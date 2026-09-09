@@ -70,7 +70,7 @@
 
         '<div class="section">' +
           '<h3>어떻게 맞힐까요?</h3>' +
-          '<div class="choice-grid">' +
+          '<div class="mode-grid">' +
             MODE_CARDS.map(function (m) {
               return '<button class="mode-card" type="button" data-mode="' + m.id + '" aria-pressed="' + (s.mode === m.id ? 'true' : 'false') + '">' +
                 '<span class="emo" aria-hidden="true">' + m.emo + '</span>' +
@@ -715,7 +715,17 @@
       doc.removeEventListener('click', once);
     });
 
+    registerServiceWorker();
     renderHome();
+  }
+
+  /* 한 번 열어 두면 인터넷 없이도 놀 수 있게 한다. file:// 로 연 경우에는 건너뛴다. */
+  function registerServiceWorker() {
+    if (!('serviceWorker' in global.navigator)) return;
+    var proto = global.location.protocol;
+    var host = global.location.hostname;
+    if (proto !== 'https:' && host !== 'localhost' && host !== '127.0.0.1') return;
+    global.navigator.serviceWorker.register('sw.js').catch(function () { /* 없어도 그만 */ });
   }
 
   FQ.app = { home: renderHome, boot: boot, startGame: startGame };

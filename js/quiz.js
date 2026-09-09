@@ -89,50 +89,66 @@
     return q;
   }
 
-  /** 자유 입력(말하기/쓰기) 채점 */
-  function checkText(answer, text, opts) {
-    opts = opts || {};
-    var threshold = opts.threshold || 0.8;
+  /** 이름 길이에 따라 봐줄 수 있는 오타 개수 (자모 기준) */
+  function allowedSlip(len) {
+    if (len <= 5) return 1;    // 칠레, 인도처럼 짧은 이름은 한 글자까지
+    if (len <= 11) return 2;   // 필리핀, 브라질 정도
+    return 3;                  // 오스트레일리아처럼 긴 이름
+  }
+
+  /**
+   * 자유 입력(말하기/쓰기) 채점.
+   * 살짝 틀리게 말하거나 써도 인정하되, 그 답이 다른 나라와 더 가깝거나
+   * 똑같이 가까우면 정답으로 치지 않는다. (니제르 ↔ 나이지리아 같은 사고 방지)
+   */
+  function checkText(answer, text) {
     var norm = util.normalize(text);
     var result = { correct: false, exact: false, score: 0, matched: null, confusedWith: null };
     if (!norm) return result;
+    var inputKey = util.compareKey(text);
 
     function best(country) {
       var names = (country.aliases || []).concat([country.ko, country.en]);
-      var top = 0, hit = null, exact = false;
+      var out = { score: 0, name: null, exact: false, near: false };
       for (var i = 0; i < names.length; i++) {
-        if (!names[i]) continue;
-        var n = util.normalize(names[i]);
-        if (!n) continue;
-        if (n === norm) { return { score: 1, name: names[i], exact: true }; }
-        var s = util.similarity(norm, n);
-        if (s > top) { top = s; hit = names[i]; }
+        var nm = names[i];
+        if (!nm) continue;
+        if (util.normalize(nm) === norm) return { score: 1, name: nm, exact: true, near: true };
+        var key = util.compareKey(nm);
+        if (!key) continue;
+        var gap = Math.abs(inputKey.length - key.length);
+        var longer = Math.max(inputKey.length, key.length);
+        // 길이 차이가 이미 크면 편집 거리를 재 볼 필요가 없다
+        var dist = gap > 4 ? gap : util.editDistance(inputKey, key);
+        var score = longer ? 1 - dist / longer : 0;
+        if (score > out.score) {
+          out = { score: score, name: nm, exact: false, near: dist <= allowedSlip(key.length) };
+        }
       }
-      return { score: top, name: hit, exact: exact };
+      return out;
     }
 
     var mine = best(answer);
     result.score = mine.score;
     result.matched = mine.name;
     result.exact = mine.exact;
-
     if (mine.exact) { result.correct = true; return result; }
 
     // 다른 나라 이름을 말한 것은 아닌지 확인한다
     var list = all();
-    var rivalTop = 0, rival = null;
+    var rivalScore = 0, rival = null;
     for (var i = 0; i < list.length; i++) {
       if (list[i].code === answer.code) continue;
       var r = best(list[i]);
-      if (r.score > rivalTop) { rivalTop = r.score; rival = list[i]; }
-      if (r.exact) { rivalTop = 1.0001; rival = list[i]; break; }
+      if (r.exact) { rivalScore = 1.0001; rival = list[i]; break; }
+      if (r.score > rivalScore) { rivalScore = r.score; rival = list[i]; }
     }
 
-    if (rivalTop >= mine.score) {
-      if (rivalTop >= threshold) result.confusedWith = rival;
+    if (rivalScore >= mine.score) {
+      if (rivalScore >= 0.75) result.confusedWith = rival;
       return result;
     }
-    if (mine.score >= threshold) result.correct = true;
+    result.correct = mine.near;
     return result;
   }
 

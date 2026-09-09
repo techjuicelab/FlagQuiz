@@ -64,14 +64,30 @@
     return prev[b.length];
   }
 
+  /* 같은 나라 이름을 몇 번이고 다시 분해하지 않도록 결과를 담아 둔다 */
+  var keyCache = {};
+  function compareKey(s) {
+    if (typeof s !== 'string') s = String(s == null ? '' : s);
+    var hit = keyCache[s];
+    if (hit === undefined) {
+      hit = toJamo(normalize(s));
+      keyCache[s] = hit;
+    }
+    return hit;
+  }
+
   /** 0~1 유사도. 자모 단위로 비교해 받침 하나 차이 같은 실수에 관대하다. */
   function similarity(a, b) {
-    var x = toJamo(normalize(a));
-    var y = toJamo(normalize(b));
+    var x = compareKey(a);
+    var y = compareKey(b);
     if (!x && !y) return 1;
     if (!x || !y) return 0;
-    var d = editDistance(x, y);
-    return 1 - d / Math.max(x.length, y.length);
+    var longer = Math.max(x.length, y.length);
+    // 길이 차이만으로 이미 많이 다르면 편집 거리를 계산하지 않는다
+    if (Math.abs(x.length - y.length) / longer >= 0.5) {
+      return 1 - Math.abs(x.length - y.length) / longer;
+    }
+    return 1 - editDistance(x, y) / longer;
   }
 
   /* ---------------- 배열 ---------------- */
@@ -134,6 +150,7 @@
     toJamo: toJamo,
     initialOf: initialOf,
     normalize: normalize,
+    compareKey: compareKey,
     editDistance: editDistance,
     similarity: similarity,
     shuffle: shuffle,
