@@ -55,54 +55,123 @@
     } catch (e) { /* 지원하지 않으면 넘어간다 */ }
   }
 
-  function tone(freq, startAt, duration, type, gain) {
+  /* 소리가 여러 개 겹쳐도 찢어지지 않도록 한 번 눌러서 내보낸다 */
+  var master = null;
+  function bus() {
     var a = ac();
-    if (!a) return;
+    if (!a) return null;
+    if (master) return master;
+    var comp = a.createDynamicsCompressor();
+    comp.threshold.setValueAtTime(-16, a.currentTime);
+    comp.ratio.setValueAtTime(6, a.currentTime);
+    comp.attack.setValueAtTime(0.003, a.currentTime);
+    comp.release.setValueAtTime(0.2, a.currentTime);
+    var g = a.createGain();
+    g.gain.setValueAtTime(0.85, a.currentTime);
+    comp.connect(g);
+    g.connect(a.destination);
+    master = comp;
+    return master;
+  }
+
+  /**
+   * 음 하나를 낸다.
+   * detune 을 주면 살짝 어긋난 소리를 겹쳐 더 도톰하게 들린다.
+   */
+  function tone(freq, startAt, duration, type, gain, detune) {
+    var a = ac();
+    var out = bus();
+    if (!a || !out) return;
+    var t = a.currentTime + startAt;
     var osc = a.createOscillator();
     var g = a.createGain();
     osc.type = type || 'sine';
-    osc.frequency.setValueAtTime(freq, a.currentTime + startAt);
-    g.gain.setValueAtTime(0.0001, a.currentTime + startAt);
-    g.gain.exponentialRampToValueAtTime(gain || 0.18, a.currentTime + startAt + 0.012);
-    g.gain.exponentialRampToValueAtTime(0.0001, a.currentTime + startAt + duration);
+    osc.frequency.setValueAtTime(freq, t);
+    if (detune) osc.detune.setValueAtTime(detune, t);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(Math.max(0.0002, gain || 0.18), t + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + duration);
     osc.connect(g);
-    g.connect(a.destination);
-    osc.start(a.currentTime + startAt);
-    osc.stop(a.currentTime + startAt + duration + 0.02);
+    g.connect(out);
+    osc.start(t);
+    osc.stop(t + duration + 0.02);
+  }
+
+  /** 화음 — 여러 음을 한꺼번에 */
+  function chord(freqs, startAt, duration, type, gain) {
+    for (var i = 0; i < freqs.length; i++) {
+      tone(freqs[i], startAt, duration, type, gain, i === 0 ? 0 : (i % 2 ? 6 : -6));
+    }
+  }
+
+  /** 아르페지오 — 음을 차례로 굴려 올린다 */
+  function arp(freqs, startAt, step, duration, type, gain) {
+    for (var i = 0; i < freqs.length; i++) {
+      tone(freqs[i], startAt + i * step, duration, type, gain);
+    }
+  }
+
+  /* 음이름 → 주파수 (12평균율) */
+  var C5 = 523.25, D5 = 587.33, E5 = 659.25, G5 = 783.99, A5 = 880.00;
+  var C6 = 1046.50, D6 = 1174.66, E6 = 1318.51, G6 = 1567.98, A6 = 1760.00, C7 = 2093.00, E7 = 2637.02;
+
+  /**
+   * 정답 축하 소리.
+   * level 이 올라갈수록(연속 정답) 더 높고 화려해진다.
+   */
+  function fanfare(level) {
+    var lv = Math.max(0, Math.min(3, level || 0));
+    // 밑에 깔리는 포근한 화음
+    chord([C5, E5, G5], 0, 0.5, 'triangle', 0.09);
+    // 반짝이며 굴러 올라가는 아르페지오
+    arp([C6, E6, G6, C7], 0.04, 0.075, 0.28, 'sine', 0.16);
+    // 맨 위에서 한 번 더 반짝
+    tone(E7, 0.34, 0.5, 'sine', 0.1);
+    if (lv >= 1) {
+      chord([E5, G5, C6], 0.3, 0.5, 'triangle', 0.08);
+      arp([E6, G6, C7], 0.34, 0.07, 0.26, 'sine', 0.13);
+    }
+    if (lv >= 2) {
+      arp([G6, C7, E7], 0.56, 0.065, 0.3, 'sine', 0.12);
+      tone(A6, 0.75, 0.55, 'triangle', 0.09);
+    }
+    if (lv >= 3) {
+      chord([C6, E6, G6, C7], 0.8, 0.7, 'sine', 0.08);
+    }
   }
 
   function play(name) {
     if (!enabled) return;
     unlock();
     switch (name) {
-      case 'correct':                       // 도-미-솔 아르페지오
-        tone(523.25, 0, 0.14, 'sine');
-        tone(659.25, 0.09, 0.14, 'sine');
-        tone(783.99, 0.18, 0.24, 'sine');
+      case 'correct':                       // 정답 — 짧고 밝은 팡파레
+        fanfare(0);
         break;
-      case 'wrong':                         // 낮은 두 음
-        tone(220, 0, 0.16, 'triangle', 0.14);
-        tone(164.81, 0.14, 0.28, 'triangle', 0.14);
+      case 'combo':                         // 연속 정답 — 더 화려하게
+        fanfare(2);
         break;
-      case 'combo':                         // 반짝
-        tone(1046.5, 0, 0.08, 'sine', 0.12);
-        tone(1318.5, 0.07, 0.08, 'sine', 0.12);
-        tone(1567.9, 0.14, 0.16, 'sine', 0.12);
+      case 'bigcombo':                      // 많이 연속 — 제일 화려하게
+        fanfare(3);
+        break;
+      case 'wrong':                         // 낮은 두 음, 야단치지 않는 부드러운 소리
+        tone(320, 0, 0.16, 'triangle', 0.12);
+        tone(240, 0.13, 0.3, 'triangle', 0.12);
         break;
       case 'click':
-        tone(880, 0, 0.05, 'sine', 0.07);
+        tone(A5, 0, 0.05, 'sine', 0.07);
         break;
       case 'tick':
-        tone(1200, 0, 0.03, 'square', 0.04);
+        tone(D6, 0, 0.03, 'square', 0.04);
         break;
-      case 'finish':                        // 팡파레
-        [523.25, 659.25, 783.99, 1046.5].forEach(function (f, i) {
-          tone(f, i * 0.11, 0.3, 'sine', 0.16);
-        });
-        tone(1318.5, 0.46, 0.5, 'sine', 0.14);
+      case 'finish':                        // 판이 끝났을 때
+        chord([C5, E5, G5], 0, 0.6, 'triangle', 0.09);
+        arp([C6, D6, E6, G6, C7], 0.06, 0.09, 0.32, 'sine', 0.15);
+        chord([E5, A5, C6], 0.5, 0.7, 'triangle', 0.08);
+        tone(E7, 0.62, 0.7, 'sine', 0.1);
         break;
-      case 'badge':
-        [659.25, 880, 1174.7].forEach(function (f, i) { tone(f, i * 0.1, 0.35, 'triangle', 0.13); });
+      case 'badge':                         // 새 배지
+        arp([E5, A5, C6, E6, A6], 0, 0.085, 0.35, 'triangle', 0.12);
+        tone(C7, 0.42, 0.6, 'sine', 0.1);
         break;
     }
   }

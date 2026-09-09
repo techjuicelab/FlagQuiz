@@ -15,7 +15,7 @@
   var MODE_CARDS = [
     { id: 'choice4', emo: '🚩', title: '국기 보고 나라 고르기', desc: '네 개 중에서 골라요' },
     { id: 'reverse', emo: '🔎', title: '나라 보고 국기 찾기', desc: '이름을 보고 국기를 골라요' },
-    { id: 'voice',   emo: '🎤', title: '말로 답하기', desc: '국기를 보고 소리 내어 말해요' },
+    { id: 'voice',   emo: '🎤', title: '말로 답하기', desc: '누르지 않고 바로 말하면 돼요' },
     { id: 'typing',  emo: '⌨️', title: '이름 써서 맞히기', desc: '글자로 입력해요' },
     { id: 'capital', emo: '🏙️', title: '수도 맞히기', desc: '나라의 수도를 골라요' }
   ];
@@ -40,6 +40,8 @@
     removed: [],
     timerId: null,
     timeLeft: 0,
+    listenOn: false,
+    listenTimer: null,
     lastSummary: null,
     lastBadges: []
   };
@@ -201,7 +203,7 @@
 
   function voiceNotice() {
     var reason = FQ.speech.unavailableReason();
-    if (!reason) return '<div class="notice">🎤 마이크 사용을 물어보면 “허용”을 눌러 주세요. 조용한 곳에서 또박또박 말하면 더 잘 알아들어요.</div>';
+    if (!reason) return '<div class="notice">🎤 버튼을 누를 필요 없어요. 국기가 나오면 <b>바로 나라 이름을 말하면</b> 알아듣습니다. 마이크 사용을 물어보면 “허용”을 눌러 주세요.</div>';
     return '<div class="notice">⚠️ ' + esc(reason) +
       (FQ.speech.blocked() ? '<br>말하기 대신 <b>이름 써서 맞히기</b>로도 즐길 수 있어요.' : '') + '</div>';
   }
@@ -303,7 +305,7 @@
     ui.on(m, '[data-speak]', 'click', function (e, t) { audio.speak(t.getAttribute('data-speak')); });
     ui.$('#quit', m).addEventListener('click', function () {
       stopTimer();
-      FQ.speech.abort();
+      stopListening();
       audio.stopSpeaking();
       state.game = null;
       renderHome();
@@ -314,6 +316,12 @@
     bindAnswerArea(m, q);
     preloadNext();
     startTimer();
+
+    if (q.mode === 'voice') {
+      state.listenOn = true;
+      // 앞 문제의 읽어주기가 끝난 뒤 듣기 시작해야 제 목소리를 받아 적지 않는다
+      state.listenTimer = global.setTimeout(startListening, 350);
+    }
   }
 
   function answerArea(q) {
@@ -340,12 +348,19 @@
       var off = FQ.speech.blocked();
       return '<div class="mic-wrap">' +
         (reason ? '<div class="notice">⚠️ ' + esc(reason) + '</div>' : '') +
-        '<button class="mic-btn" id="mic" type="button" aria-label="눌러서 말하기"' + (off ? ' disabled' : '') + '>🎤</button>' +
-        '<div class="heard" id="heard">' + (off ? '' : '버튼을 누르고 나라 이름을 말해 보세요') + '</div>' +
-        '<div class="field" style="margin-top:14px">' +
-          '<input class="text-input" id="answer-input" placeholder="글자로 답해도 좋아요" autocomplete="off">' +
-          '<button class="btn btn-primary" id="answer-submit" type="button">확인</button>' +
+        '<button class="mic-btn" id="mic" type="button" aria-label="듣기 멈추기"' + (off ? ' disabled' : '') + '>🎤</button>' +
+        '<div class="listen-state" id="listen-state">' +
+          (off ? '마이크를 쓸 수 없어요' : '마이크를 준비하고 있어요…') +
         '</div>' +
+        '<div class="heard" id="heard"></div>' +
+        '<div class="listen-tip small muted" id="listen-tip"></div>' +
+        '<details class="type-fallback">' +
+          '<summary>⌨️ 글자로 답하기</summary>' +
+          '<div class="field" style="margin-top:10px">' +
+            '<input class="text-input" id="answer-input" placeholder="나라 이름을 써 보세요" autocomplete="off">' +
+            '<button class="btn btn-primary" id="answer-submit" type="button">확인</button>' +
+          '</div>' +
+        '</details>' +
       '</div>';
     }
     return '<div class="field">' +
@@ -385,38 +400,126 @@
     submit({ text: text });
   }
 
-  /* --------- 마이크 --------- */
-  function toggleMic() {
+  /* --------- 마이크: 버튼을 누르지 않아도 계속 듣는다 --------- */
+
+  /* 아이가 모를 때 자연스럽게 하는 말들. 이러면 답을 보여 주고 넘어간다. */
+  var GIVE_UP = ['몰라', '몰라요', '모르겠어', '모르겠어요', '모르겠다', '모르겠는데',
+                 '패스', '다음', '다음이요', '넘어가', '넘어갈래', '스킵'];
+
+  function isGiveUp(text) {
+    return GIVE_UP.indexOf(util.normalize(text)) !== -1;
+  }
+
+  /**
+   * 들린 말을 어떻게 받아들일지 정한다.
+   *   {kind:'answer'}  정답이거나 다른 나라 이름이 확실하다 → 채점
+   *   {kind:'giveup'}  "몰라요" 처럼 넘어가고 싶다는 말이다
+   *   null             웅얼거림이나 나라 이름이 아닌 말 → 흘려듣고 계속 기다린다
+   */
+  function interpret(text) {
+    if (!text || !state.game) return null;
+    var q = state.game.current();
+    if (!q) return null;
+    if (isGiveUp(text)) return { kind: 'giveup' };
+    if (quiz.checkText(q.country, text).correct) return { kind: 'answer', text: text };
+    var other = quiz.findCountry(text);
+    if (other && other.code !== q.country.code) return { kind: 'answer', text: text };
+    return null;
+  }
+
+  function actOn(hit, text) {
+    if (!hit) return false;
+    if (hit.kind === 'giveup') { submit({ text: '' }, true); return true; }
+    submit({ text: hit.text || text });
+    return true;
+  }
+
+  function setListenState(msg, cls) {
+    var el = ui.$('#listen-state');
+    if (!el) return;
+    el.textContent = msg;
+    el.className = 'listen-state' + (cls ? ' ' + cls : '');
+  }
+
+  /** 문제가 뜨면 알아서 듣기 시작한다. */
+  function startListening() {
+    if (state.answered || !state.listenOn) return;
     var mic = ui.$('#mic');
-    var heard = ui.$('#heard');
-    if (!mic) return;
-    if (FQ.speech.isListening()) { FQ.speech.stop(); return; }
+    if (!mic || mic.disabled) return;
     audio.stopSpeaking();
     mic.classList.add('listening');
-    heard.textContent = '듣고 있어요…';
+    setListenState('듣고 있어요. 나라 이름을 말해 보세요!', 'on');
+    var tip = ui.$('#listen-tip');
+    if (tip) tip.textContent = '모르겠으면 “몰라요” 라고 말해도 돼요';
+
     FQ.speech.start({
-      interim: function (text) { if (heard) heard.textContent = text; },
+      continuous: true,
+      interim: function (text) {
+        if (state.answered) return;
+        var heard = ui.$('#heard');
+        if (heard) heard.textContent = text;
+        // 말하는 도중에도 나라 이름이 들리면 바로 채점한다
+        actOn(interpret(text), text);
+      },
       result: function (alts) {
         if (state.answered) return;
+        var heard = ui.$('#heard');
         if (heard) heard.textContent = alts[0] || '';
-        var q = state.game.current();
-        var best = null;
-        for (var i = 0; i < alts.length; i++) {
-          var r = quiz.checkText(q.country, alts[i]);
-          if (r.correct) { best = alts[i]; break; }
-          if (!best) best = alts[i];
+        // 여러 후보 중 정답이 있으면 그것부터 인정해 준다
+        var i;
+        for (i = 0; i < alts.length; i++) {
+          var hit = interpret(alts[i]);
+          if (hit && hit.kind === 'answer' && quiz.checkText(state.game.current().country, alts[i]).correct) {
+            submit({ text: alts[i] });
+            return;
+          }
         }
-        submit({ text: best || '' });
+        for (i = 0; i < alts.length; i++) {
+          if (actOn(interpret(alts[i]), alts[i])) return;
+        }
+        // 나라 이름이 아니면 그냥 흘려듣고 계속 기다린다
       },
       error: function (code, message) {
-        mic.classList.remove('listening');
-        if (!heard) return;
-        if (code === 'no-speech') heard.textContent = '소리가 잘 안 들렸어요. 다시 눌러 볼까요?';
-        else if (code === 'not-allowed' || code === 'service-not-allowed') heard.textContent = '마이크 사용을 허용해 주세요.';
-        else heard.textContent = message || '지금은 마이크를 쓸 수 없어요. 글자로 답해 주세요.';
+        if (state.answered) return;
+        if (code === 'no-speech' || code === 'aborted') return;   // 조용하면 그냥 계속 기다린다
+        if (code === 'not-allowed' || code === 'service-not-allowed') {
+          state.listenOn = false;
+          var mic2 = ui.$('#mic');
+          if (mic2) mic2.classList.remove('listening');
+          setListenState('마이크 사용을 허용해 주세요. 글자로 답해도 좋아요.', 'off');
+          return;
+        }
+        setListenState(message || '마이크가 잠깐 멈췄어요. 다시 들을게요.', 'off');
       },
-      end: function () { if (mic) mic.classList.remove('listening'); }
+      end: function () {
+        var mic3 = ui.$('#mic');
+        if (mic3) mic3.classList.remove('listening');
+        // 사파리는 몇 초마다 스스로 끊는다. 아직 답을 안 했으면 곧바로 다시 듣는다.
+        if (!state.answered && state.listenOn) {
+          state.listenTimer = global.setTimeout(startListening, 250);
+        }
+      }
     });
+  }
+
+  function stopListening() {
+    state.listenOn = false;
+    if (state.listenTimer) { global.clearTimeout(state.listenTimer); state.listenTimer = null; }
+    FQ.speech.abort();
+    var mic = ui.$('#mic');
+    if (mic) mic.classList.remove('listening');
+  }
+
+  /** 마이크 버튼은 이제 듣기를 잠깐 멈추거나 다시 켜는 스위치다. */
+  function toggleMic() {
+    if (state.answered) return;
+    if (state.listenOn) {
+      stopListening();
+      setListenState('듣기를 멈췄어요. 마이크를 누르면 다시 들어요.', 'off');
+    } else {
+      state.listenOn = true;
+      startListening();
+    }
   }
 
   /* --------- 힌트 --------- */
@@ -456,7 +559,7 @@
     if (state.answered) return;
     state.answered = true;
     stopTimer();
-    FQ.speech.abort();
+    stopListening();
 
     var g = state.game;
     var res = g.submit(payload, state.usedHint);
@@ -483,6 +586,7 @@
     if (skipBtn) skipBtn.disabled = true;
     var micBtn = ui.$('#mic');
     if (micBtn) { micBtn.disabled = true; micBtn.classList.remove('listening'); }
+    setListenState('', '');
     var inputBox = ui.$('#answer-input');
     if (inputBox) inputBox.disabled = true;
     var subBtn = ui.$('#answer-submit');
@@ -492,8 +596,15 @@
     var verdict, extra = '';
     if (res.correct) {
       verdict = '🎉 ' + who + '정답이에요!' + (res.gained > 10 ? ' <span class="small">(+' + res.gained + '점 연속 보너스!)</span>' : '');
-      audio.play(g.streak >= 3 ? 'combo' : 'correct');
-      FQ.effects.burst(g.streak >= 3 ? 90 : 40);
+      // 연속으로 맞힐수록 소리도 화면도 더 신나게
+      var level = g.streak >= 7 ? 3 : g.streak >= 5 ? 2 : g.streak >= 3 ? 1 : 0;
+      audio.play(level >= 3 ? 'bigcombo' : level >= 1 ? 'combo' : 'correct');
+      FQ.effects.celebrate({ level: level, streak: g.streak });
+      var stage = ui.$('.flag-stage');
+      if (stage) {
+        stage.classList.add('correct-pulse');
+        global.setTimeout(function () { stage.classList.remove('correct-pulse'); }, 700);
+      }
       if (!res.exact && res.matched) {
         extra = '<div class="small muted">비슷하게 말해도 정답으로 인정했어요. 정확한 이름은 <b>' + esc(c.ko) + '</b> 예요.</div>';
       }
@@ -584,7 +695,7 @@
   /* =================== 결과 =================== */
   function finishGame() {
     stopTimer();
-    FQ.speech.abort();
+    stopListening();
     var g = state.game;
     if (!g) return renderHome();
     var summary = g.summary();
@@ -715,11 +826,11 @@
     audio.setSpeakEnabled(s.speak);
 
     doc.getElementById('nav-dex').addEventListener('click', function () {
-      stopTimer(); FQ.speech.abort(); audio.stopSpeaking(); state.game = null;
+      stopTimer(); stopListening(); audio.stopSpeaking(); state.game = null;
       FQ.screens.dex();
     });
     doc.getElementById('nav-stats').addEventListener('click', function () {
-      stopTimer(); FQ.speech.abort(); audio.stopSpeaking(); state.game = null;
+      stopTimer(); stopListening(); audio.stopSpeaking(); state.game = null;
       FQ.screens.stats();
     });
     // 아이폰·아이패드는 사용자가 화면을 처음 만질 때만 소리를 열어 준다
