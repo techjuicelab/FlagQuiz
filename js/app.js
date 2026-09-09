@@ -198,7 +198,8 @@
   function voiceNotice() {
     var reason = FQ.speech.unavailableReason();
     if (!reason) return '<div class="notice">🎤 마이크 사용을 물어보면 “허용”을 눌러 주세요. 조용한 곳에서 또박또박 말하면 더 잘 알아들어요.</div>';
-    return '<div class="notice">⚠️ ' + esc(reason) + '<br>말하기 대신 <b>이름 써서 맞히기</b>로도 즐길 수 있어요.</div>';
+    return '<div class="notice">⚠️ ' + esc(reason) +
+      (FQ.speech.blocked() ? '<br>말하기 대신 <b>이름 써서 맞히기</b>로도 즐길 수 있어요.' : '') + '</div>';
   }
 
   function savePlayers(m) {
@@ -279,13 +280,17 @@
           (s.timer ? '<span class="chip" id="timer-chip">⏱ ' + s.timer + '</span>' : '') +
         '</div>' +
         '<div class="progress"><i style="width:' + progress + '%"></i></div>' +
-        stage +
-        '<div id="answer-area">' + answerArea(q) + '</div>' +
-        '<div class="row" style="margin-top:14px">' +
-          '<button class="btn btn-sm" id="hint" type="button">💡 힌트 (-3점)</button>' +
-          '<button class="btn btn-sm btn-ghost" id="skip" type="button">🤷 모르겠어요</button>' +
+        '<div class="quiz-body">' +
+          '<div>' + stage + '</div>' +
+          '<div>' +
+            '<div id="answer-area">' + answerArea(q) + '</div>' +
+            '<div class="row" style="margin-top:14px">' +
+              '<button class="btn btn-sm" id="hint" type="button">💡 힌트 (-3점)</button>' +
+              '<button class="btn btn-sm btn-ghost" id="skip" type="button">🤷 모르겠어요</button>' +
+            '</div>' +
+            '<div id="hint-area"></div>' +
+          '</div>' +
         '</div>' +
-        '<div id="hint-area"></div>' +
         '<div id="feedback-area"></div>' +
       '</section>';
 
@@ -328,10 +333,11 @@
     }
     if (q.mode === 'voice') {
       var reason = FQ.speech.unavailableReason();
+      var off = FQ.speech.blocked();
       return '<div class="mic-wrap">' +
         (reason ? '<div class="notice">⚠️ ' + esc(reason) + '</div>' : '') +
-        '<button class="mic-btn" id="mic" type="button" aria-label="눌러서 말하기"' + (reason ? ' disabled' : '') + '>🎤</button>' +
-        '<div class="heard" id="heard">' + (reason ? '' : '버튼을 누르고 나라 이름을 말해 보세요') + '</div>' +
+        '<button class="mic-btn" id="mic" type="button" aria-label="눌러서 말하기"' + (off ? ' disabled' : '') + '>🎤</button>' +
+        '<div class="heard" id="heard">' + (off ? '' : '버튼을 누르고 나라 이름을 말해 보세요') + '</div>' +
         '<div class="field" style="margin-top:14px">' +
           '<input class="text-input" id="answer-input" placeholder="글자로 답해도 좋아요" autocomplete="off">' +
           '<button class="btn btn-primary" id="answer-submit" type="button">확인</button>' +
@@ -355,7 +361,9 @@
       input.addEventListener('keydown', function (ev) {
         if (ev.key === 'Enter') { ev.preventDefault(); submitTyped(); }
       });
-      if (q.mode === 'typing') setTimeout(function () { input.focus(); }, 60);
+      // 손가락으로 쓰는 기기에서는 자동으로 자판을 올리지 않는다 (화면이 갑자기 튀어 오르는 걸 막는다)
+      var touchDevice = global.matchMedia && global.matchMedia('(hover: none)').matches;
+      if (q.mode === 'typing' && !touchDevice) setTimeout(function () { input.focus(); }, 60);
     }
     var sub = ui.$('#answer-submit', m);
     if (sub) sub.addEventListener('click', submitTyped);
@@ -710,9 +718,9 @@
       stopTimer(); FQ.speech.abort(); audio.stopSpeaking(); state.game = null;
       FQ.screens.stats();
     });
-    doc.addEventListener('click', function once() {
-      audio.unlock();
-      doc.removeEventListener('click', once);
+    // 아이폰·아이패드는 사용자가 화면을 처음 만질 때만 소리를 열어 준다
+    ['pointerdown', 'touchend', 'click', 'keydown'].forEach(function (evt) {
+      doc.addEventListener(evt, audio.unlock, { passive: true });
     });
 
     registerServiceWorker();

@@ -8,6 +8,10 @@
   var ctx = null;
   var enabled = true;
   var speakEnabled = true;
+  var unlocked = false;
+  var speechPrimed = false;
+
+  var synth = global.speechSynthesis || null;
 
   function ac() {
     if (ctx) return ctx;
@@ -17,10 +21,38 @@
     return ctx;
   }
 
-  /** 사용자 첫 터치 때 오디오를 깨운다(모바일 자동재생 정책). */
+  /**
+   * 사용자가 화면을 처음 만질 때 소리를 깨운다.
+   * 아이폰·아이패드는 손가락 조작 중에 한 번 소리를 내 봐야 그다음부터 소리가 난다.
+   * 여러 번 불러도 안전하며, 열리고 나면 아무 일도 하지 않는다.
+   */
   function unlock() {
     var a = ac();
-    if (a && a.state === 'suspended') a.resume();
+    if (!a) { primeSpeech(); return; }
+    if (a.state === 'suspended' && a.resume) a.resume();
+    if (!unlocked) {
+      try {
+        var buffer = a.createBuffer(1, 1, 22050);
+        var source = a.createBufferSource();
+        source.buffer = buffer;
+        source.connect(a.destination);
+        if (source.start) source.start(0);
+        unlocked = true;
+      } catch (e) { /* 못 열어도 게임은 그대로 돌아간다 */ }
+    }
+    primeSpeech();
+  }
+
+  /** 읽어주기도 첫 손가락 조작 때 한 번 깨워 둬야 사파리에서 소리가 난다. */
+  function primeSpeech() {
+    if (speechPrimed || !synth) return;
+    speechPrimed = true;
+    try {
+      var u = new global.SpeechSynthesisUtterance(' ');
+      u.volume = 0;
+      u.lang = 'ko-KR';
+      synth.speak(u);
+    } catch (e) { /* 지원하지 않으면 넘어간다 */ }
   }
 
   function tone(freq, startAt, duration, type, gain) {
@@ -76,8 +108,6 @@
   }
 
   /* ---------------- 읽어주기 ---------------- */
-  var synth = global.speechSynthesis || null;
-
   function canSpeak() { return !!synth; }
 
   function speak(text, opts) {
@@ -120,6 +150,7 @@
     canSpeak: canSpeak,
     setEnabled: setEnabled,
     setSpeakEnabled: setSpeakEnabled,
-    unlock: unlock
+    unlock: unlock,
+    primeSpeech: primeSpeech
   };
 })(window);

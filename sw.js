@@ -20,7 +20,9 @@ var SHELL = [
   './js/screens.js',
   './js/app.js',
   './assets/favicon.svg',
-  './assets/icon.svg'
+  './assets/icon.svg',
+  './assets/icon-180.png',
+  './assets/icon-192.png'
 ];
 
 self.addEventListener('install', function (event) {

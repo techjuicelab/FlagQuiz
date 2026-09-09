@@ -8,8 +8,12 @@
 <meta name="theme-color" content="#4f7cff">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" sizes="180x180" href="assets/icon-180.png">
 <link rel="apple-touch-icon" href="assets/icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="format-detection" content="telephone=no">
 <meta name="apple-mobile-web-app-title" content="국기 퀴즈">
 <link rel="stylesheet" href="css/style.css">
 </head>
@@ -21,8 +25,8 @@
       <h1>세계 국기 퀴즈</h1>
     </div>
     <span class="spacer"></span>
-    <button class="btn btn-sm btn-ghost" id="nav-dex" type="button">📚 국기 도감</button>
-    <button class="btn btn-sm btn-ghost" id="nav-stats" type="button">🏅 내 기록</button>
+    <button class="btn btn-sm btn-ghost" id="nav-dex" type="button">📚 <span class="lbl-long">국기 </span>도감</button>
+    <button class="btn btn-sm btn-ghost" id="nav-stats" type="button">🏅 <span class="lbl-long">내 </span>기록</button>
   </header>
 
   <main id="main" aria-live="polite">
@@ -30,7 +34,7 @@
   </main>
 
   <footer class="small muted" style="text-align:center;margin-top:28px;line-height:1.7">
-    국기 이미지는 <a href="https://github.com/lipis/flag-icons" rel="noopener">flag-icons</a> (MIT) 를 사용합니다.<br>
+    국기 이미지는 <a href="https://github.com/lipis/flag-icons" target="_blank" rel="noopener">flag-icons</a> (MIT) 를 사용합니다.<br>
     기록은 이 브라우저 안에만 저장돼요.
   </footer>
 </div>
