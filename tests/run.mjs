@@ -155,9 +155,96 @@ group('정답 판정', () => {
   ok(!quiz.checkText(quiz.byCode('sk'), '슬로베니아').correct, '슬로바키아 ≠ 슬로베니아');
   ok(!quiz.checkText(quiz.byCode('cg'), '콩고민주공화국').correct, '콩고공화국 ≠ 콩고민주공화국');
   ok(!quiz.checkText(quiz.byCode('do'), '도미니카 연방').correct, '도미니카공화국 ≠ 도미니카연방');
+  ok(!quiz.checkText(quiz.byCode('dm'), '도미니카공화국').correct, '도미니카연방 ≠ 도미니카공화국');
+  ok(!quiz.checkText(quiz.byCode('is'), '아일랜드').correct, '아이슬란드 ≠ 아일랜드');
+  ok(!quiz.checkText(quiz.byCode('ie'), '아이슬란드').correct, '아일랜드 ≠ 아이슬란드');
+  ok(!quiz.checkText(quiz.byCode('gw'), '기니').correct, '기니비사우 ≠ 기니');
+  ok(!quiz.checkText(quiz.byCode('gq'), '기니').correct, '적도기니 ≠ 기니');
+  ok(!quiz.checkText(quiz.byCode('gn'), '기니비사우').correct, '기니 ≠ 기니비사우');
+  ok(!quiz.checkText(quiz.byCode('cd'), '콩고공화국').correct, '콩고민주공화국 ≠ 콩고공화국');
+  ok(!quiz.checkText(quiz.byCode('in'), '인도네시아').correct, '인도 ≠ 인도네시아');
+  ok(!quiz.checkText(quiz.byCode('gh'), '차드').correct, '가나 ≠ 차드');
+  ok(!quiz.checkText(quiz.byCode('td'), '가나').correct, '차드 ≠ 가나');
+  ok(!quiz.checkText(quiz.byCode('kp'), '대한민국').correct, '북한 ≠ 대한민국');
   ok(quiz.checkText(quiz.byCode('kr'), '한국').correct, '별칭 인정');
   ok(quiz.checkText(quiz.byCode('br'), '브라찔').correct, '살짝 틀리게 말해도 인정');
   ok(!quiz.checkText(quiz.byCode('kr'), '').correct, '빈 답은 오답');
+});
+
+group('아이가 말한 그대로 인정하기', () => {
+  // 두 번 말하기, 앞뒤에 다른 말, 조사, 살짝 틀린 발음, 여러 낱말로 끊어 말하기
+  const ACCEPT = [
+    ['br', '브라질 브라질'], ['br', '브라질 브라질 브라질'], ['br', '브라질브라질'],
+    ['br', '음 그러니까 브라질이요'], ['br', '브라찔'], ['br', '음 브라찔이요'],
+    ['br', '브라질입니다'], ['br', '정답은 브라질'], ['br', '어 브라질 맞나?'],
+    ['fr', '프랑스 프랑스요'], ['fr', '프랑쓰'],
+    ['ph', '피리핀'], ['ph', '필리핀 필리핀'],
+    ['nl', '네델란드'], ['kr', '한국 한국'], ['kr', '대한민국이요'],
+    ['us', '미국이요'], ['us', '미국 미국'], ['us', '어 미국!'], ['us', '미쿡'],
+    ['jp', '일본 일본이요'], ['jp', '일번'], ['th', '태국이요'],
+    ['eg', '이집트 이집트'], ['au', '호주 호주요'], ['tr', '터키요'],
+    ['id', '인도네시아 인도네시아'], ['in', '인도 인도'], ['in', '인도요'],
+    ['gh', '가나요'], ['pe', '페루 페루'], ['ca', '캐나다 캐나다'],
+    ['om', '오만이요'], ['to', '통가요'], ['ni', '니카라과요'],
+    // 여러 낱말로 끊어 말한 이름
+    ['za', '남아프리카 공화국'], ['ae', '아랍 에미리트'], ['pg', '파푸아 뉴기니'],
+    ['ba', '보스니아 헤르체고비나'], ['kn', '세인트 키츠 네비스']
+  ];
+  for (const [code, said] of ACCEPT) {
+    ok(quiz.checkText(quiz.byCode(code), said).correct, '인정해야 함', code + ' ← "' + said + '"');
+  }
+
+  // 모른다고 하거나 무엇인지 물어보는 말 — 답과 국기 특징을 알려 주고 넘어간다
+  const GIVE_UP = [
+    '몰라요', '모릅니다', '모르겠어요', '모르겠습니다', '몰라', '아 나 모르겠어', '기억 안 나', '생각이 안 나',
+    '이거 뭐지요?', '이게 뭔가요', '이게 뭐예요?',
+    '이건 뭘까', '뭐지', '뭐야', '어느 나라야', '어디지', '무슨 나라예요',
+    '답이 뭐야', '정답이 뭐지', '알려줘', '가르쳐 주세요',
+    '패스', '다음', '넘어가요', '스킵'
+  ];
+  for (const said of GIVE_UP) {
+    ok(quiz.isGiveUp(said), '넘어가기로 받아야 함', said);
+  }
+  // 나라 이름은 넘어가기로 새지 않아야 한다
+  for (const c of countries) {
+    ok(!quiz.isGiveUp(c.ko), '나라 이름은 넘어가기가 아님', c.ko);
+  }
+});
+
+group('받아쓰기가 로마자로 적어 보낸 경우', () => {
+  // 아이패드·아이폰 받아쓰기는 "시리아" 를 시리 호출로 알아듣고 "Siri야" 로 적어 보낸다.
+  // 실제로 아이패드에서 나온 문제라 로마자를 한글 소리로 옮겨 견준다.
+  const SIRI = ['Siri야', 'siri야', 'Siri 야', 'SIRI야', '시리야', 'Syria'];
+  for (const said of SIRI) {
+    ok(quiz.checkText(quiz.byCode('sy'), said).correct, '시리아로 인정해야 함', said);
+  }
+  ok(util.latinToJamo('Siri야') === util.compareKey('시리야'), '로마자를 한글 소리로 옮김',
+    util.latinToJamo('Siri야'));
+  // 로마자가 없으면 건드리지 않는다
+  ok(util.latinToJamo('시리아') === util.compareKey('시리아'), '한글은 그대로 분해');
+  // 영어 이름을 그대로 말해도 인정한다
+  for (const [code, said] of [['br', 'Brazil'], ['jp', 'Japan'], ['fr', 'France'], ['gh', 'Ghana']]) {
+    ok(quiz.checkText(quiz.byCode(code), said).correct, '영어 이름 인정', code + ' ← ' + said);
+  }
+});
+
+group('웅얼거림은 나라 이름으로 잡히지 않아야 한다', () => {
+  // 말하기 모드는 마이크를 계속 열어 두므로, 아이와 부모의 평소 말이 그대로 들어온다.
+  // 이런 말이 나라 이름으로 잡히면 엉뚱하게 오답 처리된다.
+  const FILLER = [
+    '음 그러니까 뭐지', '어… 저기', '아 알겠다', '그거 뭐더라', '아니 잠깐만', '음', '어', '아', '아 진짜', '우와 멋있다',
+    '다시 해볼래', '잠깐만요', '어렵다', '쉽다', '아 맞다',
+    '생각났어', '기다려', '하나만 더', '재밌다', '또 할래',
+    '엄마 이거 봐', '내가 맞췄어', '우와 신기해', '아 진짜 어렵다', '저기요',
+    '있잖아', '그게 아니고', '아 알 것 같아', '조금만 기다려',
+    '너무 어려워', '한 번 더', '아이고', '아하', '으음', '에이', '치', '와', '앗', '오',
+    '그래', '응', '아니야', '맞아', '좋아', '싫어', '배고파', '졸려',
+    '하나 둘 셋', '빨리빨리', '그만할래', '아 그거', '이제 알았다'
+  ];
+  for (const said of FILLER) {
+    const hit = quiz.findCountry(said);
+    ok(!hit, '나라 이름이 아니어야 함', '"' + said + '" → ' + (hit ? hit.ko : ''));
+  }
 });
 
 group('오답 판정이 엉뚱한 나라로 새지 않는지', () => {
@@ -261,6 +348,16 @@ group('한 판 진행', () => {
   // 문항 수가 후보보다 많으면 후보 수만큼만
   const g4 = quiz.createGame({ mode: 'choice4', count: 'all', continent: '오세아니아', level: '3' });
   ok(g4.total === quiz.pool({ continent: '오세아니아', level: '3' }).length, '전부 모드 문항 수');
+});
+
+group('말 안에서 이름 찾기 (containsDistance)', () => {
+  const d = (a, b) => util.containsDistance(util.compareKey(a), util.compareKey(b));
+  ok(d('브라질 브라질', '브라질') === 0, '두 번 말해도 거리 0');
+  ok(d('음 그러니까 브라질이요', '브라질') === 0, '앞뒤에 다른 말이 붙어도 거리 0');
+  ok(d('브라찔', '브라질') === 1, '한 글자 틀리면 거리 1');
+  ok(d('니제르', '나이지리아') > 3, '니제르와 나이지리아는 멀어야 함', String(d('니제르', '나이지리아')));
+  ok(d('오스트리아', '오스트레일리아') > 3, '오스트리아와 오스트레일리아는 멀어야 함');
+  ok(d('', '브라질') === util.compareKey('브라질').length, '빈 말은 이름 길이만큼 멀다');
 });
 
 group('힌트 재료', () => {

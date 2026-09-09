@@ -64,6 +64,86 @@
     return prev[b.length];
   }
 
+  /* ---------------- 로마자를 한글 소리로 ---------------- */
+  /*
+   * 아이패드·아이폰 받아쓰기는 한국말을 로마자로 적어 보낼 때가 있다.
+   * 예: "시리아" → "Siri야" (시리 호출로 알아듣는 탓)
+   * 이런 답도 인정하려면 로마자 부분을 한글 소리(자모)로 옮겨 견주어야 한다.
+   */
+  var LATIN_PAIR = {
+    ch: 'ㅊ', sh: 'ㅅ', th: 'ㅌ', ph: 'ㅍ', kh: 'ㅋ', gh: 'ㄱ', wh: 'ㅇ', ck: 'ㅋ',
+    ee: 'ㅣ', oo: 'ㅜ', ai: 'ㅐ', ei: 'ㅔ', ea: 'ㅣ', ie: 'ㅣ', ou: 'ㅜ', au: 'ㅗ', eu: 'ㅡ'
+  };
+  var LATIN_ONE = {
+    a: 'ㅏ', b: 'ㅂ', c: 'ㅋ', d: 'ㄷ', e: 'ㅔ', f: 'ㅍ', g: 'ㄱ', h: 'ㅎ', i: 'ㅣ',
+    j: 'ㅈ', k: 'ㅋ', l: 'ㄹ', m: 'ㅁ', n: 'ㄴ', o: 'ㅗ', p: 'ㅍ', q: 'ㅋ', r: 'ㄹ',
+    s: 'ㅅ', t: 'ㅌ', u: 'ㅜ', v: 'ㅂ', w: 'ㅇ', x: 'ㅋㅅ', y: 'ㅣ', z: 'ㅈ'
+  };
+  var JUNG_SET = {};
+  JUNG.forEach(function (v) { JUNG_SET[v] = true; });
+
+  function hasLatin(str) { return /[a-z]/i.test(str || ''); }
+
+  /**
+   * 로마자가 섞인 말을 한글 자모로 옮긴다. 한글 부분은 그대로 분해한다.
+   * 홀소리 앞에 닿소리가 없으면 'ㅇ' 을 넣어 한글 소리 모양을 맞춘다.
+   */
+  function latinToJamo(str) {
+    var src = String(str || '').toLowerCase();
+    var out = '';
+    var i = 0;
+    function push(jamo) {
+      for (var k = 0; k < jamo.length; k++) {
+        var ch = jamo[k];
+        if (JUNG_SET[ch]) {
+          var prev = out[out.length - 1];
+          if (!prev || JUNG_SET[prev]) out += 'ㅇ';
+        }
+        out += ch;
+      }
+    }
+    while (i < src.length) {
+      var two = src.slice(i, i + 2);
+      if (LATIN_PAIR[two]) { push(LATIN_PAIR[two]); i += 2; continue; }
+      var one = src[i];
+      if (LATIN_ONE[one]) { push(LATIN_ONE[one]); i += 1; continue; }
+      out += toJamo(one);          // 한글이나 그 밖의 글자는 그대로
+      i += 1;
+    }
+    return out;
+  }
+
+  /**
+   * 말한 내용(input) 안에서 이름(pattern)과 가장 가까운 부분을 찾아
+   * 그 부분과 이름 사이의 편집 거리를 돌려준다.
+   *
+   * 앞뒤를 공짜로 건너뛰기 때문에
+   *   "음… 브라질이요"   → 앞의 "음…"과 뒤의 "이요"를 빼고 견준다
+   *   "브라질 브라질"     → 두 번 말해도 한 번만 견준다
+   *   "브라찔"           → 살짝 틀리게 말해도 거리 1 로 나온다
+   * 처럼 아이가 말한 그대로도 이름을 찾아낸다.
+   */
+  function containsDistance(input, pattern) {
+    if (!pattern || !pattern.length) return input ? input.length : 0;
+    if (!input || !input.length) return pattern.length;
+    var n = input.length;
+    var prev = new Array(n + 1);
+    var cur = new Array(n + 1);
+    var i, j;
+    for (i = 0; i <= n; i++) prev[i] = 0;          // 앞부분은 얼마든지 건너뛸 수 있다
+    for (j = 1; j <= pattern.length; j++) {
+      cur[0] = j;
+      for (i = 1; i <= n; i++) {
+        var cost = input[i - 1] === pattern[j - 1] ? 0 : 1;
+        cur[i] = Math.min(cur[i - 1] + 1, prev[i] + 1, prev[i - 1] + cost);
+      }
+      for (i = 0; i <= n; i++) prev[i] = cur[i];
+    }
+    var best = prev[0];                            // 뒷부분도 얼마든지 남아도 된다
+    for (i = 1; i <= n; i++) if (prev[i] < best) best = prev[i];
+    return best;
+  }
+
   /* 같은 나라 이름을 몇 번이고 다시 분해하지 않도록 결과를 담아 둔다 */
   var keyCache = {};
   function compareKey(s) {
@@ -151,7 +231,10 @@
     initialOf: initialOf,
     normalize: normalize,
     compareKey: compareKey,
+    hasLatin: hasLatin,
+    latinToJamo: latinToJamo,
     editDistance: editDistance,
+    containsDistance: containsDistance,
     similarity: similarity,
     shuffle: shuffle,
     sample: sample,

@@ -179,11 +179,16 @@
   /* ---------------- 읽어주기 ---------------- */
   function canSpeak() { return !!synth; }
 
+  /**
+   * 소리로 읽어 준다.
+   * opts.queue 를 주면 앞의 말을 끊지 않고 뒤에 이어 붙인다.
+   * ("정답!" 을 먼저 외치고 이어서 나라 이름을 읽어 주는 데 쓴다)
+   */
   function speak(text, opts) {
     if (!speakEnabled || !synth || !text) return;
     opts = opts || {};
     try {
-      synth.cancel();
+      if (!opts.queue) synth.cancel();
       var u = new global.SpeechSynthesisUtterance(text);
       u.lang = opts.lang || 'ko-KR';
       u.rate = opts.rate || 0.95;

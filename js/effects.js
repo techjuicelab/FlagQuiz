@@ -71,7 +71,7 @@
       burst(24 + level * 10, { x: w * 0.92, y: h * 0.55, spread: 40, vx: -4, power: 1.15 });
     }
 
-    if (reducedMotion()) return;
+    if (reducedMotion()) return text;
 
     var old = document.querySelector('.celebrate');
     if (old) old.remove();
@@ -87,6 +87,7 @@
       '</div>';
     document.body.appendChild(el);
     global.setTimeout(function () { el.remove(); }, 1500);
+    return text;
   }
 
   function tick() {
