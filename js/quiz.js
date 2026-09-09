@@ -65,16 +65,28 @@
     candidates.forEach(function (c) { buckets[tier(c)].push(c); });
 
     var out = [];
+    var usedCode = {};
+    var usedCapital = {};
+    usedCode[answer.code] = true;
+    usedCapital[answer.capital] = true;
+
+    function take(c) {
+      if (usedCode[c.code]) return false;
+      if (mode === 'capital' && usedCapital[c.capital]) return false;
+      usedCode[c.code] = true;
+      usedCapital[c.capital] = true;
+      out.push(c);
+      return true;
+    }
+
     for (var t = 0; t < buckets.length && out.length < count; t++) {
       var picked = util.shuffle(buckets[t]);
-      for (var i = 0; i < picked.length && out.length < count; i++) out.push(picked[i]);
+      for (var i = 0; i < picked.length && out.length < count; i++) take(picked[i]);
     }
     // 그래도 모자라면 전체에서 채운다
     if (out.length < count) {
-      var used = {};
-      out.concat([answer]).forEach(function (c) { used[c.code] = true; });
-      var rest = util.shuffle(all().filter(function (c) { return !used[c.code]; }));
-      for (var j = 0; j < rest.length && out.length < count; j++) out.push(rest[j]);
+      var rest = util.shuffle(all());
+      for (var j = 0; j < rest.length && out.length < count; j++) take(rest[j]);
     }
     return out.slice(0, count);
   }
