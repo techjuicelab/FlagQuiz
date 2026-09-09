@@ -3,6 +3,11 @@
 아이와 함께 세계 195개 나라의 **국기와 나라 이름**을 놀이로 익히는 한국어 학습 게임입니다.
 설치할 것도, 인터넷 연결도 필요 없습니다. 브라우저만 있으면 바로 놀 수 있어요.
 
+### 👉 지금 바로 놀기: **https://techjuicelab.github.io/FlagQuiz/**
+
+아이폰·아이패드에서는 이 주소를 **사파리로 연 뒤 공유 → 홈 화면에 추가** 하면
+앱처럼 쓰고, 그다음부터는 인터넷 없이도 놀 수 있어요.
+
 ![모드](https://img.shields.io/badge/모드-5가지-4f7cff) ![나라](https://img.shields.io/badge/나라-195개국-16a34a) ![의존성](https://img.shields.io/badge/외부_라이브러리-없음-ffb703)
 
 ---
@@ -30,9 +35,12 @@ Node.js가 없다면 파이썬으로도 됩니다:
 python3 -m http.server 8080
 ```
 
-### 3) 인터넷에 올려서 쓰기 (선택)
-이 저장소를 GitHub에 올리고 **Settings → Pages → Source: GitHub Actions** 를 켜면
-`main` 브랜치에 올릴 때마다 자동으로 배포됩니다. 배포된 https 주소에서는 말하기 모드도 잘 됩니다.
+### 3) 인터넷에 올려서 쓰기
+이미 배포되어 있습니다 → **https://techjuicelab.github.io/FlagQuiz/**
+
+> 처음 한 번은 저장소 **Settings → Pages → Build and deployment → Source** 를
+> `GitHub Actions` 로 바꿔 주어야 합니다. 이 최초 설정만 저장소 관리자가 직접 해야 하고,
+> 그다음부터는 `main` 에 올릴 때마다 `.github/workflows/pages.yml` 이 알아서 배포합니다.
 
 ### 4) 아이폰·아이패드에 앱처럼 설치하기 (추천)
 `https` 주소(예: GitHub Pages)로 **사파리**에서 접속한 뒤,
