@@ -397,18 +397,11 @@
     if (!input) return;
     var text = (input.value || '').trim();
     if (!text) { input.focus(); return; }
+    if (!quiz.findCountry(text) && quiz.isGiveUp(text)) { submit({ text: '' }, true); return; }
     submit({ text: text });
   }
 
   /* --------- 마이크: 버튼을 누르지 않아도 계속 듣는다 --------- */
-
-  /* 아이가 모를 때 자연스럽게 하는 말들. 이러면 답을 보여 주고 넘어간다. */
-  var GIVE_UP = ['몰라', '몰라요', '모르겠어', '모르겠어요', '모르겠다', '모르겠는데',
-                 '패스', '다음', '다음이요', '넘어가', '넘어갈래', '스킵'];
-
-  function isGiveUp(text) {
-    return GIVE_UP.indexOf(util.normalize(text)) !== -1;
-  }
 
   /**
    * 들린 말을 어떻게 받아들일지 정한다.
@@ -420,10 +413,11 @@
     if (!text || !state.game) return null;
     var q = state.game.current();
     if (!q) return null;
-    if (isGiveUp(text)) return { kind: 'giveup' };
+    // 나라 이름을 먼저 본다. "브라질 뭐지?" 처럼 이름을 말했으면 그것을 답으로 받는다
     if (quiz.checkText(q.country, text).correct) return { kind: 'answer', text: text };
     var other = quiz.findCountry(text);
     if (other && other.code !== q.country.code) return { kind: 'answer', text: text };
+    if (quiz.isGiveUp(text)) return { kind: 'giveup' };
     return null;
   }
 
@@ -450,7 +444,7 @@
     mic.classList.add('listening');
     setListenState('듣고 있어요. 나라 이름을 말해 보세요!', 'on');
     var tip = ui.$('#listen-tip');
-    if (tip) tip.textContent = '모르겠으면 “몰라요” 라고 말해도 돼요';
+    if (tip) tip.textContent = '모르겠으면 “몰라요” 나 “이게 뭐야?” 라고 말해도 돼요';
 
     FQ.speech.start({
       continuous: true,
@@ -593,13 +587,13 @@
     if (subBtn) subBtn.disabled = true;
 
     var who = g.players.length > 1 ? esc(g.currentPlayer()) + ', ' : '';
-    var verdict, extra = '';
+    var verdict, extra = '', cheerWord = '';
     if (res.correct) {
       verdict = '🎉 ' + who + '정답이에요!' + (res.gained > 10 ? ' <span class="small">(+' + res.gained + '점 연속 보너스!)</span>' : '');
       // 연속으로 맞힐수록 소리도 화면도 더 신나게
       var level = g.streak >= 7 ? 3 : g.streak >= 5 ? 2 : g.streak >= 3 ? 1 : 0;
       audio.play(level >= 3 ? 'bigcombo' : level >= 1 ? 'combo' : 'correct');
-      FQ.effects.celebrate({ level: level, streak: g.streak });
+      cheerWord = FQ.effects.celebrate({ level: level, streak: g.streak });
       var stage = ui.$('.flag-stage');
       if (stage) {
         stage.classList.add('correct-pulse');
@@ -609,17 +603,27 @@
         extra = '<div class="small muted">비슷하게 말해도 정답으로 인정했어요. 정확한 이름은 <b>' + esc(c.ko) + '</b> 예요.</div>';
       }
     } else {
-      verdict = res.gaveUp ? '👀 같이 알아볼까요?' : '😅 아쉬워요';
+      verdict = res.gaveUp ? '👀 같이 외워 볼까요?' : '😅 아쉬워요';
       audio.play('wrong');
       if (res.confusedWith) {
         extra = '<div class="small">고른 나라는 <b>' + esc(res.confusedWith.ko) + '</b> 였어요.</div>';
       }
     }
 
-    var speakText = res.correct
-      ? c.ko
-      : '정답은 ' + c.ko + (util.hasJongseong(c.ko) ? '이에요' : '예요');
-    if (s.speak) setTimeout(function () { audio.speak(speakText); }, res.correct ? 380 : 520);
+    // 소리로도 알려 준다.
+    //   맞혔을 때  → "정답!" 하고 외친 뒤 나라 이름을 읽어 준다
+    //   모를 때·틀렸을 때 → 나라 이름을 두 번 읽고 국기 특징을 짧게 알려 준다
+    if (s.speak) {
+      setTimeout(function () {
+        if (res.correct) {
+          audio.speak(cheerWord || '정답', { rate: 1.02, pitch: 1.35 });
+          audio.speak(c.ko, { queue: true, rate: 0.95, pitch: 1.1 });
+        } else {
+          audio.speak(c.ko + '. ' + c.ko + '.', { rate: 0.92, pitch: 1.1 });
+          audio.speak(c.flagHint, { queue: true, rate: 0.95 });
+        }
+      }, res.correct ? 300 : 480);
+    }
 
     var html =
       '<div class="feedback ' + (res.correct ? 'ok' : 'no') + '">' +
@@ -637,6 +641,12 @@
           '<li><b>수도</b><span>' + esc(c.capital) + '</span></li>' +
           '<li><b>위치</b><span>' + esc(c.continent) + ' · ' + esc(c.region) + '</span></li>' +
         '</ul>' +
+        (res.correct ? '' :
+          '<div class="remember-box">' +
+            '<div class="remember-name">' + esc(c.ko) + ' · ' + esc(c.ko) + '</div>' +
+            '<div class="remember-hint">🚩 ' + esc(c.flagHint) + '</div>' +
+            '<div class="remember-tip small">이렇게 기억해 두면 다음엔 맞힐 수 있어요!</div>' +
+          '</div>') +
         '<div class="fact-box">💡 ' + esc(c.fact) + '</div>' +
         '<button class="btn btn-primary btn-big" id="next" type="button" style="width:100%;margin-top:14px">' +
           (g.isLast() ? '결과 보기 →' : '다음 문제 →') +

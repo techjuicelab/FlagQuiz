@@ -101,94 +101,227 @@
     return q;
   }
 
-  /** 이름 길이에 따라 봐줄 수 있는 오타 개수 (자모 기준) */
+  /**
+   * 이름 길이에 따라 봐줄 수 있는 발음·오타 차이 (자모 기준).
+   * 아이가 말한 것이니 넉넉하게 인정한다.
+   */
   function allowedSlip(len) {
-    if (len <= 5) return 1;    // 칠레, 인도처럼 짧은 이름은 한 글자까지
-    if (len <= 11) return 2;   // 필리핀, 브라질 정도
-    return 3;                  // 오스트레일리아처럼 긴 이름
+    if (len <= 4) return 0;     // 가나, 페루, 쿠바처럼 아주 짧은 이름 — 그대로 말해야 한다.
+                                // 한 글자만 봐줘도 "하나 만 더" 의 '하나' 가 가나로 잡힌다.
+    if (len <= 6) return 1;     // 미국, 인도, 몰타 정도.
+                                // 더 봐주면 "아 맞다" 가 몰타로, "또 할래" 가 말리로 잡힌다.
+    if (len <= 10) return 2;    // 프랑스, 브라질, 필리핀 정도
+    if (len <= 15) return 3;    // 인도네시아, 슬로바키아 정도
+    return 4;                   // 보스니아헤르체고비나처럼 긴 이름
   }
 
   /**
-   * 들린(쓴) 말이 이 나라의 이름과 얼마나 가까운지 잰다.
-   *   exact  이름과 똑같다
-   *   near   오타 몇 글자 안에서 같다 — 정답으로 인정할 만하다
-   *   score  0~1, 여러 나라 중 어느 쪽이 더 가까운지 견줄 때 쓴다
+   * 아이가 "모른다" 거나 "이게 뭐야?" 하고 물어볼 때 쓰는 말들.
+   * 이런 말이 들리면 나라 이름을 두 번 읽어 주고 국기 특징을 알려 준 뒤 넘어간다.
+   *
+   * 낱말이 들어 있는지로 보기 때문에 "아빠 이거 뭐야?", "에이 나 모르겠네" 처럼
+   * 앞뒤에 다른 말이 붙어도 알아본다. 나라 이름 중에 이 말이 들어간 것은 없다.
    */
-  function matchOne(country, inputKey, norm) {
+  var GIVE_UP_MARKS = [
+    // 모른다
+    '몰라', '모르겠', '모릅니', '모르는데', '기억안나', '기억이안나', '생각안나', '생각이안나',
+    // 물어본다
+    '뭐지', '뭐야', '뭐예요', '뭐에요', '뭔가요', '뭘까', '뭐냐', '뭐임', '무엇',
+    '어디야', '어디지', '어디예요', '어느나라', '무슨나라',
+    '알려줘', '알려주세요', '가르쳐', '답이뭐', '정답이뭐',
+    // 넘어간다
+    '패스', '넘어가', '스킵', '다음문제', '다음이요'
+  ];
+
+  /** 모른다고 하거나 무엇인지 물어보는 말인가 */
+  function isGiveUp(text) {
+    var n = util.normalize(text);
+    if (!n) return false;
+    if (n === '다음') return true;
+    for (var i = 0; i < GIVE_UP_MARKS.length; i++) {
+      if (n.indexOf(GIVE_UP_MARKS[i]) !== -1) return true;
+    }
+    return false;
+  }
+
+  /* 이름 뒤에 흔히 붙는 조사·말끝. 낱말 끝에서만 떼어 본다. */
+  var TAILS = ['입니다', '이에요', '인가요', '이랑', '이요', '예요', '이야', '이다', '인가',
+               '하고', '까지', '부터', '으로', '에서', '에게', '한테',
+               '요', '은', '는', '이', '가', '을', '를', '도', '만', '랑', '과', '와', '의', '로', '에'];
+
+  /** 낱말 끝의 조사를 떼어 본다. 떼고 나서 너무 짧아지면 그대로 둔다. */
+  function stripTail(word) {
+    for (var i = 0; i < TAILS.length; i++) {
+      var t = TAILS[i];
+      if (word.length > t.length + 1 && word.slice(-t.length) === t) {
+        return word.slice(0, word.length - t.length);
+      }
+    }
+    return word;
+  }
+
+  /**
+   * 말한 내용을 낱말로 쪼개고, 이어지는 낱말들을 묶어 견줄 후보를 만든다.
+   *
+   *   "음 그러니까 브라질이요" → "음", "그러니까", "브라질이요"("브라질"),
+   *                             "음그러니까", "그러니까브라질이요", …
+   *
+   * 낱말 단위로 견주기 때문에 "에이 모르겠네" 안의 조각이 나라 이름으로
+   * 잘못 잡히지 않는다.
+   */
+  function candidateKeys(text) {
+    var raw = String(text || '').split(/[\s.,!?…·:;'"()\[\]{}~\-]+/);
+    var words = [];
+    for (var i = 0; i < raw.length; i++) {
+      var w = util.normalize(raw[i]);
+      if (w) words.push(w);
+    }
+    var keys = [];
+    var seen = {};
+    function add(str) {
+      if (!str) return;
+      var key = util.compareKey(str);
+      if (!key || seen[key]) return;
+      seen[key] = true;
+      keys.push(key);
+    }
+    function addLatin(str) {
+      // 받아쓰기가 한국말을 로마자로 적어 보낸 경우 ("시리아" → "Siri야")
+      if (!str || !util.hasLatin(str)) return;
+      var key = util.latinToJamo(str);
+      if (!key || seen[key]) return;
+      seen[key] = true;
+      keys.push(key);
+    }
+    // 이어지는 낱말 1~4개를 묶어 본다 (세인트빈센트그레나딘처럼 여러 낱말인 이름 때문)
+    for (var a = 0; a < words.length; a++) {
+      var joined = '';
+      for (var b = a; b < words.length && b < a + 4; b++) {
+        joined += words[b];
+        add(joined);
+        add(stripTail(joined));
+        addLatin(joined);
+        addLatin(stripTail(joined));
+      }
+    }
+    if (!keys.length) add(util.normalize(text));
+    return keys;
+  }
+
+  /** 같은 이름을 두세 번 이어 말한 것까지 헤아려 가장 가까운 거리를 잰다. */
+  function keyDistance(runKey, nameKey, allowed) {
+    var best = Infinity;
+    var repeated = nameKey;
+    for (var k = 1; k <= 3; k++) {
+      if (k > 1) repeated += nameKey;
+      // 길이 차이만으로 이미 허용치를 넘으면 계산할 필요가 없다
+      if (Math.abs(runKey.length - repeated.length) > allowed) continue;
+      var d = util.editDistance(runKey, repeated);
+      if (d < best) best = d;
+      if (best === 0) break;
+    }
+    return best;
+  }
+
+  /**
+   * 아이가 말한(쓴) 내용이 이 나라의 이름과 얼마나 맞아떨어지는지 잰다.
+   *
+   * 앞뒤에 다른 말이 붙어도("음… 브라질이요"), 두 번 말해도("브라질 브라질"),
+   * 살짝 틀리게 말해도("브라찔") 인정한다.
+   *
+   *   near      인정할 만큼 가깝다
+   *   strength  맞아떨어진 이름의 길이. 여러 나라가 걸릴 때 어느 쪽이 더 구체적인지
+   *             가른다. (예: "인도네시아" 는 '인도' 보다 '인도네시아')
+   */
+  function matchOne(country, keys, norm) {
     var names = (country.aliases || []).concat([country.ko, country.en]);
-    var out = { score: 0, name: null, exact: false, near: false };
+    var out = { strength: -1, dist: Infinity, name: null, exact: false, near: false };
     for (var i = 0; i < names.length; i++) {
       var nm = names[i];
       if (!nm) continue;
-      if (util.normalize(nm) === norm) return { score: 1, name: nm, exact: true, near: true };
-      var key = util.compareKey(nm);
-      if (!key) continue;
-      var gap = Math.abs(inputKey.length - key.length);
-      var longer = Math.max(inputKey.length, key.length);
-      // 길이 차이만으로 이미 많이 다르면 편집 거리를 재지 않는다.
-      // 이때 score 는 실제보다 높게 잡히므로, 어떤 문턱값에도 못 미치는 경우에만 건너뛴다.
-      var dist = (longer && gap / longer > 0.34) ? gap : util.editDistance(inputKey, key);
-      var score = longer ? 1 - dist / longer : 0;
-      if (score > out.score) {
-        out = { score: score, name: nm, exact: false, near: dist <= allowedSlip(key.length) };
+      var nameKey = util.compareKey(nm);
+      if (!nameKey) continue;
+      var allowed = allowedSlip(nameKey.length);
+      var exact = util.normalize(nm) === norm;
+      var dist = Infinity;
+      if (exact) dist = 0;
+      else {
+        for (var j = 0; j < keys.length; j++) {
+          var d = keyDistance(keys[j], nameKey, allowed);
+          if (d < dist) dist = d;
+          if (dist === 0) break;
+        }
+      }
+      var near = dist <= allowed;
+      var strength = near ? nameKey.length - dist : -1;
+      if (strength > out.strength || (strength === out.strength && dist < out.dist)) {
+        out = { strength: strength, dist: dist, name: nm, exact: exact, near: near };
       }
     }
     return out;
   }
 
   /**
-   * 들린 말이 어느 나라를 가리키는지 찾는다.
-   * 이름과 똑같거나 오타 몇 글자 안에서 같은 나라만 돌려주고,
-   * 그런 나라가 둘 이상이면(헷갈리면) null 을 돌려준다.
+   * 말한 내용이 어느 나라를 가리키는지 찾는다.
+   * 걸리는 나라가 없거나 둘 이상이 똑같이 걸리면 null 을 돌려준다.
    * 웅얼거림이나 나라 이름이 아닌 말에는 null 이 나온다.
    */
   function findCountry(text) {
     var norm = util.normalize(text);
     if (!norm) return null;
-    var inputKey = util.compareKey(text);
+    var keys = candidateKeys(text);
     var list = all();
-    var best = null, bestScore = -1, tie = false;
+    var best = null, bestStrength = -1, bestDist = Infinity, tie = false;
     for (var i = 0; i < list.length; i++) {
-      var m = matchOne(list[i], inputKey, norm);
+      var m = matchOne(list[i], keys, norm);
       if (!m.near) continue;
-      if (m.score > bestScore) { bestScore = m.score; best = list[i]; tie = false; }
-      else if (m.score === bestScore && best && list[i].code !== best.code) { tie = true; }
+      if (m.strength > bestStrength || (m.strength === bestStrength && m.dist < bestDist)) {
+        bestStrength = m.strength; bestDist = m.dist; best = list[i]; tie = false;
+      } else if (m.strength === bestStrength && m.dist === bestDist && best && list[i].code !== best.code) {
+        tie = true;
+      }
     }
     return tie ? null : best;
   }
 
   /**
    * 자유 입력(말하기/쓰기) 채점.
-   * 살짝 틀리게 말하거나 써도 인정하되, 그 답이 다른 나라와 더 가깝거나
-   * 똑같이 가까우면 정답으로 치지 않는다. (니제르 ↔ 나이지리아 같은 사고 방지)
+   * 넉넉하게 인정하되, 다른 나라가 더 잘 맞아떨어지면 정답으로 치지 않는다.
+   * (니제르 ↔ 나이지리아, 인도 ↔ 인도네시아 같은 사고 방지)
    */
   function checkText(answer, text) {
     var norm = util.normalize(text);
     var result = { correct: false, exact: false, score: 0, matched: null, confusedWith: null };
     if (!norm) return result;
-    var inputKey = util.compareKey(text);
+    var keys = candidateKeys(text);
 
-    var mine = matchOne(answer, inputKey, norm);
-    result.score = mine.score;
+    var mine = matchOne(answer, keys, norm);
     result.matched = mine.name;
     result.exact = mine.exact;
+    result.score = mine.near ? (mine.strength / (mine.strength + mine.dist)) : 0;
     if (mine.exact) { result.correct = true; return result; }
 
     // 다른 나라 이름을 말한 것은 아닌지 확인한다
     var list = all();
-    var rivalScore = 0, rival = null, rivalNear = false;
+    var rivalStrength = -1, rivalDist = Infinity, rival = null;
     for (var i = 0; i < list.length; i++) {
       if (list[i].code === answer.code) continue;
-      var r = matchOne(list[i], inputKey, norm);
-      if (r.exact) { rivalScore = 1.0001; rival = list[i]; rivalNear = true; break; }
-      if (r.score > rivalScore) { rivalScore = r.score; rival = list[i]; rivalNear = r.near; }
+      var r = matchOne(list[i], keys, norm);
+      if (!r.near) continue;
+      if (r.exact) { rivalStrength = Infinity; rivalDist = 0; rival = list[i]; break; }
+      if (r.strength > rivalStrength || (r.strength === rivalStrength && r.dist < rivalDist)) {
+        rivalStrength = r.strength; rivalDist = r.dist; rival = list[i];
+      }
     }
 
-    if (rivalScore >= mine.score) {
-      if (rivalNear) result.confusedWith = rival;
+    // 다른 나라가 더 많이(또는 같은 만큼이지만 더 정확히) 맞아떨어지면 정답이 아니다
+    var rivalWins = rivalStrength > mine.strength ||
+                    (rivalStrength === mine.strength && rivalDist <= mine.dist);
+    if (!mine.near || rivalWins) {
+      if (rival) result.confusedWith = rival;
       return result;
     }
-    result.correct = mine.near;
+    result.correct = true;
     return result;
   }
 
@@ -329,6 +462,7 @@
     makeQuestion: makeQuestion,
     checkText: checkText,
     findCountry: findCountry,
+    isGiveUp: isGiveUp,
     createGame: createGame
   };
 })(window);
