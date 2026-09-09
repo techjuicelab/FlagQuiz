@@ -105,6 +105,7 @@
     var history = FQ.storage.history();
     var util = FQ.util;
 
+    var total = (FQ.countries || []).length;
     var seenCount = Object.keys(countryStats).filter(function (k) { return countryStats[k].seen > 0; }).length;
     var learnedCount = Object.keys(countryStats).filter(function (k) { return countryStats[k].correct > 0 && countryStats[k].streak >= 2; }).length;
     var rate = st.asked ? Math.round((st.correct / st.asked) * 100) : 0;
@@ -137,8 +138,8 @@
             '<div class="stat"><div class="v">' + seenCount + '</div><div class="k">만난 나라</div></div>' +
             '<div class="stat"><div class="v">' + learnedCount + '</div><div class="k">확실히 아는 나라</div></div>' +
           '</div>' +
-          '<p class="small muted" style="margin:12px 0 0">전체 195개국 중 ' + seenCount + '개국을 만났어요. ' +
-            (seenCount >= 195 ? '온 세계를 한 바퀴 돌았네요! 🌐' : '아직 ' + (195 - seenCount) + '개국이 남았어요.') + '</p>' +
+          '<p class="small muted" style="margin:12px 0 0">전체 ' + total + '개국 중 ' + seenCount + '개국을 만났어요. ' +
+            (seenCount >= total ? '온 세계를 한 바퀴 돌았네요! 🌐' : '아직 ' + (total - seenCount) + '개국이 남았어요.') + '</p>' +
         '</div>' +
 
         (tough.length

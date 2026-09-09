@@ -1,6 +1,6 @@
 /* 브라우저용 스크립트를 그대로 불러와 돌리는 검사기.
  *   npm test
- * 데이터가 195개국 온전한지, 정답 판정이 나라를 헷갈리지 않는지 확인한다.
+ * 데이터가 194개국 온전한지, 정답 판정이 나라를 헷갈리지 않는지 확인한다.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -58,6 +58,9 @@ for (const file of ['js/util.js', 'js/storage.js', 'data/countries.js', 'js/quiz
   vm.runInContext(fs.readFileSync(full, 'utf8'), sandbox, { filename: file });
 }
 
+/** 유엔 회원국 193 + 바티칸. 목록이 바뀌면 여기도 함께 고쳐야 한다. */
+const EXPECTED_COUNT = 194;
+
 const FQ = sandbox.FQ;
 const { util, quiz } = FQ;
 const countries = FQ.countries;
@@ -81,7 +84,13 @@ const CONTINENTS = ['아시아', '유럽', '아프리카', '북아메리카', '�
 
 group('데이터 기본', () => {
   ok(Array.isArray(countries), '데이터가 배열이어야 함');
-  ok(countries.length === 195, '195개국이어야 함', '실제 ' + countries.length);
+  ok(countries.length === EXPECTED_COUNT, EXPECTED_COUNT + '개국이어야 함', '실제 ' + countries.length);
+
+  // 국가로 볼지 견해가 갈리는 지역은 넣지 않기로 했다
+  const DISPUTED = { tw: '대만', ps: '팔레스타인', xk: '코소보', eh: '서사하라', ck: '쿡제도', nu: '니우에' };
+  for (const [code, name] of Object.entries(DISPUTED)) {
+    ok(!countries.some((c) => c.code === code), name + '(' + code + ') 은 넣지 않는다');
+  }
 
   const codes = new Set();
   for (const c of countries) {
@@ -105,6 +114,12 @@ group('데이터 기본', () => {
 group('국기 이미지 파일', () => {
   for (const c of countries) {
     ok(fs.existsSync(path.join(root, 'flags', c.code + '.svg')), '국기 파일 존재', c.code);
+  }
+  // 목록에서 뺀 나라의 국기가 남아 있으면 그대로 배포되므로 함께 확인한다
+  const codes = new Set(countries.map((c) => c.code));
+  const files = fs.readdirSync(path.join(root, 'flags')).filter((f) => f.endsWith('.svg'));
+  for (const f of files) {
+    ok(codes.has(f.replace('.svg', '')), '쓰이지 않는 국기 파일이 없어야 함', f);
   }
 });
 
@@ -195,7 +210,7 @@ group('난이도 / 대륙 필터', () => {
   const all = quiz.pool({ level: '3' });
   ok(easy.length >= 30 && easy.length <= 70, '쉬움 30~70개', String(easy.length));
   ok(mid.length > easy.length, '보통이 쉬움보다 많음', easy.length + ' → ' + mid.length);
-  ok(all.length === 195, '어려움은 전체', String(all.length));
+  ok(all.length === EXPECTED_COUNT, '어려움은 전체', String(all.length));
   ok(easy.every((c) => c.level === 1), '쉬움은 level 1만');
   for (const cont of CONTINENTS) {
     ok(quiz.pool({ continent: cont }).every((c) => c.continent === cont), cont + ' 필터 정확');
