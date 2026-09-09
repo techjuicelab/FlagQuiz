@@ -32,7 +32,10 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+      # 저장소에 Pages 가 아직 꺼져 있으면 이 단계에서 켠다 (공개 저장소라 무료)
       - uses: actions/configure-pages@v5
+        with:
+          enablement: true
       - uses: actions/upload-pages-artifact@v3
         with:
           path: '.'
