@@ -83,10 +83,10 @@
     if (!x && !y) return 1;
     if (!x || !y) return 0;
     var longer = Math.max(x.length, y.length);
-    // 길이 차이만으로 이미 많이 다르면 편집 거리를 계산하지 않는다
-    if (Math.abs(x.length - y.length) / longer >= 0.5) {
-      return 1 - Math.abs(x.length - y.length) / longer;
-    }
+    var gap = Math.abs(x.length - y.length);
+    // 길이 차이만으로 이미 많이 다르면 편집 거리를 계산하지 않는다.
+    // 이때 돌려주는 값은 실제 유사도보다 높으므로, 어떤 문턱값에도 못 미칠 때만 건너뛴다.
+    if (gap / longer > 0.34) return 1 - gap / longer;
     return 1 - editDistance(x, y) / longer;
   }
 

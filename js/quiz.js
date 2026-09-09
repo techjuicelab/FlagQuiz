@@ -109,6 +109,55 @@
   }
 
   /**
+   * 들린(쓴) 말이 이 나라의 이름과 얼마나 가까운지 잰다.
+   *   exact  이름과 똑같다
+   *   near   오타 몇 글자 안에서 같다 — 정답으로 인정할 만하다
+   *   score  0~1, 여러 나라 중 어느 쪽이 더 가까운지 견줄 때 쓴다
+   */
+  function matchOne(country, inputKey, norm) {
+    var names = (country.aliases || []).concat([country.ko, country.en]);
+    var out = { score: 0, name: null, exact: false, near: false };
+    for (var i = 0; i < names.length; i++) {
+      var nm = names[i];
+      if (!nm) continue;
+      if (util.normalize(nm) === norm) return { score: 1, name: nm, exact: true, near: true };
+      var key = util.compareKey(nm);
+      if (!key) continue;
+      var gap = Math.abs(inputKey.length - key.length);
+      var longer = Math.max(inputKey.length, key.length);
+      // 길이 차이만으로 이미 많이 다르면 편집 거리를 재지 않는다.
+      // 이때 score 는 실제보다 높게 잡히므로, 어떤 문턱값에도 못 미치는 경우에만 건너뛴다.
+      var dist = (longer && gap / longer > 0.34) ? gap : util.editDistance(inputKey, key);
+      var score = longer ? 1 - dist / longer : 0;
+      if (score > out.score) {
+        out = { score: score, name: nm, exact: false, near: dist <= allowedSlip(key.length) };
+      }
+    }
+    return out;
+  }
+
+  /**
+   * 들린 말이 어느 나라를 가리키는지 찾는다.
+   * 이름과 똑같거나 오타 몇 글자 안에서 같은 나라만 돌려주고,
+   * 그런 나라가 둘 이상이면(헷갈리면) null 을 돌려준다.
+   * 웅얼거림이나 나라 이름이 아닌 말에는 null 이 나온다.
+   */
+  function findCountry(text) {
+    var norm = util.normalize(text);
+    if (!norm) return null;
+    var inputKey = util.compareKey(text);
+    var list = all();
+    var best = null, bestScore = -1, tie = false;
+    for (var i = 0; i < list.length; i++) {
+      var m = matchOne(list[i], inputKey, norm);
+      if (!m.near) continue;
+      if (m.score > bestScore) { bestScore = m.score; best = list[i]; tie = false; }
+      else if (m.score === bestScore && best && list[i].code !== best.code) { tie = true; }
+    }
+    return tie ? null : best;
+  }
+
+  /**
    * 자유 입력(말하기/쓰기) 채점.
    * 살짝 틀리게 말하거나 써도 인정하되, 그 답이 다른 나라와 더 가깝거나
    * 똑같이 가까우면 정답으로 치지 않는다. (니제르 ↔ 나이지리아 같은 사고 방지)
@@ -119,28 +168,7 @@
     if (!norm) return result;
     var inputKey = util.compareKey(text);
 
-    function best(country) {
-      var names = (country.aliases || []).concat([country.ko, country.en]);
-      var out = { score: 0, name: null, exact: false, near: false };
-      for (var i = 0; i < names.length; i++) {
-        var nm = names[i];
-        if (!nm) continue;
-        if (util.normalize(nm) === norm) return { score: 1, name: nm, exact: true, near: true };
-        var key = util.compareKey(nm);
-        if (!key) continue;
-        var gap = Math.abs(inputKey.length - key.length);
-        var longer = Math.max(inputKey.length, key.length);
-        // 길이 차이가 이미 크면 편집 거리를 재 볼 필요가 없다
-        var dist = gap > 4 ? gap : util.editDistance(inputKey, key);
-        var score = longer ? 1 - dist / longer : 0;
-        if (score > out.score) {
-          out = { score: score, name: nm, exact: false, near: dist <= allowedSlip(key.length) };
-        }
-      }
-      return out;
-    }
-
-    var mine = best(answer);
+    var mine = matchOne(answer, inputKey, norm);
     result.score = mine.score;
     result.matched = mine.name;
     result.exact = mine.exact;
@@ -148,16 +176,16 @@
 
     // 다른 나라 이름을 말한 것은 아닌지 확인한다
     var list = all();
-    var rivalScore = 0, rival = null;
+    var rivalScore = 0, rival = null, rivalNear = false;
     for (var i = 0; i < list.length; i++) {
       if (list[i].code === answer.code) continue;
-      var r = best(list[i]);
-      if (r.exact) { rivalScore = 1.0001; rival = list[i]; break; }
-      if (r.score > rivalScore) { rivalScore = r.score; rival = list[i]; }
+      var r = matchOne(list[i], inputKey, norm);
+      if (r.exact) { rivalScore = 1.0001; rival = list[i]; rivalNear = true; break; }
+      if (r.score > rivalScore) { rivalScore = r.score; rival = list[i]; rivalNear = r.near; }
     }
 
     if (rivalScore >= mine.score) {
-      if (rivalScore >= 0.75) result.confusedWith = rival;
+      if (rivalNear) result.confusedWith = rival;
       return result;
     }
     result.correct = mine.near;
@@ -300,6 +328,7 @@
     distractors: distractors,
     makeQuestion: makeQuestion,
     checkText: checkText,
+    findCountry: findCountry,
     createGame: createGame
   };
 })(window);

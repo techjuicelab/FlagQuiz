@@ -54,10 +54,11 @@
     return !SR || !secureOk();
   }
 
-  function build() {
+  function build(opts) {
     var r = new SR();
     r.lang = 'ko-KR';
-    r.continuous = false;
+    // 계속 듣기: 버튼을 누르지 않아도 아이가 말하면 바로 알아듣게 한다
+    r.continuous = opts && opts.continuous !== false;
     r.interimResults = true;
     r.maxAlternatives = 5;
     r.onresult = function (ev) {
@@ -87,18 +88,19 @@
 
   function start(cbs) {
     handlers = cbs || {};
-    var reason = unavailableReason();
-    if (reason) {
-      if (handlers.error) handlers.error('unsupported', reason);
+    if (blocked()) {
+      if (handlers.error) handlers.error('unsupported', unavailableReason());
       return false;
     }
-    if (listening) stop();
+    if (listening) abort();
     try {
-      rec = build();
+      rec = build(cbs);
       rec.start();
       listening = true;
       return true;
     } catch (e) {
+      // 이미 켜져 있는데 또 켜려 한 경우는 그대로 두면 된다
+      if (String(e).indexOf('already started') !== -1) { listening = true; return true; }
       listening = false;
       if (handlers.error) handlers.error('start-failed', String(e));
       return false;
