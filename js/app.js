@@ -20,11 +20,15 @@
     { id: 'capital', emo: '🏙️', title: '수도 맞히기', desc: '나라의 수도를 골라요' }
   ];
 
-  var LEVELS = [
-    { id: '1', label: '쉬움', desc: '유명한 나라' },
-    { id: '2', label: '보통', desc: '조금 더 많이' },
-    { id: '3', label: '어려움', desc: '195개국 전부' }
-  ];
+  function totalCountries() { return quiz.all().length; }
+
+  function levels() {
+    return [
+      { id: '1', label: '쉬움', desc: '유명한 나라' },
+      { id: '2', label: '보통', desc: '조금 더 많이' },
+      { id: '3', label: '어려움', desc: totalCountries() + '개국 전부' }
+    ];
+  }
 
   var CONTINENTS = ['all', '아시아', '유럽', '아프리카', '북아메리카', '남아메리카', '오세아니아'];
   var COUNTS = [5, 10, 20, 'all'];
@@ -52,7 +56,7 @@
       '<section class="screen">' +
         '<div class="hero">' +
           '<h2>어느 나라 국기일까요?</h2>' +
-          '<p>' + esc(s.players[0] || '친구') + '와 함께 세계 195개 나라를 만나 봐요</p>' +
+          '<p>' + esc(s.players[0] || '친구') + '와 함께 세계 ' + totalCountries() + '개 나라를 만나 봐요</p>' +
         '</div>' +
 
         '<div class="card section">' +
@@ -84,7 +88,7 @@
         '<div class="card section">' +
           '<h3>난이도</h3>' +
           '<div class="pill-grid">' +
-            LEVELS.map(function (l) {
+            levels().map(function (l) {
               return '<button class="pill" type="button" data-level="' + l.id + '" aria-pressed="' + (String(s.level) === l.id ? 'true' : 'false') + '">' +
                 esc(l.label) + ' <span class="small">· ' + esc(l.desc) + '</span></button>';
             }).join('') +

@@ -1,4 +1,6 @@
-/* 세계 195개 나라 자료 (유엔 회원국 193 + 바티칸 + 대만)
+/* 세계 194개 나라 자료 (유엔 회원국 193 + 바티칸)
+ *
+ * 국가로 볼지 견해가 갈리는 지역(대만·팔레스타인·코소보·서사하라 등)은 넣지 않는다.
  *
  *   code       ISO 3166-1 alpha-2 소문자 — flags/<code>.svg 파일 이름과 같다
  *   ko         한글 국가명
@@ -49,7 +51,6 @@ window.FQ.countries = [
   {"code":"kr","ko":"대한민국","aliases":["대한민국","한국","남한","코리아"],"en":"South Korea","capital":"서울","capitalEn":"Seoul","continent":"아시아","region":"동아시아","level":1,"fact":"글자를 만든 날이 국경일인 나라예요. 김치와 태권도로도 아주 유명해요","flagHint":"하얀 바탕 가운데에 빨강과 파랑 태극 무늬, 네 귀퉁이에 검은 막대들이 있어요"},
   {"code":"lk","ko":"스리랑카","aliases":["스리랑카","실론","실론섬"],"en":"Sri Lanka","capital":"스리자야와르데네푸라코테","capitalEn":"Sri Jayawardenepura Kotte","continent":"아시아","region":"남아시아","level":2,"fact":"인도양에 떠 있는 섬나라예요. 향긋한 실론 홍차가 세계적으로 유명해요","flagHint":"왼쪽에 초록과 주황 세로 띠, 짙은 빨강 바탕에 칼을 든 노란 사자가 있어요"},
   {"code":"sy","ko":"시리아","aliases":["시리아","시리아아랍공화국"],"en":"Syria","capital":"다마스쿠스","capitalEn":"Damascus","continent":"아시아","region":"서아시아","level":2,"fact":"수도 다마스쿠스는 사람이 가장 오래 살아온 도시 가운데 하나예요","flagHint":"위부터 초록·하양·검정 가로 줄, 가운데 하얀 칸에 빨간 별 세 개가 있어요"},
-  {"code":"tw","ko":"대만","aliases":["대만","타이완","중화민국"],"en":"Taiwan","capital":"타이베이","capitalEn":"Taipei","continent":"아시아","region":"동아시아","level":1,"fact":"쫄깃한 알갱이가 들어간 버블티가 이곳에서 처음 만들어졌어요","flagHint":"빨간 바탕 왼쪽 위에 파란 네모가 있고, 그 안에 하얀 해가 그려져 있어요"},
   {"code":"tj","ko":"타지키스탄","aliases":["타지키스탄","타지크","타지키스탄공화국"],"en":"Tajikistan","capital":"두샨베","capitalEn":"Dushanbe","continent":"아시아","region":"중앙아시아","level":3,"fact":"국토의 90퍼센트가 넘게 산이라서 '산의 나라'라고 불려요","flagHint":"위부터 빨강·하양·초록 가로 줄, 가운데에 금색 왕관과 별 일곱 개가 있어요"},
   {"code":"th","ko":"태국","aliases":["태국","타이","타일랜드","시암"],"en":"Thailand","capital":"방콕","capitalEn":"Bangkok","continent":"아시아","region":"동남아시아","level":1,"fact":"동남아시아에서 유일하게 다른 나라의 식민지가 된 적이 없는 나라예요","flagHint":"빨강-하양-파랑-하양-빨강 가로 다섯 줄인데 가운데 파란 줄이 제일 두꺼워요"},
   {"code":"tl","ko":"동티모르","aliases":["동티모르","티모르레스테","티모르"],"en":"Timor-Leste","capital":"딜리","capitalEn":"Dili","continent":"아시아","region":"동남아시아","level":3,"fact":"2002년에 독립해서 21세기에 가장 먼저 새로 생긴 나라예요","flagHint":"빨간 바탕 왼쪽에서 노란 삼각형과 검은 삼각형이 뻗어 나오고 하얀 별이 있어요"},

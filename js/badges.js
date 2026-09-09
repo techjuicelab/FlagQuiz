@@ -26,8 +26,8 @@
       test: function (c) { return c.seenCount >= 50; } },
     { id: 'explorer100', icon: '🌏', name: '100개국 탐험', desc: '서로 다른 나라 국기 100개를 만났어요',
       test: function (c) { return c.seenCount >= 100; } },
-    { id: 'explorer_all', icon: '🌐', name: '온 세계 한 바퀴', desc: '195개국 국기를 모두 만났어요',
-      test: function (c) { return c.seenCount >= 195; } }
+    { id: 'explorer_all', icon: '🌐', name: '온 세계 한 바퀴', desc: '모든 나라의 국기를 만났어요',
+      test: function (c) { return c.seenCount >= (FQ.countries || []).length; } }
   ];
 
   CONTINENTS.forEach(function (cont) {
