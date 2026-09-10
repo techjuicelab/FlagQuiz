@@ -101,11 +101,16 @@
     save();
   }
 
-  /** 아직 확실히 익히지 못한 나라 목록 (오답노트) */
+  /**
+   * 아직 확실히 익히지 못한 나라 목록 (오답노트).
+   * 한 번 맞히면 목록에서는 빠진다 — 복습 한 판을 다 맞혔는데 개수가 그대로면
+   * 아이 입장에서는 아무 일도 일어나지 않은 것과 같기 때문이다.
+   * 대신 weightOf 가 두 번 연속 맞힐 때까지 계속 자주 내보내므로 그냥 놓아 주는 것은 아니다.
+   */
   function wrongList() {
     return Object.keys(state.countries).filter(function (code) {
       var s = state.countries[code];
-      return s.wrong > 0 && s.streak < 2;
+      return s.wrong > 0 && s.streak < 1;
     });
   }
 

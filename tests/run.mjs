@@ -62,7 +62,7 @@ for (const file of ['js/util.js', 'js/storage.js', 'data/countries.js', 'js/prog
 const EXPECTED_COUNT = 194;
 
 const FQ = sandbox.FQ;
-const { util, quiz } = FQ;
+const { util, quiz, storage } = FQ;
 const countries = FQ.countries;
 
 /* --------- 검사 도구 --------- */
@@ -424,6 +424,40 @@ group('보상 체계', () => {
   ok(P.daily().complete, '완료로 남는다');
   ok(P.noteDaily(mine, true) === false, '완료 뒤에는 더 오르지 않음');
   ok(P.noteDaily(mine, false) === false, '틀린 답은 도전에 안 들어감');
+});
+
+group('오답노트 졸업', () => {
+  // 복습 한 판을 다 맞혔는데 개수가 그대로면 아이 입장에서는 아무 일도 없던 것과 같다.
+  // 한 번 맞히면 목록에서는 빠지되, 가중치는 두 번 연속까지 계속 높게 남아야 한다.
+  storage.resetProgress();
+  const code = countries[0].code;
+  storage.recordAnswer(code, false);
+  ok(storage.wrongList().indexOf(code) !== -1, '틀리면 오답노트에 들어간다');
+  const wAfterWrong = storage.weightOf(code);
+  storage.recordAnswer(code, true);
+  ok(storage.wrongList().indexOf(code) === -1, '한 번 맞히면 오답노트에서 빠진다');
+  ok(storage.weightOf(code) > 1.2, '그래도 아직은 자주 나온다 (완전히 놓아주지 않는다)');
+  storage.recordAnswer(code, true);
+  ok(storage.weightOf(code) <= 1.2, '두 번 연속 맞히면 그제서야 보통 빈도로 내려온다');
+  ok(wAfterWrong > storage.weightOf(code), '틀린 직후가 가장 자주 나온다');
+  storage.recordAnswer(code, false);
+  ok(storage.wrongList().indexOf(code) !== -1, '다시 틀리면 오답노트로 돌아온다');
+  storage.resetProgress();
+});
+
+group('보물상자 보너스 점수', () => {
+  // 상자 화면이 '보너스 별 +5점' 이라 적어 놓고 점수를 안 올리던 것을 막는다.
+  const g = quiz.createGame({ mode: 'choice4', level: '1', continent: 'all', count: 3, players: ['민규'] });
+  const before = g.score;
+  g.addBonus(5);
+  ok(g.score === before + 5, '보너스가 점수에 실제로 더해진다');
+  ok(g.bonusScore === 5, '보너스만 따로도 셈한다');
+  ok(g.playerScores[0].score === before + 5, '지금 차례인 사람 점수에도 더해진다');
+  g.addBonus(0);
+  ok(g.score === before + 5, '0점은 아무것도 바꾸지 않는다');
+  g.addBonus(-3);
+  ok(g.score === before + 5, '음수는 무시한다');
+  ok(g.summary().bonusScore === 5, '결과에도 실려 나간다');
 });
 
 group('힌트 재료', () => {

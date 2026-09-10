@@ -12,6 +12,8 @@
   var ui = FQ.ui;
   var esc = ui.esc;
 
+  var CHEST_BONUS = 5;   // 보물상자를 열면 더해 주는 점수
+
   var MODE_CARDS = [
     { id: 'choice4', emo: '🚩', title: '국기 보고 나라 고르기', desc: '네 개 중에서 골라요' },
     { id: 'reverse', emo: '🔎', title: '나라 보고 국기 찾기', desc: '이름을 보고 국기를 골라요' },
@@ -73,6 +75,10 @@
             '<input class="text-input" id="p1" maxlength="10" value="' + esc(s.players[0] || '') + '" placeholder="민규">' +
           '</div>' +
           '<label class="switch"><input type="checkbox" id="duel"' + (duel ? ' checked' : '') + '> 둘이서 번갈아 대결하기</label>' +
+          (duel
+            ? '<p class="small muted" style="margin:8px 0 0">점수는 각자 따로 매기지만, 스티커·경험치·레벨은 <b>' +
+              esc(s.players[0] || '민규') + '</b> 것으로 쌓여요.</p>'
+            : '') +
           '<div class="field' + (duel ? '' : ' hidden') + '" id="p2-field" style="margin-top:10px">' +
             '<label for="p2">함께할 사람</label>' +
             '<input class="text-input" id="p2" maxlength="10" value="' + esc(s.players[1] || '아빠') + '" placeholder="아빠">' +
@@ -145,7 +151,8 @@
         '<button class="btn btn-primary btn-big" id="start" type="button" style="width:100%">🎮 시작하기</button>' +
 
         (wrongCount > 0
-          ? '<button class="btn btn-big" id="review" type="button" style="width:100%;margin-top:12px">📝 틀렸던 ' + wrongCount + '개 나라 복습하기</button>'
+          ? '<button class="btn btn-big" id="review" type="button" style="width:100%;margin-top:12px">📝 틀렸던 나라 복습하기 (' +
+              Math.min(wrongCount, 20) + '문제' + (wrongCount > 20 ? ' · 남은 ' + (wrongCount - 20) + '개는 다음에' : '') + ')</button>'
           : '') +
 
         '</div>' +
@@ -201,6 +208,23 @@
       store.updateSettings({ reviewFirst: ev.target.checked });
     });
 
+    // 오늘의 도전 카드를 누르면 그 대륙으로 맞춰 준다 (여태 눌러도 아무 일이 없었다)
+    var dailyGo = ui.$('#daily-go', m);
+    if (dailyGo) {
+      dailyGo.addEventListener('click', function () {
+        var d = FQ.progress.daily();
+        if (d.complete) { FQ.screens.dex(); return; }
+        savePlayers(m);
+        store.updateSettings({ continent: d.continent });
+        renderHome();
+      });
+    }
+
+    // 대륙별 모으기 항목을 누르면 스티커 판의 그 대륙으로 간다
+    ui.on(m, '[data-cont-go]', 'click', function (e, t) {
+      FQ.screens.dex(t.getAttribute('data-cont-go'));
+    });
+
     ui.$('#start', m).addEventListener('click', function () {
       savePlayers(m);
       startGame(null);
@@ -228,7 +252,7 @@
         '<span class="player-name">' + esc(s.players[0] || '친구') + '</span>' +
         '<span class="player-level"> · 레벨 ' + lv.number + ' ' + esc(lv.name) + '</span>' +
         '<span class="player-nums">' +
-          '<span class="mini-chip">✨ ' + lv.into + ' / ' + lv.need + '</span>' +
+          '<span class="mini-chip">✨ ' + (lv.isMax ? '경험치 ' + FQ.progress.xp() : lv.into + ' / ' + lv.need) + '</span>' +
           '<span class="mini-chip">🔥 최고 ' + (stats.bestStreak || 0) + '연속</span>' +
         '</span>' +
       '</span>' +
@@ -246,13 +270,13 @@
         names.map(function (name) {
           var b = st.byContinent[name];
           var pct = b.total ? Math.round((b.owned / b.total) * 100) : 0;
-          return '<span class="cont-item">' +
+          return '<button class="cont-item" type="button" data-cont-go="' + esc(name) + '">' +
             '<span class="cont-top">' +
               '<span class="cont-name">' + esc(name) + '</span>' +
               '<span class="cont-num">' + b.owned + '/' + b.total + '</span>' +
             '</span>' +
             '<span class="cont-bar"><i style="width:' + pct + '%"></i></span>' +
-          '</span>';
+          '</button>';
         }).join('') +
       '</div>' +
     '</div>';
@@ -261,7 +285,11 @@
   /** 홈: 오늘의 도전 */
   function dailyCard() {
     var d = FQ.progress.daily();
-    return '<div class="daily-card">' +
+    var s = store.settings();
+    // 고른 대륙이 오늘의 대륙과 다르면 도전은 한 칸도 오르지 않는다.
+    // 여태 아무 말도 없이 조용히 멈춰 있었다.
+    var mismatch = !d.complete && s.continent !== 'all' && s.continent !== d.continent;
+    return '<button class="daily-card" id="daily-go" type="button">' +
       '<span class="ic">' + (d.complete ? '🏆' : '🎯') + '</span>' +
       '<span class="body">' +
         '<span class="t">' +
@@ -269,10 +297,14 @@
             ? '오늘의 도전을 끝냈어요!'
             : '오늘의 도전 · ' + esc(d.continent) + ' 나라 ' + d.target + '개 맞히기') +
         '</span>' +
+        (mismatch
+          ? '<span class="daily-why">지금은 ' + esc(s.continent) + '만 나와서 오르지 않아요 · 눌러서 ' +
+            esc(d.continent) + '로 바꾸기</span>'
+          : '') +
         '<span class="daily-bar"><i style="width:' + Math.round(d.ratio * 100) + '%"></i></span>' +
       '</span>' +
       '<span class="cnt">' + d.done + '/' + d.target + '</span>' +
-    '</div>';
+    '</button>';
   }
 
   function voiceNotice() {
@@ -297,6 +329,10 @@
   /* =================== 게임 시작 =================== */
   function startGame(onlyCodes) {
     var s = store.settings();
+    var reviewing = !!(onlyCodes && onlyCodes.length);
+    state.review = reviewing
+      ? { asked: Math.min(onlyCodes.length, 20), before: store.wrongList().length }
+      : null;
     audio.setEnabled(s.sound);
     audio.setSpeakEnabled(s.speak);
     audio.unlock();
@@ -338,9 +374,10 @@
     } else if (q.mode === 'capital') {
       stage =
         '<div class="flag-stage">' +
-          '<img class="flag-img" src="' + ui.flagSrc(q.country.code) + '" alt="국기">' +
+          '<img class="flag-img" src="' + ui.flagSrc(q.country.code) + '" alt="' + esc(q.country.ko) + ' 국기">' +
           '<div class="big-name">' + esc(q.country.ko) + '</div>' +
-          '<div class="q-label">이 나라의 수도는 어디일까요?</div>' +
+          '<button class="btn btn-sm" data-speak="' + esc(q.country.ko) + '" type="button">🔊 들어보기</button>' +
+          '<div class="q-label" style="margin-top:10px">이 나라의 수도는 어디일까요?</div>' +
         '</div>';
     } else {
       stage =
@@ -371,7 +408,7 @@
           '<div class="row" style="align-items:center">' +
             '<span class="level-chip"><span class="num">' + lv.number + '</span>' + esc(lv.name) + '</span>' +
             '<span class="spacer"></span>' +
-            '<span class="val" id="xp-val">' + lv.into + ' / ' + lv.need + '</span>' +
+            '<span class="val" id="xp-val">' + (lv.isMax ? '최고 레벨' : lv.into + ' / ' + lv.need) + '</span>' +
           '</div>' +
           '<div class="xp-bar"><i id="xp-fill" style="width:' + Math.round(lv.ratio * 100) + '%"></i></div>' +
         '</div>' +
@@ -406,12 +443,25 @@
 
     var m = ui.setMain(html);
 
-    ui.on(m, '[data-speak]', 'click', function (e, t) { audio.speak(t.getAttribute('data-speak')); });
+    ui.on(m, '[data-speak]', 'click', function (e, t) {
+      // 읽어주기가 꺼져 있으면 눌러도 아무 일이 없었다. 켜 주고 바로 읽는다.
+      if (!store.settings().speak) {
+        store.updateSettings({ speak: true });
+        audio.setSpeakEnabled(true);
+        var chip = ui.$('#listen-tip') || ui.$('#heard');
+        if (chip) chip.textContent = '읽어주기를 켰어요';
+      }
+      audio.speak(t.getAttribute('data-speak'));
+    });
     ui.$('#quit', m).addEventListener('click', function () {
+      var g2 = state.game;
+      var played = g2 ? g2.index : 0;
+      if (played > 0 && !global.confirm('지금 그만하면 이번 판 기록은 남지 않아요. 그만할까요?')) return;
       stopTimer();
       stopListening();
       audio.stopSpeaking();
       state.game = null;
+      state.timedOut = false;
       renderHome();
     });
     ui.$('#hint', m).addEventListener('click', showHint);
@@ -444,9 +494,11 @@
       }).join('') + '</div>';
     }
     if (q.mode === 'reverse') {
-      return '<div class="answer-grid grid-2">' + q.options.map(function (c) {
-        return '<button class="answer-btn flag-choice" type="button" data-code="' + c.code + '">' +
-          '<img src="' + ui.flagSrc(c.code) + '" alt="국기 후보"></button>';
+      return '<div class="answer-grid grid-2">' + q.options.map(function (c, i) {
+        return '<button class="answer-btn flag-choice" type="button" data-code="' + c.code + '"' +
+          ' aria-label="' + (i + 1) + '번 국기">' +
+          '<span class="choice-num" aria-hidden="true">' + (i + 1) + '</span>' +
+          '<img src="' + ui.flagSrc(c.code) + '" alt=""></button>';
       }).join('') + '</div>';
     }
     if (q.mode === 'voice') {
@@ -459,8 +511,10 @@
           (off ? '마이크를 쓸 수 없어요' : '마이크를 준비하고 있어요…') +
         '</div>' +
         '<div class="heard" id="heard"></div>' +
-        '<div class="listen-tip small muted" id="listen-tip"></div>' +
-        '<details class="type-fallback">' +
+        '<div class="listen-tip small muted" id="listen-tip">' +
+          (off ? '아래에 나라 이름을 써서 답해 주세요' : '') +
+        '</div>' +
+        '<details class="type-fallback"' + (off ? ' open' : '') + '>' +
           '<summary>⌨️ 글자로 답하기</summary>' +
           '<div class="field" style="margin-top:10px">' +
             '<input class="text-input" id="answer-input" placeholder="나라 이름을 써 보세요" autocomplete="off">' +
@@ -585,8 +639,9 @@
         if (code === 'not-allowed' || code === 'service-not-allowed') {
           state.listenOn = false;
           var mic2 = ui.$('#mic');
-          if (mic2) mic2.classList.remove('listening');
+          if (mic2) { mic2.classList.remove('listening'); mic2.disabled = true; }
           setListenState('마이크 사용을 허용해 주세요. 글자로 답해도 좋아요.', 'off');
+          openTypeFallback('아래에 나라 이름을 써서 답해 주세요');
           return;
         }
         setListenState(message || '마이크가 잠깐 멈췄어요. 다시 들을게요.', 'off');
@@ -600,6 +655,14 @@
         }
       }
     });
+  }
+
+  /** 말로 답할 수 없을 때, 글자 입력을 펼쳐 주고 그리로 안내한다 */
+  function openTypeFallback(tip) {
+    var box = ui.$('.type-fallback');
+    if (box) box.open = true;
+    var t = ui.$('#listen-tip');
+    if (t && tip) t.textContent = tip;
   }
 
   function stopListening() {
@@ -740,7 +803,7 @@
       var fill = ui.$('#xp-fill');
       if (fill) { fill.classList.add('gain'); fill.style.width = Math.round(lvNow.ratio * 100) + '%'; }
       var xpVal = ui.$('#xp-val');
-      if (xpVal) xpVal.textContent = lvNow.into + ' / ' + lvNow.need;
+      if (xpVal) xpVal.textContent = lvNow.isMax ? '최고 레벨' : lvNow.into + ' / ' + lvNow.need;
       var chestNow = FQ.progress.chestProgress(g.streak);
       var cFill = ui.$('#combo-fill');
       if (cFill) cFill.style.width = Math.round(chestNow.ratio * 100) + '%';
@@ -751,19 +814,29 @@
           : g.streak + '연속! 보물상자까지 ' + chestNow.left + '개';
       }
     } else {
-      verdict = res.gaveUp ? '👀 같이 외워 볼까요?' : '😅 아쉬워요';
+      verdict = state.timedOut
+        ? '⏱ 시간이 다 됐어요'
+        : (res.gaveUp ? '👀 같이 외워 볼까요?' : '😅 아쉬워요');
       audio.play('wrong');
       if (res.confusedWith) {
-        extra = '<div class="small">고른 나라는 <b>' + esc(res.confusedWith.ko) + '</b> 였어요.</div>';
+        // 수도 모드는 화면에 수도만 보이므로, 누른 그 이름부터 말해 준다
+        extra = res.question && res.question.mode === 'capital'
+          ? '<div class="small">고른 곳은 <b>' + esc(res.confusedWith.capital) + '</b> — ' +
+            esc(res.confusedWith.ko) + '의 수도예요.</div>'
+          : '<div class="small">고른 나라는 <b>' + esc(res.confusedWith.ko) + '</b> 였어요.</div>';
       }
     }
 
     // 소리로도 알려 준다.
     //   맞혔을 때  → "정답!" 하고 외친 뒤 나라 이름을 읽어 준다
     //   모를 때·틀렸을 때 → 나라 이름을 두 번 읽고 국기 특징을 짧게 알려 준다
+    // 수도 모드는 나라 이름이 이미 문제에 나와 있다. 못 맞힌 것은 수도이므로 그것을 되짚어 준다.
+    var isCapitalQ = res.question && res.question.mode === 'capital';
     state.lastSpeech = res.correct
-      ? { lines: [cheerWord || '정답', c.ko], opts: { rates: [1.02, 0.95], pitches: [1.35, 1.1] } }
-      : { lines: [c.ko, c.ko, c.flagHint], opts: { rate: 0.93, pitch: 1.1 } };
+      ? { lines: isCapitalQ ? [cheerWord || '정답', c.capital] : [cheerWord || '정답', c.ko],
+          opts: { rates: [1.02, 0.95], pitches: [1.35, 1.1] } }
+      : { lines: isCapitalQ ? [c.capital, c.capital, c.ko + '의 수도예요'] : [c.ko, c.ko, c.flagHint],
+          opts: { rate: 0.93, pitch: 1.1 } };
 
     // 마이크를 완전히 놓은 뒤에 읽어 준다.
     // 말하기 모드에서 곧바로 읽으면 아이폰·아이패드는 소리를 조용히 버린다.
@@ -794,8 +867,12 @@
         '</ul>' +
         (res.correct ? '' :
           '<div class="remember-box">' +
-            '<div class="remember-name">' + esc(c.ko) + ' · ' + esc(c.ko) + '</div>' +
-            '<div class="remember-hint">🚩 ' + esc(c.flagHint) + '</div>' +
+            '<div class="remember-name">' +
+              (isCapitalQ ? esc(c.capital) + ' · ' + esc(c.capital) : esc(c.ko) + ' · ' + esc(c.ko)) +
+            '</div>' +
+            '<div class="remember-hint">' +
+              (isCapitalQ ? '🏙️ ' + esc(c.ko) + '의 수도예요' : '🚩 ' + esc(c.flagHint)) +
+            '</div>' +
             (store.settings().speak
               ? '<button class="btn btn-sm" id="replay" type="button" style="margin-top:8px">🔊 다시 들려주기</button>'
               : '<button class="btn btn-sm" id="speak-on" type="button" style="margin-top:8px">🔇 읽어주기가 꺼져 있어요 · 켜고 듣기</button>') +
@@ -830,7 +907,7 @@
     var next = ui.$('#next');
     next.addEventListener('click', goNext);
     next.focus();
-    if (res.chest) global.setTimeout(function () { showChest(c, res.newSticker); }, 950);
+    if (res.chest) global.setTimeout(function () { showChest(c, res.newSticker, g.streak); }, 950);
     next.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }
 
@@ -850,7 +927,7 @@
    * 연속 정답으로 보물상자가 열리는 순간.
    * 눌러서 닫을 때까지 떠 있고, 안에서 무엇을 얻었는지 보여 준다.
    */
-  function showChest(country, gotSticker) {
+  function showChest(country, gotSticker, streak) {
     var st = FQ.progress.stickers();
     var back = doc.createElement('div');
     back.className = 'chest-back';
@@ -861,10 +938,10 @@
           '<div class="chest-emoji">🎁</div>' +
         '</div>' +
         '<div class="chest-title">보물상자를 열었어요!</div>' +
-        '<div class="chest-sub">' + FQ.progress.CHEST_EVERY + '문제를 연달아 맞혔어요</div>' +
+        '<div class="chest-sub">' + (streak || FQ.progress.CHEST_EVERY) + '문제를 연달아 맞혔어요</div>' +
         '<div class="chest-loot">' +
           '<div class="loot" style="animation-delay:.15s">' +
-            '<div class="ic">⭐</div><div class="n">보너스 별</div><div class="d">+5점</div>' +
+            '<div class="ic">⭐</div><div class="n">보너스 별</div><div class="d">+' + CHEST_BONUS + '점</div>' +
           '</div>' +
           '<div class="loot" style="animation-delay:.3s">' +
             '<div class="ic">✨</div><div class="n">경험치</div><div class="d">+20</div>' +
@@ -881,16 +958,25 @@
       '</div>';
     doc.body.appendChild(back);
 
-    // 상자를 여는 동안 보상 경험치를 더해 준다
+    // 뒤의 '다음 문제' 단추를 잠가 둔다. 포커스를 쥔 채로 두면 엔터 한 번에
+    // 상자를 못 본 채 다음 문제로 넘어가 버린다.
+    var behind = ui.$('#next');
+    if (behind) behind.disabled = true;
+    var closeBtn0 = back.querySelector('#chest-close');
+    if (closeBtn0) { try { closeBtn0.focus({ preventScroll: true }); } catch (e) { closeBtn0.focus(); } }
+
+    // 상자를 여는 동안 보상을 실제로 준다.
+    // 여태 '보너스 별 +5점' 은 글자만 있고 점수가 오르지 않았다.
     FQ.progress.addXp(20);
     state.xpGained += 20;
+    if (state.game && state.game.addBonus) state.game.addBonus(CHEST_BONUS);
     audio.play('badge');
     FQ.effects.burst(110);
 
     function close() {
       back.remove();
       var nextBtn = ui.$('#next');
-      if (nextBtn) nextBtn.focus();
+      if (nextBtn) { nextBtn.disabled = false; nextBtn.focus(); }
     }
     back.addEventListener('click', function (ev) {
       if (ev.target === back || ev.target.closest('#chest-close')) close();
@@ -900,6 +986,7 @@
   }
 
   function goNext() {
+    state.timedOut = false;
     audio.stopSpeaking();
     state.game.next();
     if (state.game.isOver()) finishGame();
@@ -931,7 +1018,13 @@
       if (state.timeLeft <= 3 && state.timeLeft > 0) audio.play('tick');
       if (state.timeLeft <= 0) {
         stopTimer();
-        if (!state.answered) submit({ text: '' }, true);
+        if (!state.answered) {
+          state.timedOut = true;
+          // 쓰던 답이 있으면 버리지 않고 그것으로 채점한다
+          var typed = ui.$('#answer-input');
+          var left = typed && typed.value ? typed.value.trim() : '';
+          submit({ text: left }, !left);
+        }
       }
     }, 1000);
   }
@@ -1001,6 +1094,7 @@
               ? '<div class="xp-gain">✨ 경험치 +' + state.xpGained + '</div>'
               : '') +
           '</div>' +
+          reviewResultBlock() +
           resultLevelBlock() +
           '<div class="stat-grid">' +
             '<div class="stat"><div class="v">' + summary.score + '</div><div class="k">점수</div></div>' +
@@ -1036,7 +1130,9 @@
               '<div class="wrong-grid">' + summary.wrong.map(function (c) {
                 return '<button class="wrong-item" type="button" data-code="' + c.code + '">' +
                   '<img src="' + ui.flagSrc(c.code) + '" alt="' + esc(c.ko) + ' 국기">' +
-                  '<div class="n">' + esc(c.ko) + '</div></button>';
+                  '<div class="n">' + esc(c.ko) + '</div>' +
+                  (c.flagHint ? '<div class="wh">' + esc(c.flagHint) + '</div>' : '') +
+                '</button>';
               }).join('') + '</div>' +
               '<p class="small muted" style="margin-bottom:0">국기를 누르면 자세히 볼 수 있어요.</p>' +
             '</div>'
@@ -1067,6 +1163,25 @@
     ui.$('#home', m).addEventListener('click', renderHome);
   }
 
+  /** 복습 판이었을 때, 오답노트가 얼마나 줄었는지 알려 준다 */
+  function reviewResultBlock() {
+    var r = state.review;
+    if (!r) return '';
+    var after = store.wrongList().length;
+    var cleared = Math.max(0, r.before - after);
+    return '<div class="review-done">' +
+      '<span class="ic">📝</span>' +
+      '<span class="body">' +
+        '<span class="t">' +
+          (cleared > 0
+            ? '복습한 나라 ' + cleared + '개가 오답노트에서 빠졌어요!'
+            : '이번에는 빠진 나라가 없어요. 한 번 더 맞히면 빠져요.') +
+        '</span>' +
+        '<span class="d">아직 ' + after + '개가 남아 있어요</span>' +
+      '</span>' +
+    '</div>';
+  }
+
   /** 결과 화면에 지금 레벨과 스티커 판 진행을 보여 준다 */
   function resultLevelBlock() {
     var lv = FQ.progress.level();
@@ -1079,7 +1194,7 @@
       '</div>' +
       '<div class="xp-row">' +
         '<span class="who">' + (lv.isMax ? '가장 높은 레벨이에요' : '다음 레벨까지') + '</span>' +
-        '<span class="val">' + lv.into + ' / ' + lv.need + '</span>' +
+        '<span class="val">' + (lv.isMax ? '경험치 ' + FQ.progress.xp() : lv.into + ' / ' + lv.need) + '</span>' +
       '</div>' +
       '<div class="xp-bar"><i style="width:' + Math.round(lv.ratio * 100) + '%"></i></div>' +
     '</div>';
@@ -1088,7 +1203,7 @@
   /* =================== 키보드 =================== */
   doc.addEventListener('keydown', function (ev) {
     if (!state.game) return;
-    if (doc.querySelector('.modal-back')) return;
+    if (doc.querySelector('.modal-back') || doc.querySelector('.chest-back')) return;
     var tag = (ev.target.tagName || '').toLowerCase();
     if (tag === 'input' || tag === 'textarea') return;
 

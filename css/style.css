@@ -1104,3 +1104,76 @@ a:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-
   .home-cols > .col { display: flex; flex-direction: column; gap: 16px; }
   .home-cols .section { margin: 0; }
 }
+
+/* ---- 결과: 복습 판을 끝냈을 때 ---- */
+.review-done {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--success-bg);
+  border-radius: 16px;
+  padding: 12px 14px;
+  margin: 14px 0 0;
+  color: var(--success);
+}
+.review-done .ic { font-size: 1.6rem; flex: 0 0 auto; }
+.review-done .body { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.review-done .t { font-weight: 900; font-size: 1rem; word-break: keep-all; }
+.review-done .d { font-size: .84rem; opacity: .85; }
+
+/* ---- 홈: 눌리는 카드가 된 오늘의 도전 · 대륙별 항목 ---- */
+button.daily-card {
+  width: 100%;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  min-height: 64px;
+}
+button.daily-card:focus-visible { outline: 4px solid var(--accent); outline-offset: 2px; }
+.daily-why {
+  display: block;
+  font-size: .8rem;
+  font-weight: 700;
+  opacity: .85;
+  margin-top: 2px;
+  word-break: keep-all;
+}
+button.cont-item {
+  border: none;
+  background: none;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  min-height: 44px;
+}
+button.cont-item:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; border-radius: 8px; }
+
+/* ---- '나라 보고 국기 찾기': 보기에 번호를 붙여 말로도 고를 수 있게 ---- */
+.flag-choice { position: relative; }
+.flag-choice .choice-num {
+  position: absolute;
+  top: 6px;
+  left: 8px;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--card-2);
+  color: var(--text-soft);
+  font-size: .82rem;
+  font-weight: 900;
+  display: grid;
+  place-items: center;
+}
+
+/* ---- 결과: 다시 보면 좋은 국기에 구분 요령 한 줄 ---- */
+.wrong-item .wh {
+  font-size: .72rem;
+  line-height: 1.35;
+  color: var(--text-soft);
+  margin-top: 4px;
+  word-break: keep-all;
+}
