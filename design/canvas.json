@@ -1,0 +1,15 @@
+{
+  "artboards": [
+    { "file": "Home.dc.html",         "x": 0,    "y": 0,   "w": 390,  "h": 844, "title": "홈 · 놀이 고르기" },
+    { "file": "Main.dc.html",         "x": 510,  "y": 0,   "w": 390,  "h": 844, "title": "문제 화면" },
+    { "file": "Reward.dc.html",       "x": 1020, "y": 0,   "w": 390,  "h": 844, "title": "보물상자 열기" },
+    { "file": "Result.dc.html",       "x": 1530, "y": 0,   "w": 390,  "h": 844, "title": "한 판 결과" },
+    { "file": "StickerBook.dc.html",  "x": 2040, "y": 0,   "w": 390,  "h": 844, "title": "스티커 판" },
+    { "file": "RewardSystem.dc.html", "x": 0,    "y": 1000, "w": 1330, "h": 620, "title": "보상 체계 한눈에" }
+  ],
+  "annotations": [
+    { "id": "note-flow", "x": 0, "y": -150, "w": 300, "text": "민규의 하루: 홈에서 놀이를 고르고 → 문제를 풀고 → 5연속이면 보물상자가 열리고 → 한 판 결과에서 별과 경험치를 받고 → 스티커 판이 한 칸씩 채워져요." },
+    { "id": "note-system", "x": 1420, "y": 1000, "w": 300, "text": "보상은 여섯 가지: 별 · 경험치와 레벨 · 스티커 · 보물상자 · 불꽃 콤보 · 하루 도전. 아래 판이 무엇을 언제 받는지 한 장으로 보여줘요." }
+  ],
+  "launch": { "view": "canvas" }
+}

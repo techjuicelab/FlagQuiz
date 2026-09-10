@@ -1,0 +1,418 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    .rw-root {
+      font-family: "Pretendard", "Pretendard Variable", -apple-system, BlinkMacSystemFont,
+        "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
+      word-break: keep-all;
+      -webkit-font-smoothing: antialiased;
+    }
+    .rw-root, .rw-root * {
+      box-sizing: border-box;
+    }
+
+    @keyframes rw-confetti {
+      0% {
+        transform: translateY(-60px) rotate(0deg);
+        opacity: 0;
+      }
+      8% {
+        opacity: 1;
+      }
+      85% {
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(900px) rotate(620deg);
+        opacity: 0;
+      }
+    }
+    @keyframes rw-banner {
+      0% {
+        transform: translateY(-170px) rotate(-4deg);
+        opacity: 0;
+      }
+      62% {
+        transform: translateY(10px) rotate(1.5deg);
+        opacity: 1;
+      }
+      82% {
+        transform: translateY(-5px) rotate(-1deg);
+      }
+      100% {
+        transform: translateY(0) rotate(0deg);
+        opacity: 1;
+      }
+    }
+    @keyframes rw-shake {
+      0% {
+        transform: translateX(0) rotate(0deg);
+      }
+      20% {
+        transform: translateX(-6px) rotate(-3deg);
+      }
+      45% {
+        transform: translateX(6px) rotate(3deg);
+      }
+      70% {
+        transform: translateX(-4px) rotate(-2deg);
+      }
+      100% {
+        transform: translateX(0) rotate(0deg);
+      }
+    }
+    @keyframes rw-lid {
+      0% {
+        transform: rotate(0deg);
+      }
+      70% {
+        transform: rotate(-48deg);
+      }
+      100% {
+        transform: rotate(-42deg);
+      }
+    }
+    @keyframes rw-glow {
+      0% {
+        transform: scale(0.3);
+        opacity: 0;
+      }
+      55% {
+        transform: scale(1.06);
+        opacity: 1;
+      }
+      100% {
+        transform: scale(1);
+        opacity: 0.9;
+      }
+    }
+    @keyframes rw-breathe {
+      0% {
+        opacity: 0.6;
+      }
+      50% {
+        opacity: 1;
+      }
+      100% {
+        opacity: 0.6;
+      }
+    }
+    @keyframes rw-fade-in {
+      0% {
+        opacity: 0;
+      }
+      100% {
+        opacity: 1;
+      }
+    }
+    @keyframes rw-spin {
+      0% {
+        transform: rotate(0deg);
+      }
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+    @keyframes rw-pop-out {
+      0% {
+        transform: translateY(90px) scale(0.35);
+        opacity: 0;
+      }
+      45% {
+        opacity: 1;
+      }
+      62% {
+        transform: translateY(-18px) scale(1.1);
+      }
+      82% {
+        transform: translateY(6px) scale(0.97);
+      }
+      100% {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+      }
+    }
+    @keyframes rw-bob {
+      0% {
+        transform: translateY(0);
+      }
+      50% {
+        transform: translateY(-7px);
+      }
+      100% {
+        transform: translateY(0);
+      }
+    }
+    @keyframes rw-star-pop {
+      0% {
+        transform: scale(0.2) rotate(-40deg);
+        opacity: 0;
+      }
+      50% {
+        transform: scale(1.3) rotate(8deg);
+        opacity: 1;
+      }
+      74% {
+        transform: scale(0.92) rotate(-3deg);
+      }
+      100% {
+        transform: scale(1) rotate(0deg);
+        opacity: 1;
+      }
+    }
+    @keyframes rw-rise {
+      0% {
+        transform: translateY(26px);
+        opacity: 0;
+      }
+      100% {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+    @keyframes rw-btn-glow {
+      0% {
+        box-shadow: 0 10px 24px rgba(59, 95, 224, 0.34);
+      }
+      50% {
+        box-shadow: 0 16px 34px rgba(59, 95, 224, 0.52);
+      }
+      100% {
+        box-shadow: 0 10px 24px rgba(59, 95, 224, 0.34);
+      }
+    }
+    @keyframes rw-sparkle {
+      0% {
+        transform: translateY(6px) scale(0.7);
+        opacity: 0;
+      }
+      40% {
+        transform: translateY(-6px) scale(1.1);
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(-20px) scale(0.8);
+        opacity: 0;
+      }
+    }
+
+    .rw-confetti-piece {
+      animation: rw-confetti 3.4s linear infinite;
+    }
+    .rw-banner {
+      animation: rw-banner 1s cubic-bezier(0.2, 0.9, 0.3, 1.25) 0.15s both;
+    }
+    .rw-caption {
+      animation: rw-rise 0.6s ease-out 0.9s both;
+    }
+    .rw-chest {
+      animation: rw-shake 0.42s ease-in-out 0.5s 3;
+    }
+    .rw-lid {
+      animation: rw-lid 0.9s cubic-bezier(0.2, 0.9, 0.3, 1.2) 1.45s both;
+    }
+    .rw-glow {
+      animation: rw-glow 1.1s ease-out 1.55s both, rw-breathe 2.6s ease-in-out 2.6s infinite;
+    }
+    .rw-rays-fade {
+      animation: rw-fade-in 1s ease-out 1.6s both;
+    }
+    .rw-rays-spin {
+      animation: rw-spin 16s linear 1.6s infinite;
+    }
+    .rw-pop {
+      animation: rw-pop-out 0.95s cubic-bezier(0.2, 0.9, 0.3, 1.3) both;
+    }
+    .rw-bob {
+      animation: rw-bob 3s ease-in-out infinite;
+    }
+    .rw-star-on {
+      animation: rw-star-pop 0.7s cubic-bezier(0.2, 0.9, 0.3, 1.4) both;
+    }
+    .rw-rise {
+      animation: rw-rise 0.6s ease-out both;
+    }
+    .rw-btn {
+      animation: rw-rise 0.6s ease-out 3.5s both, rw-btn-glow 2.4s ease-in-out 4.1s infinite;
+    }
+    .rw-sparkle {
+      animation: rw-sparkle 2.4s ease-in-out infinite;
+    }
+
+    @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+  </style>
+</helmet>
+<div class="rw-root" style="width: 390px; min-height: 844px; position: relative; overflow: hidden; background: #eef4ff; color: #1f2937; padding: 20px 20px 26px; display: flex; flex-direction: column; gap: 14px;">
+
+  <div style="position: absolute; left: 45px; top: 330px; width: 300px; height: 300px; border-radius: 999px; background: radial-gradient(circle, rgba(255, 183, 3, 0.22) 0%, rgba(255, 183, 3, 0) 68%); pointer-events: none;"></div>
+
+  <div style="position: absolute; left: 0; top: 0; width: 390px; height: 844px; pointer-events: none; overflow: hidden;">
+    <div class="rw-confetti-piece" style="position: absolute; top: 0; left: 14px; width: 10px; height: 14px; border-radius: 3px; background: #4f7cff; animation-delay: 0.1s;"></div>
+    <div class="rw-confetti-piece" style="position: absolute; top: 0; left: 46px; width: 8px; height: 8px; border-radius: 999px; background: #ffb703; animation-delay: 0.9s;"></div>
+    <div class="rw-confetti-piece" style="position: absolute; top: 0; left: 78px; width: 12px; height: 10px; border-radius: 3px; background: #ef4444; animation-delay: 1.7s;"></div>
+    <div class="rw-confetti-piece" style="position: absolute; top: 0; left: 108px; width: 9px; height: 15px; border-radius: 3px; background: #16a34a; animation-delay: 0.5s;"></div>
+    <div class="rw-confetti-piece" style="position: absolute; top: 0; left: 140px; width: 10px; height: 10px; border-radius: 3px; background: #3b5fe0; animation-delay: 2.3s;"></div>
+    <div class="rw-confetti-piece" style="position: absolute; top: 0; left: 172px; width: 8px; height: 14px; border-radius: 3px; background: #ffb703; animation-delay: 1.2s;"></div>
+    <div class="rw-confetti-piece" style="position: absolute; top: 0; left: 200px; width: 11px; height: 9px; border-radius: 3px; background: #ef4444; animation-delay: 0.3s;"></div>
+    <div class="rw-confetti-piece" style="position: absolute; top: 0; left: 228px; width: 9px; height: 9px; border-radius: 999px; background: #4f7cff; animation-delay: 2.0s;"></div>
+    <div class="rw-confetti-piece" style="position: absolute; top: 0; left: 258px; width: 10px; height: 15px; border-radius: 3px; background: #3b5fe0; animation-delay: 1.5s;"></div>
+    <div class="rw-confetti-piece" style="position: absolute; top: 0; left: 288px; width: 8px; height: 12px; border-radius: 3px; background: #16a34a; animation-delay: 0.7s;"></div>
+    <div class="rw-confetti-piece" style="position: absolute; top: 0; left: 316px; width: 12px; height: 10px; border-radius: 3px; background: #ffb703; animation-delay: 2.6s;"></div>
+    <div class="rw-confetti-piece" style="position: absolute; top: 0; left: 344px; width: 9px; height: 14px; border-radius: 3px; background: #4f7cff; animation-delay: 1.9s;"></div>
+    <div class="rw-confetti-piece" style="position: absolute; top: 0; left: 366px; width: 8px; height: 8px; border-radius: 999px; background: #ef4444; animation-delay: 1.1s;"></div>
+    <div class="rw-confetti-piece" style="position: absolute; top: 0; left: 62px; width: 9px; height: 13px; border-radius: 3px; background: #3b5fe0; animation-delay: 2.9s;"></div>
+    <div class="rw-confetti-piece" style="position: absolute; top: 0; left: 186px; width: 8px; height: 12px; border-radius: 3px; background: #16a34a; animation-delay: 3.1s;"></div>
+    <div class="rw-confetti-piece" style="position: absolute; top: 0; left: 300px; width: 10px; height: 12px; border-radius: 3px; background: #ffb703; animation-delay: 0.2s;"></div>
+  </div>
+
+  <div class="rw-banner" style="position: relative; display: flex; align-items: center; gap: 14px; padding: 16px 18px; border-radius: 20px; background: linear-gradient(135deg, #4f7cff 0%, #3b5fe0 100%); box-shadow: 0 14px 40px rgba(31, 41, 55, 0.16);">
+    <div style="flex: none; width: 48px; height: 48px; border-radius: 999px; background: rgba(255, 255, 255, 0.2); display: flex; align-items: center; justify-content: center;">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"></path><path d="M5 12l7-7 7 7"></path></svg>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 6px;">
+      <div style="font-size: 21px; font-weight: 900; letter-spacing: -0.03em; color: #ffffff;">레벨이 올랐어요!</div>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <div style="padding: 4px 10px; border-radius: 999px; background: #ffb703; color: #1f2937; font-size: 13px; font-weight: 900;">레벨 4</div>
+        <div style="font-size: 15px; font-weight: 800; color: #ffffff;">나침반 탐험가</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="rw-caption" style="position: relative; text-align: center; font-size: 15px; font-weight: 800; color: #6b7280; letter-spacing: -0.02em;">5문제를 연속으로 맞혀서 보물상자가 열렸어요</div>
+
+  <div style="position: relative; width: 350px; height: 380px;">
+
+    <div class="rw-glow" style="position: absolute; left: 45px; top: 120px; width: 260px; height: 260px; border-radius: 999px; background: radial-gradient(circle, rgba(255, 236, 179, 0.95) 0%, rgba(255, 183, 3, 0.42) 38%, rgba(255, 183, 3, 0) 70%); z-index: 1;"></div>
+
+    <div class="rw-rays-fade" style="position: absolute; left: 25px; top: 100px; width: 300px; height: 300px; z-index: 2;">
+      <div class="rw-rays-spin" style="position: absolute; left: 0; top: 0; width: 300px; height: 300px;">
+        <div style="position: absolute; left: 143px; bottom: 150px; width: 14px; height: 140px; transform-origin: 50% 100%; transform: rotate(0deg); background: linear-gradient(to top, rgba(255, 183, 3, 0.55), rgba(255, 183, 3, 0));"></div>
+        <div style="position: absolute; left: 143px; bottom: 150px; width: 10px; height: 130px; transform-origin: 50% 100%; transform: rotate(45deg); background: linear-gradient(to top, rgba(255, 183, 3, 0.45), rgba(255, 183, 3, 0));"></div>
+        <div style="position: absolute; left: 143px; bottom: 150px; width: 14px; height: 140px; transform-origin: 50% 100%; transform: rotate(90deg); background: linear-gradient(to top, rgba(255, 183, 3, 0.55), rgba(255, 183, 3, 0));"></div>
+        <div style="position: absolute; left: 143px; bottom: 150px; width: 10px; height: 130px; transform-origin: 50% 100%; transform: rotate(135deg); background: linear-gradient(to top, rgba(255, 183, 3, 0.45), rgba(255, 183, 3, 0));"></div>
+        <div style="position: absolute; left: 143px; bottom: 150px; width: 14px; height: 140px; transform-origin: 50% 100%; transform: rotate(180deg); background: linear-gradient(to top, rgba(255, 183, 3, 0.55), rgba(255, 183, 3, 0));"></div>
+        <div style="position: absolute; left: 143px; bottom: 150px; width: 10px; height: 130px; transform-origin: 50% 100%; transform: rotate(225deg); background: linear-gradient(to top, rgba(255, 183, 3, 0.45), rgba(255, 183, 3, 0));"></div>
+        <div style="position: absolute; left: 143px; bottom: 150px; width: 14px; height: 140px; transform-origin: 50% 100%; transform: rotate(270deg); background: linear-gradient(to top, rgba(255, 183, 3, 0.55), rgba(255, 183, 3, 0));"></div>
+        <div style="position: absolute; left: 143px; bottom: 150px; width: 10px; height: 130px; transform-origin: 50% 100%; transform: rotate(315deg); background: linear-gradient(to top, rgba(255, 183, 3, 0.45), rgba(255, 183, 3, 0));"></div>
+      </div>
+    </div>
+
+    <div style="position: absolute; left: 0; top: 18px; width: 350px; z-index: 5; display: flex; justify-content: center; align-items: flex-end; gap: 12px;">
+
+      <div class="rw-pop" style="animation-delay: 1.6s;">
+        <div style="transform: rotate(-9deg);">
+          <div class="rw-bob" style="animation-delay: 2.6s; width: 100px; height: 124px; border-radius: 20px; background: #ffffff; box-shadow: 0 14px 40px rgba(31, 41, 55, 0.16); padding: 12px 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;">
+            <div style="position: relative; width: 56px; height: 40px; border-radius: 6px; overflow: hidden; background: #009c3b; box-shadow: 0 2px 6px rgba(31, 41, 55, 0.18);">
+              <div style="position: absolute; left: 50%; top: 50%; width: 26px; height: 26px; border-radius: 3px; background: #ffdf00; transform: translate(-50%, -50%) rotate(45deg);"></div>
+              <div style="position: absolute; left: 50%; top: 50%; width: 15px; height: 15px; border-radius: 999px; background: #002776; transform: translate(-50%, -50%);"></div>
+            </div>
+            <div style="font-size: 14px; font-weight: 900; letter-spacing: -0.02em; color: #1f2937;">브라질</div>
+            <div style="padding: 3px 8px; border-radius: 999px; background: #dcfce7; color: #16a34a; font-size: 11px; font-weight: 800;">새 스티커</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="rw-pop" style="animation-delay: 1.9s;">
+        <div style="transform: rotate(2deg);">
+          <div class="rw-bob" style="animation-delay: 2.9s; width: 100px; height: 132px; border-radius: 20px; background: #ffffff; box-shadow: 0 14px 40px rgba(31, 41, 55, 0.16); padding: 12px 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;">
+            <div style="position: relative; width: 56px; height: 40px; border-radius: 6px; overflow: hidden; background: linear-gradient(to bottom, #000000 0%, #000000 30%, #ffffff 30%, #ffffff 36%, #bb0000 36%, #bb0000 64%, #ffffff 64%, #ffffff 70%, #006600 70%, #006600 100%); box-shadow: 0 2px 6px rgba(31, 41, 55, 0.18);">
+              <div style="position: absolute; left: 50%; top: 50%; width: 16px; height: 28px; border-radius: 999px; background: #ffffff; transform: translate(-50%, -50%); display: flex; align-items: center; justify-content: center;">
+                <div style="width: 10px; height: 22px; border-radius: 999px; background: #bb0000; display: flex; align-items: center; justify-content: center;">
+                  <div style="width: 3px; height: 14px; border-radius: 999px; background: #000000;"></div>
+                </div>
+              </div>
+            </div>
+            <div style="font-size: 14px; font-weight: 900; letter-spacing: -0.02em; color: #1f2937;">케냐</div>
+            <div style="padding: 3px 8px; border-radius: 999px; background: #dcfce7; color: #16a34a; font-size: 11px; font-weight: 800;">새 스티커</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="rw-pop" style="animation-delay: 2.2s;">
+        <div style="transform: rotate(10deg);">
+          <div class="rw-bob" style="animation-delay: 3.2s; width: 100px; height: 132px; border-radius: 20px; background: #ffffff; box-shadow: 0 14px 40px rgba(31, 41, 55, 0.16); padding: 12px 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;">
+            <div style="position: relative; width: 44px; height: 48px;">
+              <div style="position: absolute; left: 0; top: 0; width: 44px; height: 48px; background: #003893; clip-path: polygon(0% 0%, 84% 32%, 36% 39%, 94% 80%, 0% 100%);"></div>
+              <div style="position: absolute; left: 3px; top: 3px; width: 38px; height: 42px; background: #dc143c; clip-path: polygon(0% 0%, 84% 32%, 36% 39%, 94% 80%, 0% 100%);"></div>
+              <div style="position: absolute; left: 8px; top: 8px; width: 9px; height: 9px; border-radius: 999px; background: #ffffff;"></div>
+              <div style="position: absolute; left: 8px; top: 27px; width: 10px; height: 10px; border-radius: 999px; background: #ffffff;"></div>
+            </div>
+            <div style="font-size: 14px; font-weight: 900; letter-spacing: -0.02em; color: #1f2937;">네팔</div>
+            <div style="padding: 3px 8px; border-radius: 999px; background: #dcfce7; color: #16a34a; font-size: 11px; font-weight: 800;">새 스티커</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="rw-sparkle" style="position: absolute; left: 24px; top: 210px; font-size: 22px; z-index: 6; animation-delay: 2.2s;">✨</div>
+    <div class="rw-sparkle" style="position: absolute; left: 300px; top: 176px; font-size: 18px; z-index: 6; animation-delay: 3.0s;">✨</div>
+    <div class="rw-sparkle" style="position: absolute; left: 286px; top: 262px; font-size: 20px; z-index: 6; animation-delay: 2.6s;">✨</div>
+
+    <div class="rw-chest" style="position: absolute; left: 75px; bottom: 0; width: 200px; height: 200px; z-index: 4;">
+
+      <div class="rw-lid" style="position: absolute; left: 0; bottom: 120px; width: 200px; height: 76px; transform-origin: 14% 100%; transform: rotate(-42deg); border-radius: 100px 100px 8px 8px; background: repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.09) 0px, rgba(0, 0, 0, 0.09) 2px, rgba(0, 0, 0, 0) 2px, rgba(0, 0, 0, 0) 20px), linear-gradient(180deg, #c8853a 0%, #a0602a 60%, #8a5220 100%); box-shadow: 0 -6px 16px rgba(31, 41, 55, 0.14);">
+        <div style="position: absolute; left: 0; right: 0; bottom: 0; height: 14px; background: linear-gradient(180deg, #ffd76a 0%, #e8a11c 100%); border-radius: 0 0 8px 8px;"></div>
+        <div style="position: absolute; left: 87px; top: 0; width: 26px; height: 76px; background: linear-gradient(90deg, #e8a11c 0%, #ffd76a 50%, #e8a11c 100%); border-radius: 13px 13px 0 0;"></div>
+      </div>
+
+      <div style="position: absolute; left: 0; bottom: 0; width: 200px; height: 120px; border-radius: 8px 8px 14px 14px; background: repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.09) 0px, rgba(0, 0, 0, 0.09) 2px, rgba(0, 0, 0, 0) 2px, rgba(0, 0, 0, 0) 20px), linear-gradient(180deg, #b5762f 0%, #8a5220 100%); box-shadow: 0 14px 40px rgba(31, 41, 55, 0.16), inset 0 6px 14px rgba(0, 0, 0, 0.28);">
+        <div style="position: absolute; left: 0; right: 0; top: 0; height: 16px; background: linear-gradient(180deg, #ffd76a 0%, #e8a11c 100%);"></div>
+        <div style="position: absolute; left: 87px; top: 0; bottom: 0; width: 26px; background: linear-gradient(90deg, #e8a11c 0%, #ffd76a 50%, #e8a11c 100%);"></div>
+        <div style="position: absolute; left: 0; right: 0; bottom: 0; height: 14px; background: linear-gradient(180deg, #e8a11c 0%, #c8850f 100%); border-radius: 0 0 14px 14px;"></div>
+        <div style="position: absolute; left: 85px; top: 30px; width: 30px; height: 30px; border-radius: 999px; background: radial-gradient(circle at 35% 30%, #ffe9a8 0%, #ffd76a 45%, #d99512 100%); display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(31, 41, 55, 0.24);">
+          <div style="width: 7px; height: 13px; border-radius: 4px; background: #6b4416;"></div>
+        </div>
+      </div>
+
+      <div style="position: absolute; left: 14px; bottom: -6px; width: 172px; height: 14px; border-radius: 999px; background: rgba(31, 41, 55, 0.12); filter: blur(2px); z-index: -1;"></div>
+    </div>
+
+  </div>
+
+  <div style="position: relative; display: flex; justify-content: center; align-items: center; gap: 14px;">
+
+    <div style="position: relative; width: 58px; height: 58px;">
+      <div style="position: absolute; left: 0; top: 0; width: 58px; height: 58px; border-radius: 999px; background: #e5e7eb;"></div>
+      <div class="rw-star-on" style="position: absolute; left: 0; top: 0; width: 58px; height: 58px; border-radius: 999px; background: radial-gradient(circle at 35% 30%, #fff3cf 0%, #ffb703 100%); box-shadow: 0 6px 18px rgba(255, 183, 3, 0.5); display: flex; align-items: center; justify-content: center; font-size: 27px; animation-delay: 2.5s;">⭐</div>
+    </div>
+
+    <div style="position: relative; width: 58px; height: 58px;">
+      <div style="position: absolute; left: 0; top: 0; width: 58px; height: 58px; border-radius: 999px; background: #e5e7eb;"></div>
+      <div class="rw-star-on" style="position: absolute; left: 0; top: 0; width: 58px; height: 58px; border-radius: 999px; background: radial-gradient(circle at 35% 30%, #fff3cf 0%, #ffb703 100%); box-shadow: 0 6px 18px rgba(255, 183, 3, 0.5); display: flex; align-items: center; justify-content: center; font-size: 27px; animation-delay: 2.8s;">⭐</div>
+    </div>
+
+    <div style="position: relative; width: 58px; height: 58px;">
+      <div style="position: absolute; left: 0; top: 0; width: 58px; height: 58px; border-radius: 999px; background: #e5e7eb;"></div>
+      <div class="rw-star-on" style="position: absolute; left: 0; top: 0; width: 58px; height: 58px; border-radius: 999px; background: radial-gradient(circle at 35% 30%, #fff3cf 0%, #ffb703 100%); box-shadow: 0 6px 18px rgba(255, 183, 3, 0.5); display: flex; align-items: center; justify-content: center; font-size: 27px; animation-delay: 3.1s;">⭐</div>
+    </div>
+
+  </div>
+
+  <div class="rw-rise" style="position: relative; display: flex; justify-content: center; gap: 8px; animation-delay: 3.3s;">
+    <div style="padding: 9px 12px; border-radius: 999px; background: #ffffff; box-shadow: 0 6px 18px rgba(31, 41, 55, 0.1); font-size: 13px; font-weight: 800; color: #1f2937;">스티커 3장</div>
+    <div style="padding: 9px 12px; border-radius: 999px; background: #ffffff; box-shadow: 0 6px 18px rgba(31, 41, 55, 0.1); font-size: 13px; font-weight: 800; color: #1f2937;">별 3개</div>
+    <div style="padding: 9px 12px; border-radius: 999px; background: #ffffff; box-shadow: 0 6px 18px rgba(31, 41, 55, 0.1); font-size: 13px; font-weight: 800; color: #1f2937;">경험치 +120</div>
+  </div>
+
+  <div style="flex: 1 1 auto; min-height: 6px;"></div>
+
+  <div style="position: relative; display: flex; flex-direction: column; gap: 10px;">
+    <div class="rw-btn" style="height: 64px; border-radius: 16px; background: linear-gradient(135deg, #4f7cff 0%, #3b5fe0 100%); box-shadow: 0 10px 24px rgba(59, 95, 224, 0.34); display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 19px; font-weight: 900; letter-spacing: -0.02em; color: #ffffff;">
+      <div style="font-size: 21px;">🎁</div>
+      <div>스티커 판에 붙이기</div>
+    </div>
+    <div class="rw-rise" style="text-align: center; font-size: 12px; font-weight: 700; color: #6b7280; animation-delay: 3.7s;">민규의 스티커 판을 63/194칸 채웠어요</div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>
