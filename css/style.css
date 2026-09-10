@@ -706,3 +706,16 @@ a:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-
   .remember-hint { color: #ffe9b0; }
   .remember-tip { color: #d8bd74; }
 }
+
+/* 소리가 자동으로 나지 않을 때, 눌러서 들으라고 눈에 띄게 알려 준다 */
+.btn.needs-tap {
+  background: linear-gradient(135deg, #ffb703, #ff8a00);
+  color: #fff;
+  font-size: 1.05rem;
+  min-height: 50px;
+  animation: tapNudge 1.1s ease-in-out infinite;
+}
+@keyframes tapNudge {
+  0%, 100% { transform: scale(1); box-shadow: 0 6px 18px rgba(255, 138, 0, .35); }
+  50%      { transform: scale(1.05); box-shadow: 0 10px 26px rgba(255, 138, 0, .5); }
+}

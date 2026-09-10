@@ -10,6 +10,8 @@
   var speakEnabled = true;
   var unlocked = false;
   var speechPrimed = false;
+  var lastPrime = -99999;
+  function tick() { return (global.performance && global.performance.now) ? global.performance.now() : +new Date(); }
 
   var synth = global.speechSynthesis || null;
 
@@ -43,13 +45,29 @@
     primeSpeech();
   }
 
-  /** 읽어주기도 첫 손가락 조작 때 한 번 깨워 둬야 사파리에서 소리가 난다. */
+  /**
+   * 읽어주기를 깨워 둔다.
+   *
+   * 아이폰·아이패드는 손가락으로 화면을 만진 흐름 안에서 한 번 말을 시켜 둬야
+   * 그 뒤에 소리가 난다. 게다가 이 허가는 시간이 지나거나 음성 인식이
+   * 소리 장치를 가져갔다 놓으면 풀린다. 그래서 손가락 조작이 있을 때마다
+   * 다시 깨운다. (아이가 "다음 문제" 를 누르는 순간마다 깨워지므로,
+   * 그다음 문제에서 말로 답해 손가락 조작이 없어도 소리가 난다.)
+   *
+   * 음량을 0 으로 두면 아이폰이 발화를 아예 건너뛰어 깨워지지 않는다.
+   * 들리지 않을 만큼 작게, 그러나 0 이 아닌 값으로 말한다.
+   */
   function primeSpeech() {
-    if (speechPrimed || !synth) return;
+    if (!synth) return;
+    var now = tick();
+    if (now - lastPrime < 1500) return;      // 너무 자주 하지 않는다
+    lastPrime = now;
     speechPrimed = true;
     try {
-      var u = new global.SpeechSynthesisUtterance(' ');
-      u.volume = 0;
+      if (synth.speaking || synth.pending) return;   // 말하는 중이면 건드리지 않는다
+      var u = new global.SpeechSynthesisUtterance('\u200b');
+      u.volume = 0.01;
+      u.rate = 2;
       u.lang = 'ko-KR';
       synth.speak(u);
     } catch (e) { /* 지원하지 않으면 넘어간다 */ }
@@ -183,11 +201,11 @@
    * 소리로 읽어 준다.
    * opts.queue 를 주면 앞의 말을 끊지 않고 뒤에 이어 붙인다.
    */
+  /** 발화 하나를 만들어 바로 내보낸다 (끊기·기다리기 판단은 부르는 쪽에서 한다) */
   function speak(text, opts) {
     if (!speakEnabled || !synth || !text) return null;
     opts = opts || {};
     try {
-      if (!opts.queue) synth.cancel();
       if (synth.paused && synth.resume) synth.resume();   // 사파리가 멈춰 둔 경우
       var u = new global.SpeechSynthesisUtterance(text);
       u.lang = opts.lang || 'ko-KR';
@@ -208,43 +226,53 @@
   /**
    * 여러 줄을 차례로 읽어 준다.
    *
-   * 아이폰·아이패드는 말하기(음성 인식) 직후에 읽어주기를 시키면 소리가
-   * 조용히 사라질 때가 있다. 첫 줄이 실제로 시작됐는지 지켜보다가
-   * 시작되지 않으면 한 번 더 시도한다.
-   *
    *   say(['정답', '브라질'])
-   *   say(['브라질', '브라질', '초록 바탕에 …'], { rate: 0.92 })
+   *   say(['브라질', '브라질', '초록 바탕에 …'], { rate: 0.92 }, onFail)
+   *
+   * 아이폰·아이패드에서 소리가 조용히 사라지는 경우가 많아 세 가지를 함께 한다.
+   *   - 사파리는 cancel 직후의 speak 을 삼키므로, 끊어야 할 때는 한 틈 뒤에 말한다
+   *   - 첫 줄이 실제로 시작됐는지 지켜보다가 두 번까지 다시 시도한다 (이때는 끊지 않는다)
+   *   - 끝내 시작되지 않으면 onFail 을 불러, 화면에서 눌러 들을 수 있게 안내한다
    */
-  function say(lines, opts) {
+  function say(lines, opts, onFail) {
     if (!speakEnabled || !synth) return;
     var list = (lines || []).filter(function (t) { return t; });
     if (!list.length) return;
     opts = opts || {};
+    var started = false;
+    var attempt = 0;
 
-    function run(isRetry) {
-      var started = false;
+    function utter() {
       for (var i = 0; i < list.length; i++) {
-        var lineOpts = {
-          queue: i > 0,
+        var u = speak(list[i], {
           rate: (opts.rates && opts.rates[i]) || opts.rate,
           pitch: (opts.pitches && opts.pitches[i]) || opts.pitch
-        };
-        var u = speak(list[i], lineOpts);
-        if (i === 0 && u) {
-          u.onstart = function () { started = true; };
-        }
+        });
+        if (i === 0 && u) u.onstart = function () { started = true; };
       }
-      if (isRetry) return;
-      // 첫 줄이 시작되지 않았으면 소리 장치가 아직 안 돌아온 것이다. 한 번 더.
-      global.setTimeout(function () {
-        if (!started && speakEnabled && synth) {
-          try { synth.cancel(); } catch (e) {}
-          run(true);
-        }
-      }, 700);
     }
 
-    run(false);
+    function attemptOnce() {
+      attempt += 1;
+      utter();
+      global.setTimeout(function () {
+        if (started || !speakEnabled || !synth) return;
+        if (attempt < 3) {
+          // 다시 시도할 때는 cancel 하지 않는다. 사파리는 cancel 뒤의 speak 을 삼킨다.
+          attemptOnce();
+        } else if (onFail) {
+          onFail();
+        }
+      }, 600);
+    }
+
+    // 앞의 말이 남아 있으면 끊고 한 틈 뒤에 시작한다
+    if (synth.speaking || synth.pending) {
+      try { synth.cancel(); } catch (e) {}
+      global.setTimeout(attemptOnce, 150);
+    } else {
+      attemptOnce();
+    }
   }
 
   function stopSpeaking() {

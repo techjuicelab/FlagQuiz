@@ -628,11 +628,10 @@
     FQ.speech.stopAnd(function () {
       var micBtn2 = ui.$('#mic');
       if (micBtn2) micBtn2.classList.remove('listening');
-      if (store.settings().speak) {
-        global.setTimeout(function () {
-          audio.say(state.lastSpeech.lines, state.lastSpeech.opts);
-        }, res.correct ? 180 : 120);
-      }
+      if (!store.settings().speak) return;
+      global.setTimeout(function () {
+        audio.say(state.lastSpeech.lines, state.lastSpeech.opts, nudgeReplay);
+      }, res.correct ? 180 : 120);
     });
 
     var html =
@@ -655,7 +654,9 @@
           '<div class="remember-box">' +
             '<div class="remember-name">' + esc(c.ko) + ' · ' + esc(c.ko) + '</div>' +
             '<div class="remember-hint">🚩 ' + esc(c.flagHint) + '</div>' +
-            '<button class="btn btn-sm" id="replay" type="button" style="margin-top:8px">🔊 다시 들려주기</button>' +
+            (store.settings().speak
+              ? '<button class="btn btn-sm" id="replay" type="button" style="margin-top:8px">🔊 다시 들려주기</button>'
+              : '<button class="btn btn-sm" id="speak-on" type="button" style="margin-top:8px">🔇 읽어주기가 꺼져 있어요 · 켜고 듣기</button>') +
             '<div class="remember-tip small">이렇게 기억해 두면 다음엔 맞힐 수 있어요!</div>' +
           '</div>') +
         '<div class="fact-box">💡 ' + esc(c.fact) + '</div>' +
@@ -669,6 +670,18 @@
     var replay = ui.$('#replay', area);
     if (replay) {
       replay.addEventListener('click', function () {
+        replay.classList.remove('needs-tap');
+        replay.textContent = '🔊 다시 들려주기';
+        audio.say(state.lastSpeech.lines, state.lastSpeech.opts);
+      });
+    }
+    var speakOn = ui.$('#speak-on', area);
+    if (speakOn) {
+      speakOn.addEventListener('click', function () {
+        store.updateSettings({ speak: true });
+        audio.setSpeakEnabled(true);
+        speakOn.textContent = '🔊 다시 들려주기';
+        speakOn.id = 'replay';
         audio.say(state.lastSpeech.lines, state.lastSpeech.opts);
       });
     }
@@ -676,6 +689,18 @@
     next.addEventListener('click', goNext);
     next.focus();
     next.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }
+
+  /**
+   * 아이폰·아이패드가 소리를 끝내 내주지 않을 때 부른다.
+   * 조용히 넘어가면 아이가 답을 못 듣게 되므로, 눌러서 들을 수 있다고 크게 알려 준다.
+   */
+  function nudgeReplay() {
+    var btn = ui.$('#replay');
+    if (!btn) return;
+    btn.classList.add('needs-tap');
+    btn.textContent = '🔊 눌러서 들어보기';
+    try { btn.focus({ preventScroll: true }); } catch (e) {}
   }
 
   function goNext() {
