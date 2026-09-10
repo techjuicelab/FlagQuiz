@@ -75,10 +75,9 @@
             '<input class="text-input" id="p1" maxlength="10" value="' + esc(s.players[0] || '') + '" placeholder="민규">' +
           '</div>' +
           '<label class="switch"><input type="checkbox" id="duel"' + (duel ? ' checked' : '') + '> 둘이서 번갈아 대결하기</label>' +
-          (duel
-            ? '<p class="small muted" style="margin:8px 0 0">점수는 각자 따로 매기지만, 스티커·경험치·레벨은 <b>' +
-              esc(s.players[0] || '민규') + '</b> 것으로 쌓여요.</p>'
-            : '') +
+          '<p class="small muted' + (duel ? '' : ' hidden') + '" id="duel-note" style="margin:8px 0 0">' +
+            '점수는 각자 따로 매기지만, 스티커·경험치·레벨은 <b id="duel-owner">' +
+            esc(s.players[0] || '민규') + '</b> 것으로 쌓여요.</p>' +
           '<div class="field' + (duel ? '' : ' hidden') + '" id="p2-field" style="margin-top:10px">' +
             '<label for="p2">함께할 사람</label>' +
             '<input class="text-input" id="p2" maxlength="10" value="' + esc(s.players[1] || '아빠') + '" placeholder="아빠">' +
@@ -190,6 +189,13 @@
 
     ui.$('#duel', m).addEventListener('change', function (ev) {
       ui.$('#p2-field', m).classList.toggle('hidden', !ev.target.checked);
+      var note = ui.$('#duel-note', m);
+      if (note) {
+        note.classList.toggle('hidden', !ev.target.checked);
+        var owner = ui.$('#duel-owner', m);
+        var p1box = ui.$('#p1', m);
+        if (owner && p1box) owner.textContent = (p1box.value || '').trim() || '민규';
+      }
       savePlayers(m);
     });
     ['#p1', '#p2'].forEach(function (sel) {
