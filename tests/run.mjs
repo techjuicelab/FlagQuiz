@@ -49,7 +49,7 @@ sandbox.window = sandbox;
 sandbox.global = sandbox;
 vm.createContext(sandbox);
 
-for (const file of ['js/util.js', 'js/storage.js', 'data/countries.js', 'js/quiz.js']) {
+for (const file of ['js/util.js', 'js/storage.js', 'data/countries.js', 'js/progress.js', 'js/quiz.js']) {
   const full = path.join(root, file);
   if (!fs.existsSync(full)) {
     console.error('✗ 파일이 없어요: ' + file);
@@ -358,6 +358,72 @@ group('말 안에서 이름 찾기 (containsDistance)', () => {
   ok(d('니제르', '나이지리아') > 3, '니제르와 나이지리아는 멀어야 함', String(d('니제르', '나이지리아')));
   ok(d('오스트리아', '오스트레일리아') > 3, '오스트리아와 오스트레일리아는 멀어야 함');
   ok(d('', '브라질') === util.compareKey('브라질').length, '빈 말은 이름 길이만큼 멀다');
+});
+
+group('보상 체계', () => {
+  const P = FQ.progress;
+
+  // 별
+  ok(P.starsFor(10, 10) === 3, '다 맞히면 별 셋');
+  ok(P.starsFor(9, 10) === 3, '90%면 별 셋');
+  ok(P.starsFor(7, 10) === 2, '70%면 별 둘');
+  ok(P.starsFor(4, 10) === 1, '40%면 별 하나');
+  ok(P.starsFor(3, 10) === 0, '30%면 별 없음');
+  ok(P.starsFor(0, 0) === 0, '문제가 없으면 별 없음');
+
+  // 보물상자는 5연속마다
+  ok(P.chestOpensAt(5) && P.chestOpensAt(10) && P.chestOpensAt(15), '5·10·15연속에 열림');
+  ok(!P.chestOpensAt(0) && !P.chestOpensAt(4) && !P.chestOpensAt(6), '그 밖에는 안 열림');
+  ok(P.chestProgress(3).left === 2, '3연속이면 두 개 남음');
+  ok(P.chestProgress(5).left === 5, '열린 직후에는 다시 다섯 개');
+
+  // 연속으로 맞힐수록 경험치를 더 준다
+  ok(P.xpFor(1) === 10, '기본 경험치 10');
+  ok(P.xpFor(3) > P.xpFor(2), '3연속부터 더 받음');
+  ok(P.xpFor(7) > P.xpFor(5), '7연속부터 더 받음');
+
+  // 레벨은 다섯 단계, 경험치가 쌓이면 올라간다
+  ok(P.LEVELS.length === 5, '레벨 다섯 단계');
+  const start = P.level();
+  ok(start.number === 1 && start.into === 0, '처음에는 레벨 1');
+  P.addXp(P.LEVELS[1].from);
+  ok(P.level().number === 2, '경험치를 채우면 레벨 2');
+  P.addXp(P.LEVELS[4].from);
+  const top = P.level();
+  ok(top.number === 5 && top.isMax && top.ratio === 1, '마지막 레벨에서는 가득 참');
+
+  // 스티커는 "한 번이라도 맞힌 나라"
+  // 앞의 검사들이 이미 몇 나라를 맞혀 두었으므로, 아직 안 맞힌 나라를 골라 확인한다
+  const before = P.stickers();
+  ok(before.total === countries.length, '스티커 칸은 나라 수와 같다', String(before.total));
+  const target = countries.find((c) => !P.hasSticker(c.code));
+  ok(!!target, '아직 못 얻은 스티커가 남아 있다');
+  if (target) {
+    ok(!P.hasSticker(target.code), '아직 못 얻은 스티커');
+    FQ.storage.recordAnswer(target.code, true);
+    ok(P.hasSticker(target.code), '맞히면 스티커를 얻는다');
+    const after = P.stickers();
+    ok(after.owned === before.owned + 1, '모은 개수가 하나 늘어난다',
+      before.owned + ' → ' + after.owned);
+    ok(after.byContinent[target.continent].owned >= 1, '대륙별로도 세어진다');
+  }
+
+  // 하루 도전
+  const d = P.daily();
+  ok(d.target === 5 && d.done === 0, '오늘의 도전은 5개로 시작');
+  ok(['아시아','유럽','아프리카','북아메리카','남아메리카','오세아니아'].includes(d.continent),
+    '오늘의 대륙이 정해진다', d.continent);
+  ok(P.continentForDay('2026-09-10') === P.continentForDay('2026-09-10'), '같은 날은 같은 대륙');
+  const mine = countries.find((c) => c.continent === d.continent);
+  const other = countries.find((c) => c.continent !== d.continent);
+  P.noteDaily(other, true);
+  ok(P.daily().done === 0, '다른 대륙은 도전에 안 들어감');
+  for (let i = 0; i < 4; i++) P.noteDaily(mine, true);
+  ok(P.daily().done === 4 && !P.daily().complete, '네 개까지는 진행 중');
+  ok(P.noteDaily(mine, true) === true, '다섯 번째에서 도전 완료');
+  ok(P.daily().complete, '완료로 남는다');
+  ok(P.noteDaily(mine, true) === false, '완료 뒤에는 더 오르지 않음');
+  ok(P.noteDaily(mine, false) === false, '틀린 답은 도전에 안 들어감');
 });
 
 group('힌트 재료', () => {

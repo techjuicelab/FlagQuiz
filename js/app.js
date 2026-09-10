@@ -43,6 +43,8 @@
     listenOn: false,
     listenTimer: null,
     lastSpeech: { lines: [], opts: {} },
+    xpGained: 0,
+    newStickers: [],
     lastSummary: null,
     lastBadges: []
   };
@@ -61,6 +63,9 @@
           '<h2>어느 나라 국기일까요?</h2>' +
           '<p>' + esc(s.players[0] || '친구') + '와 함께 세계 ' + totalCountries() + '개 나라를 만나 봐요</p>' +
         '</div>' +
+
+        playerCard(s) +
+        dailyCard() +
 
         '<div class="card section">' +
           '<h3>누가 하나요?</h3>' +
@@ -202,6 +207,45 @@
     }
   }
 
+  /** 홈 위쪽: 지금 레벨과 모은 것들을 한눈에 */
+  function playerCard(s) {
+    var lv = FQ.progress.level();
+    var st = FQ.progress.stickers();
+    var stats = store.stats();
+    return '<div class="player-card">' +
+      '<span class="level-ring" title="레벨 ' + lv.number + '">' +
+        '<span class="track" style="--p:' + lv.ratio.toFixed(3) + '"></span>' +
+        '<span class="hole">' + lv.emoji + '</span>' +
+      '</span>' +
+      '<span class="player-meta">' +
+        '<span class="player-name">' + esc(s.players[0] || '친구') + '</span>' +
+        '<span class="player-level"> · 레벨 ' + lv.number + ' ' + esc(lv.name) + '</span>' +
+        '<span class="player-nums">' +
+          '<span class="mini-chip">✨ ' + lv.into + ' / ' + lv.need + '</span>' +
+          '<span class="mini-chip">📖 스티커 ' + st.owned + ' / ' + st.total + '</span>' +
+          '<span class="mini-chip">🔥 최고 ' + (stats.bestStreak || 0) + '연속</span>' +
+        '</span>' +
+      '</span>' +
+    '</div>';
+  }
+
+  /** 홈: 오늘의 도전 */
+  function dailyCard() {
+    var d = FQ.progress.daily();
+    return '<div class="daily-card">' +
+      '<span class="ic">' + (d.complete ? '🏆' : '🎯') + '</span>' +
+      '<span class="body">' +
+        '<span class="t">' +
+          (d.complete
+            ? '오늘의 도전을 끝냈어요!'
+            : '오늘의 도전 · ' + esc(d.continent) + ' 나라 ' + d.target + '개 맞히기') +
+        '</span>' +
+        '<span class="daily-bar"><i style="width:' + Math.round(d.ratio * 100) + '%"></i></span>' +
+      '</span>' +
+      '<span class="cnt">' + d.done + '/' + d.target + '</span>' +
+    '</div>';
+  }
+
   function voiceNotice() {
     var reason = FQ.speech.unavailableReason();
     if (!reason) return '<div class="notice">🎤 버튼을 누를 필요 없어요. 국기가 나오면 <b>바로 나라 이름을 말하면</b> 알아듣습니다. 마이크 사용을 물어보면 “허용”을 눌러 주세요.</div>';
@@ -237,6 +281,8 @@
       only: onlyCodes && onlyCodes.length ? onlyCodes : null
     });
     state.lastBadges = [];
+    state.xpGained = 0;
+    state.newStickers = [];
     renderQuiz();
   }
 
@@ -251,7 +297,6 @@
     var q = g.current();
     var s = store.settings();
     var duel = g.players.length > 1;
-    var progress = Math.round((g.index / g.total) * 100);
 
     var stage;
     if (q.mode === 'reverse') {
@@ -276,17 +321,51 @@
         '</div>';
     }
 
+    var lv = FQ.progress.level();
+    var chest = FQ.progress.chestProgress(g.streak);
+    var dots = '';
+    for (var di = 0; di < g.total; di++) {
+      var cls = di < g.index ? 'done' : (di === g.index ? 'now' : '');
+      dots += '<i class="' + cls + '" style="animation-delay:' + (di * 0.03) + 's"></i>';
+    }
+
     var html =
       '<section class="screen">' +
         '<div class="quiz-head">' +
           '<button class="btn btn-sm btn-ghost" id="quit" type="button">← 그만하기</button>' +
           '<span class="chip">' + (g.index + 1) + ' / ' + g.total + '</span>' +
           '<span class="chip">⭐ ' + g.score + '</span>' +
-          (g.streak >= 2 ? '<span class="chip combo">🔥 ' + g.streak + '연속</span>' : '') +
           (duel ? '<span class="chip turn">' + esc(g.currentPlayer()) + ' 차례</span>' : '') +
           (s.timer ? '<span class="chip" id="timer-chip">⏱ ' + s.timer + '</span>' : '') +
         '</div>' +
-        '<div class="progress"><i style="width:' + progress + '%"></i></div>' +
+
+        '<div class="game-head">' +
+          '<div class="row" style="align-items:center">' +
+            '<span class="level-chip"><span class="num">' + lv.number + '</span>' + esc(lv.name) + '</span>' +
+            '<span class="spacer"></span>' +
+            '<span class="chip">' + lv.emoji + '</span>' +
+          '</div>' +
+          '<div class="xp-row">' +
+            '<span class="who">' + esc(g.players[0]) + '의 경험치</span>' +
+            '<span class="val" id="xp-val">' + lv.into + ' / ' + lv.need + '</span>' +
+          '</div>' +
+          '<div class="xp-bar"><i id="xp-fill" style="width:' + Math.round(lv.ratio * 100) + '%"></i></div>' +
+        '</div>' +
+
+        '<div class="combo-card">' +
+          '<span class="combo-flame">🔥</span>' +
+          '<span class="combo-body">' +
+            '<span class="combo-title" id="combo-title">' +
+              (g.streak > 0
+                ? g.streak + '연속! 보물상자까지 ' + chest.left + '개'
+                : '연속으로 맞히면 보물상자가 열려요') +
+            '</span>' +
+            '<span class="combo-bar"><i id="combo-fill" style="width:' + Math.round(chest.ratio * 100) + '%"></i></span>' +
+          '</span>' +
+          '<span class="combo-goal">🎁</span>' +
+        '</div>' +
+
+        '<div class="qdots">' + dots + '</div>' +
         '<div class="quiz-body">' +
           '<div>' + stage + '</div>' +
           '<div>' +
@@ -562,9 +641,26 @@
     if (state.listenTimer) { global.clearTimeout(state.listenTimer); state.listenTimer = null; }
 
     var g = state.game;
+    var q = g.current();
+    // 스티커는 "이 나라를 처음 맞혔는가" 로 정해지므로 기록하기 전에 확인해야 한다
+    var isNewSticker = q && !FQ.progress.hasSticker(q.country.code);
+
     var res = g.submit(payload, state.usedHint);
     if (!res) return;
     res.gaveUp = !!gaveUp;
+
+    if (res.correct && q) {
+      var gain = FQ.progress.xpFor(g.streak);
+      state.xpGained += gain;
+      res.xpGain = gain;
+      res.levelUp = FQ.progress.addXp(gain);
+      if (isNewSticker) {
+        state.newStickers.push(q.country);
+        res.newSticker = true;
+      }
+      res.dailyDone = FQ.progress.noteDaily(q.country, true);
+      res.chest = FQ.progress.chestOpensAt(g.streak);
+    }
     showFeedback(res);
   }
 
@@ -607,6 +703,28 @@
       }
       if (!res.exact && res.matched) {
         extra = '<div class="small muted">비슷하게 말해도 정답으로 인정했어요. 정확한 이름은 <b>' + esc(c.ko) + '</b> 예요.</div>';
+      }
+      var wins = [];
+      if (res.xpGain) wins.push('✨ 경험치 +' + res.xpGain);
+      if (res.newSticker) wins.push('🏳️ ' + esc(c.ko) + ' 스티커를 얻었어요!');
+      if (res.levelUp) wins.push('🎉 레벨 ' + res.levelUp.number + ' ' + esc(res.levelUp.name) + ' 이 되었어요!');
+      if (res.dailyDone) wins.push('🏆 오늘의 도전을 끝냈어요!');
+      if (wins.length) extra += '<div class="xp-gain" style="margin-top:8px">' + wins.join(' · ') + '</div>';
+
+      // 게임 머리판의 경험치·콤보를 그 자리에서 갱신한다
+      var lvNow = FQ.progress.level();
+      var fill = ui.$('#xp-fill');
+      if (fill) { fill.classList.add('gain'); fill.style.width = Math.round(lvNow.ratio * 100) + '%'; }
+      var xpVal = ui.$('#xp-val');
+      if (xpVal) xpVal.textContent = lvNow.into + ' / ' + lvNow.need;
+      var chestNow = FQ.progress.chestProgress(g.streak);
+      var cFill = ui.$('#combo-fill');
+      if (cFill) cFill.style.width = Math.round(chestNow.ratio * 100) + '%';
+      var cTitle = ui.$('#combo-title');
+      if (cTitle) {
+        cTitle.textContent = res.chest
+          ? '보물상자가 열렸어요!'
+          : g.streak + '연속! 보물상자까지 ' + chestNow.left + '개';
       }
     } else {
       verdict = res.gaveUp ? '👀 같이 외워 볼까요?' : '😅 아쉬워요';
@@ -688,6 +806,7 @@
     var next = ui.$('#next');
     next.addEventListener('click', goNext);
     next.focus();
+    if (res.chest) global.setTimeout(function () { showChest(c, res.newSticker); }, 950);
     next.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }
 
@@ -701,6 +820,59 @@
     btn.classList.add('needs-tap');
     btn.textContent = '🔊 눌러서 들어보기';
     try { btn.focus({ preventScroll: true }); } catch (e) {}
+  }
+
+  /**
+   * 연속 정답으로 보물상자가 열리는 순간.
+   * 눌러서 닫을 때까지 떠 있고, 안에서 무엇을 얻었는지 보여 준다.
+   */
+  function showChest(country, gotSticker) {
+    var st = FQ.progress.stickers();
+    var back = doc.createElement('div');
+    back.className = 'chest-back';
+    back.innerHTML =
+      '<div class="chest-card" role="dialog" aria-label="보물상자를 열었어요">' +
+        '<div class="chest-art">' +
+          '<div class="chest-rays"></div>' +
+          '<div class="chest-emoji">🎁</div>' +
+        '</div>' +
+        '<div class="chest-title">보물상자를 열었어요!</div>' +
+        '<div class="chest-sub">' + FQ.progress.CHEST_EVERY + '문제를 연달아 맞혔어요</div>' +
+        '<div class="chest-loot">' +
+          '<div class="loot" style="animation-delay:.15s">' +
+            '<div class="ic">⭐</div><div class="n">보너스 별</div><div class="d">+5점</div>' +
+          '</div>' +
+          '<div class="loot" style="animation-delay:.3s">' +
+            '<div class="ic">✨</div><div class="n">경험치</div><div class="d">+20</div>' +
+          '</div>' +
+          (gotSticker && country
+            ? '<div class="loot" style="animation-delay:.45s">' +
+                '<div class="ic">🏳️</div><div class="n">' + esc(country.ko) + '</div><div class="d">새 스티커</div>' +
+              '</div>'
+            : '<div class="loot" style="animation-delay:.45s">' +
+                '<div class="ic">📖</div><div class="n">스티커 판</div><div class="d">' + st.owned + ' / ' + st.total + '</div>' +
+              '</div>') +
+        '</div>' +
+        '<button class="btn btn-primary btn-big" id="chest-close" type="button" style="width:100%;margin-top:18px">좋아요!</button>' +
+      '</div>';
+    doc.body.appendChild(back);
+
+    // 상자를 여는 동안 보상 경험치를 더해 준다
+    FQ.progress.addXp(20);
+    state.xpGained += 20;
+    audio.play('badge');
+    FQ.effects.burst(110);
+
+    function close() {
+      back.remove();
+      var nextBtn = ui.$('#next');
+      if (nextBtn) nextBtn.focus();
+    }
+    back.addEventListener('click', function (ev) {
+      if (ev.target === back || ev.target.closest('#chest-close')) close();
+    });
+    var btn = back.querySelector('#chest-close');
+    if (btn) global.setTimeout(function () { btn.focus(); }, 600);
   }
 
   function goNext() {
@@ -760,7 +932,12 @@
 
   function renderResult(summary, earned) {
     var rate = summary.total ? summary.correct / summary.total : 0;
-    var stars = rate >= 0.9 ? '⭐⭐⭐' : rate >= 0.7 ? '⭐⭐' : rate >= 0.4 ? '⭐' : '💪';
+    var starCount = FQ.progress.starsFor(summary.correct, summary.total);
+    var stars = '';
+    for (var si = 0; si < 3; si++) {
+      stars += '<span class="' + (si < starCount ? '' : 'off') +
+        '" style="animation-delay:' + (0.15 + si * 0.22) + 's">⭐</span>';
+    }
     var cheer = rate >= 0.9 ? '대단해요! 세계 국기 박사님!'
       : rate >= 0.7 ? '아주 잘했어요!'
       : rate >= 0.4 ? '조금만 더 하면 돼요!'
@@ -793,10 +970,14 @@
       '<section class="screen">' +
         '<div class="card">' +
           '<div class="result-hero">' +
-            '<div class="stars">' + stars + '</div>' +
+            '<div class="star-row">' + stars + '</div>' +
             '<div class="score">' + summary.correct + ' / ' + summary.total + '</div>' +
             '<p class="muted">' + esc(cheer) + '</p>' +
+            (state.xpGained
+              ? '<div class="xp-gain">✨ 경험치 +' + state.xpGained + '</div>'
+              : '') +
           '</div>' +
+          resultLevelBlock() +
           '<div class="stat-grid">' +
             '<div class="stat"><div class="v">' + summary.score + '</div><div class="k">점수</div></div>' +
             '<div class="stat"><div class="v">' + summary.bestStreak + '</div><div class="k">최고 연속</div></div>' +
@@ -812,6 +993,17 @@
               return '<div class="badge-pop"><span class="ic">' + b.icon + '</span>' +
                 '<span><span class="n">새 배지! ' + esc(b.name) + '</span><br><span class="d">' + esc(b.desc) + '</span></span></div>';
             }).join('') + '</div>'
+          : '') +
+
+        (state.newStickers.length
+          ? '<div class="card section">' +
+              '<h3>새로 얻은 스티커 ' + state.newStickers.length + '개</h3>' +
+              '<div class="new-stickers">' + state.newStickers.map(function (c, i) {
+                return '<div style="animation-delay:' + (0.1 + i * 0.08) + 's">' +
+                  '<img src="' + ui.flagSrc(c.code) + '" alt="' + esc(c.ko) + ' 스티커">' +
+                  '<div class="n">' + esc(c.ko) + '</div></div>';
+              }).join('') + '</div>' +
+            '</div>'
           : '') +
 
         (summary.wrong.length
@@ -849,6 +1041,24 @@
       startGame(summary.wrong.map(function (c) { return c.code; }));
     });
     ui.$('#home', m).addEventListener('click', renderHome);
+  }
+
+  /** 결과 화면에 지금 레벨과 스티커 판 진행을 보여 준다 */
+  function resultLevelBlock() {
+    var lv = FQ.progress.level();
+    var st = FQ.progress.stickers();
+    return '<div class="game-head" style="margin:14px 0 0">' +
+      '<div class="row" style="align-items:center">' +
+        '<span class="level-chip"><span class="num">' + lv.number + '</span>' + esc(lv.name) + '</span>' +
+        '<span class="spacer"></span>' +
+        '<span class="mini-chip">📖 ' + st.owned + ' / ' + st.total + '</span>' +
+      '</div>' +
+      '<div class="xp-row">' +
+        '<span class="who">' + (lv.isMax ? '가장 높은 레벨이에요' : '다음 레벨까지') + '</span>' +
+        '<span class="val">' + lv.into + ' / ' + lv.need + '</span>' +
+      '</div>' +
+      '<div class="xp-bar"><i style="width:' + Math.round(lv.ratio * 100) + '%"></i></div>' +
+    '</div>';
   }
 
   /* =================== 키보드 =================== */
