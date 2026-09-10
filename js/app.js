@@ -59,11 +59,6 @@
 
     var html =
       '<section class="screen">' +
-        '<div class="hero">' +
-          '<h2>어느 나라 국기일까요?</h2>' +
-          '<p>' + esc(s.players[0] || '친구') + '와 함께 세계 ' + totalCountries() + '개 나라를 만나 봐요</p>' +
-        '</div>' +
-
         playerCard(s) +
         dailyCard() +
 
@@ -137,6 +132,8 @@
             '</div>' +
           '</div>' +
         '</div>' +
+
+        continentCard() +
 
         '<button class="btn btn-primary btn-big" id="start" type="button" style="width:100%">🎮 시작하기</button>' +
 
@@ -222,10 +219,32 @@
         '<span class="player-level"> · 레벨 ' + lv.number + ' ' + esc(lv.name) + '</span>' +
         '<span class="player-nums">' +
           '<span class="mini-chip">✨ ' + lv.into + ' / ' + lv.need + '</span>' +
-          '<span class="mini-chip">📖 스티커 ' + st.owned + ' / ' + st.total + '</span>' +
           '<span class="mini-chip">🔥 최고 ' + (stats.bestStreak || 0) + '연속</span>' +
         '</span>' +
       '</span>' +
+    '</div>';
+  }
+
+  /** 홈: 대륙별로 얼마나 모았는지 */
+  function continentCard() {
+    var st = FQ.progress.stickers();
+    var names = Object.keys(st.byContinent);
+    if (!names.length) return '';
+    return '<div class="card section cont-card">' +
+      '<h3>대륙별 모으기</h3>' +
+      '<div class="cont-grid">' +
+        names.map(function (name) {
+          var b = st.byContinent[name];
+          var pct = b.total ? Math.round((b.owned / b.total) * 100) : 0;
+          return '<span class="cont-item">' +
+            '<span class="cont-top">' +
+              '<span class="cont-name">' + esc(name) + '</span>' +
+              '<span class="cont-num">' + b.owned + '/' + b.total + '</span>' +
+            '</span>' +
+            '<span class="cont-bar"><i style="width:' + pct + '%"></i></span>' +
+          '</span>';
+        }).join('') +
+      '</div>' +
     '</div>';
   }
 
@@ -334,7 +353,6 @@
         '<div class="quiz-head">' +
           '<button class="btn btn-sm btn-ghost" id="quit" type="button">← 그만하기</button>' +
           '<span class="chip">' + (g.index + 1) + ' / ' + g.total + '</span>' +
-          '<span class="chip">⭐ ' + g.score + '</span>' +
           (duel ? '<span class="chip turn">' + esc(g.currentPlayer()) + ' 차례</span>' : '') +
           (s.timer ? '<span class="chip" id="timer-chip">⏱ ' + s.timer + '</span>' : '') +
         '</div>' +
@@ -343,10 +361,6 @@
           '<div class="row" style="align-items:center">' +
             '<span class="level-chip"><span class="num">' + lv.number + '</span>' + esc(lv.name) + '</span>' +
             '<span class="spacer"></span>' +
-            '<span class="chip">' + lv.emoji + '</span>' +
-          '</div>' +
-          '<div class="xp-row">' +
-            '<span class="who">' + esc(g.players[0]) + '의 경험치</span>' +
             '<span class="val" id="xp-val">' + lv.into + ' / ' + lv.need + '</span>' +
           '</div>' +
           '<div class="xp-bar"><i id="xp-fill" style="width:' + Math.round(lv.ratio * 100) + '%"></i></div>' +
@@ -358,7 +372,7 @@
             '<span class="combo-title" id="combo-title">' +
               (g.streak > 0
                 ? g.streak + '연속! 보물상자까지 ' + chest.left + '개'
-                : '연속으로 맞히면 보물상자가 열려요') +
+                : (FQ.progress.CHEST_EVERY || 5) + '연속이면 보물상자가 열려요') +
             '</span>' +
             '<span class="combo-bar"><i id="combo-fill" style="width:' + Math.round(chest.ratio * 100) + '%"></i></span>' +
           '</span>' +

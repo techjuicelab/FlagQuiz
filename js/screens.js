@@ -7,10 +7,9 @@
   var CONTINENTS = ['all', '아시아', '유럽', '아프리카', '북아메리카', '남아메리카', '오세아니아'];
   var dexFilter = { continent: 'all', query: '', onlyWrong: false, onlyLocked: false };
 
-  /** 스티커 판 위쪽: 모은 개수와 대륙별 진행 */
+  /** 스티커 판 위쪽: 모은 개수 */
   function stickerHeader() {
     var st = FQ.progress.stickers();
-    var conts = Object.keys(st.byContinent);
     return '<div class="card section">' +
       '<div class="row" style="align-items:baseline">' +
         '<b style="font-size:1.15rem">모은 스티커 ' + st.owned + ' / ' + st.total + '</b>' +
@@ -18,12 +17,6 @@
         '<span class="small muted">' + st.left + '개 남았어요</span>' +
       '</div>' +
       '<div class="xp-bar" style="margin-top:8px"><i style="width:' + Math.round(st.ratio * 100) + '%"></i></div>' +
-      '<div class="pill-grid" style="margin-top:12px">' +
-        conts.map(function (name) {
-          var b = st.byContinent[name];
-          return '<span class="mini-chip">' + esc(name) + ' ' + b.owned + '/' + b.total + '</span>';
-        }).join('') +
-      '</div>' +
     '</div>';
   }
 
