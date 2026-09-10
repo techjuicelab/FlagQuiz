@@ -62,6 +62,10 @@
         playerCard(s) +
         dailyCard() +
 
+        '<div class="home-cols">' +
+
+        '<div class="col">' +
+
         '<div class="card section">' +
           '<h3>누가 하나요?</h3>' +
           '<div class="field">' +
@@ -87,6 +91,9 @@
           '</div>' +
           (s.mode === 'voice' ? voiceNotice() : '') +
         '</div>' +
+
+        '</div>' +
+        '<div class="col">' +
 
         '<div class="card section">' +
           '<h3>난이도</h3>' +
@@ -140,6 +147,9 @@
         (wrongCount > 0
           ? '<button class="btn btn-big" id="review" type="button" style="width:100%;margin-top:12px">📝 틀렸던 ' + wrongCount + '개 나라 복습하기</button>'
           : '') +
+
+        '</div>' +
+        '</div>' +
       '</section>';
 
     var m = ui.setMain(html);

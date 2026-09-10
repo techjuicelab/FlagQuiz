@@ -1,0 +1,133 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    .ip-root {
+      font-family: "Pretendard", "Pretendard Variable", -apple-system, BlinkMacSystemFont,
+        "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
+      word-break: keep-all;
+      -webkit-font-smoothing: antialiased;
+    }
+    .ip-root, .ip-root * { box-sizing: border-box; }
+    a { color: #4f7cff; } a:hover { color: #3b5fe0; }
+
+    @keyframes ip-drop { from { opacity: 0; transform: translateY(-14px); } to { opacity: 1; transform: none; } }
+    @keyframes ip-rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+    @keyframes ip-pop { from { opacity: 0; transform: scale(.94); } to { opacity: 1; transform: none; } }
+    @keyframes ip-fill { from { width: 0; } }
+    @keyframes ip-shine {
+      0% { transform: translateX(-120%); }
+      55%, 100% { transform: translateX(420%); }
+    }
+    @keyframes ip-ring {
+      0% { box-shadow: 0 0 0 0 rgba(255, 183, 3, .55); }
+      70% { box-shadow: 0 0 0 12px rgba(255, 183, 3, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(255, 183, 3, 0); }
+    }
+    @keyframes ip-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+    @keyframes ip-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+
+    .ip-head { animation: ip-drop .5s cubic-bezier(.2,.8,.3,1) both; }
+    .ip-combo { animation: ip-drop .5s cubic-bezier(.2,.8,.3,1) .08s both; }
+    .ip-stage { animation: ip-pop .55s cubic-bezier(.22,1.15,.36,1) .16s both; }
+    .ip-flag { animation: ip-float 5.5s ease-in-out 1s infinite; }
+    .ip-xp i { animation: ip-fill 1.4s cubic-bezier(.2,.8,.3,1) both; }
+    .ip-shine { animation: ip-shine 2.8s ease-in-out 1.4s infinite; }
+    .ip-now { animation: ip-ring 1.9s ease-out .6s infinite; }
+    .ip-flame { animation: ip-pulse 1.8s ease-in-out infinite; }
+    .ip-ans { animation: ip-rise .5s cubic-bezier(.2,.8,.3,1) both; }
+
+    @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+  </style>
+</helmet>
+<div class="ip-root" style="width: 1180px; min-height: 820px; background: #eef4ff; color: #1f2937; padding: 20px 40px 18px; display: flex; flex-direction: column; gap: 12px;">
+
+  <div style="display: flex; align-items: center; gap: 10px;">
+    <span style="font-size: 26px; line-height: 1;">🌍</span>
+    <span style="font-size: 21px; font-weight: 900; letter-spacing: -.03em;">세계 국기 퀴즈</span>
+    <span style="flex: 1 1 auto;"></span>
+    <span style="height: 44px; padding: 0 18px; border-radius: 999px; background: #ffffff; box-shadow: 0 6px 18px rgba(31,41,55,.10); display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 800;">📖 스티커 판</span>
+    <span style="height: 44px; padding: 0 18px; border-radius: 999px; background: #ffffff; box-shadow: 0 6px 18px rgba(31,41,55,.10); display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 800;">🏅 내 기록</span>
+  </div>
+
+  <div style="display: flex; align-items: center; gap: 12px;">
+    <span style="height: 44px; padding: 0 18px; border-radius: 999px; background: rgba(255,255,255,.7); display: flex; align-items: center; font-size: 15px; font-weight: 800; color: #6b7280;">← 그만하기</span>
+    <span style="height: 44px; padding: 0 20px; border-radius: 999px; background: #ffffff; box-shadow: 0 6px 18px rgba(31,41,55,.10); display: flex; align-items: center; font-size: 15px; font-weight: 900;">4 / 10</span>
+  </div>
+
+  <div class="ip-head" style="background: #ffffff; border-radius: 20px; box-shadow: 0 6px 18px rgba(31,41,55,.10); padding: 14px 18px; display: flex; flex-direction: column; gap: 10px;">
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+      <span style="height: 34px; display: inline-flex; align-items: center; gap: 9px; padding: 0 16px 0 6px; border-radius: 999px; background: linear-gradient(135deg, #4f7cff, #3b5fe0); box-shadow: 0 4px 12px rgba(79,124,255,.3);">
+        <span style="width: 26px; height: 26px; border-radius: 999px; background: rgba(255,255,255,.25); color: #ffffff; font-size: 14px; font-weight: 900; display: flex; align-items: center; justify-content: center;">4</span>
+        <span style="color: #ffffff; font-size: 15px; font-weight: 800; letter-spacing: -.02em;">나침반 탐험가</span>
+      </span>
+      <span style="font-size: 15px; font-weight: 900; color: #3b5fe0;">340 / 500</span>
+    </div>
+    <div class="ip-xp" style="height: 14px; border-radius: 999px; background: #e5e7eb; overflow: hidden;">
+      <i style="display: block; width: 68%; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #4f7cff, #3b5fe0); position: relative; overflow: hidden;">
+        <span class="ip-shine" style="position: absolute; top: 0; left: 0; width: 30%; height: 100%; background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,.75), rgba(255,255,255,0));"></span>
+      </i>
+    </div>
+  </div>
+
+  <div class="ip-combo" style="background: linear-gradient(135deg, rgba(255,183,3,.10), rgba(255,183,3,.26)), #ffffff; border: 1px solid rgba(255,183,3,.45); border-radius: 20px; box-shadow: 0 6px 18px rgba(31,41,55,.10); padding: 10px 18px; display: flex; align-items: center; gap: 14px;">
+    <span class="ip-flame" style="width: 42px; height: 42px; flex: 0 0 42px; border-radius: 999px; background: linear-gradient(135deg, #ffb703, #ef4444); display: flex; align-items: center; justify-content: center; font-size: 21px;">🔥</span>
+    <span style="flex: 1 1 auto; display: flex; flex-direction: column; gap: 6px; min-width: 0;">
+      <span style="font-size: 15px; font-weight: 900; letter-spacing: -.02em;">3연속! 보물상자까지 2개</span>
+      <span style="height: 8px; border-radius: 999px; background: #ffffff; overflow: hidden; display: block;">
+        <i style="display: block; width: 60%; height: 100%; border-radius: 999px; background: #ffb703;"></i>
+      </span>
+    </span>
+    <span style="font-size: 24px; line-height: 1;">🎁</span>
+  </div>
+
+  <div style="display: flex; align-items: center; gap: 7px;">
+    <span style="flex: 1 1 0; height: 12px; border-radius: 999px; background: #4f7cff;"></span>
+    <span style="flex: 1 1 0; height: 12px; border-radius: 999px; background: #4f7cff;"></span>
+    <span style="flex: 1 1 0; height: 12px; border-radius: 999px; background: #4f7cff;"></span>
+    <span class="ip-now" style="flex: 1.6 1 0; height: 12px; border-radius: 999px; background: #ffb703;"></span>
+    <span style="flex: 1 1 0; height: 12px; border-radius: 999px; background: #e5e7eb;"></span>
+    <span style="flex: 1 1 0; height: 12px; border-radius: 999px; background: #e5e7eb;"></span>
+    <span style="flex: 1 1 0; height: 12px; border-radius: 999px; background: #e5e7eb;"></span>
+    <span style="flex: 1 1 0; height: 12px; border-radius: 999px; background: #e5e7eb;"></span>
+    <span style="flex: 1 1 0; height: 12px; border-radius: 999px; background: #e5e7eb;"></span>
+    <span style="flex: 1 1 0; height: 12px; border-radius: 999px; background: #e5e7eb;"></span>
+  </div>
+
+  <div style="flex: 1 1 auto; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; align-items: center; min-height: 0;">
+
+    <div class="ip-stage" style="background: #ffffff; border-radius: 24px; box-shadow: 0 14px 40px rgba(31,41,55,.16); padding: 20px; display: flex; flex-direction: column; align-items: center; gap: 14px;">
+      <span style="font-size: 17px; font-weight: 800; color: #6b7280; letter-spacing: -.02em;">이 국기는 어느 나라일까요?</span>
+      <span class="ip-flag" style="width: 100%; max-width: 420px; aspect-ratio: 4 / 3; border-radius: 12px; border: 1px solid #e5e7eb; background: #f8fafc; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+        <span style="width: 300px; height: 200px; border-radius: 6px; overflow: hidden; box-shadow: 0 6px 18px rgba(31,41,55,.14); display: block; background: linear-gradient(180deg, #ff9933 0 33.33%, #ffffff 33.33% 66.66%, #138808 66.66%); position: relative;">
+          <span style="position: absolute; left: 50%; top: 50%; width: 56px; height: 56px; border-radius: 999px; border: 5px solid #000080; transform: translate(-50%, -50%); display: block;"></span>
+        </span>
+      </span>
+      <span style="height: 36px; padding: 0 14px; border-radius: 999px; background: #f8fafc; border: 1px solid #e5e7eb; display: inline-flex; align-items: center; gap: 7px; font-size: 14px; font-weight: 800; color: #6b7280;">🚩 아시아 · 가운데에 파란 바퀴가 있어요</span>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px;">
+        <span class="ip-ans" style="animation-delay: .24s; min-height: 116px; border-radius: 20px; background: #ffffff; box-shadow: 0 6px 18px rgba(31,41,55,.10); display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 22px; font-weight: 800; letter-spacing: -.03em;"><span style="font-size: 15px; font-weight: 800; color: #6b7280;">1</span>인도</span>
+        <span class="ip-ans" style="animation-delay: .3s; min-height: 116px; border-radius: 20px; background: #ffffff; box-shadow: 0 6px 18px rgba(31,41,55,.10); display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 22px; font-weight: 800; letter-spacing: -.03em;"><span style="font-size: 15px; font-weight: 800; color: #6b7280;">2</span>말레이시아</span>
+        <span class="ip-ans" style="animation-delay: .36s; min-height: 116px; border-radius: 20px; background: #ffffff; box-shadow: 0 6px 18px rgba(31,41,55,.10); display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 22px; font-weight: 800; letter-spacing: -.03em;"><span style="font-size: 15px; font-weight: 800; color: #6b7280;">3</span>대한민국</span>
+        <span class="ip-ans" style="animation-delay: .42s; min-height: 116px; border-radius: 20px; background: #ffffff; box-shadow: 0 6px 18px rgba(31,41,55,.10); display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 22px; font-weight: 800; letter-spacing: -.03em;"><span style="font-size: 15px; font-weight: 800; color: #6b7280;">4</span>튀르키예</span>
+      </div>
+      <div class="ip-ans" style="animation-delay: .48s; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px;">
+        <span style="min-height: 56px; border-radius: 999px; background: #ffffff; border: 2px solid #ffe2a8; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 16px; font-weight: 800;">💡 힌트 보기</span>
+        <span style="min-height: 56px; border-radius: 999px; background: #ffffff; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 16px; font-weight: 800; color: #6b7280;">🤷 모르겠어요</span>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

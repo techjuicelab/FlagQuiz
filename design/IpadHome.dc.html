@@ -1,0 +1,251 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    .ih-root {
+      font-family: "Pretendard", "Pretendard Variable", -apple-system, BlinkMacSystemFont,
+        "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
+      word-break: keep-all;
+      -webkit-font-smoothing: antialiased;
+    }
+    .ih-root, .ih-root * { box-sizing: border-box; }
+    a { color: #4f7cff; } a:hover { color: #3b5fe0; }
+
+    @keyframes ih-drop { from { opacity: 0; transform: translateY(-14px); } to { opacity: 1; transform: none; } }
+    @keyframes ih-rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+    @keyframes ih-fill { from { width: 0; } }
+    @keyframes ih-ring { from { --p: 0; } }
+    @keyframes ih-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+    @keyframes ih-shine { 0% { transform: translateX(-120%); } 55%, 100% { transform: translateX(420%); } }
+
+    .ih-card { animation: ih-rise .5s cubic-bezier(.2,.8,.3,1) both; }
+    .ih-top { animation: ih-drop .5s cubic-bezier(.2,.8,.3,1) both; }
+    .ih-bar i { animation: ih-fill 1.2s cubic-bezier(.2,.8,.3,1) .3s both; }
+    .ih-avatar { animation: ih-float 4.4s ease-in-out infinite; }
+    .ih-shine { animation: ih-shine 3.2s ease-in-out 1.4s infinite; }
+
+    .ih-h3 { margin: 0 0 12px; font-size: 15px; font-weight: 900; color: #6b7280; letter-spacing: -.02em; }
+    .ih-pill { height: 44px; padding: 0 18px; border-radius: 999px; background: #ffffff; border: 1.5px solid #e5e7eb; display: inline-flex; align-items: center; font-size: 14px; font-weight: 800; color: #6b7280; letter-spacing: -.02em; }
+    .ih-pill-on { background: linear-gradient(135deg, #4f7cff, #3b5fe0); border-color: transparent; color: #ffffff; box-shadow: 0 6px 18px rgba(79,124,255,.28); }
+    .ih-mode { min-height: 74px; border-radius: 16px; background: #ffffff; border: 2px solid #e5e7eb; box-shadow: 0 6px 18px rgba(31,41,55,.10); display: flex; align-items: center; gap: 12px; padding: 0 14px; }
+    .ih-mode-on { border-color: #4f7cff; }
+    .ih-emo { width: 38px; height: 38px; flex: 0 0 38px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 19px; }
+
+    @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+  </style>
+</helmet>
+<div class="ih-root" style="width: 1180px; min-height: 880px; background: #eef4ff; color: #1f2937; padding: 20px 40px 24px; display: flex; flex-direction: column; gap: 16px;">
+
+  <div class="ih-top" style="display: flex; align-items: center; gap: 10px;">
+    <span style="font-size: 26px; line-height: 1;">🌍</span>
+    <span style="font-size: 21px; font-weight: 900; letter-spacing: -.03em;">세계 국기 퀴즈</span>
+    <span style="flex: 1 1 auto;"></span>
+    <span style="height: 44px; padding: 0 18px; border-radius: 999px; background: #ffffff; box-shadow: 0 6px 18px rgba(31,41,55,.10); display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 800;">📖 스티커 판</span>
+    <span style="height: 44px; padding: 0 18px; border-radius: 999px; background: #ffffff; box-shadow: 0 6px 18px rgba(31,41,55,.10); display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 800;">🏅 내 기록</span>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; align-items: start;">
+
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+
+      <div class="ih-card" style="background: #ffffff; border-radius: 20px; box-shadow: 0 6px 18px rgba(31,41,55,.10); padding: 16px; display: flex; align-items: center; gap: 16px;">
+        <span style="position: relative; width: 68px; height: 68px; flex: 0 0 68px;">
+          <span style="position: absolute; inset: 0; border-radius: 999px; background: conic-gradient(from -90deg, #ffb703 0deg, #ffb703 245deg, #e5e7eb 245deg 360deg); display: block;"></span>
+          <span class="ih-avatar" style="position: absolute; inset: 6px; border-radius: 999px; background: #f8fafc; border: 1px solid #e5e7eb; display: flex; align-items: center; justify-content: center; font-size: 28px;">🧭</span>
+        </span>
+        <span style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 9px;">
+          <span style="display: flex; align-items: baseline; gap: 9px;">
+            <span style="font-size: 22px; font-weight: 900; letter-spacing: -.03em;">민규</span>
+            <span style="font-size: 14px; font-weight: 800; color: #3b5fe0;">· 레벨 4 나침반 탐험가</span>
+          </span>
+          <span style="display: flex; gap: 9px;">
+            <span style="height: 32px; padding: 0 14px; border-radius: 999px; background: #fff7e6; border: 1px solid #ffe2a8; display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 900;">⭐ 별 17개</span>
+            <span style="height: 32px; padding: 0 14px; border-radius: 999px; background: #fee2e2; display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 900;">🔥 최고 9연속</span>
+          </span>
+        </span>
+      </div>
+
+      <div class="ih-card" style="animation-delay: .06s; background: linear-gradient(135deg, #fff3d1, #ffe9a8); border-radius: 20px; box-shadow: 0 6px 18px rgba(31,41,55,.10); padding: 16px; display: flex; align-items: center; gap: 14px;">
+        <span style="font-size: 28px; line-height: 1;">🎯</span>
+        <span style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 8px;">
+          <span style="font-size: 16px; font-weight: 900; letter-spacing: -.03em;">오늘의 도전 · 아프리카 나라 5개 맞히기</span>
+          <span class="ih-bar" style="height: 10px; border-radius: 999px; background: #ffffff; overflow: hidden; display: block;">
+            <i style="display: block; width: 60%; height: 100%; border-radius: 999px; background: #ffb703;"></i>
+          </span>
+        </span>
+        <span style="font-size: 16px; font-weight: 900;">3 / 5</span>
+      </div>
+
+      <div class="ih-card" style="animation-delay: .12s; background: #ffffff; border-radius: 20px; box-shadow: 0 6px 18px rgba(31,41,55,.10); padding: 16px;">
+        <h3 class="ih-h3">어떻게 맞힐까요?</h3>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;">
+          <span class="ih-mode ih-mode-on">
+            <span class="ih-emo" style="background: linear-gradient(135deg, #4f7cff, #3b5fe0);">🚩</span>
+            <span style="display: flex; flex-direction: column; gap: 3px; min-width: 0;">
+              <span style="font-size: 15px; font-weight: 900; letter-spacing: -.03em;">국기 보고 나라 고르기</span>
+              <span style="font-size: 12px; font-weight: 700; color: #6b7280;">네 개 중에서 골라요</span>
+            </span>
+          </span>
+          <span class="ih-mode">
+            <span class="ih-emo" style="background: #eef4ff;">🔎</span>
+            <span style="display: flex; flex-direction: column; gap: 3px; min-width: 0;">
+              <span style="font-size: 15px; font-weight: 900; letter-spacing: -.03em;">나라 보고 국기 찾기</span>
+              <span style="font-size: 12px; font-weight: 700; color: #6b7280;">이름을 보고 국기를 골라요</span>
+            </span>
+          </span>
+          <span class="ih-mode">
+            <span class="ih-emo" style="background: #fee2e2;">🎤</span>
+            <span style="display: flex; flex-direction: column; gap: 3px; min-width: 0;">
+              <span style="font-size: 15px; font-weight: 900; letter-spacing: -.03em;">말로 답하기</span>
+              <span style="font-size: 12px; font-weight: 700; color: #6b7280;">누르지 않고 바로 말하면 돼요</span>
+            </span>
+          </span>
+          <span class="ih-mode">
+            <span class="ih-emo" style="background: #dcfce7;">⌨️</span>
+            <span style="display: flex; flex-direction: column; gap: 3px; min-width: 0;">
+              <span style="font-size: 15px; font-weight: 900; letter-spacing: -.03em;">이름 써서 맞히기</span>
+              <span style="font-size: 12px; font-weight: 700; color: #6b7280;">글자로 입력해요</span>
+            </span>
+          </span>
+          <span class="ih-mode">
+            <span class="ih-emo" style="background: #fff7e6;">🏙️</span>
+            <span style="display: flex; flex-direction: column; gap: 3px; min-width: 0;">
+              <span style="font-size: 15px; font-weight: 900; letter-spacing: -.03em;">수도 맞히기</span>
+              <span style="font-size: 12px; font-weight: 700; color: #6b7280;">나라의 수도를 골라요</span>
+            </span>
+          </span>
+        </div>
+      </div>
+
+      <div class="ih-card" style="animation-delay: .18s; background: #ffffff; border-radius: 20px; box-shadow: 0 6px 18px rgba(31,41,55,.10); padding: 16px;">
+        <h3 class="ih-h3">대륙별 모으기</h3>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 20px;">
+          <span style="display: flex; flex-direction: column; gap: 6px;">
+            <span style="display: flex; align-items: baseline; gap: 8px;">
+              <span style="font-size: 13px; font-weight: 800; letter-spacing: -.02em;">아시아</span>
+              <span style="margin-left: auto; font-size: 12px; font-weight: 800; color: #6b7280;">21/46</span>
+            </span>
+            <span class="ih-bar" style="height: 7px; border-radius: 999px; background: #e5e7eb; overflow: hidden; display: block;"><i style="display: block; width: 46%; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #4f7cff, #3b5fe0);"></i></span>
+          </span>
+          <span style="display: flex; flex-direction: column; gap: 6px;">
+            <span style="display: flex; align-items: baseline; gap: 8px;">
+              <span style="font-size: 13px; font-weight: 800; letter-spacing: -.02em;">유럽</span>
+              <span style="margin-left: auto; font-size: 12px; font-weight: 800; color: #6b7280;">18/45</span>
+            </span>
+            <span class="ih-bar" style="height: 7px; border-radius: 999px; background: #e5e7eb; overflow: hidden; display: block;"><i style="display: block; width: 40%; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #4f7cff, #3b5fe0);"></i></span>
+          </span>
+          <span style="display: flex; flex-direction: column; gap: 6px;">
+            <span style="display: flex; align-items: baseline; gap: 8px;">
+              <span style="font-size: 13px; font-weight: 800; letter-spacing: -.02em;">아프리카</span>
+              <span style="margin-left: auto; font-size: 12px; font-weight: 800; color: #6b7280;">9/54</span>
+            </span>
+            <span class="ih-bar" style="height: 7px; border-radius: 999px; background: #e5e7eb; overflow: hidden; display: block;"><i style="display: block; width: 17%; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #4f7cff, #3b5fe0);"></i></span>
+          </span>
+          <span style="display: flex; flex-direction: column; gap: 6px;">
+            <span style="display: flex; align-items: baseline; gap: 8px;">
+              <span style="font-size: 13px; font-weight: 800; letter-spacing: -.02em;">북아메리카</span>
+              <span style="margin-left: auto; font-size: 12px; font-weight: 800; color: #6b7280;">8/23</span>
+            </span>
+            <span class="ih-bar" style="height: 7px; border-radius: 999px; background: #e5e7eb; overflow: hidden; display: block;"><i style="display: block; width: 35%; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #4f7cff, #3b5fe0);"></i></span>
+          </span>
+          <span style="display: flex; flex-direction: column; gap: 6px;">
+            <span style="display: flex; align-items: baseline; gap: 8px;">
+              <span style="font-size: 13px; font-weight: 800; letter-spacing: -.02em;">남아메리카</span>
+              <span style="margin-left: auto; font-size: 12px; font-weight: 800; color: #6b7280;">5/12</span>
+            </span>
+            <span class="ih-bar" style="height: 7px; border-radius: 999px; background: #e5e7eb; overflow: hidden; display: block;"><i style="display: block; width: 42%; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #4f7cff, #3b5fe0);"></i></span>
+          </span>
+          <span style="display: flex; flex-direction: column; gap: 6px;">
+            <span style="display: flex; align-items: baseline; gap: 8px;">
+              <span style="font-size: 13px; font-weight: 800; letter-spacing: -.02em;">오세아니아</span>
+              <span style="margin-left: auto; font-size: 12px; font-weight: 800; color: #6b7280;">2/14</span>
+            </span>
+            <span class="ih-bar" style="height: 7px; border-radius: 999px; background: #e5e7eb; overflow: hidden; display: block;"><i style="display: block; width: 14%; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #4f7cff, #3b5fe0);"></i></span>
+          </span>
+        </div>
+      </div>
+
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+
+      <div class="ih-card" style="animation-delay: .04s; background: #ffffff; border-radius: 20px; box-shadow: 0 6px 18px rgba(31,41,55,.10); padding: 16px;">
+        <h3 class="ih-h3">누가 하나요?</h3>
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <span style="font-size: 15px; font-weight: 800;">이름</span>
+          <span style="flex: 1 1 auto; height: 52px; border-radius: 14px; border: 1.5px solid #e5e7eb; background: #ffffff; display: flex; align-items: center; padding: 0 16px; font-size: 17px; font-weight: 800;">민규</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 12px; margin-top: 14px;">
+          <span style="width: 26px; height: 26px; border-radius: 8px; border: 2px solid #e5e7eb; display: block;"></span>
+          <span style="font-size: 15px; font-weight: 800;">둘이서 번갈아 대결하기</span>
+        </div>
+      </div>
+
+      <div class="ih-card" style="animation-delay: .1s; background: #ffffff; border-radius: 20px; box-shadow: 0 6px 18px rgba(31,41,55,.10); padding: 16px;">
+        <h3 class="ih-h3">난이도</h3>
+        <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+          <span class="ih-pill ih-pill-on">쉬움 · 유명한 나라</span>
+          <span class="ih-pill">보통 · 조금 더 많이</span>
+          <span class="ih-pill">어려움 · 194개국 전부</span>
+        </div>
+        <h3 class="ih-h3" style="margin-top: 18px;">대륙</h3>
+        <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+          <span class="ih-pill ih-pill-on">전체</span>
+          <span class="ih-pill">아시아</span>
+          <span class="ih-pill">유럽</span>
+          <span class="ih-pill">아프리카</span>
+          <span class="ih-pill">북아메리카</span>
+          <span class="ih-pill">남아메리카</span>
+          <span class="ih-pill">오세아니아</span>
+        </div>
+        <h3 class="ih-h3" style="margin-top: 18px;">몇 문제 풀까요?</h3>
+        <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+          <span class="ih-pill">5문제</span>
+          <span class="ih-pill ih-pill-on">10문제</span>
+          <span class="ih-pill">20문제</span>
+          <span class="ih-pill">전부 (194문제)</span>
+        </div>
+      </div>
+
+      <div class="ih-card" style="animation-delay: .16s; background: #ffffff; border-radius: 20px; box-shadow: 0 6px 18px rgba(31,41,55,.10); padding: 16px;">
+        <h3 class="ih-h3">설정</h3>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;">
+          <span style="display: flex; align-items: center; gap: 10px;">
+            <span style="width: 26px; height: 26px; border-radius: 8px; background: #4f7cff; display: flex; align-items: center; justify-content: center; color: #ffffff; font-size: 15px; font-weight: 900;">✓</span>
+            <span style="font-size: 14px; font-weight: 800;">🔔 효과음</span>
+          </span>
+          <span style="display: flex; align-items: center; gap: 10px;">
+            <span style="width: 26px; height: 26px; border-radius: 8px; background: #4f7cff; display: flex; align-items: center; justify-content: center; color: #ffffff; font-size: 15px; font-weight: 900;">✓</span>
+            <span style="font-size: 14px; font-weight: 800;">🔊 이름 읽어주기</span>
+          </span>
+          <span style="display: flex; align-items: center; gap: 10px;">
+            <span style="width: 26px; height: 26px; border-radius: 8px; background: #4f7cff; display: flex; align-items: center; justify-content: center; color: #ffffff; font-size: 15px; font-weight: 900;">✓</span>
+            <span style="font-size: 14px; font-weight: 800;">🔁 틀린 나라 더 자주</span>
+          </span>
+          <span style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 14px; font-weight: 800; color: #6b7280;">제한 시간</span>
+            <span class="ih-pill ih-pill-on" style="height: 36px; padding: 0 14px;">없음</span>
+          </span>
+        </div>
+      </div>
+
+      <div class="ih-card" style="animation-delay: .22s; min-height: 84px; border-radius: 20px; background: linear-gradient(135deg, #4f7cff, #3b5fe0); box-shadow: 0 10px 24px rgba(59,95,224,.34); display: flex; align-items: center; justify-content: center; gap: 12px; position: relative; overflow: hidden;">
+        <span class="ih-shine" style="position: absolute; top: 0; left: 0; width: 22%; height: 100%; background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,.42), rgba(255,255,255,0));"></span>
+        <span style="font-size: 26px; line-height: 1;">🎮</span>
+        <span style="font-size: 22px; font-weight: 900; color: #ffffff; letter-spacing: -.03em;">시작하기</span>
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>
