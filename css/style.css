@@ -343,11 +343,20 @@ a:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-
   .quiz-body {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: 20px;
-    align-items: start;
+    gap: 24px;
+    align-items: center;
   }
-  .quiz-body .flag-stage { margin-bottom: 0; position: sticky; top: 12px; }
-  .quiz-body .flag-img { max-width: 100%; }
+  .quiz-body .flag-stage { margin-bottom: 0; }
+  /* 국기는 화면 높이에 맞춰 잡는다. 놔두면 한 화면을 다 먹는다 */
+  .quiz-body .flag-img { max-width: 100%; max-height: 40vh; }
+  .quiz-body .flag-stage { padding: 16px; }
+  .quiz-body .answer-grid { gap: 16px; }
+  /* 국기가 큰 만큼 답 단추도 같이 커져야 균형이 맞는다 */
+  .quiz-body .answer-btn { min-height: 100px; font-size: 1.32rem; }
+  .quiz-body .answer-grid.grid-2 .answer-btn { min-height: 0; }
+  /* 힌트·모르겠어요도 답 단추와 같은 너비로 나란히 */
+  .quiz-body .row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .quiz-body .row .btn-sm { min-height: 56px; font-size: 1.05rem; }
 }
 
 .answer-grid { display: grid; gap: 12px; grid-template-columns: 1fr 1fr; }
@@ -740,11 +749,14 @@ a:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-
   font-weight: 900;
 }
 
+.game-head .val { font-size: .92rem; font-weight: 800; color: var(--primary); }
 .xp-row { display: flex; align-items: baseline; gap: 8px; margin-top: 10px; }
 .xp-row .who { font-size: .84rem; color: var(--text-soft); font-weight: 700; }
-.xp-row .val { margin-left: auto; font-size: .84rem; font-weight: 800; color: var(--primary); }
+.xp-row .val { margin-left: auto; font-size: .84rem; }
+.xp-row + .xp-bar { margin-top: 6px; }
 
 .xp-bar {
+  margin-top: 10px;
   height: 12px;
   background: var(--line);
   border-radius: 999px;
@@ -1015,3 +1027,80 @@ a:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-
 .new-stickers img { width: 100%; aspect-ratio: 4/3; object-fit: contain; border-radius: 5px; }
 .new-stickers .n { font-size: .78rem; font-weight: 800; margin-top: 4px; word-break: keep-all; }
 @keyframes slideIn { from { opacity: 0; transform: translateX(28px); } to { opacity: 1; transform: none; } }
+
+/* ---- 홈: 대륙별 모으기 ---- */
+.cont-card h3 { margin: 0 0 10px; }
+.cont-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 14px;
+}
+.cont-item { display: flex; flex-direction: column; gap: 5px; }
+.cont-top { display: flex; align-items: baseline; gap: 6px; }
+.cont-name { font-size: .82rem; font-weight: 800; letter-spacing: -.02em; }
+.cont-num { margin-left: auto; font-size: .76rem; font-weight: 800; color: var(--text-soft); }
+.cont-bar {
+  height: 7px;
+  border-radius: 999px;
+  background: var(--line);
+  overflow: hidden;
+}
+.cont-bar i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--primary), var(--primary-dark));
+  transition: width .6s cubic-bezier(.2, .8, .3, 1);
+}
+@media (max-width: 359px) { .cont-grid { grid-template-columns: 1fr; } }
+
+/* ==========================================================================
+   아이패드 — 손가락에 맞춘 크기와, 넓은 화면을 두 칸으로 쓰기
+   ========================================================================== */
+
+/* 아이패드는 화면이 넓으니 글자와 단추도 그만큼 키운다.
+   폰 크기 그대로 두면 큰 화면에서 오히려 작고 멀어 보인다. */
+@media (min-width: 744px) {
+  .app { max-width: 1040px; }
+  .topbar h1 { font-size: 1.45rem; }
+  .topbar .globe { font-size: 1.8rem; }
+  .topbar .btn-sm { padding: 12px 18px; font-size: 1rem; }
+
+  .flag-stage .q-label { font-size: 1.06rem; }
+  .answer-btn { min-height: 84px; font-size: 1.3rem; }
+  .btn-big { min-height: 76px; font-size: 1.32rem; }
+  .big-name { font-size: 2.6rem; }
+
+  .mode-card .t { font-size: 1.06rem; }
+  .pill { min-height: 48px; font-size: .98rem; }
+  .text-input { min-height: 54px; font-size: 1.1rem; }
+  .level-chip { font-size: 1.05rem; }
+  .game-head .val { font-size: 1.05rem; }
+  .combo-title { font-size: 1.02rem; }
+  .cont-name { font-size: .92rem; }
+  .cont-num { font-size: .86rem; }
+}
+
+/* 아이패드 세로: 폰과 같은 한 칸이지만, 국기가 화면을 다 먹어
+   보기 네 개가 아래로 밀려나지 않게 높이를 잡는다 */
+@media (min-width: 744px) and (orientation: portrait) {
+  .flag-img { max-width: 100%; max-height: 34vh; }
+  .flag-stage { padding: 16px; }
+  .mode-grid { grid-template-columns: 1fr 1fr; }
+}
+
+/* 좁은 화면에서는 두 칸 껍데기가 없는 셈 치고 지금 순서 그대로 흐른다 */
+.home-cols > .col { display: contents; }
+
+/* 아이패드 가로: 한 칸으로 길게 늘어놓으면 한참 내려야 한다.
+   설정 화면을 두 칸으로 갈라 한눈에 들어오게 한다. */
+@media (min-width: 1000px) and (orientation: landscape) {
+  .home-cols {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 20px;
+    align-items: start;
+  }
+  .home-cols > .col { display: flex; flex-direction: column; gap: 16px; }
+  .home-cols .section { margin: 0; }
+}
