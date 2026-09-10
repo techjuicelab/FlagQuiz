@@ -42,6 +42,7 @@
     timeLeft: 0,
     listenOn: false,
     listenTimer: null,
+    lastSpeech: { lines: [], opts: {} },
     lastSummary: null,
     lastBadges: []
   };
@@ -319,8 +320,10 @@
 
     if (q.mode === 'voice') {
       state.listenOn = true;
-      // 앞 문제의 읽어주기가 끝난 뒤 듣기 시작해야 제 목소리를 받아 적지 않는다
-      state.listenTimer = global.setTimeout(startListening, 350);
+      audio.stopSpeaking();
+      // 단추를 누른 그 흐름 안에서 시작해야 사파리가 마이크 권한을 다시 묻지 않는다.
+      // 늦게(setTimeout) 시작하면 사용자가 누른 동작과 끊겨 매번 허용을 물어본다.
+      startListening();
     }
   }
 
@@ -553,7 +556,10 @@
     if (state.answered) return;
     state.answered = true;
     stopTimer();
-    stopListening();
+    // 마이크는 showFeedback 에서 놓는다. 놓인 것을 확인한 뒤에 읽어 줘야
+    // 아이폰·아이패드에서 소리가 사라지지 않는다.
+    state.listenOn = false;
+    if (state.listenTimer) { global.clearTimeout(state.listenTimer); state.listenTimer = null; }
 
     var g = state.game;
     var res = g.submit(payload, state.usedHint);
@@ -613,17 +619,21 @@
     // 소리로도 알려 준다.
     //   맞혔을 때  → "정답!" 하고 외친 뒤 나라 이름을 읽어 준다
     //   모를 때·틀렸을 때 → 나라 이름을 두 번 읽고 국기 특징을 짧게 알려 준다
-    if (s.speak) {
-      setTimeout(function () {
-        if (res.correct) {
-          audio.speak(cheerWord || '정답', { rate: 1.02, pitch: 1.35 });
-          audio.speak(c.ko, { queue: true, rate: 0.95, pitch: 1.1 });
-        } else {
-          audio.speak(c.ko + '. ' + c.ko + '.', { rate: 0.92, pitch: 1.1 });
-          audio.speak(c.flagHint, { queue: true, rate: 0.95 });
-        }
-      }, res.correct ? 300 : 480);
-    }
+    state.lastSpeech = res.correct
+      ? { lines: [cheerWord || '정답', c.ko], opts: { rates: [1.02, 0.95], pitches: [1.35, 1.1] } }
+      : { lines: [c.ko, c.ko, c.flagHint], opts: { rate: 0.93, pitch: 1.1 } };
+
+    // 마이크를 완전히 놓은 뒤에 읽어 준다.
+    // 말하기 모드에서 곧바로 읽으면 아이폰·아이패드는 소리를 조용히 버린다.
+    FQ.speech.stopAnd(function () {
+      var micBtn2 = ui.$('#mic');
+      if (micBtn2) micBtn2.classList.remove('listening');
+      if (store.settings().speak) {
+        global.setTimeout(function () {
+          audio.say(state.lastSpeech.lines, state.lastSpeech.opts);
+        }, res.correct ? 180 : 120);
+      }
+    });
 
     var html =
       '<div class="feedback ' + (res.correct ? 'ok' : 'no') + '">' +
@@ -645,6 +655,7 @@
           '<div class="remember-box">' +
             '<div class="remember-name">' + esc(c.ko) + ' · ' + esc(c.ko) + '</div>' +
             '<div class="remember-hint">🚩 ' + esc(c.flagHint) + '</div>' +
+            '<button class="btn btn-sm" id="replay" type="button" style="margin-top:8px">🔊 다시 들려주기</button>' +
             '<div class="remember-tip small">이렇게 기억해 두면 다음엔 맞힐 수 있어요!</div>' +
           '</div>') +
         '<div class="fact-box">💡 ' + esc(c.fact) + '</div>' +
@@ -655,6 +666,12 @@
 
     var area = ui.$('#feedback-area');
     area.innerHTML = html;
+    var replay = ui.$('#replay', area);
+    if (replay) {
+      replay.addEventListener('click', function () {
+        audio.say(state.lastSpeech.lines, state.lastSpeech.opts);
+      });
+    }
     var next = ui.$('#next');
     next.addEventListener('click', goNext);
     next.focus();

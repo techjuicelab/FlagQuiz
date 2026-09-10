@@ -182,13 +182,13 @@
   /**
    * 소리로 읽어 준다.
    * opts.queue 를 주면 앞의 말을 끊지 않고 뒤에 이어 붙인다.
-   * ("정답!" 을 먼저 외치고 이어서 나라 이름을 읽어 주는 데 쓴다)
    */
   function speak(text, opts) {
-    if (!speakEnabled || !synth || !text) return;
+    if (!speakEnabled || !synth || !text) return null;
     opts = opts || {};
     try {
       if (!opts.queue) synth.cancel();
+      if (synth.paused && synth.resume) synth.resume();   // 사파리가 멈춰 둔 경우
       var u = new global.SpeechSynthesisUtterance(text);
       u.lang = opts.lang || 'ko-KR';
       u.rate = opts.rate || 0.95;
@@ -199,7 +199,52 @@
         if (voices[i].lang && voices[i].lang.toLowerCase().indexOf(want) === 0) { u.voice = voices[i]; break; }
       }
       synth.speak(u);
-    } catch (e) { /* 브라우저가 지원하지 않으면 조용히 넘어간다 */ }
+      return u;
+    } catch (e) {
+      return null;   // 브라우저가 지원하지 않으면 조용히 넘어간다
+    }
+  }
+
+  /**
+   * 여러 줄을 차례로 읽어 준다.
+   *
+   * 아이폰·아이패드는 말하기(음성 인식) 직후에 읽어주기를 시키면 소리가
+   * 조용히 사라질 때가 있다. 첫 줄이 실제로 시작됐는지 지켜보다가
+   * 시작되지 않으면 한 번 더 시도한다.
+   *
+   *   say(['정답', '브라질'])
+   *   say(['브라질', '브라질', '초록 바탕에 …'], { rate: 0.92 })
+   */
+  function say(lines, opts) {
+    if (!speakEnabled || !synth) return;
+    var list = (lines || []).filter(function (t) { return t; });
+    if (!list.length) return;
+    opts = opts || {};
+
+    function run(isRetry) {
+      var started = false;
+      for (var i = 0; i < list.length; i++) {
+        var lineOpts = {
+          queue: i > 0,
+          rate: (opts.rates && opts.rates[i]) || opts.rate,
+          pitch: (opts.pitches && opts.pitches[i]) || opts.pitch
+        };
+        var u = speak(list[i], lineOpts);
+        if (i === 0 && u) {
+          u.onstart = function () { started = true; };
+        }
+      }
+      if (isRetry) return;
+      // 첫 줄이 시작되지 않았으면 소리 장치가 아직 안 돌아온 것이다. 한 번 더.
+      global.setTimeout(function () {
+        if (!started && speakEnabled && synth) {
+          try { synth.cancel(); } catch (e) {}
+          run(true);
+        }
+      }, 700);
+    }
+
+    run(false);
   }
 
   function stopSpeaking() {
@@ -220,6 +265,7 @@
   FQ.audio = {
     play: play,
     speak: speak,
+    say: say,
     stopSpeaking: stopSpeaking,
     canSpeak: canSpeak,
     setEnabled: setEnabled,
