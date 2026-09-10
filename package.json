@@ -5,7 +5,12 @@
   "description": "아이와 함께 세계 국기와 나라 이름을 배우는 한국어 국기 맞히기 게임",
   "scripts": {
     "start": "node scripts/serve.mjs",
-    "test": "node tests/run.mjs"
+    "build": "npm run voice:check && node scripts/build-site.mjs",
+    "test": "node tests/run.mjs && node --test tests/*.test.mjs",
+    "voice:plan": "node scripts/generate-voice.mjs --plan",
+    "voice:check": "node scripts/generate-voice.mjs --check",
+    "voice:generate": "op run --env-file=env/typecast.op.env -- node scripts/generate-voice.mjs",
+    "voice:sample": "op run --env-file=env/typecast.op.env -- node scripts/generate-voice.mjs --sample"
   },
   "license": "MIT"
 }

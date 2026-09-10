@@ -21,6 +21,9 @@ const TYPES = {
   '.svg': 'image/svg+xml',
   '.json': 'application/json; charset=utf-8',
   '.png': 'image/png',
+  '.mp3': 'audio/mpeg',
+  '.wav': 'audio/wav',
+  '.m4a': 'audio/mp4',
   '.ico': 'image/x-icon',
   '.md': 'text/markdown; charset=utf-8'
 };

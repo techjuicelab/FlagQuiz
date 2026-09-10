@@ -36,7 +36,7 @@
   /* --------- 나라 상세 모달 --------- */
   function closeModal() {
     var back = $('.modal-back');
-    if (back) back.remove();
+    if (back) { FQ.audio.stopSpeaking(); back.remove(); }
   }
 
   function countryModal(country) {
@@ -62,12 +62,24 @@
         '</ul>' +
         '<div class="fact-box">💡 ' + esc(country.fact) + '</div>' +
         '<div class="hint-box" style="margin-top:10px">🚩 ' + esc(country.flagHint) + '</div>' +
+        '<button class="btn btn-sm" data-explain type="button" style="margin-top:10px">🔊 설명 듣기</button>' +
+        '<div class="small muted" data-audio-status role="status"></div>' +
         '<button class="btn btn-primary btn-big" data-close-modal type="button" style="width:100%;margin-top:14px">닫기</button>' +
       '</div>';
     back.addEventListener('click', function (ev) {
       if (ev.target === back || ev.target.closest('[data-close-modal]')) closeModal();
       var sp = ev.target.closest('[data-speak]');
-      if (sp) FQ.audio.speak(sp.getAttribute('data-speak'));
+      var explain = ev.target.closest('[data-explain]');
+      if (sp || explain) {
+        FQ.storage.updateSettings({ speak: true });
+        FQ.audio.setSpeakEnabled(true);
+        var status = back.querySelector('[data-audio-status]');
+        if (status) status.textContent = '';
+        var lines = explain ? [country.ko, country.flagHint, country.fact] : [country.ko];
+        FQ.audio.say(lines, {}, function () {
+          if (status) status.textContent = '소리를 재생하지 못했어요. 연결과 음량을 확인하고 다시 눌러 주세요.';
+        });
+      }
     });
     doc.body.appendChild(back);
     var btn = back.querySelector('[data-close-modal]');

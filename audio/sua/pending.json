@@ -1,0 +1,10 @@
+{
+  "voice": {
+    "name": "Sua",
+    "id": "tc_6699eb5749dfac016c29445c",
+    "model": "ssfm-v30"
+  },
+  "count": 0,
+  "characters": 0,
+  "entries": []
+}

@@ -11,6 +11,22 @@
   var unlocked = false;
   var speechPrimed = false;
   var lastPrime = -99999;
+  // 화면을 옮기거나 다시 듣기를 누르면 이전 읽어주기의 지연·재시도를 함께 무효화한다.
+  var speechGeneration = 0;
+  var speechTimers = [];
+  function clearSpeechWork() {
+    speechGeneration += 1;
+    speechTimers.forEach(function (timer) { global.clearTimeout(timer); });
+    speechTimers = [];
+  }
+  function afterSpeech(delay, callback) {
+    var token = speechGeneration;
+    var timer = global.setTimeout(function () {
+      speechTimers = speechTimers.filter(function (id) { return id !== timer; });
+      if (token === speechGeneration) callback();
+    }, delay);
+    speechTimers.push(timer);
+  }
   function tick() { return (global.performance && global.performance.now) ? global.performance.now() : +new Date(); }
 
   var synth = global.speechSynthesis || null;
@@ -205,6 +221,7 @@
   function speak(text, opts) {
     if (!speakEnabled || !synth || !text) return null;
     opts = opts || {};
+    if (!opts.queue) stopSpeaking();
     try {
       if (synth.paused && synth.resume) synth.resume();   // 사파리가 멈춰 둔 경우
       var u = new global.SpeechSynthesisUtterance(text);
@@ -239,6 +256,8 @@
     var list = (lines || []).filter(function (t) { return t; });
     if (!list.length) return;
     opts = opts || {};
+    clearSpeechWork();
+    var token = speechGeneration;
     var started = false;
     var attempt = 0;
 
@@ -246,16 +265,18 @@
       for (var i = 0; i < list.length; i++) {
         var u = speak(list[i], {
           rate: (opts.rates && opts.rates[i]) || opts.rate,
-          pitch: (opts.pitches && opts.pitches[i]) || opts.pitch
+          pitch: (opts.pitches && opts.pitches[i]) || opts.pitch,
+          queue: true
         });
-        if (i === 0 && u) u.onstart = function () { started = true; };
+        if (i === 0 && u) u.onstart = function () { if (token === speechGeneration) started = true; };
       }
     }
 
     function attemptOnce() {
+      if (token !== speechGeneration || !speakEnabled) return;
       attempt += 1;
       utter();
-      global.setTimeout(function () {
+      afterSpeech(600, function () {
         if (started || !speakEnabled || !synth) return;
         if (attempt < 3) {
           // 다시 시도할 때는 cancel 하지 않는다. 사파리는 cancel 뒤의 speak 을 삼킨다.
@@ -263,19 +284,20 @@
         } else if (onFail) {
           onFail();
         }
-      }, 600);
+      });
     }
 
     // 앞의 말이 남아 있으면 끊고 한 틈 뒤에 시작한다
     if (synth.speaking || synth.pending) {
       try { synth.cancel(); } catch (e) {}
-      global.setTimeout(attemptOnce, 150);
+      afterSpeech(150, attemptOnce);
     } else {
       attemptOnce();
     }
   }
 
   function stopSpeaking() {
+    clearSpeechWork();
     if (synth) { try { synth.cancel(); } catch (e) {} }
   }
 
@@ -296,6 +318,8 @@
     say: say,
     stopSpeaking: stopSpeaking,
     canSpeak: canSpeak,
+    isSpeaking: function () { return !!(synth && (synth.speaking || synth.pending)); },
+    preload: function () {},
     setEnabled: setEnabled,
     setSpeakEnabled: setSpeakEnabled,
     unlock: unlock,

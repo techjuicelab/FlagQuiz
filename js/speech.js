@@ -8,9 +8,10 @@
   var SR = global.SpeechRecognition || global.webkitSpeechRecognition;
 
   var rec = null;
-  var listening = false;
-  var handlers = {};
-  var pendingRelease = null;
+  var session = null;
+  var pendingStart = null;
+  var restartTimer = null;
+  var releaseVersion = 0;
 
   function supported() { return !!SR; }
 
@@ -55,112 +56,193 @@
     return !SR || !secureOk();
   }
 
-  /**
-   * 인식기는 한 번만 만들어 두고 계속 다시 쓴다.
-   * 새로 만들 때마다 사파리가 마이크 권한을 다시 물어보기 때문에,
-   * 문제마다 새 인식기를 만들면 아이가 매번 “허용”을 눌러야 한다.
-   */
-  function build(opts) {
-    if (rec) {
-      rec.continuous = !opts || opts.continuous !== false;
-      return rec;
-    }
-    var r = new SR();
+  /** 정상 종료한 인식기는 재사용하고, 종료 신호가 사라진 인식기만 교체한다. */
+  function build(current) {
+    var r = rec || new SR();
+    rec = r;
     r.lang = 'ko-KR';
-    // 계속 듣기: 버튼을 누르지 않아도 아이가 말하면 바로 알아듣게 한다
-    r.continuous = !opts || opts.continuous !== false;
+    r.continuous = current.handlers.continuous !== false;
     r.interimResults = true;
     r.maxAlternatives = 5;
+    r.onstart = function () {
+      if (session !== current || current.phase !== 'starting') return;
+      clearStartTimer(current);
+      current.phase = 'listening';
+      if (current.handlers.start) current.handlers.start();
+    };
     r.onresult = function (ev) {
+      if (session !== current || current.discardResults) return;
       var finals = [];
       var interim = '';
       for (var i = ev.resultIndex; i < ev.results.length; i++) {
         var result = ev.results[i];
         if (result.isFinal) {
           for (var j = 0; j < result.length; j++) finals.push(result[j].transcript);
-        } else {
+        } else if (result.length) {
           interim += result[0].transcript;
         }
       }
-      if (interim && handlers.interim) handlers.interim(interim.trim());
-      if (finals.length && handlers.result) handlers.result(finals.map(function (t) { return t.trim(); }));
+      if (interim && current.handlers.interim) current.handlers.interim(interim.trim());
+      // interim 콜백에서 정답 처리나 화면 이동으로 중단했을 수 있다.
+      if (session !== current || current.discardResults) return;
+      if (finals.length && current.handlers.result) current.handlers.result(finals.map(function (t) { return t.trim(); }));
     };
     r.onerror = function (ev) {
-      listening = false;
-      if (handlers.error) handlers.error(ev.error);
+      if (session !== current) return;
+      clearStartTimer(current);
+      current.phase = 'stopping';
+      current.discardResults = true;
+      current.error = ev.error;
+      waitForEnd(current);
+      if (!current.silent && current.handlers.error) current.handlers.error(ev.error);
     };
-    r.onend = function () {
-      listening = false;
-      releaseNow();
-      if (handlers.end) handlers.end();
-    };
-    rec = r;
+    r.onend = function () { finish(current, false); };
     return r;
   }
 
-  /** 마이크가 놓였다고 기다리던 쪽에 알려 준다 */
-  function releaseNow() {
-    if (!pendingRelease) return;
-    var fn = pendingRelease;
-    pendingRelease = null;
-    fn();
+  function cancelPendingStart() {
+    pendingStart = null;
+    if (restartTimer !== null) global.clearTimeout(restartTimer);
+    restartTimer = null;
+  }
+
+  function clearStartTimer(current) {
+    if (current.startTimer !== null) global.clearTimeout(current.startTimer);
+    current.startTimer = null;
+  }
+
+  /** 종료 안전장치는 해당 세션에만 속한다. 다음 문제의 콜백을 건드리지 않는다. */
+  function waitForEnd(current) {
+    if (current.endTimer !== null) return;
+    current.endTimer = global.setTimeout(function () {
+      if (session !== current) return;
+      // 브라우저가 onend를 누락했다면 기존 인식기를 폐기한다.
+      current.retired = true;
+      try { rec.abort(); } catch (e) {}
+      finish(current, true);
+    }, 1500);
+  }
+
+  function afterRelease(cb, version, delay) {
+    global.setTimeout(function () {
+      if (version === releaseVersion) cb();
+    }, delay);
+  }
+
+  function finish(current, retire) {
+    if (session !== current) return;
+    clearStartTimer(current);
+    if (current.endTimer !== null) global.clearTimeout(current.endTimer);
+    session = null;
+    if (retire || current.retired) rec = null;
+    var extra = isApple() ? 350 : 60;
+    current.release.forEach(function (item) { afterRelease(item.cb, item.version, extra); });
+    if (!current.silent && current.handlers.end) current.handlers.end({ error: current.error || null });
+    if (pendingStart && !session) {
+      restartTimer = global.setTimeout(function () {
+        restartTimer = null;
+        var next = pendingStart;
+        pendingStart = null;
+        if (next) begin(next);
+      }, isApple() ? 350 : 60);
+    }
   }
 
   function start(cbs) {
-    handlers = cbs || {};
+    var handlers = cbs || {};
     if (blocked()) {
       if (handlers.error) handlers.error('unsupported', unavailableReason());
       return false;
     }
-    if (listening) return true;      // 이미 듣고 있으면 그대로 둔다
+    releaseVersion++;
+    if (session) {
+      if (session.phase === 'stopping') {
+        // stop/abort는 비동기다. 이전 onend 이전에 start하면 요청이 소실된다.
+        pendingStart = handlers;
+      }
+      return true;
+    }
+    cancelPendingStart();
+    return begin(handlers);
+  }
+
+  function begin(handlers) {
+    var current = {
+      handlers: handlers,
+      phase: 'starting',
+      discardResults: false,
+      silent: false,
+      error: null,
+      startTimer: null,
+      endTimer: null,
+      release: []
+    };
+    session = current;
+    current.startTimer = global.setTimeout(function () {
+      if (session !== current || current.phase !== 'starting') return;
+      current.startTimer = null;
+      current.phase = 'stopping';
+      current.discardResults = true;
+      current.error = 'start-timeout';
+      current.silent = true;
+      waitForEnd(current);
+      // 권한 대기나 브라우저 무응답을 무한히 기다리지 않고 수동 재시도로 안내한다.
+      if (handlers.error) handlers.error('start-timeout');
+      if (session === current) { try { rec.abort(); } catch (e) {} }
+    }, 15000);
     try {
-      build(cbs).start();
-      listening = true;
+      build(current).start();
       return true;
     } catch (e) {
-      // 이미 켜져 있는데 또 켜려 한 경우는 그대로 두면 된다
-      if (String(e).indexOf('already started') !== -1) { listening = true; return true; }
-      listening = false;
-      if (handlers.error) handlers.error('start-failed', String(e));
+      // 시작 실패를 성공으로 표시하지 않는다. 다음 시도에는 새 인식기를 쓴다.
+      clearStartTimer(current);
+      session = null;
+      var failed = rec;
+      rec = null;
+      try { if (failed) failed.abort(); } catch (ignored) {}
+      var code = e.name === 'NotAllowedError' || e.name === 'SecurityError' ? 'not-allowed' : 'start-failed';
+      if (handlers.error) handlers.error(code);
       return false;
     }
   }
 
   function stop() {
-    if (rec) {
-      try { rec.stop(); } catch (e) {}
-    }
-    listening = false;
+    cancelPendingStart();
+    if (!session || session.phase === 'stopping') return;
+    clearStartTimer(session);
+    session.phase = 'stopping';
+    waitForEnd(session);
+    try { rec.stop(); } catch (e) {}
   }
 
   function abort() {
-    if (rec) {
-      try { rec.abort(); } catch (e) {}
-    }
-    listening = false;
-    releaseNow();
+    releaseVersion++;
+    cancelPendingStart();
+    if (!session) return;
+    clearStartTimer(session);
+    session.silent = true;
+    session.discardResults = true;
+    session.release = [];
+    session.phase = 'stopping';
+    waitForEnd(session);
+    try { rec.abort(); } catch (e) {}
   }
 
-  /**
-   * 듣기를 멈추고, 마이크가 실제로 놓인 뒤에 cb 를 부른다.
-   *
-   * 아이폰·아이패드는 음성 인식이 소리 장치를 쥐고 있어서, 멈추자마자
-   * 읽어주기를 시키면 소리가 조용히 사라진다. 그래서 인식이 끝났다는
-   * 신호(onend)를 기다렸다가, 소리 장치가 돌아올 틈을 조금 더 주고 부른다.
-   */
+  /** 마이크 종료를 기다린 뒤 재생한다. 화면 이동이나 새 듣기가 시작되면 취소한다. */
   function stopAnd(cb) {
-    var extra = isApple() ? 350 : 60;
-    if (!listening) {
-      global.setTimeout(cb, 0);
+    cancelPendingStart();
+    if (!session) {
+      afterRelease(cb, releaseVersion, 0);
       return;
     }
-    pendingRelease = function () { global.setTimeout(cb, extra); };
+    session.release.push({ cb: cb, version: releaseVersion });
+    session.discardResults = true;
+    session.silent = true;
+    waitForEnd(session);
     stop();
-    // onend 가 오지 않는 경우를 대비한 안전장치
-    global.setTimeout(releaseNow, 1200);
   }
 
-  function isListening() { return listening; }
+  function isListening() { return !!session && session.phase !== 'stopping'; }
 
   FQ.speech = {
     supported: supported,
