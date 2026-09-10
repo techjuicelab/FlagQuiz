@@ -20,11 +20,37 @@
     '</div>';
   }
 
+  /** 스티커 판이 비었을 때, 왜 비었는지에 따라 다르게 말해 준다 */
+  function emptyDexMessage() {
+    if (dexFilter.query) {
+      return '<b>“' + esc(dexFilter.query) + '”</b> 로 찾은 나라가 없어요.' +
+        '<div class="small muted" style="margin-top:6px">이름의 앞 글자만 써 봐도 좋아요.</div>' +
+        '<button class="btn btn-sm" id="dex-clear" type="button" style="margin-top:10px">검색어 지우기</button>';
+    }
+    if (dexFilter.onlyWrong) {
+      return '틀린 나라가 하나도 없어요! 🎉' +
+        '<div class="small muted" style="margin-top:6px">' +
+        (dexFilter.continent === 'all' ? '' : esc(dexFilter.continent) + '에서 ') +
+        '틀린 적이 없다는 뜻이에요.</div>';
+    }
+    if (dexFilter.onlyLocked) {
+      return (dexFilter.continent === 'all' ? '194칸을 모두 모았어요! 🌍' : esc(dexFilter.continent) + '를 모두 모았어요! 🎉') +
+        '<div class="small muted" style="margin-top:6px">못 모은 칸이 하나도 없어요.</div>';
+    }
+    return '찾는 나라가 없어요.';
+  }
+
   function init() { ui = FQ.ui; esc = ui.esc; }
 
   /* =================== 국기 도감 =================== */
-  function dex() {
+  function dex(startContinent) {
     init();
+    if (startContinent) {
+      dexFilter.continent = startContinent;
+      dexFilter.query = '';
+      dexFilter.onlyWrong = false;
+      dexFilter.onlyLocked = false;
+    }
     var html =
       '<section class="screen">' +
         '<div class="row" style="align-items:center;margin-bottom:12px">' +
@@ -115,9 +141,19 @@
               '<div class="n">' + esc(c.ko) + '</div>' +
             '</button>';
           }).join('') + '</div>'
-        : '<div class="card">찾는 나라가 없어요.</div>');
+        : '<div class="card">' + emptyDexMessage() + '</div>');
 
-    ui.$('#dex-list').innerHTML = html;
+    var host = ui.$('#dex-list');
+    host.innerHTML = html;
+    var clearBtn = ui.$('#dex-clear', host);
+    if (clearBtn) {
+      clearBtn.addEventListener('click', function () {
+        dexFilter.query = '';
+        var box = ui.$('#dex-q');
+        if (box) box.value = '';
+        paintDex();
+      });
+    }
   }
 
   /* =================== 내 기록 =================== */
@@ -216,7 +252,7 @@
       ui.countryModal(FQ.quiz.byCode(t.getAttribute('data-code')));
     });
     ui.$('#reset', m).addEventListener('click', function () {
-      if (global.confirm('점수, 배지, 오답노트를 모두 지울까요?')) {
+      if (global.confirm('스티커 판, 레벨과 경험치, 배지, 오답노트, 놀이 기록을 모두 지울까요?\n되돌릴 수 없어요.')) {
         FQ.storage.resetProgress();
         stats();
       }

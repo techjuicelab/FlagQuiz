@@ -368,6 +368,7 @@
       streak: 0,
       bestStreak: 0,
       score: 0,
+      bonusScore: 0,
       correct: 0,
       wrong: [],
       hintsUsed: 0,
@@ -428,6 +429,15 @@
       return res;
     };
 
+    /** 보물상자처럼 문제 밖에서 생기는 보너스 점수를 더한다 */
+    game.addBonus = function (points) {
+      var n = Number(points) || 0;
+      if (n <= 0) return;
+      game.score += n;
+      game.playerScores[game.currentPlayerIndex()].score += n;
+      game.bonusScore += n;
+    };
+
     game.next = function () {
       game.index += 1;
       game.turn += 1;
@@ -440,6 +450,7 @@
         total: game.total,
         correct: game.correct,
         score: game.score,
+        bonusScore: game.bonusScore,
         bestStreak: game.bestStreak,
         wrong: game.wrong,
         seconds: Math.round((Date.now() - game.startedAt) / 1000),
