@@ -880,7 +880,6 @@
       btn.disabled = true;
       var code = btn.getAttribute('data-code');
       if (code === c.code) btn.classList.add('is-correct');
-      else if (res.picked && code === res.picked.code && !res.correct) btn.classList.add('is-wrong');
     });
     var hintBtn = ui.$('#hint');
     if (hintBtn) hintBtn.disabled = true;
@@ -933,28 +932,18 @@
           : g.streak + '연속! 보물상자까지 ' + chestNow.left + '개';
       }
     } else {
-      verdict = state.timedOut
-        ? '⏱ 시간이 다 됐어요'
-        : (res.gaveUp ? '👀 같이 외워 볼까요?' : '😅 아쉬워요');
-      audio.play('wrong');
-      if (res.confusedWith) {
-        // 수도 모드는 화면에 수도만 보이므로, 누른 그 이름부터 말해 준다
-        extra = res.question && res.question.mode === 'capital'
-          ? '<div class="small">고른 곳은 <b>' + esc(res.confusedWith.capital) + '</b> — ' +
-            esc(res.confusedWith.ko) + '의 수도예요.</div>'
-          : '<div class="small">고른 나라는 <b>' + esc(res.confusedWith.ko) + '</b> 였어요.</div>';
-      }
+      verdict = '🌱 함께 알아봐요';
     }
 
     // 소리로도 알려 준다.
     //   맞혔을 때  → "정답!" 하고 외친 뒤 나라 이름을 읽어 준다
-    //   모를 때·틀렸을 때 → 나라 이름을 두 번 읽고 국기 특징을 짧게 알려 준다
+    //   모를 때·틀렸을 때 → 이름을 한 번 읽고 쉬운 특징 하나만 알려 준다
     // 수도 모드는 나라 이름이 이미 문제에 나와 있다. 못 맞힌 것은 수도이므로 그것을 되짚어 준다.
     var isCapitalQ = res.question && res.question.mode === 'capital';
     state.lastSpeech = res.correct
       ? { lines: isCapitalQ ? [cheerWord || '정답', c.capital, c.fact] : [cheerWord || '정답', c.ko, c.fact],
           opts: { rates: [1.02, 0.95, 0.95], pitches: [1.35, 1.1, 1.1] } }
-      : { lines: isCapitalQ ? [c.capital, c.capital, c.ko + '의 수도예요', c.fact] : [c.ko, c.ko, c.flagHint, c.fact],
+      : { lines: isCapitalQ ? [c.capital, c.ko + '의 수도예요'] : [c.ko, c.flagHint],
           opts: { rate: 0.93, pitch: 1.1 } };
     var feedbackSpeech = state.lastSpeech;
     var generation = state.feedbackGeneration;
@@ -987,32 +976,29 @@
     });
 
     var html =
-      '<div class="feedback ' + (res.correct ? 'ok' : 'no') + '">' +
+      '<div class="feedback ' + (res.correct ? 'ok' : 'learn') + '">' +
         '<div class="verdict">' + verdict + '</div>' +
         extra +
         '<div class="name-row" style="margin-top:10px">' +
           '<img src="' + ui.flagSrc(c.code) + '" alt="' + esc(c.ko) + ' 국기">' +
           '<div>' +
             '<div class="kname">' + esc(c.ko) + '</div>' +
-            '<div class="ename">' + esc(c.en) + '</div>' +
+            (res.correct ? '<div class="ename">' + esc(c.en) + '</div>' : '') +
           '</div>' +
           '<button class="btn btn-sm" data-speak="' + esc(c.ko) + '" type="button">🔊</button>' +
         '</div>' +
-        '<ul class="info-list">' +
+        (res.correct ? '<ul class="info-list">' +
           '<li><b>수도</b><span>' + esc(c.capital) + '</span></li>' +
           '<li><b>위치</b><span>' + esc(c.continent) + ' · ' + esc(c.region) + '</span></li>' +
-        '</ul>' +
+        '</ul>' : '') +
         (res.correct ? '' :
           '<div class="remember-box">' +
-            '<div class="remember-name">' +
-              (isCapitalQ ? esc(c.capital) + ' · ' + esc(c.capital) : esc(c.ko) + ' · ' + esc(c.ko)) +
-            '</div>' +
+            (isCapitalQ ? '<div class="remember-name">' + esc(c.capital) + '</div>' : '') +
             '<div class="remember-hint">' +
               (isCapitalQ ? '🏙️ ' + esc(c.ko) + '의 수도예요' : '🚩 ' + esc(c.flagHint)) +
             '</div>' +
-            '<div class="remember-tip small">이렇게 기억해 두면 다음엔 맞힐 수 있어요!</div>' +
           '</div>') +
-        '<div class="fact-box">💡 ' + esc(c.fact) + '</div>' +
+        (res.correct ? '<div class="fact-box">💡 ' + esc(c.fact) + '</div>' : '') +
         (store.settings().speak
           ? '<button class="btn btn-sm" id="replay" type="button" style="margin-top:8px">🔊 설명 다시 듣기</button>'
           : '<button class="btn btn-sm" id="speak-on" type="button" style="margin-top:8px">🔇 읽어주기가 꺼져 있어요 · 켜고 듣기</button>') +
@@ -1208,8 +1194,7 @@
     }
     var cheer = rate >= 0.9 ? '대단해요! 세계 국기 박사님!'
       : rate >= 0.7 ? '아주 잘했어요!'
-      : rate >= 0.4 ? '조금만 더 하면 돼요!'
-      : '괜찮아요, 다시 해 보면 훨씬 잘할 거예요!';
+      : '멋져!';
 
     var duelHtml = '';
     if (summary.players.length > 1) {

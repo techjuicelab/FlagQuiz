@@ -270,4 +270,34 @@ test('나라 이름 듣기를 예약한 뒤 답을 고르면 이전 이름 요�
   assert.equal(f.spoken.length,1);assert.equal(f.spoken[0][1],'서울');
 });
 
+test('오답과 건너뛰기는 이름 한 번과 국기 특징 하나만 다정하게 알려 준다',()=>{
+  for(const mode of ['choice4','reverse','voice','typing'])for(const gaveUp of [false,true]){
+    const f=fixture();f.c.FQ.storage.updateSettings({mode});f.c.FQ.app.startGame(['kr']);
+    const a=f.c.FQ.test,c=f.c.FQ.quiz.byCode('kr'),sounds=[];f.c.FQ.audio.play=name=>sounds.push(name);
+    a.submit({code:'jp',text:'일본'},gaveUp);
+    assert.deepEqual([...a.state.lastSpeech.lines],[c.ko,c.flagHint]);
+    assert.equal(sounds.includes('wrong'),false);
+    const html=f.node('#feedback-area').innerHTML;
+    assert.match(html,/함께 알아봐요/);assert.match(html,/feedback learn/);
+    assert.doesNotMatch(html,/아쉬워요|같이 외워|다음엔 맞힐|대한민국 · 대한민국|고른 나라는|fact-box|info-list|ename/);
+  }
+});
+
+test('수도 오답도 수도를 한 번만 말하고 어느 나라의 수도인지 짧게 설명한다',()=>{
+  const f=fixture();f.c.FQ.storage.updateSettings({mode:'capital'});f.c.FQ.app.startGame(['kr']);
+  const a=f.c.FQ.test;a.submit({code:'jp'});
+  assert.deepEqual([...a.state.lastSpeech.lines],['서울','대한민국의 수도예요']);
+  f.releases.at(-1)();f.runDelay(120);
+  assert.deepEqual(f.spoken,[['서울','대한민국의 수도예요']]);
+  f.node('#replay').click();f.releases.at(-1)();
+  assert.deepEqual(f.spoken.at(-1),['서울','대한민국의 수도예요']);
+});
+
+test('정답이 적어도 결과에서는 다시 잘해야 한다는 부담 없이 응원한다',()=>{
+  const f=fixture(),a=f.startVoice(['kr']);a.submit({text:''},true);a.goNext();
+  f.releases.at(-1)();
+  assert.deepEqual(f.spoken,[['멋져!']]);
+  assert.doesNotMatch(f.node('main').innerHTML,/조금만 더 하면|다시 해 보면 훨씬/);
+});
+
 console.log('앱 흐름 회귀 검사 '+passed+'건 통과');

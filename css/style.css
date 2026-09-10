@@ -427,7 +427,7 @@ a:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-
   border: 3px solid transparent;
 }
 .feedback.ok { background: var(--success-bg); border-color: var(--success); }
-.feedback.no { background: var(--danger-bg); border-color: var(--danger); }
+.feedback.learn { background: var(--card-2); border-color: var(--line); }
 .feedback .verdict { font-size: 1.5rem; font-weight: 900; margin-bottom: 8px; }
 .feedback .name-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .feedback .name-row img {
