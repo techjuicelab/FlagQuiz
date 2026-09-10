@@ -10,6 +10,7 @@
   var rec = null;
   var listening = false;
   var handlers = {};
+  var pendingRelease = null;
 
   function supported() { return !!SR; }
 
@@ -54,11 +55,20 @@
     return !SR || !secureOk();
   }
 
+  /**
+   * 인식기는 한 번만 만들어 두고 계속 다시 쓴다.
+   * 새로 만들 때마다 사파리가 마이크 권한을 다시 물어보기 때문에,
+   * 문제마다 새 인식기를 만들면 아이가 매번 “허용”을 눌러야 한다.
+   */
   function build(opts) {
+    if (rec) {
+      rec.continuous = !opts || opts.continuous !== false;
+      return rec;
+    }
     var r = new SR();
     r.lang = 'ko-KR';
     // 계속 듣기: 버튼을 누르지 않아도 아이가 말하면 바로 알아듣게 한다
-    r.continuous = opts && opts.continuous !== false;
+    r.continuous = !opts || opts.continuous !== false;
     r.interimResults = true;
     r.maxAlternatives = 5;
     r.onresult = function (ev) {
@@ -81,9 +91,19 @@
     };
     r.onend = function () {
       listening = false;
+      releaseNow();
       if (handlers.end) handlers.end();
     };
+    rec = r;
     return r;
+  }
+
+  /** 마이크가 놓였다고 기다리던 쪽에 알려 준다 */
+  function releaseNow() {
+    if (!pendingRelease) return;
+    var fn = pendingRelease;
+    pendingRelease = null;
+    fn();
   }
 
   function start(cbs) {
@@ -92,10 +112,9 @@
       if (handlers.error) handlers.error('unsupported', unavailableReason());
       return false;
     }
-    if (listening) abort();
+    if (listening) return true;      // 이미 듣고 있으면 그대로 둔다
     try {
-      rec = build(cbs);
-      rec.start();
+      build(cbs).start();
       listening = true;
       return true;
     } catch (e) {
@@ -119,6 +138,26 @@
       try { rec.abort(); } catch (e) {}
     }
     listening = false;
+    releaseNow();
+  }
+
+  /**
+   * 듣기를 멈추고, 마이크가 실제로 놓인 뒤에 cb 를 부른다.
+   *
+   * 아이폰·아이패드는 음성 인식이 소리 장치를 쥐고 있어서, 멈추자마자
+   * 읽어주기를 시키면 소리가 조용히 사라진다. 그래서 인식이 끝났다는
+   * 신호(onend)를 기다렸다가, 소리 장치가 돌아올 틈을 조금 더 주고 부른다.
+   */
+  function stopAnd(cb) {
+    var extra = isApple() ? 350 : 60;
+    if (!listening) {
+      global.setTimeout(cb, 0);
+      return;
+    }
+    pendingRelease = function () { global.setTimeout(cb, extra); };
+    stop();
+    // onend 가 오지 않는 경우를 대비한 안전장치
+    global.setTimeout(releaseNow, 1200);
   }
 
   function isListening() { return listening; }
@@ -132,6 +171,7 @@
     unavailableReason: unavailableReason,
     start: start,
     stop: stop,
+    stopAnd: stopAnd,
     abort: abort,
     isListening: isListening
   };
