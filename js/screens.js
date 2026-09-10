@@ -5,7 +5,27 @@
   var ui, esc;
 
   var CONTINENTS = ['all', '아시아', '유럽', '아프리카', '북아메리카', '남아메리카', '오세아니아'];
-  var dexFilter = { continent: 'all', query: '', onlyWrong: false };
+  var dexFilter = { continent: 'all', query: '', onlyWrong: false, onlyLocked: false };
+
+  /** 스티커 판 위쪽: 모은 개수와 대륙별 진행 */
+  function stickerHeader() {
+    var st = FQ.progress.stickers();
+    var conts = Object.keys(st.byContinent);
+    return '<div class="card section">' +
+      '<div class="row" style="align-items:baseline">' +
+        '<b style="font-size:1.15rem">모은 스티커 ' + st.owned + ' / ' + st.total + '</b>' +
+        '<span class="spacer"></span>' +
+        '<span class="small muted">' + st.left + '개 남았어요</span>' +
+      '</div>' +
+      '<div class="xp-bar" style="margin-top:8px"><i style="width:' + Math.round(st.ratio * 100) + '%"></i></div>' +
+      '<div class="pill-grid" style="margin-top:12px">' +
+        conts.map(function (name) {
+          var b = st.byContinent[name];
+          return '<span class="mini-chip">' + esc(name) + ' ' + b.owned + '/' + b.total + '</span>';
+        }).join('') +
+      '</div>' +
+    '</div>';
+  }
 
   function init() { ui = FQ.ui; esc = ui.esc; }
 
@@ -16,8 +36,9 @@
       '<section class="screen">' +
         '<div class="row" style="align-items:center;margin-bottom:12px">' +
           '<button class="btn btn-sm btn-ghost" id="back" type="button">← 돌아가기</button>' +
-          '<h2 style="margin:0;font-size:1.4rem">📚 국기 도감</h2>' +
+          '<h2 style="margin:0;font-size:1.4rem">📖 스티커 판</h2>' +
         '</div>' +
+        stickerHeader() +
         '<div class="card section">' +
           '<div class="field">' +
             '<input class="text-input" id="dex-q" placeholder="나라 이름으로 찾기 (예: 브라질)" value="' + esc(dexFilter.query) + '" autocomplete="off">' +
@@ -29,6 +50,7 @@
             }).join('') +
           '</div>' +
           '<label class="switch" style="margin-top:12px"><input type="checkbox" id="dex-wrong"' + (dexFilter.onlyWrong ? ' checked' : '') + '> 틀렸던 나라만 보기</label>' +
+          '<label class="switch"><input type="checkbox" id="dex-locked"' + (dexFilter.onlyLocked ? ' checked' : '') + '> 아직 못 모은 것만 보기</label>' +
         '</div>' +
         '<div id="dex-list"></div>' +
       '</section>';
@@ -48,11 +70,21 @@
       dexFilter.onlyWrong = ev.target.checked;
       paintDex();
     });
-    ui.on(m, '.dex-card', 'click', function (e, t) {
+    ui.$('#dex-locked', m).addEventListener('change', function (ev) {
+      dexFilter.onlyLocked = ev.target.checked;
+      paintDex();
+    });
+    ui.on(m, '.sticker-cell', 'click', function (e, t) {
       ui.countryModal(FQ.quiz.byCode(t.getAttribute('data-code')));
     });
     paintDex();
   }
+
+  /* 자물쇠는 이모지 대신 선으로 그린다 */
+  var LOCK_SVG = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+    'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<rect x="4" y="10" width="16" height="11" rx="2"></rect>' +
+    '<path d="M8 10V7a4 4 0 0 1 8 0v3"></path></svg>';
 
   function paintDex() {
     var util = FQ.util;
@@ -64,6 +96,7 @@
     var list = (FQ.countries || []).filter(function (c) {
       if (dexFilter.continent !== 'all' && c.continent !== dexFilter.continent) return false;
       if (dexFilter.onlyWrong && !wrongSet[c.code]) return false;
+      if (dexFilter.onlyLocked && stats[c.code] && stats[c.code].correct > 0) return false;
       if (!norm) return true;
       var names = (c.aliases || []).concat([c.ko, c.en, c.capital]);
       for (var i = 0; i < names.length; i++) {
@@ -77,18 +110,16 @@
     var seen = list.filter(function (c) { return stats[c.code] && stats[c.code].correct > 0; }).length;
 
     var html =
-      '<p class="small muted">' + list.length + '개 나라 · 맞혀 본 나라 ' + seen + '개</p>' +
+      '<p class="small muted">' + list.length + '개 나라 · 모은 스티커 ' + seen + '개</p>' +
       (list.length
-        ? '<div class="dex-grid">' + list.map(function (c) {
-            var st = stats[c.code];
-            var learned = st && st.correct > 0;
-            var meta = st && st.seen
-              ? st.correct + '/' + st.seen + ' 정답'
-              : '아직 안 만났어요';
-            return '<button class="dex-card' + (learned ? ' learned' : '') + '" type="button" data-code="' + c.code + '">' +
-              '<img src="' + ui.flagSrc(c.code) + '" alt="' + esc(c.ko) + ' 국기" loading="lazy">' +
+        ? '<div class="sticker-grid">' + list.map(function (c, i) {
+            var cs = stats[c.code];
+            var got = cs && cs.correct > 0;
+            return '<button class="sticker-cell ' + (got ? 'got' : 'locked') + '" type="button"' +
+              ' data-code="' + c.code + '" style="animation-delay:' + Math.min(0.5, i * 0.012).toFixed(3) + 's">' +
+              '<img src="' + ui.flagSrc(c.code) + '" alt="' + esc(c.ko) + ' 스티커" loading="lazy">' +
+              (got ? '' : '<span class="lock">' + LOCK_SVG + '</span>') +
               '<div class="n">' + esc(c.ko) + '</div>' +
-              '<div class="m">' + esc(meta) + '</div>' +
             '</button>';
           }).join('') + '</div>'
         : '<div class="card">찾는 나라가 없어요.</div>');

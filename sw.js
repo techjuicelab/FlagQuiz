@@ -15,6 +15,7 @@ var SHELL = [
   './js/speech.js',
   './js/effects.js',
   './js/ui.js',
+  './js/progress.js',
   './js/quiz.js',
   './js/badges.js',
   './js/screens.js',

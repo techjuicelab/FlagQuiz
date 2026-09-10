@@ -24,8 +24,11 @@
       asked: 0,
       correct: 0,
       bestStreak: 0,
-      playSeconds: 0
+      playSeconds: 0,
+      xp: 0
     },
+    /* 오늘의 도전: { date: 'YYYY-MM-DD', continent, done } */
+    daily: { date: '', continent: '', done: 0 },
     /* code -> {seen, correct, wrong, streak} */
     countries: {},
     badges: {},
@@ -131,6 +134,21 @@
   }
 
   function stats() { return state.stats; }
+
+  /** 경험치를 더한다 */
+  function addXp(amount) {
+    state.stats.xp = Math.max(0, (state.stats.xp || 0) + (amount || 0));
+    save();
+    return state.stats.xp;
+  }
+
+  function daily() { return state.daily; }
+
+  function setDaily(next) {
+    state.daily = { date: next.date || '', continent: next.continent || '', done: next.done || 0 };
+    save();
+    return state.daily;
+  }
   function history() { return state.history; }
   function allCountryStats() { return state.countries; }
   function badges() { return state.badges; }
@@ -152,6 +170,7 @@
     state.countries = {};
     state.badges = {};
     state.history = [];
+    state.daily = deepClone(DEFAULTS.daily);
     save();
   }
 
@@ -164,6 +183,9 @@
     weightOf: weightOf,
     finishGame: finishGame,
     stats: stats,
+    addXp: addXp,
+    daily: daily,
+    setDaily: setDaily,
     history: history,
     allCountryStats: allCountryStats,
     badges: badges,
