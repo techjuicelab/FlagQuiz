@@ -1,0 +1,21 @@
+04 종이새 상자
+용도: 상자 / 가벼운 피치카토가 종이새처럼 펼쳐져요.
+Model: ACE-Step 1.5 XL Turbo (8-bit)
+Mode: Text to music
+Instrumental: ON
+Lyrics: 빈칸
+Reference audio: 없음
+Duration: 10 seconds
+편집 목표: 2.5~3.5초 (생성 길이와 다름)
+Tempo: 104 BPM
+Key: C major
+Time signature: 3/4
+Vocal language: Korean (무가사)
+Seed: 41104
+대체 Seed: 42104, 43104
+Keep model loaded: OFF
+보관 파일 이름: fq-chest-04-paperbird-seed41104.wav
+
+Style prompt에 아래 영문만 붙여 넣으세요.
+
+A miniature original instrumental jingle for a paper bird unfolding from a children's treasure box. Light pizzicato strings, muted wooden xylophone and a soft harp finish. C major pentatonic, 104 BPM, 3/4. One graceful three-note rising figure, a little curved answering phrase, then a warm resolved chord. Begin at once and complete the whole gesture within three seconds, followed only by a gentle resonance tail. Small-scale and friendly, like a handmade toy coming to life. No vocals, spoken words, applause, brass fanfare, loud percussion, scratchy paper noise, intense orchestral swell or repeated melody.

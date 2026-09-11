@@ -1,0 +1,21 @@
+12 스티커가 쏙
+용도: 수집 / 스티커가 여행책에 붙을 때 한 번.
+Model: ACE-Step 1.5 XL Turbo (8-bit)
+Mode: Text to music
+Instrumental: ON
+Lyrics: 빈칸
+Reference audio: 없음
+Duration: 10 seconds
+편집 목표: 1~1.6초 (생성 길이와 다름)
+Tempo: 100 BPM
+Key: C major
+Time signature: 4/4
+Vocal language: Korean (무가사)
+Seed: 41401
+대체 Seed: 42401, 43401
+Keep model loaded: OFF
+보관 파일 이름: fq-sticker-01-bookmark-seed41401.wav
+
+Style prompt에 아래 영문만 붙여 넣으세요.
+
+A small original instrumental sticker-collection cue for a child's travel scrapbook. Warm pizzicato strings and a soft wooden music-box tone. C major pentatonic, 100 BPM, 4/4. One tiny lifting phrase and a gentle final pluck, like a bookmark settling into place. Begin at once, finish the gesture in the first one and a half seconds, and let the remainder fade to quiet. Light, tactile and affectionate, with rounded attacks and a dry intimate mix. No singing, speech, applause, coin showers, cash-register sounds, sharp clicks, drum hits or repeated refrain.

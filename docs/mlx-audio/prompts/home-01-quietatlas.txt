@@ -1,0 +1,21 @@
+16 조용한 지도방
+용도: 배경 / 선택 사항. 홈·도감 전용, 기본 꺼짐.
+Model: ACE-Step 1.5 XL Turbo (8-bit)
+Mode: Text to music
+Instrumental: ON
+Lyrics: 빈칸
+Reference audio: 없음
+Duration: 30 seconds
+편집 목표: 20~30초 (생성 길이와 다름)
+Tempo: 76 BPM
+Key: C major
+Time signature: 4/4
+Vocal language: Korean (무가사)
+Seed: 41601
+대체 Seed: 42601, 43601
+Keep model loaded: OFF
+보관 파일 이름: fq-home-01-quietatlas-seed41601.wav
+
+Style prompt에 아래 영문만 붙여 넣으세요.
+
+An original very quiet instrumental background for browsing a child's illustrated atlas. Warm felt piano, sparse nylon guitar harmonics and soft wooden kalimba, C major pentatonic, 76 BPM, 4/4. A simple three-note motif appears rarely, surrounded by generous silence and gentle sustained harmony. Even texture from beginning to end, with a calm resolved ending and no dramatic arc. Intimate and unhurried, low-density arrangement suitable for very low-volume playback. No vocals, humming, speech, sound effects, beat drops, percussion, heavy bass, sharp high notes, busy arpeggios, sudden accents or resemblance to an existing song.

@@ -1,0 +1,21 @@
+08 지도에 톡
+용도: 발견 / 지도 점이 커졌다 돌아오는 짧은 반응.
+Model: ACE-Step 1.5 XL Turbo (8-bit)
+Mode: Text to music
+Instrumental: ON
+Lyrics: 빈칸
+Reference audio: 없음
+Duration: 10 seconds
+편집 목표: 0.4~0.8초 (생성 길이와 다름)
+Tempo: 96 BPM
+Key: F major
+Time signature: 4/4
+Vocal language: Korean (무가사)
+Seed: 41202
+대체 Seed: 42202, 43202
+Keep model loaded: OFF
+보관 파일 이름: fq-discover-02-mapdot-seed41202.wav
+
+Style prompt에 아래 영문만 붙여 넣으세요.
+
+A tiny original instrumental interface cue for placing one new dot on a child's exploration map, regardless of quiz accuracy. One rounded low wooden marimba pluck followed by a soft neighboring higher note, F major pentatonic, 96 BPM, 4/4. Gentle curiosity, dry and tactile, not a victory or failure signal. Put the entire sound gesture in the first second and leave only a quiet natural tail. No background accompaniment or repeated pattern. No singing, speech, vocal breath, applause, alarm, sharp click, falling error melody, bass impact, cymbal or suspense.

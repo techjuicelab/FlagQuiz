@@ -10,7 +10,7 @@ function worker() {
     URL, Request, Response, Headers, Promise,
     self: { location: { origin: 'https://example.test' }, addEventListener: (name, fn) => { events[name] = fn; }, clients: { claim() {} }, skipWaiting() {} },
     caches: {
-      keys: async () => ['another-app-v1', 'flagquiz-v2', 'flagquiz-v3'],
+      keys: async () => ['another-app-v1', 'flagquiz-v2', 'flagquiz-v3', 'flagquiz-v4'],
       delete: async key => { deleted.push(key); },
       match,
       open: async () => ({
@@ -32,7 +32,7 @@ test('업데이트는 FlagQuiz의 이전 캐시만 삭제한다', async () => {
   const w = worker(); let done;
   w.events.activate({ waitUntil: promise => { done = promise; } });
   await done;
-  assert.deepEqual(w.deleted, ['flagquiz-v2']);
+  assert.deepEqual(w.deleted, ['flagquiz-v2', 'flagquiz-v3']);
 });
 
 test('오프라인의 누락 스크립트에 HTML을 돌려주지 않는다', async () => {
@@ -154,4 +154,17 @@ test('전체 요청에도 206을 주는 응답은 완전한 음원으로 캐시�
   w.events.fetch({ request: new Request(url), respondWith: promise => { response = promise; } });
   assert.equal((await response).status, 206);
   assert.equal(w.puts.length, 0);
+});
+
+
+test('새 축하 음악도 오프라인에서 Safari Range 요청을 재생한다', async () => {
+  const w = worker();
+  const url = 'https://example.test/FlagQuiz/audio/music/chest-01-musicbox.mp3';
+  w.cached.set(url, new Response('0123456789', { headers: { 'content-type': 'audio/mpeg' } }));
+  let response;
+  w.events.fetch({ request: new Request(url, { headers: { range: 'bytes=0-1' } }), respondWith: promise => { response = promise; } });
+  const result = await response;
+  assert.equal(result.status, 206);
+  assert.equal(result.headers.get('content-type'), 'audio/mpeg');
+  assert.equal(await result.text(), '01');
 });

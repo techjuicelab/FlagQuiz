@@ -1,0 +1,21 @@
+03 반딧불 상자
+용도: 상자 / 숲의 작은 불빛처럼 반짝이는 하프.
+Model: ACE-Step 1.5 XL Turbo (8-bit)
+Mode: Text to music
+Instrumental: ON
+Lyrics: 빈칸
+Reference audio: 없음
+Duration: 10 seconds
+편집 목표: 2.5~3.5초 (생성 길이와 다름)
+Tempo: 96 BPM
+Key: G major
+Time signature: 4/4
+Vocal language: Korean (무가사)
+Seed: 41103
+대체 Seed: 42103, 43103
+Keep model loaded: OFF
+보관 파일 이름: fq-chest-03-fireflies-seed41103.wav
+
+Style prompt에 아래 영문만 붙여 넣으세요.
+
+An original miniature instrumental treasure reveal, like three fireflies lighting a small forest path. Delicate harp harmonics, warm wooden kalimba and a soft felt-piano final chord. G major pentatonic, 96 BPM, 4/4. A simple three-note rising motif with tiny spaces between the notes and a calm, satisfying resolution. Put the entire melody in the first three seconds and leave a natural fading tail afterward. Intimate and lightly magical, without suspense or a dramatic swell. No singing, voices, animal calls, insect noise, percussion hits, piercing high chimes, heavy bass or repeating loops.

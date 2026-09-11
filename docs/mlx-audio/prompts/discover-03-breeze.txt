@@ -1,0 +1,21 @@
+09 깃발이 살랑
+용도: 발견 / 깃발 모서리가 한 번 움직이는 맑은 반응.
+Model: ACE-Step 1.5 XL Turbo (8-bit)
+Mode: Text to music
+Instrumental: ON
+Lyrics: 빈칸
+Reference audio: 없음
+Duration: 10 seconds
+편집 목표: 0.5~0.9초 (생성 길이와 다름)
+Tempo: 84 BPM
+Key: G major
+Time signature: 4/4
+Vocal language: Korean (무가사)
+Seed: 41203
+대체 Seed: 42203, 43203
+Keep model loaded: OFF
+보관 파일 이름: fq-discover-03-breeze-seed41203.wav
+
+Style prompt에 아래 영문만 붙여 넣으세요.
+
+An original miniature instrumental learning-card cue, like a small flag gently moving in a breeze. Two soft kalimba notes with a barely audible warm airy synth texture. G major pentatonic, 84 BPM, 4/4. Calm, open and curious, equally suitable for every newly revealed country. Start immediately, finish the tiny gesture within one second, then decay naturally into quiet. Rounded transients, narrow intimate sound, no melodic repetition. No voices, singing, speech, literal wind noise, sad cadence, triumphant fanfare, warning beeps, loud percussion or piercing treble.

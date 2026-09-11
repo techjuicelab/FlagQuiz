@@ -15,6 +15,8 @@
       continent: 'all',
       count: 10,
       sound: true,
+      homeMusic: false,
+      correctMusic: false,
       speak: true,
       reviewFirst: true,
       timer: 0

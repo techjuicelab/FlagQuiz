@@ -112,14 +112,14 @@
 
   var CHEST_EVERY = 5;
 
-  /** 이번 연속 정답으로 보물상자가 열리는가 (5, 10, 15 …) */
-  function chestOpensAt(streak) {
-    return streak > 0 && streak % CHEST_EVERY === 0;
+  /** 누적 학습 카드로 여행 상자가 열리는가 (5, 10, 15 …) */
+  function chestOpensAt(cards) {
+    return cards > 0 && cards % CHEST_EVERY === 0;
   }
 
   /** 다음 상자까지 남은 개수와 진행 비율 */
-  function chestProgress(streak) {
-    var into = streak % CHEST_EVERY;
+  function chestProgress(cards) {
+    var into = Math.max(0, Number(cards) || 0) % CHEST_EVERY;
     return { into: into, need: CHEST_EVERY, left: CHEST_EVERY - into, ratio: into / CHEST_EVERY };
   }
 

@@ -371,11 +371,11 @@ group('보상 체계', () => {
   ok(P.starsFor(3, 10) === 0, '30%면 별 없음');
   ok(P.starsFor(0, 0) === 0, '문제가 없으면 별 없음');
 
-  // 보물상자는 5연속마다
-  ok(P.chestOpensAt(5) && P.chestOpensAt(10) && P.chestOpensAt(15), '5·10·15연속에 열림');
+  // 여행 상자는 누적 학습 카드 5장마다
+  ok(P.chestOpensAt(5) && P.chestOpensAt(10) && P.chestOpensAt(15), '5·10·15장에 열림');
   ok(!P.chestOpensAt(0) && !P.chestOpensAt(4) && !P.chestOpensAt(6), '그 밖에는 안 열림');
-  ok(P.chestProgress(3).left === 2, '3연속이면 두 개 남음');
-  ok(P.chestProgress(5).left === 5, '열린 직후에는 다시 다섯 개');
+  ok(P.chestProgress(3).left === 2, '3장이면 두 장 남음');
+  ok(P.chestProgress(5).left === 5, '열린 직후에는 다시 다섯 장');
 
   // 연속으로 맞힐수록 경험치를 더 준다
   ok(P.xpFor(1) === 10, '기본 경험치 10');

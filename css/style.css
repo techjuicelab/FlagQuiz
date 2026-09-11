@@ -1177,3 +1177,14 @@ button.cont-item:focus-visible { outline: 3px solid var(--accent); outline-offse
   margin-top: 4px;
   word-break: keep-all;
 }
+
+/* 정오답 공통의 조용한 여행 카드 */
+.discovery-card { animation: discoveryOpen .38s ease-out both; transform-origin: center bottom; }
+@keyframes discoveryOpen { from { opacity: .5; transform: translateY(7px) scale(.99); } to { opacity: 1; transform: none; } }
+.journey-icon { font-size: 1.6rem; flex: 0 0 auto; }
+.combo-card { background: var(--card-2); border-color: var(--line); }
+.combo-goal { animation: none; }
+.combo-bar > i { background: var(--primary); }
+.journey-finish { font-size: 3.5rem; margin-bottom: 12px; }
+.journey-record { margin-top: 18px; }
+.journey-record > summary { cursor: pointer; color: var(--text-soft); font-weight: 700; }

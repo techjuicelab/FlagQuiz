@@ -1,0 +1,21 @@
+14 지도 펼치기
+용도: 여정 / 시작 버튼을 누른 뒤 짧게.
+Model: ACE-Step 1.5 XL Turbo (8-bit)
+Mode: Text to music
+Instrumental: ON
+Lyrics: 빈칸
+Reference audio: 없음
+Duration: 10 seconds
+편집 목표: 1~1.5초 (생성 길이와 다름)
+Tempo: 96 BPM
+Key: G major
+Time signature: 4/4
+Vocal language: Korean (무가사)
+Seed: 41502
+대체 Seed: 42502, 43502
+Keep model loaded: OFF
+보관 파일 이름: fq-start-01-openmap-seed41502.wav
+
+Style prompt에 아래 영문만 붙여 넣으세요.
+
+A short original instrumental welcome cue for opening a children's map exploration game. Soft kalimba and warm muted pizzicato strings, G major pentatonic, 96 BPM, 4/4. A small upward question-like figure that settles gently into a welcoming chord. Begin immediately, complete the gesture in the first one and a half seconds, then leave a natural fading tail. Calm curiosity, tactile toy-like instruments and lots of space. No voices, singing, speech, countdown, ticking, crowd noise, intense fanfare, drum hits, bass drops or repeated melody.

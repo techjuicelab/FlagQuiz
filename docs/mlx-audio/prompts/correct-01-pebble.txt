@@ -1,0 +1,21 @@
+10 조약돌 반짝
+용도: 정답 / 맞힘을 짧게 알아차리는 소리. 정답음 첫 제작 추천.
+Model: ACE-Step 1.5 XL Turbo (8-bit)
+Mode: Text to music
+Instrumental: ON
+Lyrics: 빈칸
+Reference audio: 없음
+Duration: 10 seconds
+편집 목표: 0.7~1.2초 (생성 길이와 다름)
+Tempo: 108 BPM
+Key: C major
+Time signature: 4/4
+Vocal language: Korean (무가사)
+Seed: 41301
+대체 Seed: 42301, 43301
+Keep model loaded: OFF
+보관 파일 이름: fq-correct-01-pebble-seed41301.wav
+
+Style prompt에 아래 영문만 붙여 넣으세요.
+
+A tiny original instrumental acknowledgment for a correct answer in a gentle children's country game. Warm wooden marimba and muted kalimba, C major pentatonic, 108 BPM, 4/4. A compact three-note upward figure resolving softly, cheerful but modest and no louder than an ordinary interface cue. Start immediately and complete the gesture within one second, followed only by a short natural tail. No accompaniment or repeated tune. No vocals, words, applause, crowd cheers, shouting, horns, drum hits, alarm-like beeps, bass drops or sharp high bells.

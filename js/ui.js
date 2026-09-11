@@ -41,6 +41,7 @@
 
   function countryModal(country) {
     if (!country) return;
+    if (FQ.music) FQ.music.stop();
     closeModal();
     var st = FQ.storage.countryStat(country.code);
     var rate = st.seen ? Math.round((st.correct / st.seen) * 100) : null;
@@ -71,6 +72,7 @@
       var sp = ev.target.closest('[data-speak]');
       var explain = ev.target.closest('[data-explain]');
       if (sp || explain) {
+        if (FQ.music) FQ.music.stop();
         FQ.storage.updateSettings({ speak: true });
         FQ.audio.setSpeakEnabled(true);
         var status = back.querySelector('[data-audio-status]');

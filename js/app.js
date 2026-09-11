@@ -12,7 +12,8 @@
   var ui = FQ.ui;
   var esc = ui.esc;
 
-  var CHEST_BONUS = 5;   // 보물상자를 열면 더해 주는 점수
+  var CHEST_BONUS = 5;   // 학습 카드 다섯 장을 모으면 더해 주는 점수
+  var DISCOVERIES = ['여행책에 한 장', '지도에 톡', '하나 더 만났어요', '깃발이 살랑'];
 
   var MODE_CARDS = [
     { id: 'choice4', emo: '🚩', title: '국기 보고 나라 고르기', desc: '네 개 중에서 골라요' },
@@ -46,8 +47,8 @@
     listenTimer: null,
     listenFailures: 0,
     feedbackGeneration: 0,
-    feedbackTimer: null,
-    chestTimer: null,
+    screen: 'home',
+    musicGeneration: 0,
     cancelFeedbackVoice: null,
     timerPaused: false,
     lastSpeech: { lines: [], opts: {} },
@@ -62,12 +63,44 @@
     if (state.cancelFeedbackVoice) state.cancelFeedbackVoice();
     state.cancelFeedbackVoice = null;
     state.feedbackGeneration += 1;
-    if (state.feedbackTimer) global.clearTimeout(state.feedbackTimer);
-    if (state.chestTimer) global.clearTimeout(state.chestTimer);
-    state.feedbackTimer = null;
-    state.chestTimer = null;
+    stopMusic();
     var chest = ui.$('.chest-back');
-    if (chest) chest.remove();
+    if (chest) {
+      chest.remove();
+      var next = ui.$('#next');
+      if (next) next.disabled = false;
+    }
+  }
+
+  function stopMusic() {
+    state.musicGeneration += 1;
+    if (FQ.music) FQ.music.stop();
+  }
+
+  function playMusic(event, done) {
+    if (FQ.music) return FQ.music.play(event, { onDone: done, onFail: done });
+    var pending = global.setTimeout(function () { if (done) done(); }, 0);
+    return function () { global.clearTimeout(pending); };
+  }
+
+  function musicScreen(screen) {
+    state.screen = screen;
+    if (!FQ.music) return;
+    var s = store.settings();
+    FQ.music.setEnabled(s.sound);
+    FQ.music.setBgmEnabled(!!s.homeMusic);
+    if ((screen === 'home' || screen === 'dex') && !doc.hidden && s.homeMusic && s.sound) {
+      var request = ++state.musicGeneration;
+      var generation = state.feedbackGeneration;
+      // 화면이 바뀌어도 마이크 해제는 아직 진행 중일 수 있다. BGM도 실제 종료 뒤에 연다.
+      FQ.speech.stopAnd(function () {
+        var latest = store.settings();
+        if (request !== state.musicGeneration || generation !== state.feedbackGeneration ||
+            state.screen !== screen || doc.hidden || !latest.homeMusic || !latest.sound ||
+            doc.querySelector('.modal-back') || (audio.isSpeaking && audio.isSpeaking())) return;
+        FQ.music.play('homeBgm');
+      });
+    } else stopMusic();
   }
 
   /* =================== 홈 =================== */
@@ -78,6 +111,7 @@
     audio.stopSpeaking();
     state.game = null;
     var s = store.settings();
+    musicScreen('home');
     var wrongCount = store.wrongList().length;
     var duel = s.players.length > 1;
     var poolSize = quiz.pool({ level: s.level, continent: s.continent }).length;
@@ -155,7 +189,9 @@
           '<div class="row" style="gap:18px">' +
             '<label class="switch"><input type="checkbox" id="opt-sound"' + (s.sound ? ' checked' : '') + '> 🔔 효과음</label>' +
             '<label class="switch"><input type="checkbox" id="opt-speak"' + (s.speak ? ' checked' : '') + '> 🔊 이름 읽어주기</label>' +
-            '<label class="switch"><input type="checkbox" id="opt-review"' + (s.reviewFirst ? ' checked' : '') + '> 🔁 틀린 나라 더 자주</label>' +
+            '<label class="switch"><input type="checkbox" id="opt-bgm"' + (s.homeMusic ? ' checked' : '') + '> 🎵 홈과 도감 배경음</label>' +
+            '<label class="switch"><input type="checkbox" id="opt-correct-music"' + (s.correctMusic ? ' checked' : '') + '> ✨ 정답에 다른 소리</label>' +
+            '<label class="switch"><input type="checkbox" id="opt-review"' + (s.reviewFirst ? ' checked' : '') + '> 🔁 한 번 더 만날 나라를 자주</label>' +
           '</div>' +
           '<div class="field" style="margin-top:12px">' +
             '<label for="opt-timer">제한 시간</label>' +
@@ -173,7 +209,7 @@
         '<button class="btn btn-primary btn-big" id="start" type="button" style="width:100%">🎮 시작하기</button>' +
 
         (wrongCount > 0
-          ? '<button class="btn btn-big" id="review" type="button" style="width:100%;margin-top:12px">📝 틀렸던 나라 복습하기 (' +
+          ? '<button class="btn btn-big" id="review" type="button" style="width:100%;margin-top:12px">📖 한 번 더 만나기 (' +
               Math.min(wrongCount, 20) + '문제' + (wrongCount > 20 ? ' · 남은 ' + (wrongCount - 20) + '개는 다음에' : '') + ')</button>'
           : '') +
 
@@ -228,10 +264,19 @@
     ui.$('#opt-sound', m).addEventListener('change', function (ev) {
       store.updateSettings({ sound: ev.target.checked });
       audio.setEnabled(ev.target.checked);
+      musicScreen('home');
     });
     ui.$('#opt-speak', m).addEventListener('change', function (ev) {
       store.updateSettings({ speak: ev.target.checked });
       audio.setSpeakEnabled(ev.target.checked);
+    });
+    ui.$('#opt-bgm', m).addEventListener('change', function (ev) {
+      if (FQ.music) FQ.music.unlock();
+      store.updateSettings({ homeMusic: ev.target.checked });
+      musicScreen('home');
+    });
+    ui.$('#opt-correct-music', m).addEventListener('change', function (ev) {
+      store.updateSettings({ correctMusic: ev.target.checked });
     });
     ui.$('#opt-review', m).addEventListener('change', function (ev) {
       store.updateSettings({ reviewFirst: ev.target.checked });
@@ -282,7 +327,7 @@
         '<span class="player-level"> · 레벨 ' + lv.number + ' ' + esc(lv.name) + '</span>' +
         '<span class="player-nums">' +
           '<span class="mini-chip">✨ ' + (lv.isMax ? '경험치 ' + FQ.progress.xp() : lv.into + ' / ' + lv.need) + '</span>' +
-          '<span class="mini-chip">🔥 최고 ' + (stats.bestStreak || 0) + '연속</span>' +
+          '<span class="mini-chip">📖 여행 카드 ' + (stats.asked || 0) + '장</span>' +
         '</span>' +
       '</span>' +
     '</div>';
@@ -369,6 +414,8 @@
     audio.setEnabled(s.sound);
     audio.setSpeakEnabled(s.speak);
     audio.unlock();
+    if (FQ.music) FQ.music.unlock();
+    musicScreen('quiz');
     state.game = quiz.createGame({
       mode: s.mode,
       level: s.level,
@@ -382,6 +429,8 @@
     state.xpGained = 0;
     state.newStickers = [];
     renderQuiz();
+    // 말하기는 클릭한 순간 바로 마이크를 연다. 시작 음악보다 듣기를 우선한다.
+    if (s.mode !== 'voice') playMusic('start');
   }
 
   /* =================== 퀴즈 화면 =================== */
@@ -425,7 +474,7 @@
     }
 
     var lv = FQ.progress.level();
-    var chest = FQ.progress.chestProgress(g.streak);
+    var chest = FQ.progress.chestProgress(store.stats().asked);
     var dots = '';
     for (var di = 0; di < g.total; di++) {
       var cls = di < g.index ? 'done' : (di === g.index ? 'now' : '');
@@ -451,12 +500,10 @@
         '</div>' +
 
         '<div class="combo-card">' +
-          '<span class="combo-flame">🔥</span>' +
+          '<span class="journey-icon">📖</span>' +
           '<span class="combo-body">' +
             '<span class="combo-title" id="combo-title">' +
-              (g.streak > 0
-                ? g.streak + '연속! 보물상자까지 ' + chest.left + '개'
-                : (FQ.progress.CHEST_EVERY || 5) + '연속이면 보물상자가 열려요') +
+              '여행 카드 ' + chest.into + ' / ' + chest.need + '장 · 상자까지 ' + chest.left + '장' +
             '</span>' +
             '<span class="combo-bar"><i id="combo-fill" style="width:' + Math.round(chest.ratio * 100) + '%"></i></span>' +
           '</span>' +
@@ -469,7 +516,7 @@
           '<div>' +
             '<div id="answer-area">' + answerArea(q) + '</div>' +
             '<div class="row" style="margin-top:14px">' +
-              '<button class="btn btn-sm" id="hint" type="button">💡 힌트 (-3점)</button>' +
+              '<button class="btn btn-sm" id="hint" type="button">💡 같이 보기</button>' +
               '<button class="btn btn-sm btn-ghost" id="skip" type="button">🤷 모르겠어요</button>' +
             '</div>' +
             '<div id="hint-area"></div>' +
@@ -489,6 +536,7 @@
         if (chip) chip.textContent = '읽어주기를 켰어요';
       }
       if (state.cancelFeedbackVoice) state.cancelFeedbackVoice();
+      stopMusic();
       var name = t.getAttribute('data-speak');
       var generation = state.feedbackGeneration;
       var cancelled = false;
@@ -666,6 +714,7 @@
     var mic = ui.$('#mic');
     if (!mic || mic.disabled) return;
     audio.stopSpeaking();
+    stopMusic();
     mic.classList.remove('listening');
     mic.setAttribute('aria-label', '듣기 멈추기');
     mic.setAttribute('aria-pressed', 'false');
@@ -854,15 +903,15 @@
         res.newSticker = true;
       }
       res.dailyDone = FQ.progress.noteDaily(q.country, true);
-      res.chest = FQ.progress.chestOpensAt(g.streak);
-      // 보상은 채점 때 확정한다. 상자를 기다리지 않고 넘어가도 기록에서 빠지지 않는다.
-      if (res.chest) {
-        var chestLevel = FQ.progress.addXp(20);
-        if (chestLevel) res.levelUp = chestLevel;
-        state.xpGained += 20;
-        res.xpGain += 20;
-        g.addBonus(CHEST_BONUS);
-      }
+    }
+    // recordAnswer는 제출 때 딱 한 번 증가한다. 오답·건너뛰기도 쌓이고 다음 판에 이어진다.
+    res.chest = FQ.progress.chestOpensAt(store.stats().asked);
+    if (res.chest) {
+      var chestLevel = FQ.progress.addXp(20);
+      if (chestLevel) res.levelUp = chestLevel;
+      state.xpGained += 20;
+      res.xpGain = (res.xpGain || 0) + 20;
+      g.addBonus(CHEST_BONUS);
     }
     showFeedback(res);
   }
@@ -870,11 +919,11 @@
   function showFeedback(res) {
     if (state.cancelFeedbackVoice) state.cancelFeedbackVoice();
     state.cancelFeedbackVoice = null;
+    stopMusic();
     audio.stopSpeaking();
     var q = res.question;
     var c = q.country;
     var g = state.game;
-    var s = store.settings();
 
     ui.$$('.answer-btn').forEach(function (btn) {
       btn.disabled = true;
@@ -893,117 +942,87 @@
     var subBtn = ui.$('#answer-submit');
     if (subBtn) subBtn.disabled = true;
 
-    var who = g.players.length > 1 ? esc(g.currentPlayer()) + ', ' : '';
-    var verdict, extra = '', cheerWord = '';
-    if (res.correct) {
-      verdict = '🎉 ' + who + '정답이에요!' + (res.gained > 10 ? ' <span class="small">(+' + res.gained + '점 연속 보너스!)</span>' : '');
-      // 연속으로 맞힐수록 소리도 화면도 더 신나게
-      var level = g.streak >= 7 ? 3 : g.streak >= 5 ? 2 : g.streak >= 3 ? 1 : 0;
-      audio.play(level >= 3 ? 'bigcombo' : level >= 1 ? 'combo' : 'correct');
-      cheerWord = FQ.effects.celebrate({ level: level, streak: g.streak });
-      var stage = ui.$('.flag-stage');
-      if (stage) {
-        stage.classList.add('correct-pulse');
-        global.setTimeout(function () { stage.classList.remove('correct-pulse'); }, 700);
-      }
-      if (!res.exact && res.matched) {
-        extra = '<div class="small muted">비슷하게 말해도 정답으로 인정했어요. 정확한 이름은 <b>' + esc(c.ko) + '</b> 예요.</div>';
-      }
-      var wins = [];
-      if (res.xpGain) wins.push('✨ 경험치 +' + res.xpGain);
-      if (res.newSticker) wins.push('🏳️ ' + esc(c.ko) + ' 스티커를 얻었어요!');
-      if (res.levelUp) wins.push('🎉 레벨 ' + res.levelUp.number + ' ' + esc(res.levelUp.name) + ' 이 되었어요!');
-      if (res.dailyDone) wins.push('🏆 오늘의 도전을 끝냈어요!');
-      if (wins.length) extra += '<div class="xp-gain" style="margin-top:8px">' + wins.join(' · ') + '</div>';
+    // 같은 짧은 발견 반응을 모든 학습 카드에 쓴다. 정오답이 소리나 색의 신호가 되지 않는다.
+    var verdict = '📖 ' + DISCOVERIES[(Math.max(1, store.stats().asked) - 1) % DISCOVERIES.length];
+    var extra = '';
+    var wins = [];
+    if (res.newSticker) wins.push('새 스티커가 여행책에 들어왔어요');
+    if (res.levelUp) wins.push('새 길이 열렸어요 · ' + esc(res.levelUp.name));
+    if (wins.length) extra = '<div class="small muted">' + wins.join(' · ') + '</div>';
 
-      // 게임 머리판의 경험치·콤보를 그 자리에서 갱신한다
-      var lvNow = FQ.progress.level();
-      var fill = ui.$('#xp-fill');
-      if (fill) { fill.classList.add('gain'); fill.style.width = Math.round(lvNow.ratio * 100) + '%'; }
-      var xpVal = ui.$('#xp-val');
-      if (xpVal) xpVal.textContent = lvNow.isMax ? '최고 레벨' : lvNow.into + ' / ' + lvNow.need;
-      var chestNow = FQ.progress.chestProgress(g.streak);
-      var cFill = ui.$('#combo-fill');
-      if (cFill) cFill.style.width = Math.round(chestNow.ratio * 100) + '%';
-      var cTitle = ui.$('#combo-title');
-      if (cTitle) {
-        cTitle.textContent = res.chest
-          ? '보물상자가 열렸어요!'
-          : g.streak + '연속! 보물상자까지 ' + chestNow.left + '개';
-      }
-    } else {
-      verdict = '🌱 함께 알아봐요';
-    }
+    var lvNow = FQ.progress.level();
+    var fill = ui.$('#xp-fill');
+    if (fill) fill.style.width = Math.round(lvNow.ratio * 100) + '%';
+    var xpVal = ui.$('#xp-val');
+    if (xpVal) xpVal.textContent = lvNow.isMax ? '최고 레벨' : lvNow.into + ' / ' + lvNow.need;
+    var chestNow = FQ.progress.chestProgress(store.stats().asked);
+    var cFill = ui.$('#combo-fill');
+    if (cFill) cFill.style.width = Math.round(chestNow.ratio * 100) + '%';
+    var cTitle = ui.$('#combo-title');
+    if (cTitle) cTitle.textContent = res.chest ? '여행책에 다섯 장이 모였어요' :
+      '여행 카드 ' + chestNow.into + ' / ' + chestNow.need + '장 · 상자까지 ' + chestNow.left + '장';
 
-    // 소리로도 알려 준다.
-    //   맞혔을 때  → "정답!" 하고 외친 뒤 나라 이름을 읽어 준다
-    //   모를 때·틀렸을 때 → 이름을 한 번 읽고 쉬운 특징 하나만 알려 준다
-    // 수도 모드는 나라 이름이 이미 문제에 나와 있다. 못 맞힌 것은 수도이므로 그것을 되짚어 준다.
-    var isCapitalQ = res.question && res.question.mode === 'capital';
-    state.lastSpeech = res.correct
-      ? { lines: isCapitalQ ? [cheerWord || '정답', c.capital, c.fact] : [cheerWord || '정답', c.ko, c.fact],
-          opts: { rates: [1.02, 0.95, 0.95], pitches: [1.35, 1.1, 1.1] } }
-      : { lines: isCapitalQ ? [c.capital, c.ko + '의 수도예요'] : [c.ko, c.flagHint],
-          opts: { rate: 0.93, pitch: 1.1 } };
+    // 정오답 모두 이름 한 번과 쉬운 설명 한 문장만 읽는다.
+    var isCapitalQ = q.mode === 'capital';
+    state.lastSpeech = {
+      lines: isCapitalQ ? [c.capital, c.ko + '의 수도예요'] : [c.ko, c.flagHint],
+      opts: { rate: 0.93, pitch: 1.1 }
+    };
     var feedbackSpeech = state.lastSpeech;
     var generation = state.feedbackGeneration;
     var narrationRequest = 0;
+    var chestShown = false;
     function cancelNarration() {
       narrationRequest += 1;
-      if (state.feedbackTimer) global.clearTimeout(state.feedbackTimer);
-      state.feedbackTimer = null;
+      stopMusic();
     }
     state.cancelFeedbackVoice = cancelNarration;
     function feedbackCurrent() {
       return state.feedbackGeneration === generation && state.game === g &&
         g.current() === q && state.answered && !doc.hidden;
     }
-
-    // 마이크를 완전히 놓은 뒤에 읽어 준다.
-    // 말하기 모드에서 곧바로 읽으면 아이폰·아이패드는 소리를 조용히 버린다.
-    FQ.speech.stopAnd(function () {
-      if (!feedbackCurrent() || narrationRequest !== 0) return;
-      var micBtn2 = ui.$('#mic');
-      if (micBtn2) micBtn2.classList.remove('listening');
-      if (!store.settings().speak) return;
-      state.feedbackTimer = global.setTimeout(function () {
-        state.feedbackTimer = null;
-        if (!feedbackCurrent() || narrationRequest !== 0) return;
-        audio.say(feedbackSpeech.lines, feedbackSpeech.opts, function () {
-          if (feedbackCurrent()) nudgeReplay();
-        });
-      }, res.correct ? 180 : 120);
-    });
+    function afterExplanation(request) {
+      if (!feedbackCurrent() || request !== narrationRequest || !res.chest || chestShown) return;
+      chestShown = true;
+      showChest(c, res.newSticker);
+    }
+    function narrate(request) {
+      if (!feedbackCurrent() || request !== narrationRequest) return;
+      if (!store.settings().speak) { afterExplanation(request); return; }
+      audio.say(feedbackSpeech.lines, Object.assign({}, feedbackSpeech.opts, {
+        onEnd: function () { afterExplanation(request); }
+      }), function () {
+        if (!feedbackCurrent() || request !== narrationRequest) return;
+        nudgeReplay();
+        afterExplanation(request);
+      });
+    }
+    function beginFeedback(request, replaying) {
+      FQ.speech.stopAnd(function () {
+        if (!feedbackCurrent() || request !== narrationRequest) return;
+        // 보상 소리는 우선순위가 높은 하나만 쓴다. 상자는 설명이 끝난 뒤 열린다.
+        if (res.chest || replaying) { narrate(request); return; }
+        var event = res.levelUp ? 'level' : res.newSticker ? 'sticker' :
+          res.correct && store.settings().correctMusic ? 'correct' : 'discovery';
+        playMusic(event, function () { narrate(request); });
+      });
+    }
 
     var html =
-      '<div class="feedback ' + (res.correct ? 'ok' : 'learn') + '">' +
-        '<div class="verdict">' + verdict + '</div>' +
-        extra +
+      '<div class="feedback learn discovery-card">' +
+        '<div class="verdict">' + verdict + '</div>' + extra +
         '<div class="name-row" style="margin-top:10px">' +
           '<img src="' + ui.flagSrc(c.code) + '" alt="' + esc(c.ko) + ' 국기">' +
-          '<div>' +
-            '<div class="kname">' + esc(c.ko) + '</div>' +
-            (res.correct ? '<div class="ename">' + esc(c.en) + '</div>' : '') +
-          '</div>' +
-          '<button class="btn btn-sm" data-speak="' + esc(c.ko) + '" type="button">🔊</button>' +
+          '<div><div class="kname">' + esc(isCapitalQ ? c.capital : c.ko) + '</div></div>' +
         '</div>' +
-        (res.correct ? '<ul class="info-list">' +
-          '<li><b>수도</b><span>' + esc(c.capital) + '</span></li>' +
-          '<li><b>위치</b><span>' + esc(c.continent) + ' · ' + esc(c.region) + '</span></li>' +
-        '</ul>' : '') +
-        (res.correct ? '' :
-          '<div class="remember-box">' +
-            (isCapitalQ ? '<div class="remember-name">' + esc(c.capital) + '</div>' : '') +
-            '<div class="remember-hint">' +
-              (isCapitalQ ? '🏙️ ' + esc(c.ko) + '의 수도예요' : '🚩 ' + esc(c.flagHint)) +
-            '</div>' +
-          '</div>') +
-        (res.correct ? '<div class="fact-box">💡 ' + esc(c.fact) + '</div>' : '') +
+        '<div class="remember-box"><div class="remember-hint">' +
+          (isCapitalQ ? '🏙️ ' + esc(c.ko) + '의 수도예요' : '🚩 ' + esc(c.flagHint)) +
+        '</div></div>' +
         (store.settings().speak
           ? '<button class="btn btn-sm" id="replay" type="button" style="margin-top:8px">🔊 설명 다시 듣기</button>'
           : '<button class="btn btn-sm" id="speak-on" type="button" style="margin-top:8px">🔇 읽어주기가 꺼져 있어요 · 켜고 듣기</button>') +
         '<button class="btn btn-primary btn-big" id="next" type="button" style="width:100%;margin-top:14px">' +
-          (g.isLast() ? '결과 보기 →' : '다음 문제 →') +
+          (g.isLast() ? '오늘 여행 보기 →' : '다음 나라 →') +
         '</button>' +
       '</div>';
 
@@ -1013,14 +1032,9 @@
       if (state.cancelFeedbackVoice && state.cancelFeedbackVoice !== cancelNarration) state.cancelFeedbackVoice();
       cancelNarration();
       state.cancelFeedbackVoice = cancelNarration;
-      var request = narrationRequest;
+      generation = state.feedbackGeneration;
       audio.stopSpeaking();
-      FQ.speech.stopAnd(function () {
-        // 화면을 잠깐 숨겼다가 돌아온 뒤에도 같은 문제의 설명은 다시 들을 수 있다.
-        if (state.game !== g || g.current() !== q || !state.answered ||
-            doc.hidden || request !== narrationRequest) return;
-        audio.say(feedbackSpeech.lines, feedbackSpeech.opts, nudgeReplay);
-      });
+      beginFeedback(narrationRequest, true);
     }
     var replay = ui.$('#replay', area);
     if (replay) {
@@ -1043,10 +1057,7 @@
     var next = ui.$('#next');
     next.addEventListener('click', goNext);
     next.focus();
-    if (res.chest) state.chestTimer = global.setTimeout(function () {
-      state.chestTimer = null;
-      if (feedbackCurrent()) showChest(c, res.newSticker, g.streak);
-    }, 950);
+    beginFeedback(narrationRequest, false);
     next.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }
 
@@ -1063,21 +1074,21 @@
   }
 
   /**
-   * 연속 정답으로 보물상자가 열리는 순간.
+   * 학습 카드 다섯 장으로 여행 상자가 열리는 순간.
    * 눌러서 닫을 때까지 떠 있고, 안에서 무엇을 얻었는지 보여 준다.
    */
-  function showChest(country, gotSticker, streak) {
+  function showChest(country, gotSticker) {
     var st = FQ.progress.stickers();
     var back = doc.createElement('div');
     back.className = 'chest-back';
     back.innerHTML =
-      '<div class="chest-card" role="dialog" aria-label="보물상자를 열었어요">' +
+      '<div class="chest-card" role="dialog" aria-modal="true" aria-label="여행 상자가 열렸어요">' +
         '<div class="chest-art">' +
           '<div class="chest-rays"></div>' +
           '<div class="chest-emoji">🎁</div>' +
         '</div>' +
-        '<div class="chest-title">보물상자를 열었어요!</div>' +
-        '<div class="chest-sub">' + (streak || FQ.progress.CHEST_EVERY) + '문제를 연달아 맞혔어요</div>' +
+        '<div class="chest-title">여행 상자가 열렸어요!</div>' +
+        '<div class="chest-sub">여행책에 다섯 장이 모였어요</div>' +
         '<div class="chest-loot">' +
           '<div class="loot" style="animation-delay:.15s">' +
             '<div class="ic">⭐</div><div class="n">보너스 별</div><div class="d">+' + CHEST_BONUS + '점</div>' +
@@ -1105,10 +1116,11 @@
     if (closeBtn0) { try { closeBtn0.focus({ preventScroll: true }); } catch (e) { closeBtn0.focus(); } }
 
     // 보상은 submit 에서 이미 반영했다. 여기서는 화면과 효과만 보여 준다.
-    audio.play('badge');
-    FQ.effects.burst(110);
+    playMusic('chest');
+    FQ.effects.burst(35);
 
     function close() {
+      stopMusic();
       back.remove();
       var nextBtn = ui.$('#next');
       if (nextBtn) { nextBtn.disabled = false; nextBtn.focus(); }
@@ -1185,16 +1197,8 @@
 
   function renderResult(summary, earned) {
     cancelPendingFeedback();
-    var rate = summary.total ? summary.correct / summary.total : 0;
-    var starCount = FQ.progress.starsFor(summary.correct, summary.total);
-    var stars = '';
-    for (var si = 0; si < 3; si++) {
-      stars += '<span class="' + (si < starCount ? '' : 'off') +
-        '" style="animation-delay:' + (0.15 + si * 0.22) + 's">⭐</span>';
-    }
-    var cheer = rate >= 0.9 ? '대단해요! 세계 국기 박사님!'
-      : rate >= 0.7 ? '아주 잘했어요!'
-      : '멋져!';
+    var cheer = '멋져!';
+    musicScreen('result');
 
     var duelHtml = '';
     if (summary.players.length > 1) {
@@ -1223,9 +1227,9 @@
       '<section class="screen">' +
         '<div class="card">' +
           '<div class="result-hero">' +
-            '<div class="star-row">' + stars + '</div>' +
-            '<div class="score">' + summary.correct + ' / ' + summary.total + '</div>' +
-            '<p class="muted">' + esc(cheer) + '</p>' +
+            '<div class="journey-finish" aria-hidden="true">🗺️</div>' +
+            '<div class="score">오늘 만난 나라 ' + summary.total + '개</div>' +
+            '<p class="muted">여행책에 새로운 이야기가 쌓였어요</p>' +
             '<button class="btn btn-sm" id="result-replay" type="button">🔊 응원 다시 듣기</button>' +
             (state.xpGained
               ? '<div class="xp-gain">✨ 경험치 +' + state.xpGained + '</div>'
@@ -1233,12 +1237,12 @@
           '</div>' +
           reviewResultBlock() +
           resultLevelBlock() +
-          '<div class="stat-grid">' +
+          '<details class="journey-record"><summary>학습 기록 보기</summary><div class="stat-grid">' +
             '<div class="stat"><div class="v">' + summary.score + '</div><div class="k">점수</div></div>' +
             '<div class="stat"><div class="v">' + summary.bestStreak + '</div><div class="k">최고 연속</div></div>' +
             '<div class="stat"><div class="v">' + util.formatDuration(summary.seconds) + '</div><div class="k">걸린 시간</div></div>' +
             '<div class="stat"><div class="v">' + Math.round((summary.correct / (summary.total || 1)) * 100) + '%</div><div class="k">정답률</div></div>' +
-          '</div>' +
+          '</div></details>' +
         '</div>' +
 
         duelHtml +
@@ -1263,7 +1267,7 @@
 
         (summary.wrong.length
           ? '<div class="card section">' +
-              '<h3>다시 보면 좋은 국기 ' + summary.wrong.length + '개</h3>' +
+              '<h3>한 번 더 만날 나라 ' + summary.wrong.length + '개</h3>' +
               '<div class="wrong-grid">' + summary.wrong.map(function (c) {
                 return '<button class="wrong-item" type="button" data-code="' + c.code + '">' +
                   '<img src="' + ui.flagSrc(c.code) + '" alt="' + esc(c.ko) + ' 국기">' +
@@ -1273,12 +1277,12 @@
               }).join('') + '</div>' +
               '<p class="small muted" style="margin-bottom:0">국기를 누르면 자세히 볼 수 있어요.</p>' +
             '</div>'
-          : '<div class="card section" style="text-align:center">🎊 하나도 안 틀렸어요!</div>') +
+          : '<div class="card section" style="text-align:center">📖 오늘의 여행 카드가 모두 모였어요</div>') +
 
         '<div class="row">' +
           '<button class="btn btn-primary btn-big" id="again" type="button" style="flex:1">🔁 한 번 더</button>' +
           (summary.wrong.length
-            ? '<button class="btn btn-big" id="retry-wrong" type="button" style="flex:1">📝 틀린 것만 다시</button>'
+            ? '<button class="btn btn-big" id="retry-wrong" type="button" style="flex:1">📖 한 번 더 만나기</button>'
             : '') +
         '</div>' +
         '<button class="btn btn-ghost btn-big" id="home" type="button" style="width:100%;margin-top:10px">🏠 처음으로</button>' +
@@ -1288,8 +1292,8 @@
     var resultGame = state.game;
     var resultReplay = ui.$('#result-replay', m);
     var resultRequest = 0;
-    function cancelResultVoice() { resultRequest += 1; }
-    function playResultVoice() {
+    function cancelResultVoice() { resultRequest += 1; stopMusic(); }
+    function playResultVoice(withMusic) {
       cancelResultVoice();
       state.cancelFeedbackVoice = cancelResultVoice;
       var request = resultRequest;
@@ -1303,14 +1307,17 @@
       // 마지막 답에서 곧바로 결과를 열어도 마이크를 놓기 전에는 응원을 시작하지 않는다.
       FQ.speech.stopAnd(function () {
         if (!resultCurrent()) return;
-        audio.say([cheer], {}, function () {
+        function finishMusic() { if (withMusic && resultCurrent()) playMusic('finish'); }
+        if (!store.settings().speak) { finishMusic(); return; }
+        audio.say([cheer], { onEnd: finishMusic }, function () {
           if (!resultCurrent()) return;
           resultReplay.classList.add('needs-tap');
           resultReplay.textContent = '🔊 눌러서 응원 듣기';
+          finishMusic();
         });
       });
     }
-    playResultVoice();
+    playResultVoice(true);
     resultReplay.addEventListener('click', function () {
       if (!store.settings().speak) {
         store.updateSettings({ speak: true });
@@ -1318,9 +1325,7 @@
       }
       playResultVoice();
     });
-    if (rate >= 0.7) { audio.play('finish'); FQ.effects.burst(140); }
-    else audio.play('finish');
-    if (earned && earned.length) setTimeout(function () { audio.play('badge'); }, 700);
+    FQ.effects.burst(35);
 
     ui.on(m, '.wrong-item', 'click', function (e, t) {
       cancelResultVoice();
@@ -1335,23 +1340,13 @@
     ui.$('#home', m).addEventListener('click', renderHome);
   }
 
-  /** 복습 판이었을 때, 오답노트가 얼마나 줄었는지 알려 준다 */
+  /** 한 번 더 만난 나라의 여정을 돌아본다. 정답 기록은 따로 보존한다. */
   function reviewResultBlock() {
     var r = state.review;
     if (!r) return '';
-    var after = store.wrongList().length;
-    var cleared = Math.max(0, r.before - after);
-    return '<div class="review-done">' +
-      '<span class="ic">📝</span>' +
-      '<span class="body">' +
-        '<span class="t">' +
-          (cleared > 0
-            ? '복습한 나라 ' + cleared + '개가 오답노트에서 빠졌어요!'
-            : '이번에는 빠진 나라가 없어요. 한 번 더 맞히면 빠져요.') +
-        '</span>' +
-        '<span class="d">아직 ' + after + '개가 남아 있어요</span>' +
-      '</span>' +
-    '</div>';
+    return '<div class="review-done"><span class="ic">📖</span><span class="body">' +
+      '<span class="t">익숙한 나라를 한 번 더 만났어요</span>' +
+      '<span class="d">오늘 본 국기는 여행책에서 언제든 펼쳐 볼 수 있어요</span></span></div>';
   }
 
   /** 결과 화면에 지금 레벨과 스티커 판 진행을 보여 준다 */
@@ -1409,6 +1404,7 @@
     doc.getElementById('nav-stats').addEventListener('click', function () {
       cancelPendingFeedback();
       stopTimer(); stopListening(); audio.stopSpeaking(); state.game = null;
+      musicScreen('stats');
       FQ.screens.stats();
     });
 
@@ -1434,7 +1430,10 @@
     });
     // 아이폰·아이패드는 사용자가 화면을 처음 만질 때만 소리를 열어 준다
     ['pointerdown', 'touchend', 'click', 'keydown'].forEach(function (evt) {
-      doc.addEventListener(evt, audio.unlock, { passive: true });
+      doc.addEventListener(evt, function () {
+        audio.unlock();
+        if (FQ.music) FQ.music.unlock();
+      }, { passive: true });
     });
 
     registerServiceWorker();
@@ -1450,7 +1449,7 @@
     global.navigator.serviceWorker.register('sw.js').catch(function () { /* 없어도 그만 */ });
   }
 
-  FQ.app = { home: renderHome, boot: boot, startGame: startGame };
+  FQ.app = { home: renderHome, boot: boot, startGame: startGame, musicScreen: musicScreen };
 
   if (doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', boot);
   else boot();

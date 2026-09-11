@@ -28,10 +28,10 @@
         '<button class="btn btn-sm" id="dex-clear" type="button" style="margin-top:10px">검색어 지우기</button>';
     }
     if (dexFilter.onlyWrong) {
-      return '틀린 나라가 하나도 없어요! 🎉' +
+      return '여행책을 골고루 만나고 있어요' +
         '<div class="small muted" style="margin-top:6px">' +
         (dexFilter.continent === 'all' ? '' : esc(dexFilter.continent) + '에서 ') +
-        '틀린 적이 없다는 뜻이에요.</div>';
+        '다른 나라의 국기도 펼쳐 볼까요?</div>';
     }
     if (dexFilter.onlyLocked) {
       return (dexFilter.continent === 'all' ? '194칸을 모두 모았어요! 🌍' : esc(dexFilter.continent) + '를 모두 모았어요! 🎉') +
@@ -45,6 +45,7 @@
   /* =================== 국기 도감 =================== */
   function dex(startContinent) {
     init();
+    if (FQ.app.musicScreen) FQ.app.musicScreen('dex');
     if (startContinent) {
       dexFilter.continent = startContinent;
       dexFilter.query = '';
@@ -68,8 +69,8 @@
                 (c === 'all' ? '전체' : esc(c)) + '</button>';
             }).join('') +
           '</div>' +
-          '<label class="switch" style="margin-top:12px"><input type="checkbox" id="dex-wrong"' + (dexFilter.onlyWrong ? ' checked' : '') + '> 틀렸던 나라만 보기</label>' +
-          '<label class="switch"><input type="checkbox" id="dex-locked"' + (dexFilter.onlyLocked ? ' checked' : '') + '> 아직 못 모은 것만 보기</label>' +
+          '<label class="switch" style="margin-top:12px"><input type="checkbox" id="dex-wrong"' + (dexFilter.onlyWrong ? ' checked' : '') + '> 한 번 더 만날 나라</label>' +
+          '<label class="switch"><input type="checkbox" id="dex-locked"' + (dexFilter.onlyLocked ? ' checked' : '') + '> 새로 만날 스티커</label>' +
         '</div>' +
         '<div id="dex-list"></div>' +
       '</section>';
@@ -159,6 +160,7 @@
   /* =================== 내 기록 =================== */
   function stats() {
     init();
+    if (FQ.app.musicScreen) FQ.app.musicScreen('stats');
     var st = FQ.storage.stats();
     var countryStats = FQ.storage.allCountryStats();
     var badges = FQ.storage.badges();

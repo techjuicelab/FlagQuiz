@@ -1,0 +1,21 @@
+01 작은 나무상자
+용도: 상자 / 따뜻한 오르골과 칼림바. 첫 제작 추천.
+Model: ACE-Step 1.5 XL Turbo (8-bit)
+Mode: Text to music
+Instrumental: ON
+Lyrics: 빈칸
+Reference audio: 없음
+Duration: 10 seconds
+편집 목표: 2.5~3.5초 (생성 길이와 다름)
+Tempo: 108 BPM
+Key: C major
+Time signature: 4/4
+Vocal language: Korean (무가사)
+Seed: 41101
+대체 Seed: 42101, 43101
+Keep model loaded: OFF
+보관 파일 이름: fq-chest-01-musicbox-seed41101.wav
+
+Style prompt에 아래 영문만 붙여 넣으세요.
+
+A tiny original instrumental treasure-box jingle for a gentle children’s flag exploration app. Warm wooden music box, soft kalimba and rounded marimba, with one delicate bell sparkle. C major pentatonic, 108 BPM, 4/4. One clear three-note rising motif, a small playful answer, then a warm resolved final chord. Begin the motif immediately, complete the musical gesture within the first three seconds, and let the resonance fade into quiet for the remainder. Intimate, curious and cozy, equal in loudness to a soft interface sound. No singing, speech, chanting, cheers, drum hits, cymbal crashes, piercing bells, heavy bass, dramatic build-up or repeated victory loops.

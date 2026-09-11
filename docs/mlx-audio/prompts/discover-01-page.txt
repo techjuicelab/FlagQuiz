@@ -1,0 +1,21 @@
+07 여행책 한 장
+용도: 발견 / 정오답 공통 학습 카드. 발견음 첫 제작 추천.
+Model: ACE-Step 1.5 XL Turbo (8-bit)
+Mode: Text to music
+Instrumental: ON
+Lyrics: 빈칸
+Reference audio: 없음
+Duration: 10 seconds
+편집 목표: 0.5~0.9초 (생성 길이와 다름)
+Tempo: 88 BPM
+Key: C major
+Time signature: 4/4
+Vocal language: Korean (무가사)
+Seed: 41201
+대체 Seed: 42201, 43201
+Keep model loaded: OFF
+보관 파일 이름: fq-discover-01-page-seed41201.wav
+
+Style prompt에 아래 영문만 붙여 넣으세요.
+
+An original extremely small instrumental discovery cue for opening any learning card in a calm children's app. Two warm felt-piano notes and one very soft wooden pluck, C major pentatonic, 88 BPM, 4/4. It should feel like quietly placing a page in a travel book: curious, neutral and welcoming, without announcing a result. Begin the two-note gesture immediately and finish it within the first second, then allow a natural decay and quiet remainder. Very sparse close sound, no backing rhythm. No singing, speech, humming, cheers, sad descending slide, warning tone, buzzer, drum hit or dramatic swell.

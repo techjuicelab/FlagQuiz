@@ -1,0 +1,21 @@
+15 새 길 열기
+용도: 수집 / 새 탐험 단계가 열릴 때. 상자와 겹치면 생략.
+Model: ACE-Step 1.5 XL Turbo (8-bit)
+Mode: Text to music
+Instrumental: ON
+Lyrics: 빈칸
+Reference audio: 없음
+Duration: 10 seconds
+편집 목표: 2~2.8초 (생성 길이와 다름)
+Tempo: 104 BPM
+Key: C major
+Time signature: 4/4
+Vocal language: Korean (무가사)
+Seed: 41402
+대체 Seed: 42402, 43402
+Keep model loaded: OFF
+보관 파일 이름: fq-level-01-newpath-seed41402.wav
+
+Style prompt에 아래 영문만 붙여 넣으세요.
+
+An original miniature instrumental cue for discovering a new path in a child's exploration book. A warm wooden music box, mellow marimba and soft harp harmonics. C major pentatonic, 104 BPM, 4/4. One clear three-note rising motif expands into a tiny friendly answering phrase and resolves warmly. Start immediately and finish within two and a half seconds, followed by a short fading tail. A sense of opening space, not upgrading status or winning a competition. No vocals, speech, shouts, applause, brass fanfare, drum hits, loud cymbals, piercing bells, bass drops or repetition.

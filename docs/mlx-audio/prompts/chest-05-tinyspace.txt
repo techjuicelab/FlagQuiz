@@ -1,0 +1,21 @@
+05 작은 우주 상자
+용도: 상자 / 둥근 전자음과 잔잔한 별빛. 기계 경고음은 없어요.
+Model: ACE-Step 1.5 XL Turbo (8-bit)
+Mode: Text to music
+Instrumental: ON
+Lyrics: 빈칸
+Reference audio: 없음
+Duration: 10 seconds
+편집 목표: 2.5~3.5초 (생성 길이와 다름)
+Tempo: 100 BPM
+Key: F major
+Time signature: 4/4
+Vocal language: Korean (무가사)
+Seed: 41105
+대체 Seed: 42105, 43105
+Keep model loaded: OFF
+보관 파일 이름: fq-chest-05-tinyspace-seed41105.wav
+
+Style prompt에 아래 영문만 붙여 넣으세요.
+
+An original tiny instrumental star-box celebration for a cozy children's space adventure. Rounded soft sine-wave plucks, warm felt piano and one delicate low-volume bell sparkle. F major pentatonic, 100 BPM, 4/4. A recognizable three-note rising motif with a gentle floating response and a warm final resolution. Place the musical event in the first three seconds, then fade into stillness. Friendly, tactile and curious rather than futuristic or competitive. No vocals, speech, robot voices, arcade alarms, laser sounds, harsh 8-bit square waves, drum hits, bass drops, long build-up or repeated victory phrases.

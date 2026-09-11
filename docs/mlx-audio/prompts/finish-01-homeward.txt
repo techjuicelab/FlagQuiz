@@ -1,0 +1,21 @@
+13 오늘 여행 마침
+용도: 여정 / 점수와 무관하게 같은 마침 음악.
+Model: ACE-Step 1.5 XL Turbo (8-bit)
+Mode: Text to music
+Instrumental: ON
+Lyrics: 빈칸
+Reference audio: 없음
+Duration: 10 seconds
+편집 목표: 3~4초 (생성 길이와 다름)
+Tempo: 88 BPM
+Key: F major
+Time signature: 4/4
+Vocal language: Korean (무가사)
+Seed: 41501
+대체 Seed: 42501, 43501
+Keep model loaded: OFF
+보관 파일 이름: fq-finish-01-homeward-seed41501.wav
+
+Style prompt에 아래 영문만 붙여 넣으세요.
+
+A short original instrumental closing phrase for finishing any session of a children's country-exploration app, independent of score. Warm felt piano, gentle nylon-string guitar harmonics and a soft kalimba response. F major pentatonic, 88 BPM, 4/4. A friendly three-note rising motif returns home to one calm resolved chord. Begin the melody immediately, complete one satisfying phrase within four seconds, then let it fade. Contented, cozy and open to returning another day, neither triumphant nor consoling. No singing, speech, cheers, sad strings, suspense, percussion hits, grand finale or looping chorus.

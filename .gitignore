@@ -9,6 +9,7 @@ _site/
 # 로컬 검토 보고서와 API 사용량·재생 검증 자료
 docs/review-2026-09-10.md
 docs/artifacts/
+docs/FlagQuiz-MLX-Audio-Pack.zip
 
 # 디자인 캔버스 결과물 (design/*.dc.html 에서 다시 만들 수 있음)
 design/flag-quiz-game-design.html

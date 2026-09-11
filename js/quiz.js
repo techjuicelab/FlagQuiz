@@ -117,7 +117,7 @@
 
   /**
    * 아이가 "모른다" 거나 "이게 뭐야?" 하고 물어볼 때 쓰는 말들.
-   * 이런 말이 들리면 나라 이름을 두 번 읽어 주고 국기 특징을 알려 준 뒤 넘어간다.
+   * 이런 말이 들리면 나라 이름을 한 번 읽어 주고 국기 특징을 알려 준다.
    *
    * 낱말이 들어 있는지로 보기 때문에 "아빠 이거 뭐야?", "에이 나 모르겠네" 처럼
    * 앞뒤에 다른 말이 붙어도 알아본다. 나라 이름 중에 이 말이 들어간 것은 없다.
@@ -372,6 +372,7 @@
       correct: 0,
       wrong: [],
       hintsUsed: 0,
+      answered: {},
       startedAt: Date.now(),
       turn: 0,
       players: cfg.players.slice(),
@@ -391,7 +392,8 @@
      */
     game.submit = function (payload, usedHint) {
       var q = game.current();
-      if (!q) return null;
+      if (!q || game.answered[game.index]) return null;
+      game.answered[game.index] = true;
       var res;
       if (payload && typeof payload.code === 'string') {
         res = {
@@ -412,7 +414,7 @@
         game.correct += 1;
         game.streak += 1;
         if (game.streak > game.bestStreak) game.bestStreak = game.streak;
-        var gained = 10 + (game.streak >= 3 ? 5 : 0) - (usedHint ? 3 : 0);
+        var gained = 10 + (game.streak >= 3 ? 5 : 0);
         if (gained < 1) gained = 1;
         game.score += gained;
         game.playerScores[pi].score += gained;

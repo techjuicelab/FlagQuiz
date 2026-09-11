@@ -1,0 +1,21 @@
+06 바다유리 상자
+용도: 상자 / 맑지만 날카롭지 않은 벨과 포근한 마림바.
+Model: ACE-Step 1.5 XL Turbo (8-bit)
+Mode: Text to music
+Instrumental: ON
+Lyrics: 빈칸
+Reference audio: 없음
+Duration: 10 seconds
+편집 목표: 2.5~3.5초 (생성 길이와 다름)
+Tempo: 92 BPM
+Key: G major
+Time signature: 4/4
+Vocal language: Korean (무가사)
+Seed: 41106
+대체 Seed: 42106, 43106
+Keep model loaded: OFF
+보관 파일 이름: fq-chest-06-seaglass-seed41106.wav
+
+Style prompt에 아래 영문만 붙여 넣으세요.
+
+A tiny original instrumental celebration like opening a box of smooth sea-glass treasures. Soft damped vibraphone, mellow marimba and a quiet harp shimmer. G major pentatonic, 92 BPM, 4/4. Three clear rising notes with a gentle rocking rhythm, ending on one warm resolved chord. Start the melody immediately and finish it in the first three seconds, leaving a soft fading tail. Calm delight with rounded, non-metallic attacks and a close intimate sound. No voices, singing, speech, waves, splashes, underwater rumble, cymbals, loud bells, heavy bass or recurring chorus.

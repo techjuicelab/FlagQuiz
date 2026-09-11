@@ -2,7 +2,7 @@
  * 한 번 열어 두면 인터넷 없이도 놀 수 있게 파일을 담아 둔다.
  * 국기 SVG는 본 것만 담고(용량 절약), 나머지는 새 버전이 있으면 먼저 받아온다.
  */
-var VERSION = 'flagquiz-v3';
+var VERSION = 'flagquiz-v4';
 var SHELL = [
   './',
   './index.html',
@@ -14,6 +14,8 @@ var SHELL = [
   './js/audio.js',
   './js/recorded-audio.js',
   './js/voice-manifest.js',
+  './js/music-manifest.js',
+  './js/music.js',
   './js/speech.js',
   './js/effects.js',
   './js/ui.js',
