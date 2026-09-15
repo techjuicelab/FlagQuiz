@@ -9,7 +9,7 @@ function fixture(saved) {
   context.window = context;
   vm.createContext(context);
   const load = (file) => vm.runInContext(fs.readFileSync(new URL('../' + file, import.meta.url), 'utf8'), context);
-  for (const file of ['js/util.js', 'js/storage.js', 'data/countries.js', 'js/progress.js', 'js/quiz.js']) load(file);
+  for (const file of ['js/util.js', 'js/storage.js', 'data/countries.js', 'data/subjects.js', 'js/progress.js', 'js/quiz.js']) load(file);
   return { FQ: context.FQ, load, local };
 }
 

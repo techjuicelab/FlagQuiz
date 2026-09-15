@@ -19,6 +19,29 @@
 
   function all() { return FQ.countries || []; }
 
+  // 혼동군은 축을 넘겨 연결된다. 나중에 자료를 주입하는 환경도 지원한다.
+  var indexedGroups = null;
+  var confusionIndex = {};
+  function confusionSet(code) {
+    var groups = FQ.confusionGroups || [];
+    if (groups !== indexedGroups) {
+      indexedGroups = groups;
+      confusionIndex = {};
+      groups.forEach(function (group) {
+        group.codes.forEach(function (a) {
+          var set = confusionIndex[a] || (confusionIndex[a] = {});
+          group.codes.forEach(function (b) { if (a !== b) set[b] = true; });
+        });
+      });
+    }
+    return confusionIndex[code] || {};
+  }
+
+  function hasData(country, axis) {
+    if (axis !== 'symbol' && axis !== 'place') return true;
+    return !!(FQ.subjects && FQ.subjects[country.code] && FQ.subjects[country.code][axis]);
+  }
+
   function byCode(code) {
     var list = all();
     for (var i = 0; i < list.length; i++) if (list[i].code === code) return list[i];
@@ -41,13 +64,20 @@
       opts.only.forEach(function (c) { set[c] = true; });
       list = all().filter(function (c) { return set[c.code]; });
     }
-    return list;
+    return list.filter(function (c) { return hasData(c, opts.axis); });
   }
 
   /** 정답과 헷갈릴 만한 오답 보기를 고른다. */
-  function distractors(answer, count, source, mode) {
-    var candidates = (source && source.length >= count + 1 ? source : all()).filter(function (c) {
-      return c.code !== answer.code;
+  function distractors(answer, count, source, mode, opts) {
+    opts = opts || {};
+    var axis = opts.axis || (MODES[mode] && MODES[mode].axis);
+    var art = axis === 'symbol' || axis === 'place';
+    // 자료 필터는 후보·폴백·혼동군 완화 뒤에도 항상 유지한다.
+    var fallbackPool = all().filter(function (c) {
+      return !art || !!(FQ.subjects && FQ.subjects[c.code] && FQ.subjects[c.code][axis]);
+    });
+    var candidates = (source && source.length >= count + 1 ? source : fallbackPool).filter(function (c) {
+      return c.code !== answer.code && hasData(c, axis);
     });
     if (mode === 'capital') {
       // 수도 이름이 겹치면 정답이 둘이 되어 버린다
@@ -70,9 +100,12 @@
     usedCode[answer.code] = true;
     usedCapital[answer.capital] = true;
 
-    function take(c) {
+    function take(c, relaxConfusion) {
       if (usedCode[c.code]) return false;
       if (mode === 'capital' && usedCapital[c.capital]) return false;
+      if (art && !relaxConfusion && Object.keys(usedCode).some(function (code) {
+        return confusionSet(code)[c.code];
+      })) return false;
       usedCode[c.code] = true;
       usedCapital[c.capital] = true;
       out.push(c);
@@ -85,18 +118,22 @@
     }
     // 그래도 모자라면 전체에서 채운다
     if (out.length < count) {
-      var rest = util.shuffle(all());
+      var rest = util.shuffle(fallbackPool);
       for (var j = 0; j < rest.length && out.length < count; j++) take(rest[j]);
+    }
+    if (art && out.length < count) {
+      var relaxed = util.shuffle(fallbackPool);
+      for (var k = 0; k < relaxed.length && out.length < count; k++) take(relaxed[k], true);
     }
     return out.slice(0, count);
   }
 
   /** 한 문제를 만든다. */
-  function makeQuestion(answer, mode, source) {
+  function makeQuestion(answer, mode, source, opts) {
     var q = { mode: mode, country: answer, options: null };
     if (MODES[mode] && MODES[mode].hasOptions) {
-      var opts = distractors(answer, 3, source, mode).concat([answer]);
-      q.options = util.shuffle(opts);
+      var choices = distractors(answer, 3, source, mode, opts).concat([answer]);
+      q.options = util.shuffle(choices);
     }
     return q;
   }
@@ -337,15 +374,16 @@
       only: null
     }, config || {});
 
-    var source = pool({ level: cfg.level, continent: cfg.continent, only: cfg.only });
-    if (source.length === 0) source = all();
+    var axis = (MODES[cfg.mode] && MODES[cfg.mode].axis) || 'flag';
+    var source = pool({ level: cfg.level, continent: cfg.continent, only: cfg.only, axis: axis });
+    if (source.length === 0) source = pool({ axis: axis });
 
     var total = cfg.count === 'all' ? source.length : Math.min(cfg.count, source.length);
     if (total < 1) total = Math.min(1, source.length);
 
     // 출제 순서 정하기: 오답 우선이면 가중치로, 아니면 골고루 섞어서
     var order;
-    if (cfg.reviewFirst && FQ.storage && source.length > total) {
+    if (axis === 'flag' && cfg.reviewFirst && FQ.storage && source.length > total) {
       var remaining = source.slice();
       order = [];
       while (order.length < total && remaining.length) {
@@ -358,7 +396,7 @@
       order = util.sample(source, total);
     }
 
-    var questions = order.map(function (c) { return makeQuestion(c, cfg.mode, source); });
+    var questions = order.map(function (c) { return makeQuestion(c, cfg.mode, source, { axis: axis }); });
 
     var game = {
       config: cfg,
@@ -472,6 +510,7 @@
     byCode: byCode,
     pool: pool,
     distractors: distractors,
+    confusionSet: confusionSet,
     makeQuestion: makeQuestion,
     checkText: checkText,
     findCountry: findCountry,
