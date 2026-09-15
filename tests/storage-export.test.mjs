@@ -130,9 +130,48 @@ function screenFixture(options) {
   };
   f.c.scrollTo = () => {};
   f.c.FQ.app = { home() {} };
-  f.load('data/countries.js', 'js/quiz.js', 'js/badges.js', 'js/ui.js', 'js/screens.js');
+  f.load('data/countries.js', 'js/features.js', 'js/progress.js', 'js/quiz.js', 'js/badges.js', 'js/ui.js', 'js/screens.js');
   return { ...f, main, node: selector => main.querySelector(selector) };
 }
+
+test('194개 국기 스티커 안의 새 도장은 학습 축별 정답만 읽고 기존 기록을 변경하지 않는다', () => {
+  const f = screenFixture();
+  f.storage.updateSettings({ dev: { art: true } });
+  f.storage.recordAnswer('kr', true, 'symbol');
+  f.storage.recordAnswer('kr', false, 'place');
+  f.storage.recordAnswer('kr', true, 'map');
+  const before = f.storage.exportJson();
+  f.c.FQ.screens.dex('all');
+  const html = f.node('#dex-list').innerHTML;
+  assert.equal((html.match(/class="sticker-cell /g) || []).length, 194);
+  const kr = html.match(/<button class="sticker-cell [^>]*data-code="kr"[\s\S]*?<\/button>/)[0];
+  assert.match(kr, /sticker-cell locked/);
+  assert.match(kr, /axis-stamp earned" data-axis="symbol"/);
+  assert.match(kr, /axis-stamp" data-axis="place"/);
+  assert.match(kr, /axis-stamp earned" data-axis="map"/);
+  assert.equal(f.c.FQ.progress.stickers().owned, 0);
+  assert.equal(f.storage.exportJson(), before);
+  f.storage.updateSettings({ dev: { art: false } });
+  f.c.FQ.screens.dex('all');
+  assert.doesNotMatch(f.node('#dex-list').innerHTML, /data-axis="(?:symbol|place)"/);
+  assert.match(f.node('#dex-list').innerHTML, /data-axis="map"/);
+});
+
+test('놀이별 기록은 국기·그림·명소·위치를 따로 집계하며 오래된 빈 레코드도 0으로 읽는다', () => {
+  const seed = fixture();
+  const saved = JSON.parse(seed.storage.exportJson());
+  saved.axes = { symbol: { kr: { seen: 2, correct: 1 }, jp: {} }, map: { au: { seen: 1 } } };
+  const f = screenFixture({ saved: JSON.stringify(saved) });
+  f.storage.recordAnswer('fr', true);
+  const before = f.storage.exportJson();
+  f.c.FQ.screens.stats();
+  assert.match(f.main.innerHTML, /data-axis="symbol"[\s\S]*?1개국 · 2문제[\s\S]*?정답 1개 · 50%/);
+  assert.match(f.main.innerHTML, /data-axis="map"[\s\S]*?1개국 · 1문제[\s\S]*?정답 0개 · 0%/);
+  assert.match(f.main.innerHTML, /data-axis="place"[\s\S]*?0개국 · 0문제/);
+  assert.match(f.main.innerHTML, /data-axis="flag"[\s\S]*?1개국 · 1문제/);
+  assert.doesNotMatch(f.main.innerHTML, /NaN|undefined/);
+  assert.equal(f.storage.exportJson(), before);
+});
 
 test('내 기록에서 백업 버튼을 누르면 읽기 전용 textarea에 원문을 넣고 전체 선택한다', () => {
   const f = screenFixture();
