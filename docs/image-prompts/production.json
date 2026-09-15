@@ -230,11 +230,6 @@
           "attempt": 2,
           "path": "docs/image-prompts/generation-prompts/al-symbol-02.txt",
           "sha256": "bce658b5a7c2de662b547b0826cce31bf5ece337365cbe0c4d71e5a91bba8728"
-        },
-        {
-          "attempt": 3,
-          "path": "docs/image-prompts/generation-prompts/al-symbol-03.txt",
-          "sha256": "00e94ee94fc79c02a820cd397972b9afe88869da1c09b18456e61eaee5687506"
         }
       ],
       "conversion": {
@@ -309,7 +304,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "평평한 갈색 상부, 붉은 세로 침식 절벽, 아래 파란 바다 확인. 떨어지는 물 없음. 좌우 여백 부족.",
+        "notes": "평평한 갈색 상부, 붉은 세로 침식 절벽, 아래 파란 바다 확인. 떨어지는 물 없음. 좌우 여백 부족. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -344,7 +339,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "재편집에서 눈앞 작은 흰 패치와 흰 주둥이 사이에 넓고 명료한 검은 털이 생겨 거대 세이블의 진단 형질을 충족. 검은 몸·흰 배·두 뿔·네 다리 유지. 최종 여백·카드 검수 대기.",
+        "notes": "재편집에서 눈앞 작은 흰 패치와 흰 주둥이 사이에 넓고 명료한 검은 털이 생겨 거대 세이블의 진단 형질을 충족. 검은 몸·흰 배·두 뿔·네 다리 유지. 최종 여백·카드 검수 대기. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -434,11 +429,6 @@
           "attempt": 1,
           "path": "docs/image-prompts/generation-prompts/at-landmark-01.txt",
           "sha256": "20593b05214637bbd6ff703d20524abd3d0c14b31f4e5c489236d56645c7f23a"
-        },
-        {
-          "attempt": 2,
-          "path": "docs/image-prompts/generation-prompts/at-landmark-02.txt",
-          "sha256": "eae8246da27fc06cbe1f49091abdd556e312b5757ff5559eec03d1ce0c431cb8"
         }
       ],
       "conversion": {
@@ -469,11 +459,6 @@
           "attempt": 1,
           "path": "docs/image-prompts/generation-prompts/at-symbol-01.txt",
           "sha256": "2bc30ae1c932de5291c72ee0d400c371ec30dd88148f4ff7c71358a4e69ff428"
-        },
-        {
-          "attempt": 2,
-          "path": "docs/image-prompts/generation-prompts/at-symbol-02.txt",
-          "sha256": "ddc4d74c37f82a4a2934fcb45ea37ee0809969a7304ef249717c0db1ed51ad71"
         }
       ],
       "conversion": {
@@ -561,17 +546,12 @@
         {
           "attempt": 1,
           "path": "docs/image-prompts/generation-prompts/az-landmark-01.txt",
-          "sha256": "2cd1c5517dbba1fffb675a45633cb25391546b59799aa830fcd98c28835d7f79"
+          "sha256": "0f4337d4fc1a21ea2137db3b8f415071fe884740469504ef124b8d144a1831da"
         },
         {
           "attempt": 2,
           "path": "docs/image-prompts/generation-prompts/az-landmark-02.txt",
-          "sha256": "0f4337d4fc1a21ea2137db3b8f415071fe884740469504ef124b8d144a1831da"
-        },
-        {
-          "attempt": 3,
-          "path": "docs/image-prompts/generation-prompts/az-landmark-03.txt",
-          "sha256": "caad73e636a0c96414126f250cbb653a54ce4c8148a79a32cd239d2475c2349b"
+          "sha256": "2cd1c5517dbba1fffb675a45633cb25391546b59799aa830fcd98c28835d7f79"
         }
       ],
       "conversion": {
@@ -662,11 +642,6 @@
           "attempt": 1,
           "path": "docs/image-prompts/generation-prompts/ba-symbol-01.txt",
           "sha256": "eb2e65c3e028e88b19e3483cc04015677c5a3ff657f303d54433a57dd946857f"
-        },
-        {
-          "attempt": 2,
-          "path": "docs/image-prompts/generation-prompts/ba-symbol-02.txt",
-          "sha256": "051a9e97e6b27030c7febd5845083723b5bafd0e5e4ce4c996e410e36854e376"
         }
       ],
       "conversion": {
@@ -859,7 +834,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "갈색 사암의 분리된 뾰족한 첨봉, 깊은 틈과 낮은 바닥 확인. 회색 칭기 칼날·붉은 판상 절벽과 구별됨.",
+        "notes": "갈색 사암의 분리된 뾰족한 첨봉, 깊은 틈과 낮은 바닥 확인. 회색 칭기 칼날·붉은 판상 절벽과 구별됨. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -889,7 +864,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "검정·하양·빨강 기하무늬가 천이 아닌 두꺼운 흙벽과 출입구에 그려져 있음.",
+        "notes": "검정·하양·빨강 기하무늬가 천이 아닌 두꺼운 흙벽과 출입구에 그려져 있음. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -1039,7 +1014,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "큰 나무 북 하나, 가죽 윗면과 둘레 나무 고정못 확인. 사람·의식·국기 없음.",
+        "notes": "큰 나무 북 하나, 가죽 윗면과 둘레 나무 고정못 확인. 사람·의식·국기 없음. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -1069,7 +1044,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "집 3채, 긴 나무 기둥, 푸른 호수 확인. 사람·배 없음.",
+        "notes": "집 3채, 긴 나무 기둥, 푸른 호수 확인. 사람·배 없음. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -1099,7 +1074,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "노란 셔츠·헬멧 운전자 뒷모습, 얼굴과 번호판 글자 없음. 두 바퀴와 오토바이 본체 확인.",
+        "notes": "노란 셔츠·헬멧 운전자 뒷모습, 얼굴과 번호판 글자 없음. 두 바퀴와 오토바이 본체 확인. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -1394,7 +1369,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "초록 풀섬 3개 사이로 갈라진 파란 물길 확인. 폭포·절벽 없음.",
+        "notes": "초록 풀섬 3개 사이로 갈라진 파란 물길 확인. 폭포·절벽 없음. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -1424,7 +1399,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "검정·하양 줄무늬 얼룩말 한 마리, 다리 4개와 직립 갈기 확인.",
+        "notes": "검정·하양 줄무늬 얼룩말 한 마리, 다리 4개와 직립 갈기 확인. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -1440,11 +1415,6 @@
           "attempt": 1,
           "path": "docs/image-prompts/generation-prompts/by-symbol-01.txt",
           "sha256": "39ebeb1860fcc8d3510955bf114005f5d574771a9224520cc084d736db774165"
-        },
-        {
-          "attempt": 2,
-          "path": "docs/image-prompts/generation-prompts/by-symbol-02.txt",
-          "sha256": "4288bfbed07db1364170f8513d031752bf7d50900cfdfac921ba82b307b635cd"
         }
       ],
       "conversion": {
@@ -1605,7 +1575,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "회색 깊은 분화구 안에 주황·빨강 용암 호수 하나. 화염·분출·마을 없음. 좌우 여백 좁음.",
+        "notes": "회색 깊은 분화구 안에 주황·빨강 용암 호수 하나. 화염·분출·마을 없음. 좌우 여백 좁음. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -1635,7 +1605,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "오카피 한 마리, 갈색 몸과 다리·엉덩이 흑백 줄무늬, 다리 4개 확인.",
+        "notes": "오카피 한 마리, 갈색 몸과 다리·엉덩이 흑백 줄무늬, 다리 4개 확인. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -1665,7 +1635,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "거친 무색 원석 3개 확인. 보석 세팅·가공 다이아몬드 실루엣 없음.",
+        "notes": "거친 무색 원석 3개 확인. 보석 세팅·가공 다이아몬드 실루엣 없음. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -1695,7 +1665,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "넓은 갈색 강물과 검고 둥근 바위, 낮은 흰 거품 확인. 수직 물 커튼 없음. 좌우 여백 좁음.",
+        "notes": "넓은 갈색 강물과 검고 둥근 바위, 낮은 흰 거품 확인. 수직 물 커튼 없음. 좌우 여백 좁음. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -1725,7 +1695,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "크림색 그릇 하나의 진초록 잎 나물 확인. 고기·고추·추가 장식 없음.",
+        "notes": "크림색 그릇 하나의 진초록 잎 나물 확인. 고기·고추·추가 장식 없음. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -1815,7 +1785,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "나무 두 그루에 묶인 U자 덩굴 다리, 초록 숲과 갈색 강 확인. 돌 아치·나무판자 없음.",
+        "notes": "나무 두 그루에 묶인 U자 덩굴 다리, 초록 숲과 갈색 강 확인. 돌 아치·나무판자 없음. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -1845,7 +1815,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "카카오 열매 2개: 온전한 것 하나와 흰 속을 드러낸 것 하나. 늑골형 껍질과 잎 확인.",
+        "notes": "카카오 열매 2개: 온전한 것 하나와 흰 속을 드러낸 것 하나. 늑골형 껍질과 잎 확인. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -1938,7 +1908,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "낮은 바위에서 하얀 물이 바로 파란 바다로 떨어지고 작은 모래 해안이 연결됨.",
+        "notes": "낮은 바위에서 하얀 물이 바로 파란 바다로 떨어지고 작은 모래 해안이 연결됨. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -1973,7 +1943,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "두 번째 생성: 바다는 오른쪽 해안에만 붙고 산은 넓은 마른 육지 바닥과 이어짐. 작은 건물·눈·분화 없음. 첫 번째 섬처럼 보이던 오류 해소. 좌우 여백 보정 대기.",
+        "notes": "두 번째 생성: 바다는 오른쪽 해안에만 붙고 산은 넓은 마른 육지 바닥과 이어짐. 작은 건물·눈·분화 없음. 첫 번째 섬처럼 보이던 오류 해소. 좌우 여백 보정 대기. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -1988,12 +1958,12 @@
         {
           "attempt": 1,
           "path": "docs/image-prompts/generation-prompts/cn-landmark-01.txt",
-          "sha256": "ba856b9754a3490af3ae45ce9abfc09b9d1a80d640a1a3f3f8a5168a9b83cffa"
+          "sha256": "a0ba14ca4b85c527b06fcb0cac74cea92ecbf2568acfd5594edf1622e4d6b94b"
         },
         {
           "attempt": 2,
           "path": "docs/image-prompts/generation-prompts/cn-landmark-02.txt",
-          "sha256": "a0ba14ca4b85c527b06fcb0cac74cea92ecbf2568acfd5594edf1622e4d6b94b"
+          "sha256": "ba856b9754a3490af3ae45ce9abfc09b9d1a80d640a1a3f3f8a5168a9b83cffa"
         }
       ],
       "conversion": {
@@ -2213,7 +2183,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "주요 검은 용암 바위 3개, 검은 모래 해안, 파란 바다와 흰 파도 확인.",
+        "notes": "주요 검은 용암 바위 3개, 검은 모래 해안, 파란 바다와 흰 파도 확인. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -2243,7 +2213,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "그릇 하나에 큰 노란 옥수수 알과 적갈색 콩이 분리되어 보임. 고기·추가 장식 없음.",
+        "notes": "그릇 하나에 큰 노란 옥수수 알과 적갈색 콩이 분리되어 보임. 고기·추가 장식 없음. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -2259,11 +2229,6 @@
           "attempt": 1,
           "path": "docs/image-prompts/generation-prompts/cy-symbol-01.txt",
           "sha256": "c786985ccb10e8241e12d805689e1f9fa17d9d17e6e96d9de1d515e8b9da6718"
-        },
-        {
-          "attempt": 2,
-          "path": "docs/image-prompts/generation-prompts/cy-symbol-02.txt",
-          "sha256": "5a55c404eeb390bf41fefd3ca2b4f74c7d31d1c498237b05e5106d43224fcbc4"
         }
       ],
       "conversion": {
@@ -2294,11 +2259,6 @@
           "attempt": 1,
           "path": "docs/image-prompts/generation-prompts/cz-landmark-01.txt",
           "sha256": "49f669e13c04270f4bf43c34a7a57abf1e5303e69ca7bb368156b998b4a0871d"
-        },
-        {
-          "attempt": 2,
-          "path": "docs/image-prompts/generation-prompts/cz-landmark-02.txt",
-          "sha256": "4efe0e4b228fd33f47b6b48a3cf1fbbe96702a2392aecdc65e7085f909237e36"
         }
       ],
       "conversion": {
@@ -2433,7 +2393,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "검은 화산 언덕·두꺼운 갈라진 흰 소금테·청록 물의 세 색 확인. 기둥·홍학·김 없음.",
+        "notes": "검은 화산 언덕·두꺼운 갈라진 흰 소금테·청록 물의 세 색 확인. 기둥·홍학·김 없음. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -2463,7 +2423,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "거친 굴뚝형 바위 3개, 각 꼭대기의 흰 김과 홍학 2마리 확인.",
+        "notes": "거친 굴뚝형 바위 3개, 각 꼭대기의 흰 김과 홍학 2마리 확인. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -2640,7 +2600,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "붉은 사암 벽에 납작하게 그려진 기린 2마리와 소 3마리 확인. 사람·무기·실제 동물 없음.",
+        "notes": "붉은 사암 벽에 납작하게 그려진 기린 2마리와 소 3마리 확인. 사람·무기·실제 동물 없음. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -2670,7 +2630,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "붉은 주황 모래 언덕 하나, 휜 능선과 바람결 무늬 확인. 바위·나무·물 없음.",
+        "notes": "붉은 주황 모래 언덕 하나, 휜 능선과 바람결 무늬 확인. 바위·나무·물 없음. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -2789,7 +2749,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "주요 피라미드 세 개와 고대 돌 스핑크스 하나 확인. 서로 다른 크기와 사자 몸이 보임. 좌우 여백 12% 미만으로 최종 구도 보정 대상.",
+        "notes": "주요 피라미드 세 개와 고대 돌 스핑크스 하나 확인. 서로 다른 크기와 사자 몸이 보임. 좌우 여백 12% 미만으로 최종 구도 보정 대상. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -2819,7 +2779,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "파란 뾰족 꽃잎과 노란 중심의 수련 한 송이, 둥근 잎 한 장 확인. 세로 피사체가 70%를 넘어 여백 최종 검수 필요.",
+        "notes": "파란 뾰족 꽃잎과 노란 중심의 수련 한 송이, 둥근 잎 한 장 확인. 세로 피사체가 70%를 넘어 여백 최종 검수 필요. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -2849,7 +2809,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "금색 올리브 가지 하나와 가는 잎, 열매 확인. 국기 배경·완성 문장 없음. 세로 여백 기준 보정 필요.",
+        "notes": "금색 올리브 가지 하나와 가는 잎, 열매 확인. 국기 배경·완성 문장 없음. 세로 여백 기준 보정 필요. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -2865,11 +2825,6 @@
           "attempt": 1,
           "path": "docs/image-prompts/generation-prompts/es-landmark-01.txt",
           "sha256": "38cbed0236b94ef22b3e5836339658ac76dce7f86b641f60fa49678c8f49ea70"
-        },
-        {
-          "attempt": 2,
-          "path": "docs/image-prompts/generation-prompts/es-landmark-02.txt",
-          "sha256": "dcd4d646d3a121728a2d7441171010c7879c1b4725640022b58a18839bae98a3"
         }
       ],
       "conversion": {
@@ -2944,7 +2899,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "노란 광물 바닥과 불규칙한 초록 산성 웅덩이 세 개 확인. 인공 수영장·사람 없음. 좌우 여백이 좁아 보정 대기.",
+        "notes": "노란 광물 바닥과 불규칙한 초록 산성 웅덩이 세 개 확인. 인공 수영장·사람 없음. 좌우 여백이 좁아 보정 대기. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -2974,7 +2929,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "붉은 커피 열매 다섯 개, 갈색 원두 두 개, 초록 잎 두 장 확인. 글자·사람 없음. 최종 여백 검수 대기.",
+        "notes": "붉은 커피 열매 다섯 개, 갈색 원두 두 개, 초록 잎 두 장 확인. 글자·사람 없음. 최종 여백 검수 대기. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -3226,7 +3181,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "검은 바위 사이 수십 갈래의 낮은 흰 물줄기와 숲 확인. 두 갈래 수직 폭포와 구별됨. 좌우 여백 보정 대기.",
+        "notes": "검은 바위 사이 수십 갈래의 낮은 흰 물줄기와 숲 확인. 두 갈래 수직 폭포와 구별됨. 좌우 여백 보정 대기. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -3256,7 +3211,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "만드릴 한 마리, 붉은 코와 파란 볼, 닫힌 입 확인. 위쪽 여백이 좁아 보정 대기.",
+        "notes": "만드릴 한 마리, 붉은 코와 파란 볼, 닫힌 입 확인. 위쪽 여백이 좁아 보정 대기. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -3435,7 +3390,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "흰 물줄기 두 개가 바위 간격을 두고 하나의 웅덩이로 떨어짐. 필수 구별 조건 확인. 상단 여백 부족.",
+        "notes": "흰 물줄기 두 개가 바위 간격을 두고 하나의 웅덩이로 떨어짐. 필수 구별 조건 확인. 상단 여백 부족. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -3465,7 +3420,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "노란 바탕에 빨강·초록·파랑 기하 직조 무늬와 술이 달린 접은 천 하나 확인. 완성 국기·글자 없음. 최종 구도 검수 대기.",
+        "notes": "노란 바탕에 빨강·초록·파랑 기하 직조 무늬와 술이 달린 접은 천 하나 확인. 완성 국기·글자 없음. 최종 구도 검수 대기. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -3495,7 +3450,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "낮은 붉은 라테라이트 기둥 여덟 개가 원형으로 서 있음. 의식·매장·사람·문구 없음. 여백 최종 검수 대기.",
+        "notes": "낮은 붉은 라테라이트 기둥 여덟 개가 원형으로 서 있음. 의식·매장·사람·문구 없음. 여백 최종 검수 대기. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -3530,7 +3485,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "두 번째 생성: 겹치지 않는 온전한 땅콩 일곱 알이 모두 따로 보여 개수 오류 해소. 글자·껍질 없음. 최종 여백 검수 대기.",
+        "notes": "두 번째 생성: 겹치지 않는 온전한 땅콩 일곱 알이 모두 따로 보여 개수 오류 해소. 글자·껍질 없음. 최종 여백 검수 대기. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -3560,7 +3515,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "연한 줄기와 넓게 뻗는 판근, 초록 수관의 카폭 나무 하나 확인. 바오바브의 항아리형 줄기와 구별됨. 세로 여백 보정 대기.",
+        "notes": "연한 줄기와 넓게 뻗는 판근, 초록 수관의 카폭 나무 하나 확인. 바오바브의 항아리형 줄기와 구별됨. 세로 여백 보정 대기. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -3576,11 +3531,6 @@
           "attempt": 1,
           "path": "docs/image-prompts/generation-prompts/gr-landmark-01.txt",
           "sha256": "df7f1b42d4985b8bc33d906c828c537721487de65ece2483dac5d82ca272ec3c"
-        },
-        {
-          "attempt": 2,
-          "path": "docs/image-prompts/generation-prompts/gr-landmark-02.txt",
-          "sha256": "7a52045bb4971675a44212c0970519e9d5eaafb116b7efc4d8c37a15af68faf8"
         }
       ],
       "conversion": {
@@ -3713,7 +3663,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "파란 바다에 반쯤 잠긴 회색 하마 세 마리가 주대상이고 먼 흰 모래·야자수 확인. 진흙 호수와 구별됨. 좌우 여백 보정 대기.",
+        "notes": "파란 바다에 반쯤 잠긴 회색 하마 세 마리가 주대상이고 먼 흰 모래·야자수 확인. 진흙 호수와 구별됨. 좌우 여백 보정 대기. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -3743,7 +3693,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "껍질 없는 크림색 캐슈너트 한 알, 굵고 둥근 C자 실루엣 확인. 여백 최종 검수 대기.",
+        "notes": "껍질 없는 크림색 캐슈너트 한 알, 굵고 둥근 C자 실루엣 확인. 여백 최종 검수 대기. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -4294,12 +4244,12 @@
         {
           "attempt": 1,
           "path": "docs/image-prompts/generation-prompts/ir-landmark-01.txt",
-          "sha256": "86647b129d0f3f3185922b55098bcb9ca9b82c75f16d9b1176761102a7136f2c"
+          "sha256": "df086c278689ef6b6194388adb399e1bf5a3e088163ee3fdf39a8950c3d2363e"
         },
         {
           "attempt": 2,
           "path": "docs/image-prompts/generation-prompts/ir-landmark-02.txt",
-          "sha256": "df086c278689ef6b6194388adb399e1bf5a3e088163ee3fdf39a8950c3d2363e"
+          "sha256": "86647b129d0f3f3185922b55098bcb9ca9b82c75f16d9b1176761102a7136f2c"
         }
       ],
       "conversion": {
@@ -4543,12 +4493,12 @@
         {
           "attempt": 1,
           "path": "docs/image-prompts/generation-prompts/jo-landmark-01.txt",
-          "sha256": "e257337ac5f62dd38a1511fa8bdbf22899288e33bb955b7194fc7b56fbbf08b3"
+          "sha256": "6696c6128343180aa4042962e2ebd72d95859fc140cecb36ca87f55b49e28cb0"
         },
         {
           "attempt": 2,
           "path": "docs/image-prompts/generation-prompts/jo-landmark-02.txt",
-          "sha256": "6696c6128343180aa4042962e2ebd72d95859fc140cecb36ca87f55b49e28cb0"
+          "sha256": "e257337ac5f62dd38a1511fa8bdbf22899288e33bb955b7194fc7b56fbbf08b3"
         }
       ],
       "conversion": {
@@ -4683,7 +4633,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "얕은 파란 호수 위 수백 마리 분홍 홍학 무리 확인. 고립된 한 마리 상징과 구별되며 사람 없음. 좌우 여백 보정 대기.",
+        "notes": "얕은 파란 호수 위 수백 마리 분홍 홍학 무리 확인. 고립된 한 마리 상징과 구별되며 사람 없음. 좌우 여백 보정 대기. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -4713,7 +4663,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "평평하고 넓은 원형 비즈 목걸이 하나. 빨강·파랑·노랑·흰색 구슬과 가운데 큰 구멍 확인. 사람·문구 없음.",
+        "notes": "평평하고 넓은 원형 비즈 목걸이 하나. 빨강·파랑·노랑·흰색 구슬과 가운데 큰 구멍 확인. 사람·문구 없음. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -4891,7 +4841,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "둥근 초록 호수와 바로 옆 파란 바다가 갈색 화산 바위 능선으로 분리됨. 독립된 고산 분화구와 구별. 좌우 여백 보정 대기.",
+        "notes": "둥근 초록 호수와 바로 옆 파란 바다가 갈색 화산 바위 능선으로 분리됨. 독립된 고산 분화구와 구별. 좌우 여백 보정 대기. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -4931,7 +4881,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "세 번째 국소 편집으로 서로 분리된 노란 꽃잎 끝 여섯 개를 확인. 초록 잎 두 장과 기존 일랑일랑 색·형태 유지. 꽃잎 개수 오류 해결, 최종 여백 검수 대기.",
+        "notes": "세 번째 국소 편집으로 서로 분리된 노란 꽃잎 끝 여섯 개를 확인. 초록 잎 두 장과 기존 일랑일랑 색·형태 유지. 꽃잎 개수 오류 해결, 최종 여백 검수 대기. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -5469,7 +5419,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "고무나무 줄기 하나의 비스듬한 홈에서 흰 수액이 컵 하나로 내려옴. 칼·사람 없음. 세로 여백 보정 대기.",
+        "notes": "고무나무 줄기 하나의 비스듬한 홈에서 흰 수액이 컵 하나로 내려옴. 칼·사람 없음. 세로 여백 보정 대기. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -5499,7 +5449,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "초록 급경사 절벽 사이 밝은 지그재그 길 하나와 평평한 정상 확인. 차량·사람·눈 없음. 좌우 여백 보정 대기.",
+        "notes": "초록 급경사 절벽 사이 밝은 지그재그 길 하나와 평평한 정상 확인. 차량·사람·눈 없음. 좌우 여백 보정 대기. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -5529,7 +5479,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "짚을 감아 만든 원뿔형 모자 하나, 넓은 챙과 꼭대기 고리 확인. 사람·국기 없음. 세로 여백 보정 대기.",
+        "notes": "짚을 감아 만든 원뿔형 모자 하나, 넓은 챙과 꼭대기 고리 확인. 사람·국기 없음. 세로 여백 보정 대기. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -5610,11 +5560,6 @@
           "attempt": 2,
           "path": "docs/image-prompts/generation-prompts/lu-landmark-02.txt",
           "sha256": "faff45ef981ca710adba42d8513defa23591c96b447dc7ae687847231b6523df"
-        },
-        {
-          "attempt": 3,
-          "path": "docs/image-prompts/generation-prompts/lu-landmark-03.txt",
-          "sha256": "1155701b3d7a11199948854fa2449b6d49b8a669a5323fe807838f00596a109d"
         }
       ],
       "conversion": {
@@ -5645,11 +5590,6 @@
           "attempt": 1,
           "path": "docs/image-prompts/generation-prompts/lu-symbol-01.txt",
           "sha256": "789dce71c5338c9eb9464b7305c91b9d9a7d04b9657ca728bf835f3f26466f9c"
-        },
-        {
-          "attempt": 2,
-          "path": "docs/image-prompts/generation-prompts/lu-symbol-02.txt",
-          "sha256": "26259db28a745312e9d5a1cd5b56687795e17367a3ef7e41a88a61ec9e297e90"
         }
       ],
       "conversion": {
@@ -5680,11 +5620,6 @@
           "attempt": 1,
           "path": "docs/image-prompts/generation-prompts/lv-landmark-01.txt",
           "sha256": "bf919b92941ea6da5a23afcf2a0d71817cc032eef1fbb9067a46dfb918b42fb2"
-        },
-        {
-          "attempt": 2,
-          "path": "docs/image-prompts/generation-prompts/lv-landmark-02.txt",
-          "sha256": "d0e48e3791c36f83d934f2ffaea62b4d0fe91ee0ee7b04ee21ce2fe499c15f5b"
         }
       ],
       "conversion": {
@@ -5759,7 +5694,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "가느다란 노란 줄기에 길쭉한 적갈색 대추야자가 달린 열매송이 하나 확인. 포도 같은 둥근 알과 구별됨. 세로 여백 보정 대기.",
+        "notes": "가느다란 노란 줄기에 길쭉한 적갈색 대추야자가 달린 열매송이 하나 확인. 포도 같은 둥근 알과 구별됨. 세로 여백 보정 대기. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -5789,7 +5724,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "셰프샤우엔의 파란 벽·계단·문이 있는 좁은 골목 확인. 간판·글자·사람 없음. 위쪽 여백 보정 대기.",
+        "notes": "셰프샤우엔의 파란 벽·계단·문이 있는 좁은 골목 확인. 간판·글자·사람 없음. 위쪽 여백 보정 대기. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -5819,7 +5754,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "테라코타색 낮은 둥근 그릇과 높은 원뿔 뚜껑의 타진 하나 확인. 단순 식물 무늬이며 글자·깃발 없음. 최종 여백 검수 대기.",
+        "notes": "테라코타색 낮은 둥근 그릇과 높은 원뿔 뚜껑의 타진 하나 확인. 단순 식물 무늬이며 글자·깃발 없음. 최종 여백 검수 대기. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -5999,7 +5934,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "회색 석회암 바늘·날 모양 바위가 빽빽하게 선 칭기 지형 확인. 녹색 식생은 틈에 소량, 붉은 사암 신두와 구별됨. 좌우 여백 보정 대기.",
+        "notes": "회색 석회암 바늘·날 모양 바위가 빽빽하게 선 칭기 지형 확인. 녹색 식생은 틈에 소량, 붉은 사암 신두와 구별됨. 좌우 여백 보정 대기. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -6029,7 +5964,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "회색 몸과 흰 배, 흑백 고리무늬 긴 꼬리의 알락꼬리여우원숭이 한 마리 확인. 닫힌 입과 작은 손발. 최종 여백 검수 대기.",
+        "notes": "회색 몸과 흰 배, 흑백 고리무늬 긴 꼬리의 알락꼬리여우원숭이 한 마리 확인. 닫힌 입과 작은 손발. 최종 여백 검수 대기. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -6148,7 +6083,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "진흙색 외벽·주요 탑 세 개·돌출된 짧은 목재가 있는 젠네 대사원 외관 확인. 내부·의식·사람·문구 없음. 좌우 여백 보정 대기.",
+        "notes": "진흙색 외벽·주요 탑 세 개·돌출된 짧은 목재가 있는 젠네 대사원 외관 확인. 내부·의식·사람·문구 없음. 좌우 여백 보정 대기. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -6178,7 +6113,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "갈색·황토색·크림색의 기하 무늬와 술을 가진 접힌 흙염색 천 하나 확인. 다색 켄테와 구별되고 글자·국기 없음. 최종 여백 검수 대기.",
+        "notes": "갈색·황토색·크림색의 기하 무늬와 술을 가진 접힌 흙염색 천 하나 확인. 다색 켄테와 구별되고 글자·국기 없음. 최종 여백 검수 대기. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -6328,7 +6263,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "사막 바닥의 여러 겹 동심원 암석 능선과 중앙 원형부를 상공에서 보는 리샤트 지형 확인. 지도 라벨·경계 없음. 최종 여백과 상공 시점 검수 대기.",
+        "notes": "사막 바닥의 여러 겹 동심원 암석 능선과 중앙 원형부를 상공에서 보는 리샤트 지형 확인. 지도 라벨·경계 없음. 최종 여백과 상공 시점 검수 대기. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -6358,7 +6293,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "기관차 하나와 광석을 실은 열린 화차 여덟 칸 확인. 검은 광석, 철도 길이 강조. 로고·번호·사람 없음. 좌우 여백 보정 대기.",
+        "notes": "기관차 하나와 광석을 실은 열린 화차 여덟 칸 확인. 검은 광석, 철도 길이 강조. 로고·번호·사람 없음. 좌우 여백 보정 대기. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -6418,7 +6353,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "붉은색·갈색·보라 계열 두 색·파랑·초록·노랑 흙이 둥근 구릉 띠로 이어지는 샤마렐 지형 확인. 보라 두 색은 가까워 최종 카드 크기 구별 검수 필요. 국기·하늘 무지개 없음. 좌우 여백 부족.",
+        "notes": "붉은색·갈색·보라 계열 두 색·파랑·초록·노랑 흙이 둥근 구릉 띠로 이어지는 샤마렐 지형 확인. 보라 두 색은 가까워 최종 카드 크기 구별 검수 필요. 국기·하늘 무지개 없음. 좌우 여백 부족. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -6448,7 +6383,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "회색 둥근 몸·작은 날개·큰 아래로 굽은 부리·다리 두 개·흰 꼬리의 도도새 하나 확인. 친근한 닫힌 입, 글자 없음. 세로 여백 보정 대기.",
+        "notes": "회색 둥근 몸·작은 날개·큰 아래로 굽은 부리·다리 두 개·흰 꼬리의 도도새 하나 확인. 친근한 닫힌 입, 글자 없음. 세로 여백 보정 대기. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -6538,7 +6473,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "여러 갈래로 나뉜 회색 화강암 봉우리와 평평한 초록 차밭 확인. 둥근 돔·검은 화산·호수와 구별됨. 좌우 여백 보정 대기.",
+        "notes": "여러 갈래로 나뉜 회색 화강암 봉우리와 평평한 초록 차밭 확인. 둥근 돔·검은 화산·호수와 구별됨. 좌우 여백 보정 대기. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -6568,7 +6503,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "흰 모래와 둥근 회색 바위 세 개, 투명한 파란 호수와 먼 낮은 수평선 확인. 수중·물고기·야자수·하마 없음. 최종 여백 검수 대기.",
+        "notes": "흰 모래와 둥근 회색 바위 세 개, 투명한 파란 호수와 먼 낮은 수평선 확인. 수중·물고기·야자수·하마 없음. 최종 여백 검수 대기. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -6686,7 +6621,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "하얀 빈 페이지 두 면을 펼친 책 하나 확인. 한 글자·국장·무기·도구도 없음. 최종 여백 검수 대기.",
+        "notes": "하얀 빈 페이지 두 면을 펼친 책 하나 확인. 한 글자·국장·무기·도구도 없음. 최종 여백 검수 대기. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -6716,7 +6651,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "검은 잎 없는 고목 다섯 그루, 흰 마른 바닥, 뒤 주황 모래언덕 하나가 함께 보임. 물 반사·푸른 나무·사람 없음. 좌우 여백 부족.",
+        "notes": "검은 잎 없는 고목 다섯 그루, 흰 마른 바닥, 뒤 주황 모래언덕 하나가 함께 보임. 물 반사·푸른 나무·사람 없음. 좌우 여백 부족. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -6746,7 +6681,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "목질 중심에서 좌우 두 넓은 잎이 나와 낡은 리본 조각으로 갈라지는 웰위치아 확인. 독립 잎 로제트·높은 줄기 없음. 좌우 여백 부족.",
+        "notes": "목질 중심에서 좌우 두 넓은 잎이 나와 낡은 리본 조각으로 갈라지는 웰위치아 확인. 독립 잎 로제트·높은 줄기 없음. 좌우 여백 부족. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -6781,7 +6716,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "기린 세 마리와 각각 네 다리 유지. 황금빛 마른 사헬 들판, 낮은 가시 관목, 기장 세 무더기를 실제 추가해 필수 서식지 배경 누락 해결. 최종 여백 검수 대기.",
+        "notes": "기린 세 마리와 각각 네 다리 유지. 황금빛 마른 사헬 들판, 낮은 가시 관목, 기장 세 무더기를 실제 추가해 필수 서식지 배경 누락 해결. 최종 여백 검수 대기. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -6811,7 +6746,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "다리 네 개·긴 목과 꼬리·넓은 주둥이의 연한 화석 공룡 뼈 한 개체 확인. 살아 있는 피부·날카로운 이빨·유혈·문구 없음. 좌우 여백 부족.",
+        "notes": "다리 네 개·긴 목과 꼬리·넓은 주둥이의 연한 화석 공룡 뼈 한 개체 확인. 살아 있는 피부·날카로운 이빨·유혈·문구 없음. 좌우 여백 부족. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -6841,7 +6776,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "큰 회색 화강암 단일 바위와 긴 어두운 세로 홈, 작은 초록 바닥 확인. 실제 사람 얼굴을 그리지 않았으며 분리 봉우리·붉은 돔과 구별됨. 최종 여백 검수 대기.",
+        "notes": "큰 회색 화강암 단일 바위와 긴 어두운 세로 홈, 작은 초록 바닥 확인. 실제 사람 얼굴을 그리지 않았으며 분리 봉우리·붉은 돔과 구별됨. 최종 여백 검수 대기. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -6871,7 +6806,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "산호색 천 주름이 넓은 부채꼴을 이루는 겔레 머릿수건 하나 확인. 속 빈 둥근 바닥과 뒤 매듭, 사람 없음. 세로 여백 보정 대기.",
+        "notes": "산호색 천 주름이 넓은 부채꼴을 이루는 겔레 머릿수건 하나 확인. 속 빈 둥근 바닥과 뒤 매듭, 사람 없음. 세로 여백 보정 대기. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -6945,6 +6880,11 @@
           "attempt": 1,
           "path": "docs/image-prompts/generation-prompts/nl-landmark-01.txt",
           "sha256": "42905ffa12e81873252502833148a2f1a8643d0f2d25a5dcc99f149d06090f73"
+        },
+        {
+          "attempt": 2,
+          "path": "docs/image-prompts/generation-prompts/nl-landmark-02.txt",
+          "sha256": "0278a2b1f62fdbc7888a069e5d01147149a12d03bc6b077d56f923edd5db7c18"
         }
       ],
       "conversion": {
@@ -7626,11 +7566,6 @@
           "attempt": 1,
           "path": "docs/image-prompts/generation-prompts/pt-landmark-01.txt",
           "sha256": "923e370ccf37060ec5d8daaf3ee128fdc0ec46f6bc802ecd8630912df1e4a1df"
-        },
-        {
-          "attempt": 2,
-          "path": "docs/image-prompts/generation-prompts/pt-landmark-02.txt",
-          "sha256": "506259164fb35ca6b5d1a0b08cfda09e3044583395800ad56fa1386c38835e57"
         }
       ],
       "conversion": {
@@ -7838,11 +7773,6 @@
           "attempt": 1,
           "path": "docs/image-prompts/generation-prompts/ro-landmark-01.txt",
           "sha256": "a7f9b283440bbccb5fc35681d925ac58de96f81a7a0315ef3d792d2469856173"
-        },
-        {
-          "attempt": 2,
-          "path": "docs/image-prompts/generation-prompts/ro-landmark-02.txt",
-          "sha256": "7db5f415696d5d8ec09f107509bece4819d20735517d662e388d3b5e1919ece4"
         }
       ],
       "conversion": {
@@ -8037,7 +7967,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "둥근 초록 언덕 세 개의 많은 계단밭, 낮은 골짜기 작은 빨간 지붕 집 두 채 확인. 날카로운 산·호수 없음. 좌우 여백 보정 대기.",
+        "notes": "둥근 초록 언덕 세 개의 많은 계단밭, 낮은 골짜기 작은 빨간 지붕 집 두 채 확인. 날카로운 산·호수 없음. 좌우 여백 보정 대기. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -8067,7 +7997,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "검은 털과 넓은 어깨의 고릴라 한 마리가 편안히 앉고 작은 고사리 하나 확인. 닫힌 입·위협 없는 자세. 세로 여백 보정 대기.",
+        "notes": "검은 털과 넓은 어깨의 고릴라 한 마리가 편안히 앉고 작은 고사리 하나 확인. 닫힌 입·위협 없는 자세. 세로 여백 보정 대기. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -8215,7 +8145,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "부드러운 세로 홈의 분홍 화강암 큰 바위 세 개와 흰 모래·청록 바다 확인. 말라위 회색 둥근 바위와 색·형태 구별. 좌우 여백 부족.",
+        "notes": "부드러운 세로 홈의 분홍 화강암 큰 바위 세 개와 흰 모래·청록 바다 확인. 말라위 회색 둥근 바위와 색·형태 구별. 좌우 여백 부족. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -8245,7 +8175,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "거친 섬유질 갈색 껍질과 중앙 홈, 붙은 두 둥근 갈래의 코코드메르 씨앗 하나를 위에서 보는 형태 확인. 사람·몸통 묘사·곁장식 없음. 최종 여백 검수 대기.",
+        "notes": "거친 섬유질 갈색 껍질과 중앙 홈, 붙은 두 둥근 갈래의 코코드메르 씨앗 하나를 위에서 보는 형태 확인. 사람·몸통 묘사·곁장식 없음. 최종 여백 검수 대기. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -8280,7 +8210,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "재편집에서 좁고 가파른 피라미드 꼭짓점이 30개 이상 명료하게 보이는 밀집 군집으로 늘어남. 작은 입구 구조·모래 기슭·메로에 형태 유지. 기자의 넓은 세 피라미드와 구별됨. 최종 여백·카드 검수 대기.",
+        "notes": "재편집에서 좁고 가파른 피라미드 꼭짓점이 30개 이상 명료하게 보이는 밀집 군집으로 늘어남. 작은 입구 구조·모래 기슭·메로에 형태 유지. 기자의 넓은 세 피라미드와 구별됨. 최종 여백·카드 검수 대기. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -8310,7 +8240,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "짙은 파란 강과 우윳빛 옅은 강이 하나의 넓은 물길로 합쳐지고 색 경계가 남음. 지도 기호·국경·도시·글자 없음. 최종 여백 검수 대기.",
+        "notes": "짙은 파란 강과 우윳빛 옅은 강이 하나의 넓은 물길로 합쳐지고 색 경계가 남음. 지도 기호·국경·도시·글자 없음. 최종 여백 검수 대기. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -8550,7 +8480,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "붉은 주황색 타원 열매가 다닥다닥 모인 오일팜 열매송이 하나와 짧은 꼭지만 있으며 잎·나무·풍경 없음. 내용 형태 통과, 최종 상하 여백은 inset 변환 뒤 확인.",
+        "notes": "붉은 주황색 타원 열매가 다닥다닥 모인 오일팜 열매송이 하나와 짧은 꼭지만 있으며 잎·나무·풍경 없음. 내용 형태 통과, 최종 상하 여백은 inset 변환 뒤 확인. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -8566,11 +8496,6 @@
           "attempt": 1,
           "path": "docs/image-prompts/generation-prompts/sm-symbol-01.txt",
           "sha256": "15ee3f1aa38df55f1341feab8a193f70c4a54c93e827920adce2e5a52143e2a0"
-        },
-        {
-          "attempt": 2,
-          "path": "docs/image-prompts/generation-prompts/sm-symbol-02.txt",
-          "sha256": "0e41aac2b999288b15bff589935bb934cf43914df965d520074b6fc4c91409a6"
         }
       ],
       "conversion": {
@@ -8615,7 +8540,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "분홍색 잔잔한 호수와 옅은 가는 모래 해안, 낮은 수평선. 배·인물·홍학·소금 바구니 없음. 좌우 여백이 좁아 inset 변환 뒤 확인.",
+        "notes": "분홍색 잔잔한 호수와 옅은 가는 모래 해안, 낮은 수평선. 배·인물·홍학·소금 바구니 없음. 좌우 여백이 좁아 inset 변환 뒤 확인. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -8645,7 +8570,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "굵은 회갈색 병 모양 몸통, 짧은 구불거리는 가지와 적은 잎 무리의 바오바브 한 그루. 적도기니 케이폭과 형태 구별됨. 상단 여백은 최종 변환 뒤 확인.",
+        "notes": "굵은 회갈색 병 모양 몸통, 짧은 구불거리는 가지와 적은 잎 무리의 바오바브 한 그루. 적도기니 케이폭과 형태 구별됨. 상단 여백은 최종 변환 뒤 확인. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -8675,7 +8600,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "모래빛 단봉낙타 한 마리, 혹 하나와 다리 네 개, 닫힌 입과 친근한 표정. 별도 소품 없음. 상단 여백은 최종 변환 뒤 확인.",
+        "notes": "모래빛 단봉낙타 한 마리, 혹 하나와 다리 네 개, 닫힌 입과 친근한 표정. 별도 소품 없음. 상단 여백은 최종 변환 뒤 확인. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -8749,7 +8674,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "황금빛 풀밭 위 멀리 보이는 작은 영양들이 같은 방향으로 밀집 이동하는 구도로 교정. 큰 전경 동물·물·차량·포식자 없음. 개체 수는 그림에서 전수 계수하지 않았으며 대규모 원경 무리 표현을 확인. 최종 여백 검수 대기.",
+        "notes": "황금빛 풀밭 위 멀리 보이는 작은 영양들이 같은 방향으로 밀집 이동하는 구도로 교정. 큰 전경 동물·물·차량·포식자 없음. 개체 수는 그림에서 전수 계수하지 않았으며 대규모 원경 무리 표현을 확인. 최종 여백 검수 대기. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -8779,7 +8704,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "파피루스 줄기와 우산형 잎 머리가 각각 다섯 개이며 작은 푸른 습지 받침. 종이·책·인물 없음. 상하 여백 최종 확인 필요.",
+        "notes": "파피루스 줄기와 우산형 잎 머리가 각각 다섯 개이며 작은 푸른 습지 받침. 종이·책·인물 없음. 상하 여백 최종 확인 필요. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -8809,7 +8734,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "길고 좁은 짙은 회색 화산 바위기둥 하나, 작고 푸른 정글 바닥. 무리 봉우리나 바닷물 없음. 상단 여백 최종 확인 필요.",
+        "notes": "길고 좁은 짙은 회색 화산 바위기둥 하나, 작고 푸른 정글 바닥. 무리 봉우리나 바닷물 없음. 상단 여백 최종 확인 필요. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -8927,7 +8852,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "넓고 매끄러운 붉은 화강암 돔과 작은 녹색 숲 기슭 확인. 갈라진 회색 절벽이나 뾰족한 정상 없음. 좌우 여백 최종 확인 필요.",
+        "notes": "넓고 매끄러운 붉은 화강암 돔과 작은 녹색 숲 기슭 확인. 갈라진 회색 절벽이나 뾰족한 정상 없음. 좌우 여백 최종 확인 필요. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -8957,7 +8882,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "바닥부터 꼭대기까지 연속 돔 형태인 황금빛 짚집 하나, 낮은 아치 입구. 별도 원뿔 모자가 없어 레소토 집과 구별됨.",
+        "notes": "바닥부터 꼭대기까지 연속 돔 형태인 황금빛 짚집 하나, 낮은 아치 입구. 별도 원뿔 모자가 없어 레소토 집과 구별됨. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -8987,7 +8912,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "모래사막 안 파랑·청록·초록 호수 세 개와 구분하는 낮고 어두운 능선. 분홍 유황색 없음. 좌우 여백 최종 확인 필요.",
+        "notes": "모래사막 안 파랑·청록·초록 호수 세 개와 구분하는 낮고 어두운 능선. 분홍 유황색 없음. 좌우 여백 최종 확인 필요. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -9017,7 +8942,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "어둡게 풍화된 사암 지지부 두 개와 자연 아치 구멍 하나, 작은 황토 바닥. 인공 기념문·조각·글자 없음.",
+        "notes": "어둡게 풍화된 사암 지지부 두 개와 자연 아치 구멍 하나, 작은 황토 바닥. 인공 기념문·조각·글자 없음. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -9052,7 +8977,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "재생성에서 원통 기단 위 부푼 곡물창고 형태와 짚 덮개 두 개, 매끈한 진흙 테라스·작은 입구를 확인. 장식 성곽·벽돌무늬·유럽식 큰 아치창·현관 차양을 제거해 첫 그림의 동화 성 오류 해결. 최종 여백·카드 검수 대기.",
+        "notes": "재생성에서 원통 기단 위 부푼 곡물창고 형태와 짚 덮개 두 개, 매끈한 진흙 테라스·작은 입구를 확인. 장식 성곽·벽돌무늬·유럽식 큰 아치창·현관 차양을 제거해 첫 그림의 동화 성 오류 해결. 최종 여백·카드 검수 대기. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -9067,12 +8992,12 @@
         {
           "attempt": 1,
           "path": "docs/image-prompts/generation-prompts/th-landmark-01.txt",
-          "sha256": "cc1066933b0e54795028b2b8eb44c89941fc96d6e98d7e2d851f3981a0d859b1"
+          "sha256": "b330b8db970abd35aab8650c2354e7043a807e0bc852d7de70961dec3ae9a08a"
         },
         {
           "attempt": 2,
           "path": "docs/image-prompts/generation-prompts/th-landmark-02.txt",
-          "sha256": "b330b8db970abd35aab8650c2354e7043a807e0bc852d7de70961dec3ae9a08a"
+          "sha256": "cc1066933b0e54795028b2b8eb44c89941fc96d6e98d7e2d851f3981a0d859b1"
         }
       ],
       "conversion": {
@@ -9102,12 +9027,12 @@
         {
           "attempt": 1,
           "path": "docs/image-prompts/generation-prompts/th-symbol-01.txt",
-          "sha256": "2b5897ba188da2e5f0a03a42bd95f4662a445bd3cb71e03c8c230d16875be9b4"
+          "sha256": "dc1942acd72e9fb8a556a125618f6f5e7157489c82ff6dfdba2b131e5dc708a4"
         },
         {
           "attempt": 2,
           "path": "docs/image-prompts/generation-prompts/th-symbol-02.txt",
-          "sha256": "dc1942acd72e9fb8a556a125618f6f5e7157489c82ff6dfdba2b131e5dc708a4"
+          "sha256": "2b5897ba188da2e5f0a03a42bd95f4662a445bd3cb71e03c8c230d16875be9b4"
         }
       ],
       "conversion": {
@@ -9242,7 +9167,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "모래빛 원형으로 파인 안뜰과 어두운 아치 입구 세 개 확인. 영화 소품·가구·인물 없음. 좌우 여백 최종 확인 필요.",
+        "notes": "모래빛 원형으로 파인 안뜰과 어두운 아치 입구 세 개 확인. 영화 소품·가구·인물 없음. 좌우 여백 최종 확인 필요. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -9272,7 +9197,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "흰 자스민 꽃잎 다섯 개, 초록 잎 두 장, 닫힌 흰 봉오리 하나 확인. 다른 꽃·소품·문자 없음.",
+        "notes": "흰 자스민 꽃잎 다섯 개, 초록 잎 두 장, 닫힌 흰 봉오리 하나 확인. 다른 꽃·소품·문자 없음. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -9507,7 +9432,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "넓고 평평한 화산 정상과 흰 눈 덮개, 회청색 경사면, 작은 녹색 기슭. 뾰족한 알프스형 봉우리 없음. 매우 좁은 좌우 여백을 inset 변환 뒤 확인.",
+        "notes": "넓고 평평한 화산 정상과 흰 눈 덮개, 회청색 경사면, 작은 녹색 기슭. 뾰족한 알프스형 봉우리 없음. 매우 좁은 좌우 여백을 inset 변환 뒤 확인. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -9537,7 +9462,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "청보라색 긴 기둥 원석 하나, 세로 줄무늬와 거칠게 깨진 바닥·가장자리 확인. 보석 세공·장신구 없음. 상하 여백 최종 확인 필요.",
+        "notes": "청보라색 긴 기둥 원석 하나, 세로 줄무늬와 거칠게 깨진 바닥·가장자리 확인. 보석 세공·장신구 없음. 상하 여백 최종 확인 필요. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -9627,7 +9552,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "매우 좁은 어두운 절벽 틈으로 흰 폭포 한 줄기가 분출하고 작은 소로 떨어짐. 넓은 커튼 폭포·두 갈래·낮은 여울 없음. 상하 여백 최종 확인 필요.",
+        "notes": "매우 좁은 어두운 절벽 틈으로 흰 폭포 한 줄기가 분출하고 작은 소로 떨어짐. 넓은 커튼 폭포·두 갈래·낮은 여울 없음. 상하 여백 최종 확인 필요. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -9657,7 +9582,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "회색왕관두루미 한 마리: 황금 부채 모양 머리깃, 흰 볼, 붉은 목주머니, 흰 패널이 있는 접힌 회색 날개, 긴 어두운 다리 두 개. 상단 여백 최종 확인 필요.",
+        "notes": "회색왕관두루미 한 마리: 황금 부채 모양 머리깃, 흰 볼, 붉은 목주머니, 흰 패널이 있는 접힌 회색 날개, 긴 어두운 다리 두 개. 상단 여백 최종 확인 필요. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -9789,12 +9714,12 @@
         {
           "attempt": 1,
           "path": "docs/image-prompts/generation-prompts/uz-symbol-01.txt",
-          "sha256": "45d7d65f6445dbf63113baca69d5952789e4588e637d6bd03119cd9ec84159d9"
+          "sha256": "76dfb3bb1639598f334c937830615bd520d516381632187d4a3b786ae08ae45f"
         },
         {
           "attempt": 2,
           "path": "docs/image-prompts/generation-prompts/uz-symbol-02.txt",
-          "sha256": "76dfb3bb1639598f334c937830615bd520d516381632187d4a3b786ae08ae45f"
+          "sha256": "45d7d65f6445dbf63113baca69d5952789e4588e637d6bd03119cd9ec84159d9"
         }
       ],
       "conversion": {
@@ -10222,7 +10147,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "길고 거의 수평인 정상과 각진 어깨, 회색 절벽, 작은 녹색 기슭의 테이블마운틴. 둥근 돔·뾰족한 봉우리 없음. 좁은 좌우 여백을 inset 뒤 확인.",
+        "notes": "길고 거의 수평인 정상과 각진 어깨, 회색 절벽, 작은 녹색 기슭의 테이블마운틴. 둥근 돔·뾰족한 봉우리 없음. 좁은 좌우 여백을 inset 뒤 확인. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -10252,7 +10177,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "뾰족하고 두꺼운 분홍 포엽 왕관과 옅고 보송한 중앙의 킹프로테아 한 송이, 매끈한 초록 잎 두 장 확인. 상하 여백 최종 확인 필요.",
+        "notes": "뾰족하고 두꺼운 분홍 포엽 왕관과 옅고 보송한 중앙의 킹프로테아 한 송이, 매끈한 초록 잎 두 장 확인. 상하 여백 최종 확인 필요. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -10282,7 +10207,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "긴 어두운 벼랑에서 거대한 넓은 흰 커튼 폭포가 좁은 협곡과 물안개로 내려옴. 무지개·다리·인물 없음. 좁은 폭포인 우간다 그림과 명료하게 구별됨.",
+        "notes": "긴 어두운 벼랑에서 거대한 넓은 흰 커튼 폭포가 좁은 협곡과 물안개로 내려옴. 무지개·다리·인물 없음. 좁은 폭포인 우간다 그림과 명료하게 구별됨. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -10312,7 +10237,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "갈색 넓은 날개 두 개를 펼친 아프리카물수리, 흰 머리·가슴·꼬리, 적갈색 배, 노란 부리와 접힌 발 두 개 확인. 먹잇감·날카로운 위협 포즈 없음. 좌우 여백 최종 확인 필요.",
+        "notes": "갈색 넓은 날개 두 개를 펼친 아프리카물수리, 흰 머리·가슴·꼬리, 적갈색 배, 노란 부리와 접힌 발 두 개 확인. 먹잇감·날카로운 위협 포즈 없음. 좌우 여백 최종 확인 필요. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -10342,7 +10267,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "크고 둥근 갈색 바위 세 개가 좁은 접촉점으로 균형을 이루며 바위 사이 바탕색 틈이 보임. 추가 작은 돌이나 풍경 없음. 상하 여백 최종 확인 필요.",
+        "notes": "크고 둥근 갈색 바위 세 개가 좁은 접촉점으로 균형을 이루며 바위 사이 바탕색 틈이 보임. 추가 작은 돌이나 풍경 없음. 상하 여백 최종 확인 필요. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     },
@@ -10377,9 +10302,10 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "재편집에서 크고 휘어진 앵무새형 부리를 짧고 뭉툭한 돌 쐐기 형태로 교정. 거친 회색 돌 재질, 긴 목, 접힌 새김 날개와 짧은 받침 유지. 최종 여백·카드 검수 대기.",
+        "notes": "재편집에서 크고 휘어진 앵무새형 부리를 짧고 뭉툭한 돌 쐐기 형태로 교정. 거친 회색 돌 재질, 긴 목, 접힌 새김 날개와 짧은 받침 유지. 최종 여백·카드 검수 대기. 최종 WebP에서 root가 형태·개수·잘림·여백을 다시 확인함.",
         "independentReview": "/root"
       }
     }
-  ]
+  ],
+  "promptBoundary": "actualPrompts는 실제 생성·편집 요청 순서이며, 현재 큐레이션을 다시 조립한 prompts/와 다를 수 있습니다. 수정 후 재조립한 문장을 과거 생성 요청으로 기록하지 않습니다."
 }

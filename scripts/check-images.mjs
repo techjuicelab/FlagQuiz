@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
 import { fileURLToPath } from 'node:url';
+import { createHash } from 'node:crypto';
 import { imageStyle, readWebpDimensions } from './prepare-images.mjs';
 export { readWebpDimensions } from './prepare-images.mjs';
 const projectRoot = fileURLToPath(new URL('../', import.meta.url));
@@ -55,6 +56,18 @@ export function checkImages({root = projectRoot} = {}) {
     try { style=imageStyle(pack); } catch(error) { errors.push(error.message); }
   }
   const present = new Set(); let checked = 0;
+  const production = new Map();
+  const tracked = approved.filter(item => item.productionRecord);
+  if (tracked.length) {
+    try {
+      const record = JSON.parse(fs.readFileSync(path.join(root,'docs/image-prompts/production.json'),'utf8'));
+      if (!Array.isArray(record.items)) throw new Error('items 배열 없음');
+      for (const entry of record.items) {
+        if (!entry || production.has(entry.id)) throw new Error('중복 또는 잘못된 제작 id');
+        production.set(entry.id,entry);
+      }
+    } catch(error) { errors.push('제작 이력 읽기 실패: '+error.message); }
+  }
   for (const file of files) {
     const {relative,name} = file;
     present.add(relative);
@@ -72,12 +85,26 @@ export function checkImages({root = projectRoot} = {}) {
     if (style && bytes.length > style.maxBytes) errors.push('용량 상한 초과: '+relative+' '+bytes.length+'B / '+style.maxBytes+'B');
     else if (style && bytes.length > style.warnBytes) warnings.push('용량 경고: '+relative+' '+bytes.length+'B / '+style.warnBytes+'B');
     if (item && item.bytes !== bytes.length) errors.push('원장 bytes 불일치: '+relative+' 원장 '+item.bytes+' / 실제 '+bytes.length);
+    if (item?.productionRecord) {
+      const record = production.get(item.id);
+      if (!record || item.productionRecord !== 'docs/image-prompts/production.json#'+item.id || record.output !== relative) errors.push('제작 이력 경로 불일치: '+item.id);
+      else if (createHash('sha256').update(bytes).digest('hex') !== record.outputSha256) errors.push('검수한 그림과 SHA-256 불일치: '+relative);
+    }
   }
   for (const item of approved) {
     const relative=item.outputStem+'.webp';
     if (!present.has(relative)) errors.push('승인 그림 파일 누락: '+relative);
     const prompt=path.join(root,'docs/image-prompts/prompts',item.id+'.txt');
     if (!fs.existsSync(prompt) || !fs.lstatSync(prompt).isFile() || fs.lstatSync(prompt).isSymbolicLink() || !fs.readFileSync(prompt,'utf8').trim()) errors.push('실제 프롬프트 누락 또는 비어 있음: '+item.id);
+    if (item.productionRecord) {
+      const requests = production.get(item.id)?.actualPrompts;
+      if (!Array.isArray(requests) || !requests.length) errors.push('실제 생성 요청 이력 없음: '+item.id);
+      else for (const request of requests) {
+        if (!request || !new RegExp('^docs/image-prompts/generation-prompts/'+item.id+'-[0-9]{2}\\.txt$').test(request.path)) { errors.push('생성 요청 경로 오류: '+item.id); continue; }
+        const file = path.join(root,request.path);
+        if (!fs.existsSync(file) || !fs.lstatSync(file).isFile() || fs.lstatSync(file).isSymbolicLink() || createHash('sha256').update(fs.readFileSync(file)).digest('hex') !== request.sha256) errors.push('실제 생성 요청 SHA-256 불일치: '+request.path);
+      }
+    }
   }
   // 배경색·12% 여백은 WebP 헤더로 알 수 없다. 픽셀 디코더를 추가하지 않고 CHECK.md 사람 검수로 남긴다.
   return {ok:errors.length===0,errors,warnings,files:files.length,approved:approved.length,checked};
