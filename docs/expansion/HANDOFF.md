@@ -21,7 +21,7 @@
 
 4. quiz.js:49의 후보 생성과 :87-90의 전체 폴백 **양쪽에** '자료 있는 나라만' 필터를 같은 커밋으로 넣어라. 한쪽만 고치는 것이 이 작업에서 가장 흔한 실수이고, 안 넣으면 그림 없는 나라가 보기로 올라와 빈 칸이 렌더링된다. 후보가 모자라 굶주릴 때 푸는 것은 혼동군 배제뿐이고, 자료 필터는 어떤 경우에도 풀지 않는다.
 
-5. 새 그림을 flags/ 폴더에 넣지 마라. tests/run.mjs:114-124가 flags/ 안의 모든 파일이 194개 code 중 하나여야 한다고 단언해 즉시 실패하고, sw.js의 국기 예열과 build-site.mjs의 flags/ 통째 복사에도 섞여 들어간다. 그림은 별도 폴더에 두되, 폴더 이름(images/symbols·images/places 대 루트 symbols·landmarks)은 착수 전에 한 쪽으로 고정하고 build-site.mjs 폴더 목록·serve.mjs MIME·테스트·ui.js 경로 함수를 전부 같은 이름으로 맞춰라.
+5. 새 그림을 flags/ 폴더에 넣지 마라. tests/run.mjs:114-124가 flags/ 안의 모든 파일이 194개 code 중 하나여야 한다고 단언해 즉시 실패하고, sw.js의 국기 예열과 build-site.mjs의 flags/ 통째 복사에도 섞여 들어간다. 그림 경로는 사용자가 images/symbols/·images/places/로 확정했다. build-site.mjs에는 images 하나를 추가하고 serve.mjs MIME·테스트·ui.js 경로 함수를 전부 이 경로에 맞춰라.
 
 6. 새 수아 음원 문구를 한 줄도 추가하지 마라. scripts/build-site.mjs:13-15의 배포 게이트가 전체 음원이 준비되어야 배포를 허락하므로, 문구가 하나 늘어나는 순간 main 배포 전체가 멈춘다. 1차는 새 음원 0개로 간다 — 그림 이름을 읽어 주고 싶어도 ui.js의 lines 배열을 건드리지 말고, js/voice-manifest.js와 data/voice-config.json은 손대지 마라. 기존 fact 118행 재사용이 그 근거다.
 
@@ -92,7 +92,7 @@ D2의 첫 배포 대상. ui.js:64(fact-box)와 :65(hint-box) 사이에 그림 �
 회차 규약(1대화창 = 앵커 1 + 항목 8~10, 상한 12장)에 따라 342장을 뽑고, 맥에서 화풍별 규격으로 변환하고, 폴더·MIME·서비스워커·경로 함수 다섯 자리를 배선한다. 배선은 그림 30장쯤 모인 시점에 한 번만 한다.
 
 - **과제** — `T9-batches`, `T13-wiring`
-- **사람이 먼저** — presets.json.styleChoice가 확정되고 앵커 1장이 커밋된 뒤에만 시작한다. 생성(회차 35~43개, 약 18~21시간)과 PNG→WebP 변환은 사람이 맥에서 실행한다 — 이 컨테이너에는 cwebp·ffmpeg·ImageMagick·sips가 하나도 없다.
+- **사람이 먼저** — presets.json.styleChoice가 확정되고 앵커 1장이 커밋된 뒤에만 시작한다. 생성(회차 35~43개, 약 18~21시간)과 PNG→WebP 변환은 사람이 맥에서 실행한다 — 2026-09-15 맥 실측은 sips와 cwebp가 있고 ffmpeg·ImageMagick은 PATH에 없다. 도구 존재는 생성·검수의 사람 확인을 대신하지 않는다.
 - **배포되면** — 배선 커밋 한 번을 배포한다. 플래그가 여전히 off라 아이 화면 변화는 0이고, 로컬에서 콘솔로 플래그를 켜면 도감 카드에 지금까지 모인 그림이 보인다. 서비스워커 음원 버킷 이름은 이 단계에서도 그대로다.
 
 ### 7단계 — 전량 공개 (플래그 on)
@@ -155,19 +155,19 @@ Natural Earth 50m을 좌표 194개와 '국경선 없는 육지 실루엣 한 덩
 
 ### `T2-sw-cache-buckets` 서비스워커 캐시 버킷 분리 — 단독으로 먼저 배포해 검증
 
-**왜** — sw.js:5 의 VERSION 문자열 하나에 셸·국기·음원이 다 들어 있고, 정리 코드(sw.js:76-77)가 'flagquiz- 로 시작하면 전부 삭제'다. 그림을 교체할 때마다 버전을 올려야 하므로 이 구조 그대로면 '그림 몇 장 고쳤더니 아이가 차 안에서 앱이 벙어리가 됨'(114MB 음원 소실)이 구조적으로 예정돼 있다. 이관 자체가 1회 재다운로드를 유발하므로 그림 작업과 섞지 말고 **이 커밋만 단독 배포해 아이패드에서 확인한 뒤** 다음으로 간다.
+**왜** — T2 구현 전에는 VERSION 문자열 하나에 셸·국기·음원이 다 들어 있고 정리 코드가 'flagquiz- 로 시작하면 전부 삭제'였다. 그림을 교체할 때마다 버전을 올려야 하므로 이 구조 그대로면 '그림 몇 장 고쳤더니 아이가 차 안에서 앱이 벙어리가 됨'(114MB 음원 소실)이 구조적으로 예정돼 있다. 이관 자체가 1회 재다운로드를 유발하므로 그림 작업과 섞지 말고 **이 커밋만 단독 배포해 아이패드에서 확인한 뒤** 다음으로 간다.
 
 **독립 배포** — 가능 · 선행: `T1-export-button`
 
 **고칠 곳**
 
 - js/sw.js 아님 — 파일은 저장소 루트의 `/home/user/FlagQuiz/sw.js` 다
-- sw.js:5 `var VERSION = 'flagquiz-v4';` 를 네 상수로 교체: `var SHELL_CACHE='flagquiz-shell-v1'; var FLAG_CACHE='flagquiz-flags-v1'; var ART_CACHE='flagquiz-art-v1'; var AUDIO_CACHE='flagquiz-v4';` + `var KEEP=[SHELL_CACHE,FLAG_CACHE,ART_CACHE,AUDIO_CACHE];`
+- 최초 T2 이관 명세(현재 네 버킷 구현·단독 배포 완료, 아이패드 확인은 STATUS.md 참조): 옛 `var VERSION = 'flagquiz-v4';` 를 네 상수로 교체: `var SHELL_CACHE='flagquiz-shell-v1'; var FLAG_CACHE='flagquiz-flags-v1'; var ART_CACHE='flagquiz-art-v1'; var AUDIO_CACHE='flagquiz-v4';` + `var KEEP=[SHELL_CACHE,FLAG_CACHE,ART_CACHE,AUDIO_CACHE];`
 - **AUDIO_CACHE 는 반드시 옛 이름 'flagquiz-v4' 를 물려받는다.** 아이패드에 이미 받아둔 114MB 가 그 이름 아래 있다. 바꾸는 순간 전량 재다운로드다. 그 취지를 주석으로 파일에 못박는다
 - sw.js:35 `caches.open(VERSION)` → `caches.open(SHELL_CACHE)` (install)
 - sw.js:55 `caches.open(VERSION)` → `caches.open(FLAG_CACHE)` (warmFlags)
 - sw.js:76-77 정리 로직을 화이트리스트로: `keys.filter(function(k){ return k.indexOf('flagquiz-')===0 && KEEP.indexOf(k)===-1; })`
-- sw.js:72-82 activate 의 `.then(warmFlags)` 앞에 **레거시 정리 단계** 추가: `caches.open(AUDIO_CACHE)` 를 열어 `cache.keys()` 를 훑고 `new URL(req.url).pathname.indexOf('/audio/')===-1` 인 항목만 `cache.delete(req)` 한다. 옛 v4 버킷에 섞여 있는 index.html·국기 SVG 를 지우는 것이고, 음원은 건드리지 않는다 (재다운로드 0바이트)
+- sw.js:72-82 activate 의 `.then(warmFlags)` 앞에 **레거시 정리 단계** 추가: `caches.open(AUDIO_CACHE)` 를 열어 `cache.keys()` 를 훑고 `new URL(req.url).pathname.indexOf('/audio/')===-1` 인 항목만 정리한다. 국기는 FLAG_CACHE에 확보된 뒤 원본을 지우고, 복사 실패 시 원본을 보존한다. 옛 셸은 지우되 음원은 읽거나 복사·삭제하지 않는다 (음원 재다운로드 0바이트)
 - sw.js:122 `caches.open(VERSION)` → `caches.open(AUDIO_CACHE)` (cachedAudio 저장)
 - sw.js:148 `caches.open(VERSION)` → `caches.open(FLAG_CACHE)` (flags 저장)
 - sw.js:163 `caches.open(VERSION)` → `caches.open(SHELL_CACHE)` (network-first 저장)
@@ -544,7 +544,7 @@ Natural Earth 50m을 좌표 194개와 '국경선 없는 육지 실루엣 한 덩
 
 - 신규 scripts/image-ledger.mjs — 서브커맨드 seed|lint|record|report. 의존성 0. node scripts/image-ledger.mjs seed 로 원장을 만든다.
 - 신규 docs/image-prompts/presets.json — 최상위: {created, templateVersion:'FQ-IMG-v1', styleChoice:null, common:{tool, aspect, styles:{a:{composition,style,exclusions,output}, b:{composition,style,exclusions,output}}}, items:[…342]}. common.styles.a에는 IMAGE-PROMPTS.md:220-236(A-스타일 블록)과 :240-254(A-금지 블록)을, common.styles.b에는 :296-313(B-상징물 템플릿)과 :317-339(B-랜드마크 템플릿)의 COMPOSITION/STYLE/DO NOT INCLUDE/OUTPUT 네 문단을 한 글자도 바꾸지 않고 옮긴다. 두 화풍의 공통 블록은 서로 다르므로 둘 다 보관한다(D7이 아직 미정).
-- items[] 한 항목의 필드: {id:'<code>-<kind>', code, kind:'symbol'|'landmark', koRaw(CSV 원문 그대로), koApprove(아빠 승인용 2~10자 요약), subjectEn:null, accuracy(landmark만 true), override:null, substitutedFrom:null, keepsBackdrop:false, continent, category(symbol만), grade(landmark만), city(landmark만), inCapital, factReuse, riskNote(CSV 위험 열 원문), confusionGroups:[군 이름…], csvStatus:'final'|'draft'|'fixed-r1', status:'draft', tries:0, bytes:null, outputStem:'symbols/<code>'|'landmarks/<code>'}
+- items[] 한 항목의 필드: {id:'<code>-<kind>', code, kind:'symbol'|'landmark', koRaw(CSV 원문 그대로), koApprove(아빠 승인용 2~10자 요약), subjectEn:null, accuracy(landmark만 true), override:null, substitutedFrom:null, keepsBackdrop:false, continent, category(symbol만), grade(landmark만), city(landmark만), inCapital, factReuse, riskNote(CSV 위험 열 원문), confusionGroups:[군 이름…], csvStatus:'final'|'draft'|'fixed-r1', status:'draft', tries:0, bytes:null, outputStem:'images/symbols/<code>'|'images/places/<code>'}
 - inCapital은 CSV '수도에있음' 열이 'Y'인 17행만 true, 나머지는 false로 굳힌다(빈칸=false). IMAGE-PROMPTS.md:341-342가 요구한 필드다 — false면 화면 문구가 '수도의 명소'가 아니라 '이 나라의 명소'여야 한다.
 - confusionGroups는 docs/expansion/confusion-groups.json의 groups[].codes를 code로 역인덱싱해 채운다. 이 값은 프롬프트에 들어가지 않는다 — 구별 지침을 얼마나 세게 써야 하는지 판단하는 사람용 표시다.
 - 신규 docs/image-prompts/settings.csv — 열: code,kind,koApprove,subjectEn,inCapital,override유무,substitutedFrom,status,tries,생성일. docs/mlx-audio/settings.csv와 같은 따옴표 정책(전 필드 인용)으로 쓴다.
@@ -555,7 +555,7 @@ Natural Earth 50m을 좌표 194개와 '국경선 없는 육지 실루엣 한 덩
 - [ ] node scripts/image-ledger.mjs seed 를 두 번 돌려도 presets.json의 바이트가 동일하다(멱등, 키 순서 고정, 들여쓰기 2칸, 끝에 개행 1개).
 - [ ] presets.json의 items 길이가 정확히 342이고, kind==='symbol' 194개, kind==='landmark' 148개다.
 - [ ] 공통 4문단 문자열은 presets.json 전체에서 화풍당 딱 1회씩만 등장한다. grep -c 'COMPOSITION (identical for every image' docs/image-prompts/presets.json 이 1이다(B 기준). items 안에 composition/style/exclusions/output 키가 하나도 없다.
-- [ ] inCapital:true 항목이 정확히 17개, factReuse가 채워진 항목이 정확히 118개(symbol·landmark 양쪽에 같은 fact가 붙을 수 있으므로 행 기준 118을 항목으로 펼친 수를 report가 따로 출력한다).
+- [ ] inCapital:true 명소 항목이 정확히 17개, factReuse가 있는 CSV 행은 118개다. symbol·landmark 양쪽으로 펼친 factReuse 항목은 220개이며 report는 행 수와 항목 수를 따로 출력한다.
 - [ ] csvStatus==='draft'인 행에서 나온 항목은 status가 'blocked-approval'로 시드되어 T5 조립 대상에서 자동 제외된다(31행 → 해당 항목).
 - [ ] settings.csv가 342행 + 헤더 1행이고, T1의 파서로 다시 읽었을 때 342항목이 그대로 복원된다.
 
@@ -611,7 +611,7 @@ Natural Earth 50m을 좌표 194개와 '국경선 없는 육지 실루엣 한 덩
 
 - 신규 scripts/build-image-prompts.mjs. 의존성 0. 인자: --style a|b (필수), --kind symbol|landmark|all (기본 all), --codes kr,jp,cn (기본 전체), --out <디렉터리> (기본 docs/image-prompts/prompts), --stdout (한 건만 표준출력), --force.
 - 조립 순서를 코드 상수로 고정한다. 화풍 A: [subjectEn] + '\n\n' + common.styles.a.style + '\n\n' + common.styles.a.exclusions. 화풍 B: 'SUBJECT: ' + subjectEn + (landmark면 '\nACCURACY: …') + (override면 '\n' + override) + '\n\n' + composition + '\n\n' + style + '\n\n' + exclusions + '\n\n' + output. 순서 배열은 파일 맨 위에 const ORDER = [...] 로 한 번만 쓰고 그 외 어디서도 문자열을 이어붙이지 않는다.
-- 출력 경로: <out>/<code>-<kind>.txt (예: prompts/kr-landmark.txt). 화풍을 바꾸면 같은 파일을 덮어쓴다 — 두 화풍의 프롬프트를 동시에 저장소에 두지 않는다. 단 --style이 presets.json의 styleChoice와 다르고 styleChoice가 null이 아니면 --force 없이는 거부한다(확정된 화풍을 실수로 뒤엎는 것을 막는다).
+- 출력 경로: <out>/<code>-<kind>.txt (예: prompts/kr-landmark.txt). 화풍을 바꾸면 같은 파일을 덮어쓴다 — 두 화풍의 프롬프트를 동시에 저장소에 두지 않는다. 본 생성은 presets.json.styleChoice가 null이면 --style·--force 유무와 무관하게 거부한다. 확정된 styleChoice와 --style이 다르면 --force 없이는 거부한다(확정된 화풍을 실수로 뒤엎는 것을 막는다).
 - 파일럿 전용 출력: --out docs/artifacts/images/pilot/prompts-a 처럼 out을 바꿔 A·B를 나란히 뽑을 수 있게 한다(이 경로는 .gitignore:11 아래라 커밋되지 않는다).
 - 각 .txt 파일 맨 앞에 주석 줄을 넣지 않는다. 파일 전체가 도구에 그대로 붙여넣는 본문이어야 한다. 메타데이터(화풍, templateVersion, 생성일)는 원장에만 둔다.
 - 거부 조건: subjectEn이 null이거나 status가 'blocked-approval'이면 그 항목을 건너뛰고 목록을 요약해 출력한다. lint 오류가 있으면 아예 조립하지 않는다(내부에서 lint를 호출한다).
@@ -667,7 +667,7 @@ Natural Earth 50m을 좌표 194개와 '국경선 없는 육지 실루엣 한 덩
 
 ### `T10-convert` PNG → WebP 변환 (scripts/prepare-images.mjs, sips/ffmpeg/ImageMagick 실명령)
 
-**왜** — 이 환경과 이 저장소에는 cwebp·ffmpeg·ImageMagick·sips·Pillow가 하나도 없고(확인함: which 전부 none, python3만 있음), package.json에 의존성이 0개이며 scripts/build-site.mjs는 변환을 전혀 하지 않는다. 즉 변환은 맥에서 커밋 전에 끝나야 하고, 저장소에는 '어떤 도구로 어떤 숫자로 변환하는가'가 명령줄 단위로 적혀 있어야 3개월 뒤 같은 결과가 나온다.
+**왜** — package.json에 의존성이 0개이며 scripts/build-site.mjs는 변환을 전혀 하지 않는다. 2026-09-15 맥 실측으로 /usr/bin/sips(sips-316)와 /opt/homebrew/bin/cwebp(1.6.0)를 확인했다. sips는 WebP 읽기만 가능하고 ffmpeg·magick·convert는 PATH에 없다. 즉 변환은 맥에서 커밋 전에 끝나야 하고, 저장소에는 '어떤 도구로 어떤 숫자로 변환하는가'가 명령줄 단위로 적혀 있어야 3개월 뒤 같은 결과가 나온다.
 
 **독립 배포** — 가능 · 선행: `T2-ledger-seed`
 
@@ -678,12 +678,12 @@ Natural Earth 50m을 좌표 194개와 '국경선 없는 육지 실루엣 한 덩
 - 치수 계산은 스크립트가 한다. PNG의 IHDR에서 폭·높이를 읽는다(바이트 16~23, 빅엔디언 32비트 2개) — 의존성 없이 가능하다. 그 값으로 크롭/패딩 픽셀 수를 계산해 정수로 박은 명령을 만든다. 도구의 비율 문법(magick -crop 4:3 등)에 의존하지 않는다.
 - 3:2로 뽑힌 경우: 중앙 크롭. 예) 1536×1024 → crop 1365×1024(가로만 자른다, 좌우 12% 여백이 이걸 위한 장치다).
 - 1:1로 뽑힌 경우: 크롭이 아니라 좌우 여백 덧대기. 1024×1024 → 1365×1024 패딩. 패딩 색은 화풍 A는 #FFFFFF, B는 #F1F5FB. 피사체를 절대 자르지 않는다(IMAGE-PROMPTS.md:259).
-- ffmpeg(권장 — 세 단계가 한 줄): ffmpeg -y -i in.png -vf "crop=1365:1024,scale=768:576:flags=lanczos" -c:v libwebp -quality 80 -compression_level 6 -preset picture -an -frames:v 1 symbols/kr.webp  /  패딩판: -vf "pad=1365:1024:171:0:0xFFFFFF,scale=768:576:flags=lanczos"  /  존재 확인: ffmpeg -hide_banner -encoders | grep libwebp
-- ImageMagick 7: magick in.png -gravity center -crop 1365x1024+0+0 +repage -resize 768x576 -strip -define webp:method=6 -quality 80 symbols/kr.webp  /  패딩판: magick in.png -background '#FFFFFF' -gravity center -extent 1365x1024 -resize 768x576 -strip -define webp:method=6 -quality 80 symbols/kr.webp  /  IM6이면 magick 대신 convert. 존재 확인: magick -version
-- sips(맥 기본, webp 쓰기 지원 여부를 먼저 확인할 것): sips --formats | grep -i webp 가 비면 sips 단독 경로는 탈락이고 크롭·축소까지만 sips로 하고 인코딩은 cwebp로 넘긴다. 지원할 때: sips -c 1024 1365 in.png --out /tmp/c.png (sips -c 는 '높이 너비' 순서다) → sips -Z 768 /tmp/c.png --out /tmp/z.png → sips -s format webp -s formatOptions 80 /tmp/z.png --out symbols/kr.webp  /  패딩판: sips -p 1024 1365 --padColor FFFFFF in.png --out /tmp/c.png
-- cwebp(가장 확실한 인코더, brew install webp): 크롭·축소는 sips나 ffmpeg로 끝낸 뒤 cwebp -q 80 -m 6 -metadata none /tmp/z.png -o symbols/kr.webp  /  cwebp 단독으로도 가능: cwebp -q 80 -m 6 -crop 85 0 1365 1024 -resize 768 576 -metadata none in.png -o symbols/kr.webp (cwebp의 -crop 은 x y w h 순서이고 -resize 보다 먼저 적용된다)
-- 출력 경로: symbols/<code>.webp, landmarks/<code>.webp (저장소 루트, flags/<code>.svg 와 형제). 원본 PNG는 docs/artifacts/images/raw/<code>-<kind>-<두자리 시도번호>.png 에 남기고 절대 덮어쓰지 않는다(docs/mlx-audio/README.md의 'WAV 원본을 MP3로 덮어쓰지 않는다'와 같은 규칙).
-- --dry-run은 명령줄 전체를 그대로 출력해 맥에서 복사·실행할 수 있게 한다. 도구가 없는 환경(이 컨테이너 포함)에서는 exec를 시도하지 않고 '도구 없음'을 명확히 알린 뒤 종료 코드 2로 끝낸다.
+- ffmpeg(설치된 환경에서 선택 가능한 경로 — 현재 맥에는 없음): ffmpeg -y -i in.png -vf "crop=1365:1024,scale=768:576:flags=lanczos" -c:v libwebp -quality 80 -compression_level 6 -preset picture -an -frames:v 1 images/symbols/kr.webp  /  패딩판: -vf "pad=1365:1024:171:0:0xFFFFFF,scale=768:576:flags=lanczos"  /  존재 확인: ffmpeg -hide_banner -encoders | grep libwebp
+- ImageMagick 7(설치된 환경에서 선택 가능한 경로 — 현재 맥에는 없음): magick in.png -gravity center -crop 1365x1024+0+0 +repage -resize 768x576 -strip -define webp:method=6 -quality 80 images/symbols/kr.webp  /  패딩판: magick in.png -background '#FFFFFF' -gravity center -extent 1365x1024 -resize 768x576 -strip -define webp:method=6 -quality 80 images/symbols/kr.webp  /  IM6이면 magick 대신 convert. 존재 확인: magick -version
+- sips(맥 기본): `sips --formats | grep -i webp`에서 WebP 행이 보이는 것만으로 쓰기 지원을 판단하지 마라. Writable 표시를 확인한다. 현재 맥 출력은 `org.webmproject.webp         webp  `이고 Writable 표시가 없어 읽기 전용이다. 크롭·축소까지만 sips로 하고 인코딩은 cwebp로 넘긴다. 아래 WebP 직접 출력은 Writable이 확인된 다른 환경에서만 쓸 예시다: sips -c 1024 1365 in.png --out /tmp/c.png (sips -c 는 '높이 너비' 순서다) → sips -Z 768 /tmp/c.png --out /tmp/z.png → sips -s format webp -s formatOptions 80 /tmp/z.png --out images/symbols/kr.webp  /  패딩판: sips -p 1024 1365 --padColor FFFFFF in.png --out /tmp/c.png
+- cwebp(현재 맥에 1.6.0 설치됨; 없는 환경은 brew install webp): 크롭·축소는 sips나 ffmpeg로 끝낸 뒤 cwebp -q 80 -m 6 -metadata none /tmp/z.png -o images/symbols/kr.webp  /  cwebp 단독으로도 가능: cwebp -q 80 -m 6 -crop 85 0 1365 1024 -resize 768 576 -metadata none in.png -o images/symbols/kr.webp (cwebp의 -crop 은 x y w h 순서이고 -resize 보다 먼저 적용된다)
+- 출력 경로: images/symbols/<code>.webp, images/places/<code>.webp (저장소 루트의 images/ 아래; flags/와 분리). 원본 PNG는 docs/artifacts/images/raw/<code>-<kind>-<두자리 시도번호>.png 에 남기고 절대 덮어쓰지 않는다(docs/mlx-audio/README.md의 'WAV 원본을 MP3로 덮어쓰지 않는다'와 같은 규칙).
+- --dry-run은 명령줄 전체를 그대로 출력해 맥에서 복사·실행할 수 있게 한다. 도구가 없는 환경에서는 exec를 시도하지 않고 '도구 없음'을 명확히 알린 뒤 종료 코드 2로 끝낸다.
 
 **완료 판정**
 
@@ -705,7 +705,7 @@ Natural Earth 50m을 좌표 194개와 '국경선 없는 육지 실루엣 한 덩
 - -strip / -metadata none 은 메타데이터를 지운다. 용량과 재현성에는 좋지만, 생성 도구의 출처 표시 의무(C2PA 등)가 있다면 메타에서 지우는 대신 원장·README에 적어야 한다. DECISIONS.md의 '아직 열려 있는 것'에 '생성 도구 약관의 재배포 권리와 출처 표시 의무'가 미결로 남아 있다 — 확인 전까지 원본 PNG의 메타데이터는 raw/ 쪽에 보존한다.
 - WebP를 만들고 나서 원본을 지우지 마라. 화풍을 바꾸거나 규격을 바꾸면 원본에서 다시 뽑아야 하고, raw/ 는 어차피 커밋되지 않아 저장소를 불리지 않는다.
 - q80을 임의로 올리지 마라. 60KB/150KB 상한은 스타일 이탈 계측기이기도 하다 — 품질을 올려 상한을 맞추는 게 아니라, 상한을 넘으면 그림에 그라데이션·노이즈가 섞인 것이다(IMAGE-PROMPTS.md:283).
-- symbols/ 와 landmarks/ 를 flags/ 아래에 만들면 tests/run.mjs:114-124의 '목록에 없는 파일이 있으면 실패' 검사에 즉시 걸린다. 반드시 루트의 별도 폴더다.
+- images/symbols/ 와 images/places/ 를 flags/ 아래에 만들면 tests/run.mjs:114-124의 '목록에 없는 파일이 있으면 실패' 검사에 즉시 걸린다. 반드시 저장소 루트의 images/ 아래에 둔다.
 
 ### `T11-verify` 기계 검수 (scripts/check-images.mjs) — 사람이 볼 것과 기계가 거를 것을 가른다
 
@@ -716,7 +716,7 @@ Natural Earth 50m을 좌표 194개와 '국경선 없는 육지 실루엣 한 덩
 **고칠 곳**
 
 - 신규 scripts/check-images.mjs. 의존성 0. WebP 헤더를 직접 읽는다: 바이트 0-3 'RIFF', 8-11 'WEBP', 12-15 청크 타입. 'VP8 '(lossy)면 폭=offset 26의 16비트 LE & 0x3FFF, 높이=offset 28. 'VP8X'면 오프셋 24부터 3바이트씩 (canvasWidth-1, canvasHeight-1). 'VP8L'이면 offset 21부터 비트필드에서 14비트씩.
-- 검사 항목 — (1) symbols/·landmarks/ 의 모든 파일이 .webp이고 RIFF/WEBP 시그니처가 맞는가, (2) 치수가 화풍별 목표와 정확히 일치하는가, (3) 용량이 상한 이하인가(경고선 별도 집계), (4) 파일명 code가 data/countries.js의 code에 있는가, (5) 고아 파일 0개 — 원장에 status:'approved-image'가 아닌데 파일이 있으면 실패, (6) 원장에 approved-image인데 파일이 없으면 실패, (7) prompts/<code>-<kind>.txt 가 존재하고 비어 있지 않은가, (8) presets.json의 bytes가 실제 파일 크기와 일치하는가.
+- 검사 항목 — (1) images/symbols/·images/places/ 의 모든 파일이 .webp이고 RIFF/WEBP 시그니처가 맞는가, (2) 치수가 화풍별 목표와 정확히 일치하는가, (3) 용량이 상한 이하인가(경고선 별도 집계), (4) 파일명 code가 data/countries.js의 code에 있는가, (5) 고아 파일 0개 — 원장에 status:'approved-image'가 아닌데 파일이 있으면 실패, (6) 원장에 approved-image인데 파일이 없으면 실패, (7) prompts/<code>-<kind>.txt 가 존재하고 비어 있지 않은가, (8) presets.json의 bytes가 실제 파일 크기와 일치하는가.
 - 여백 검사(선택, 화풍 A에 유효): WebP는 디코딩 없이 픽셀을 못 읽으므로, 이 검사는 raw PNG(무압축/필터 해제가 필요해 zlib inflate가 필요)에서 한다. node:zlib이 표준 모듈이라 의존성 0을 지킬 수 있다. 좌우 12% 세로 띠의 픽셀이 전부 배경색(A #FFFFFF, B #F1F5FB) ±2면 통과. 구현 비용이 크면 이 항목만 사람 검수로 넘기고 코드에 사유를 주석으로 남긴다.
 - 신규 docs/image-prompts/CHECK.md — 사람이 볼 항목만 추린 인쇄용 체크리스트. IMAGE-PROMPTS.md:824-848에서 A-1/A-2/A-3/B-1/B-2/B-3/C-1/C-2/C-3/C-4/D-1/D-2/D-3만 옮기고, 기계가 보는 항목은 '스크립트가 봄'이라고만 적는다.
 - tests/run.mjs 연동은 조건부로 만든다. tests/run.mjs:114-124의 국기 검사를 복제하되, '194개 다 있을 것'이 아니라 '원장에 approved-image인 나라만 파일이 있을 것'으로 바꾼다(IMAGE-PROMPTS.md:820). 342장이 다 모이기 전에는 개수 검사를 켜지 않는다.
@@ -725,7 +725,7 @@ Natural Earth 50m을 좌표 194개와 '국경선 없는 육지 실루엣 한 덩
 
 - [ ] node scripts/check-images.mjs 가 파일이 0개인 현재 상태에서 종료 코드 0으로 통과한다(빈 상태가 실패가 되면 안 된다).
 - [ ] 일부러 flags/ 에 kr.webp를 넣으면 tests/run.mjs가 즉시 실패한다(기존 검사가 살아 있음을 확인).
-- [ ] symbols/ 에 원장에 없는 zz.webp를 넣으면 check-images가 '고아 파일' 오류와 파일명을 출력하고 종료 코드 1로 끝난다.
+- [ ] images/symbols/ 에 원장에 없는 zz.webp를 넣으면 check-images가 '고아 파일' 오류와 파일명을 출력하고 종료 코드 1로 끝난다.
 - [ ] 치수가 800×600인 webp를 넣으면(화풍 A 기준) '치수 불일치 768×576 기대' 오류를 낸다.
 - [ ] WebP 헤더 파서가 VP8/VP8L/VP8X 세 형식 모두에서 정확한 치수를 반환한다.
 - [ ] docs/image-prompts/CHECK.md가 사람이 볼 항목만 담고 있고, 기계 항목이 하나도 중복되지 않는다.
@@ -755,7 +755,7 @@ Natural Earth 50m을 좌표 194개와 '국경선 없는 육지 실루엣 한 덩
 - 맨 위 첫 칸에 anchor/ 의 앵커 그림을 항상 고정으로 넣는다. 40장을 앵커와 같은 화면에서 본다.
 - 배경 토글 2개: 밝은 배경(--card #ffffff)과 어두운 배경(css/style.css:27-46의 --card #1e2439). 체크리스트 D-2(다크모드에서 흰 네모로 도드라지는가)를 이 화면에서 바로 판정한다.
 - 국기 나란히 보기 토글: 각 칸 옆에 flags/<code>.svg 를 같은 크기로 띄운다. 체크리스트 D-3을 여기서 판정한다.
-- 외부 요청 0건. 이미지는 상대 경로(../../symbols/kr.webp)로 참조한다 — file:// 로 열어도 보인다.
+- 외부 요청 0건. 이미지는 상대 경로(../../../images/symbols/kr.webp)로 참조한다 — file:// 로 열어도 보인다.
 
 **완료 판정**
 
@@ -919,34 +919,34 @@ Natural Earth 50m을 좌표 194개와 '국경선 없는 육지 실루엣 한 덩
 
 **고칠 곳**
 
-- scripts/build-site.mjs:56 — for (const folder of ['assets','css','flags','js']) 에 'symbols','landmarks' 를 추가한다. 안 넣으면 배포에서 통째로 빠진다. 단 폴더가 존재하지 않으면 fs.cp가 던지므로 존재 확인을 함께 넣는다(그림 0장 상태에서 빌드가 깨지면 안 된다).
+- scripts/build-site.mjs:56 — for (const folder of ['assets','css','flags','js']) 에 T4에서 추가한 'images'가 있는지 확인한다. 두 하위 폴더를 따로 추가하지 않는다. T4의 .gitkeep을 유지하고 폴더 존재를 확인하여 그림 0장에서도 빌드한다.
 - scripts/serve.mjs:16-29 TYPES 에 '.webp': 'image/webp' 한 줄 추가. 없으면 배포본은 멀쩡한데 npm start 로컬에서만 그림이 깨진다.
-- js/ui.js:13 flagSrc() 옆에 symbolSrc(code)='symbols/'+code+'.webp', landmarkSrc(code)='landmarks/'+code+'.webp' 를 추가한다. 코드→경로 매핑 진입점을 한 곳으로 유지한다.
+- js/ui.js:13 flagSrc() 옆에 symbolSrc(code)='images/symbols/'+code+'.webp', landmarkSrc(code)='images/places/'+code+'.webp' 를 추가한다. 코드→경로 매핑 진입점을 한 곳으로 유지한다.
 - css/style.css:73 의 touch-action:manipulation 선택자 목록과 :76-79 의 user-select:none 목록에 새 이미지 클래스를 반드시 추가한다. 빠뜨리면 아이패드에서 더블탭 확대·글자 끌림이 새 화면에서만 발생한다(IMAGE-PROMPTS.md:268).
 - 새 이미지 클래스는 css/style.css:307-317 .flag-img 의 background:var(--card-2); border:1px solid var(--line); border-radius:12px; aspect-ratio:4/3 패턴을 그대로 복제한다. 다크용 이미지를 따로 만들지 않는다.
 - sw.js — SHELL(:6-31)에 넣지 않는다. cache.addAll은 원자적이라 342장 중 한 장만 404여도 서비스워커 설치 전체가 실패한다. sw.js:46-70 warmFlags() 와 같은 방식의 warmImages()를 install이 아니라 activate에서, 20개씩 끊어, 개별 catch로 돌린다.
-- sw.js:139-155 의 /flags/ 라우트는 순수 cache-first라 절대 재검증하지 않는다. /symbols/·/landmarks/ 를 같은 전략으로 붙이면 그림을 다시 뽑아도 아이패드에는 옛 그림이 계속 뜬다.
-- VERSION(sw.js:5) — 이미지 교체 때마다 올리면 캐시 버킷이 하나뿐이라 114MB 음원 캐시가 함께 날아간다. 그래서 이미지 전용 버킷(예: var IMG_CACHE = 'flagquiz-img-v1')을 분리하고 VERSION과 독립적으로 올린다. D4가 '전량 완성 후 한 번에 공개'이므로 공개 시점에 VERSION 1회만 올리면 되고, 그 이후 개별 교체는 IMG_CACHE만 올린다.
+- sw.js의 기존 /images/ 분기는 두 축 모두 ART_CACHE를 사용한다. 같은 파일명으로 그림을 교체하면 cache-first 적중이 옛 그림을 유지하므로 ART_CACHE만 갱신한다. 국기 라우트와 새 분기를 중복으로 만들지 않는다.
+- T2에서 만든 ART_CACHE를 그대로 사용한다. 새 IMG_CACHE를 만들지 않는다. 그림 교체 때 ART_CACHE 이름을 올리고 KEEP도 그 상수를 사용하게 유지한다. 최초 공개 때도 AUDIO_CACHE='flagquiz-v4'와 SHELL_CACHE·FLAG_CACHE는 그림 때문에 올리지 않는다.
 - tests/run.mjs:114-124 의 검사를 T11의 조건부 버전으로 복제한다.
 
 **완료 판정**
 
 - [ ] npm test 가 통과한다(그림 0장 상태에서도, 30장 상태에서도).
-- [ ] npm start 로컬에서 symbols/kr.webp 가 image/webp Content-Type으로 200을 반환한다.
-- [ ] node scripts/build-site.mjs 후 _site/symbols/ 와 _site/landmarks/ 에 파일이 복사되어 있다. 폴더가 없을 때는 조용히 건너뛰고 빌드가 성공한다.
+- [ ] npm start 로컬에서 images/symbols/kr.webp 가 image/webp Content-Type으로 200을 반환한다.
+- [ ] node scripts/build-site.mjs 후 _site/images/symbols/ 와 _site/images/places/ 에 파일이 복사되어 있다. 그림 0장에서도 T4의 .gitkeep 두 개로 images/symbols/·images/places/ 폴더가 존재하고 빌드가 성공한다.
 - [ ] sw.js의 SHELL 배열에 .webp 경로가 0개다(grep -c 'webp' 로 SHELL 구간 확인).
-- [ ] sw.js에 이미지 전용 캐시 이름이 따로 있고, VERSION 문자열이 'flagquiz-v4' 그대로다 — 이 과제에서 VERSION을 올리지 않는다. 공개 시점에 별도 결정으로 1회 올린다.
+- [ ] sw.js는 기존 ART_CACHE와 /images/ 분기를 사용하고 AUDIO_CACHE는 'flagquiz-v4' 그대로다. 최초 공개·개별 그림 교체 모두 음원 캐시 이름을 바꾸지 않는다.
 - [ ] localStorage 키 'flagquiz.v1'이 저장소 전체에서 그대로다(grep으로 확인). 이 과제는 저장 구조를 건드리지 않는다.
 - [ ] 새 이미지 클래스가 css/style.css:73과 :76-79 목록에 들어가 있다.
 
 **테스트**
 
 - tests/run.mjs 에 조건부 이미지 파일 그룹 추가(원장 approved-image 기준).
-- tests/*.test.mjs 에 (1) serve.mjs TYPES에 .webp가 있는지, (2) build-site.mjs의 폴더 배열에 symbols·landmarks가 있는지, (3) sw.js의 SHELL에 webp 경로가 없는지, (4) sw.js의 VERSION이 예상 문자열인지(의도치 않은 상승을 테스트로 막는다) — 4건.
+- tests/*.test.mjs 에 (1) serve.mjs TYPES에 .webp가 있는지, (2) build-site.mjs의 폴더 배열에 images가 있는지, (3) sw.js의 SHELL에 webp 경로가 없는지, (4) sw.js의 AUDIO_CACHE가 'flagquiz-v4'인지(음원 캐시 변경을 테스트로 막는다) — 4건.
 
 **함정**
 
-- sw.js VERSION을 올리는 것이 이 과제에서 가장 위험한 한 줄이다. 캐시 버킷이 하나라 음원 114MB가 함께 지워지고 민규의 아이패드는 오프라인에서 벙어리가 된다. 이 과제에서는 절대 올리지 않는다.
+- AUDIO_CACHE 이름 'flagquiz-v4'를 바꾸거나 KEEP에서 빼면 기존 음원 114MB를 잃는다. 그림 배선·공개·교체에서는 음원 캐시를 절대 바꾸지 않는다.
 - SHELL에 342장을 나열하는 것도 같은 종류의 사고다. cache.addAll이 원자적이라 설치 자체가 실패한다.
 - localStorage 키와 storage.js의 복원 규칙(객체인 값만 복원)은 이 과제의 범위 밖이지만, 기능 플래그를 여기서 추가하고 싶어질 수 있다. 추가한다면 반드시 객체 안에 넣는다 — 최상위 스칼라는 저장은 되고 절대 읽히지 않는다.
 - build-site.mjs:56에 폴더를 추가할 때 존재 확인 없이 넣으면, 그림 0장 상태에서 npm run build가 즉시 깨지고 배포가 멈춘다.
@@ -1037,7 +1037,7 @@ Natural Earth 50m을 좌표 194개와 '국경선 없는 육지 실루엣 한 덩
 - 새 파일 /home/user/FlagQuiz/scripts/lib/ne-join.mjs — 순수 함수 모듈, 의존성 0. `export function joinFeatures(features, countryCodes)` 을 내보낸다. 반환값은 `{ matched: Map<code, feature>, excluded: feature[] }`.
 - 폴백 순서: feature.properties 에서 `ISO_A2_EH` → `ISO_A2` → `WB_A2` 순으로 본다. 각 단계에서 값이 문자열이고 `/^[A-Z]{2}$/` 를 만족할 때만 채택. `'-99'`, `''`, `'-'`, `null`, `undefined` 는 전부 건너뛰고 다음 후보로 간다. 채택값을 toLowerCase() 해 우리 code 와 견준다. (노르웨이·프랑스가 ISO_A2=-99 인 것이 D3 항목 3의 사례이고, 둘 다 ISO_A2_EH 에서 잡힌다)
 - 정답 집합은 /home/user/FlagQuiz/data/countries.js:16 이후의 194개 `code` 값이다. 스크립트는 이 파일을 vm 으로 읽어 FQ.countries 를 얻는다 — /home/user/FlagQuiz/tests/run.mjs:11-52 의 가짜 브라우저 샌드박스 패턴(window·document·localStorage·matchMedia 스텁)을 그대로 복사한다. **194개 목록을 스크립트에 하드코딩하지 마라.**
-- ne-join.mjs 에 명시적 상수 두 개. (1) `CODE_OVERRIDES` — 세 단계 폴백으로도 안 잡히는 feature 를 NE의 `ADMIN` 값으로 우리 code 에 직접 꽂는 표. 비어 있더라도 상수는 존재해야 하고 각 줄에 이유를 주석한다. (2) `EXCLUDED_ADMINS` — 194개국이 아닌 나머지 도형 전부의 `ADMIN` 값 목록. docs/expansion/README.md:93-96 과 D3 항목 5가 이 수를 46으로 세어 두었다. 각 줄에 배제 사유를 한 단어로 적는다 — 예: `'Taiwan', // 견해가 갈림, README.md:173-176`, `'Greenland', // 속령`, `'Antarctica', // 무국적`, `'Somaliland', // 미승인`, `'Northern Cyprus', // 미승인`, `'Hong Kong S.A.R.', // 자치지역`.
+- ne-join.mjs 에 명시적 상수 두 개. (1) `CODE_OVERRIDES` — 세 단계 폴백으로도 안 잡히는 feature 를 NE의 `ADMIN` 값으로 우리 code 에 직접 꽂는 표. 비어 있더라도 상수는 존재해야 하고 각 줄에 이유를 주석한다. (2) `EXCLUDED_ADMINS` — 194개국이 아닌 나머지 도형 전부의 `ADMIN` 값 목록. Natural Earth v5.1.2는 242개 feature이므로 배제 지역은 48개다(242−194). 각 줄에 배제 사유를 한 단어로 적는다 — 예: `'Taiwan', // 견해가 갈림, README.md:173-176`, `'Greenland', // 속령`, `'Antarctica', // 무국적`, `'Somaliland', // 미승인`, `'Northern Cyprus', // 미승인`, `'Hong Kong S.A.R.', // 자치지역`.
 - joinFeatures 는 세 종류의 실패를 **각각 다른 메시지로** throw 한다. ① 매칭 안 된 우리 code 목록, ② 194개국에도 EXCLUDED_ADMINS 에도 없는 미분류 feature 의 ADMIN 목록, ③ 한 code 에 두 개 이상의 feature 가 붙은 경우(code + 해당 ADMIN 들).
 
 **완료 판정**
@@ -1062,7 +1062,7 @@ Natural Earth 50m을 좌표 194개와 '국경선 없는 육지 실루엣 한 덩
 
 ### `T3-simplify-silhouette` Douglas-Peucker 직접 구현과 '국경선을 그리지 않는' 단일 육지 실루엣 생성
 
-**왜** — D3 항목 5의 핵심이고 이 파이프라인에서 유일하게 틀리기 쉬운 곳이다. '나라별 도형 240개를 그린 뒤 선을 안 그린다'가 아니라 '처음부터 도형이 하나뿐'이어야 영토 논쟁이 구조적으로 사라진다. 조인(T2)이 끝나야 어느 feature 가 194개국이고 어느 것이 46개 배제 도형인지 알 수 있다.
+**왜** — D3 항목 5의 핵심이고 이 파이프라인에서 유일하게 틀리기 쉬운 곳이다. '나라별 도형 242개를 그린 뒤 선을 안 그린다'가 아니라 '처음부터 도형이 하나뿐'이어야 영토 논쟁이 구조적으로 사라진다. 조인(T2)이 끝나야 어느 feature 가 194개국이고 어느 것이 48개 배제 도형인지 알 수 있다.
 
 **독립 배포** — 불가 · 선행: `T1-fetch-raw`, `T2-code-join`
 
@@ -1070,11 +1070,11 @@ Natural Earth 50m을 좌표 194개와 '국경선 없는 육지 실루엣 한 덩
 
 - 새 파일 /home/user/FlagQuiz/scripts/lib/simplify.mjs — Douglas-Peucker 직접 구현, 의존성 0. **반복(명시적 스택) 방식으로** 쓴다 — 재귀로 쓰면 러시아 최대 링(수만 점)에서 콜스택이 넘친다. 점–선분 수직거리를 도(degree) 평면에서 계산한다.
 - 도 평면에서 단순화하는 근거: 투영이 등적장방형(x=(lng+180)/360, y=(90-lat)/180, D3 항목 6)이라 경위도 공간에서의 거리가 화면 공간과 균일 배율만큼만 다르다. 구면거리(하버사인)를 쓰지 마라 — 고위도에서 필요 없이 점이 남아 용량만 늘고 그려진 모양은 같다.
-- `const SIMPLIFY_TOLERANCE_DEG = 0.7;` 을 scripts/build-map.mjs 상단에 둔다. docs/expansion/README.md:41 이 tol 0.7 에서 162KB(gzip 59KB)를 실측했다. 값을 결과 파일 헤더 주석에 기록한다.
+- `const SIMPLIFY_TOLERANCE_DEG = 0.5;`를 유지한다. 초기 0.7° 육안 검사에서 한반도·일본·반도 해안이 거칠어 HANDOFF가 허용한 0.5°를 채택했다. 값을 결과 파일 헤더 주석에 기록한다.
 - 닫힌 링 처리: GeoJSON 링은 첫 점 == 마지막 점이다. 이 배열을 '열린 폴리라인'으로 보고 DP 를 돌리면 첫·끝 점이 항상 보존되므로 닫힘이 저절로 유지된다. 링을 회전시키거나 재닫기 하지 마라.
 - 새 파일 /home/user/FlagQuiz/scripts/build-map.mjs — T1 원본을 읽고, T2의 joinFeatures 로 분류하고, simplify 로 줄인 뒤, T4의 두 파일을 쓴다.
-- **육지를 하나로 합치는 구체적 방법** — 폴리곤 불리언 합집합(union)을 구현하지 마라. 의존성 0으로 견고하게 만들 수 없고 부동소수 오차로 해안선에 실금이 생긴다. 대신: ① 194개국 feature 와 46개 배제 feature 를 **구분 없이 전부** 취한다. ② 각 Polygon 에서 **외곽 링(rings[0])만** 쓰고 내부 링(구멍)은 **전부 버린다**. MultiPolygon 은 각 Polygon 에 같은 규칙을 적용. ③ 살아남은 모든 링을 단순화한 뒤 **하나의 `d` 문자열**에 `M x y L x y … Z` 로 이어 붙인다. ④ 그것을 `<path>` **한 개**로, 단색 fill · `stroke:none` 으로 그린다. 선을 아예 안 그리므로 인접국이 맞닿아도 내부 경계가 생기지 않고, 구멍 링을 버렸으므로 nonzero fill-rule 에서 레소토·산마리노·바티칸 자리에 흰 구멍이 뚫리지 않는다.
-- 46개 배제 도형의 처리: 육지는 같은 실루엣에 들어가되, **핀도 없고 code 도 없고 좌표도 없다.** 그냥 빼면 모로코 남쪽과 이스라엘 옆에 흰 구멍이 남아 오히려 더 눈에 띄다(D3 항목 5).
+- **육지를 하나로 합치는 구체적 방법** — 폴리곤 불리언 합집합(union)을 구현하지 마라. 의존성 0으로 견고하게 만들 수 없고 부동소수 오차로 해안선에 실금이 생긴다. 대신: ① 194개국 feature 와 48개 배제 feature 를 **구분 없이 전부** 취한다. ② 각 Polygon 에서 **외곽 링(rings[0])만** 쓰고 내부 링(구멍)은 **전부 버린다**. MultiPolygon 은 각 Polygon 에 같은 규칙을 적용. ③ 살아남은 모든 링을 단순화한 뒤 **하나의 `d` 문자열**에 `M x y L x y … Z` 로 이어 붙인다. ④ 그것을 `<path>` **한 개**로, 단색 fill · `stroke:none` 으로 그린다. 선을 아예 안 그리므로 인접국이 맞닿아도 내부 경계가 생기지 않고, 구멍 링을 버렸으므로 nonzero fill-rule 에서 레소토·산마리노·바티칸 자리에 흰 구멍이 뚫리지 않는다.
+- 48개 배제 도형의 처리: 육지는 같은 실루엣에 들어가되, **핀도 없고 code 도 없고 좌표도 없다.** 그냥 빼면 모로코 남쪽과 이스라엘 옆에 흰 구멍이 남아 오히려 더 눈에 띄다(D3 항목 5).
 - 링 버리기 규칙: bbox 의 가로·세로가 **둘 다** tol 보다 작은 링은 버린다(자잘한 무인도). 단 **배제 지역을 포함한 모든 feature의 최대 면적 링과 194개 핀을 포함한 링은 보존한다**. 보존 대상 링이 DP 후 4점 미만이거나 화면 반올림 후 면적 0이면 바깥쪽 0.1 격자의 bbox 사각형(5점)으로 대체하고 최소 폭·높이를 보장한다. 화면 좌표 변환 후 외곽 방향을 통일한다(2026-09-15 사용자 수정 지시).
 - 날짜변경선 검증: 한 링 안 연속한 두 점의 경도 차가 180을 넘으면 **throw** 한다(피지·키리바시·러시아 추코트카·뉴질랜드). NE 50m 은 ±180°에서 이미 잘라 두지만 그것을 믿지 말고 검사한다.
 - 좌표 출력: x = (lng+180)/360*2000, y = (90-lat)/180*1000, 소수 **1자리** 반올림. viewBox 는 `0 0 2000 1000`(정확히 2:1). 1 단위 ≈ 0.18° ≈ 20km, 1040px 화면에서 0.52px. **픽셀 값(1040×520)을 데이터에 굽지 마라** — 그것이 D3 항목 1이 경계한 사전 계산의 같은 종류의 실수다.
@@ -1083,17 +1083,17 @@ Natural Earth 50m을 좌표 194개와 '국경선 없는 육지 실루엣 한 덩
 **완료 판정**
 
 - [ ] simplify.mjs 가 재귀 호출을 포함하지 않는다(함수 내부에 명시적 스택 배열이 있다). 러시아 최대 링에서 RangeError 가 나지 않는다.
-- [ ] tol=0 으로 돌리면 입력 링과 출력 링의 점 개수가 같다(항등성). tol=0.7 에서 전체 점 개수가 원본의 20% 미만으로 줄어든다.
+- [ ] tol=0 으로 돌리면 입력 링과 출력 링의 점 개수가 같다(항등성). 채택한 tol=0.5에서 전체 점 개수가 원본의 20% 미만으로 줄어든다.
 - [ ] 생성된 data/map-shapes.js 가 **단 하나의 `d` 문자열**을 갖는다. 파일 안에 나라 code 문자열이나 `ADMIN` 이름이 한 개도 등장하지 않는다(= 국경 정보가 데이터에 없다).
 - [ ] 194개국과 배제 지역 각각에 대해 면적이 양수인 링이 최소 하나 출력에 들어간다. bbox 대체를 탄 모든 도형을 점검하며 특정 국가 코드 4개로 제한하지 않는다. 면적 소실·누락 시 exit 1.
 - [ ] 날짜변경선 검사가 통과한다(가로로 지도를 가로지르는 선이 0개).
-- [ ] 생성된 data/map-shapes.js 의 크기가 250KB 미만이다(README.md:41 실측 162KB 기준 + 여유).
-- [ ] 생성된 path 를 브라우저에서 `fill:#cfe3c8; stroke:none` 으로 렌더링했을 때 육안으로 확인되어야 하는 것: 이탈리아 장화 모양, 한반도, 플로리다 반도, 스칸디나비아 반도, 일본 열도. 이 중 하나라도 알아볼 수 없으면 tol 을 0.5로 낮춰 다시 뽑고 용량을 재측정한다.
+- [ ] 생성된 data/map-shapes.js 의 크기가 250KB 미만이다(2026-09-15 수정본 92,742바이트; 한도 250KB 유지).
+- [ ] 생성된 path 를 브라우저에서 `fill:#cfe3c8; stroke:none` 으로 렌더링했을 때 육안으로 확인되어야 하는 것: 이탈리아 장화 모양, 한반도, 플로리다 반도, 스칸디나비아 반도, 일본 열도. 0.5°로도 알아볼 수 없으면 원자료·단순화·확대 표현을 다시 검토하고 용량을 재측정한다.
 - [ ] 렌더링 결과에 **나라를 가르는 선이 한 개도 보이지 않고**, 모로코 남쪽(서사하라)과 이스라엘 옆(팔레스타인)에 흰 구멍이 없고, 남아프리카 안(레소토)에도 구멍이 없다.
 
 **테스트**
 
-- 자동화 테스트는 T6 가 결과물 형식을 단언하는 것으로 대신한다(파일 크기, `d` 가 문자열 하나, mapLand 의 키가 viewBox·d 둘뿐).
+- 자동화 테스트는 T6의 결과물 형식·면적·방향·194개 핀 winding 검사와 tests/map-build.test.mjs의 원자료 없는 합성 도형 회귀 검사를 함께 사용한다.
 - 실기기·육안 확인: 생성 직후 path 를 한 장짜리 HTML 에 넣어 브라우저로 열어 위 수용 기준의 마지막 두 항목을 사람 눈으로 확인한다. 이 단계는 생략하지 마라.
 
 **함정**
@@ -1101,7 +1101,7 @@ Natural Earth 50m을 좌표 194개와 '국경선 없는 육지 실루엣 한 덩
 - 구멍 링을 살려둔 채 한 path 에 전부 붙이면 nonzero fill-rule 가 레소토·산마리노·바티칸 자리를 뚫어버린다. 반드시 내부 링을 버려라. `fill-rule:evenodd` 로 해결하려 하지 마라 — 그러면 겹치는 인접국 사이에 구멍이 생겨 정확히 피하려던 경계선이 나타난다.
 - path 에 stroke 를 0.5라도 주지 마라. 한 path 안의 개별 링에도 선이 그려져 정확히 국경선이 된다.
 - MultiPolygon 과 Polygon 을 한 단계 잘못 풀면(배열 중첩 깊이) 조용히 대륙 절반이 사라진다. geometry.type 을 분기하고, 그 둘 이외의 type 을 만나면 throw 한다.
-- tol 을 올려 용량을 줄이고 싶은 유혹이 생긴다. 162KB 는 flags/rs.svg 한 장(177KB)보다 작고 gzip 으로 59KB다. 용량은 문제가 아니다 — 만 4세가 한반도를 알아보는 것이 문제다.
+- tol 을 올려 용량을 줄이고 싶은 유혹이 생긴다. 현재 실루엣 92,742바이트는 flags/rs.svg 한 장(177KB)보다 작다. 용량은 문제가 아니다 — 만 4세가 한반도를 알아보는 것이 문제다.
 - '194개국이 다 들어갔으니 46개는 빼도 되겠지'로 가지 마라. 그리면 지도에 흰 구멍이 생기고, 그 구멍이 정확히 이 저장소가 피하고 싶었던 논쟁의 지도를 그리게 된다.
 
 ### `T4-emit-data` 좌표·실루엣 데이터 파일 출력 형식 확정
@@ -1144,7 +1144,7 @@ Natural Earth 50m을 좌표 194개와 '국경선 없는 육지 실루엣 한 덩
 - `[lat, lng]` 순서로 쓰면 지도가 조용히 90도 돌아간 모양이 된다. GeoJSON 과 같은 `[lng, lat]` 로 통일하고 헤더 주석에 명시한다.
 - `toFixed(2)` 는 문자열을 돌려준다. `Number()` 으로 감싸지 않으면 JSON 에 `"66.00"` 이 문자열로 들어가 테스트의 Number.isFinite 검사가 터진다.
 - `window.FQ = window.FQ || {};` 줄을 빼면 로드 순서에 따라 FQ 가 undefined 일 수 있다. countries.js:15 와 같은 방어줄을 두 파일 모두에 넣는다.
-- map-shapes.js 가 한 줄짜리 162KB 문자열이라 에디터에서 열면 무겁다. 이것은 정상이다 — 보기 좋게 하려고 줄바꿈을 넣으면 재현성 검사가 무너질 수 있으니, 넣기로 했으면 규칙을 고정해라(예: 링 하나당 한 줄).
+- map-shapes.js는 2026-09-15 기준 92,742바이트이며 한 줄짜리 d 문자열이라 에디터에서 열면 무겁다. 이것은 정상이다 — 보기 좋게 하려고 줄바꿈을 넣으면 재현성 검사가 무너질 수 있으니, 넣기로 했으면 규칙을 고정해라(예: 링 하나당 한 줄).
 - D6의 함정을 여기서 미리 피한다: 이 두 파일은 localStorage 와 아무 관계가 없는 정적 자료다. 진행도·플래그를 여기에 섮지 마라.
 
 ### `T5-register` 새 데이터 파일을 네 군데 등록 — index.html · sw.js · build-site.mjs · tests 로더
@@ -1157,7 +1157,7 @@ Natural Earth 50m을 좌표 194개와 '국경선 없는 육지 실루엣 한 덩
 
 - /home/user/FlagQuiz/index.html:53 `<script src="data/countries.js"></script>` 바로 다음 줄에 두 줄 추가: `<script src="data/map-coords.js"></script>`, `<script src="data/map-shapes.js"></script>`. js/progress.js(index.html:54)보다 앞이어야 한다.
 - /home/user/FlagQuiz/sw.js:11 `'./data/countries.js',` 다음 줄에 `'./data/map-coords.js',` 와 `'./data/map-shapes.js',` 추가.
-- **sw.js:5 의 `var VERSION = 'flagquiz-v4';` 를 절대 바꾸지 마라.** sw.js:74-79 의 activate 가 VERSION 이 아닌 flagquiz-* 캐시를 전부 지우므로, 버전을 올리면 아이패드에 받아 둔 114MB 음원이 통째로 사라진다. SHELL 배열만 바꾸면 sw.js 바이트가 달라져 install(sw.js:33-38)이 다시 돌고 addAll 이 **같은 이름의 캐시**에 새 두 파일만 더한다 — 음원은 그대로 남는다.
+- **AUDIO_CACHE='flagquiz-v4'와 KEEP의 음원 보존을 유지한다.** T2 뒤에는 install이 SHELL_CACHE에만 쓴다. SHELL 배열에 지도 파일을 추가하면 sw.js 바이트가 달라져 install이 다시 실행되고, 기존 음원 버킷은 그대로 남는다. 지도 등록 때문에 음원 캐시 이름을 바꾸지 않는다.
 - /home/user/FlagQuiz/scripts/build-site.mjs:16 `const files = ['index.html', 'sw.js', 'manifest.webmanifest', 'data/countries.js'];` 에 `'data/map-coords.js', 'data/map-shapes.js'` 추가. build-site.mjs:56 은 assets·css·flags·js 폴더만 통째로 복사하고 **data/ 는 폴더 복사 대상이 아니다** — 여기에 안 적으면 _site 에 파일이 없어 배포본에서만 지도가 깨진다.
 - /home/user/FlagQuiz/tests/run.mjs:52 목록에서 `'data/countries.js'` 뒤에 `'data/map-coords.js', 'data/map-shapes.js'` 추가.
 - /home/user/FlagQuiz/js/ 아래에 새 파일을 만들지 마라 — 이 과제의 범위는 자산 등록까지다. 지도 화면·핀 렌더링 코드는 T7의 제약을 받아 2주 뒤 별도 과제에서 만든다.
@@ -1168,7 +1168,7 @@ Natural Earth 50m을 좌표 194개와 '국경선 없는 육지 실루엣 한 덩
 - [ ] `npm test` 가 통과하고, tests/run.mjs 샌드박스에서 `FQ.mapCoords` 와 `FQ.mapLand` 가 모두 정의되어 있다.
 - [ ] `npm run build` 후 `_site/data/map-coords.js` 와 `_site/data/map-shapes.js` 가 존재하고 원본과 바이트가 같다.
 - [ ] `_site/data/natural-earth/` 는 존재하지 않는다.
-- [ ] `grep -c "flagquiz-v4" sw.js` 가 1 이고, `git diff sw.js` 에 VERSION 줄이 나타나지 않는다.
+- [ ] `grep -c "flagquiz-v4" sw.js` 가 1 이고, `git diff sw.js`에 AUDIO_CACHE 이름 변경이 나타나지 않는다.
 - [ ] `npm test` 안의 tests/sw.test.mjs 의 '업데이트는 FlagQuiz의 이전 캐시만 삭제한다' 테스트가 그대로 통과한다(deleted === ['flagquiz-v2','flagquiz-v3']).
 - [ ] index.html 에서 두 script 태그가 data/countries.js 뒤, js/progress.js 앞에 있다.
 - [ ] js/ 아래 파일 목록이 이전과 같다(새 파일 0개). flags/ 안의 파일 개수가 이전과 같다.
@@ -1180,7 +1180,7 @@ Natural Earth 50m을 좌표 194개와 '국경선 없는 육지 실루엣 한 덩
 
 **함정**
 
-- '새 파일을 캐시에 넣으려면 버전을 올려야 한다'는 흔한 오해다. 이 저장소에서는 sw.js 의 **바이트가 바뀌면** install 이 다시 돌고, addAll 은 VERSION 이름의 캐시에 더하기만 한다. 버전을 올리는 것은 오히려 음원 114MB 삭제 버튼을 누르는 일이다.
+- '새 파일을 캐시에 넣으려면 버전을 올려야 한다'는 흔한 오해다. 이 저장소에서는 sw.js 의 **바이트가 바뀌면** install 이 다시 돌고, addAll은 SHELL_CACHE에 쓴다. AUDIO_CACHE='flagquiz-v4'는 이 등록과 무관하게 보존한다.
 - build-site.mjs:56 의 폴더 복사 목록에 'data' 를 추가해서 해결하려 하지 마라. 그러면 data/voice-config.json 과 (로컬에 있을 경우) data/natural-earth/ 원본까지 배포에 섮린다. files 배열에 두 경로를 명시하는 방식을 지킨다.
 - index.html 에만 넣고 sw.js 를 빠뜨리면 개발 중에는 멀줦하게 동작하다가 아이패드를 비행기 모드로 두는 순간 지도만 안 뜼는 버그가 된다. 네 곳을 한 커밋에 같이 고쳐라.
 
@@ -1200,7 +1200,7 @@ Natural Earth 50m을 좌표 194개와 '국경선 없는 육지 실루엣 한 덩
 - 표본 좌표 단언 5줄: kr · au · br · va · ru 가 각각 합리적인 사각형 안에 있는지(예: kr 은 lng 124~132, lat 33~39). 좌표 축 뒤집힘·부호 반전을 잡는 가장 싸고 확실한 검사다.
 - 실루엣 단언: `FQ.mapLand.viewBox === '0 0 2000 1000'`, `typeof FQ.mapLand.d === 'string'`, `FQ.mapLand.d.length < 400000`, `d` 안에 `M` 이 1회 이상, 그리고 **`Object.keys(FQ.mapLand).sort().join(',') === 'd,viewBox'`** — 나라별 키가 없음을 고정하는 검사다. 이것이 '국경선을 데이터로 갖지 않는다'를 문서가 아니라 테스트로 만드는 부분이다.
 - **등록 누락 검사**(이 저장소에 없던 새 종류의 검사): `fs.readFileSync(path.join(root,'scripts/build-site.mjs'),'utf8')` 에 `'data/map-coords.js'`·`'data/map-shapes.js'` 문자열이 있는지, `sw.js` 에 `'./data/map-coords.js'`·`'./data/map-shapes.js'` 가 있는지, `index.html` 에 두 script 태그가 있는지. 실패 메시지에 '어느 파일에 무엇을 더해야 하는지'를 적는다.
-- **sw.js VERSION 고정 검사**: `sw.js` 텍스트에 `flagquiz-v4` 가 들어 있음을 단언하고, 실패 메시지에 '서비스워커 버전을 올리면 아이패드에 받아 둔 음원 캐시가 전부 삭제된다'를 적는다. tests/sw.test.mjs:34 가 우회적으로 막고 있지만 이유가 적혀 있지 않다.
+- **sw.js AUDIO_CACHE 고정 검사**: `sw.js` 텍스트에 `flagquiz-v4` 가 들어 있음을 단언하고, 실패 메시지에 '서비스워커 버전을 올리면 아이패드에 받아 둔 음원 캐시가 전부 삭제된다'를 적는다. tests/sw.test.mjs:34 가 우회적으로 막고 있지만 이유가 적혀 있지 않다.
 - /home/user/FlagQuiz/README.md:154-160 '검사하기' 절의 불릿 목록에 한 줄 추가: `- 지도 좌표 194개가 나라 목록과 정확히 짝지는지 — 빠진 나라도, 목록에서 뻐 나라의 좌표가 남은 것도 없는지`
 
 **완료 판정**
@@ -1210,7 +1210,7 @@ Natural Earth 50m을 좌표 194개와 '국경선 없는 육지 실루엣 한 덩
 - [ ] data/map-coords.js 에 `"tw":[121.0,23.6]` 을 더하면 npm test 가 exit 1 하고 '쓰이지 않는 지도 좌표' 와 '대만' 관련 두 검사가 동시에 잡힌다.
 - [ ] data/map-shapes.js 에 `kr: 'M…'` 같은 나라별 키를 더하면 npm test 가 exit 1 한다.
 - [ ] scripts/build-site.mjs:16 에서 'data/map-coords.js' 를 지우면 npm test 가 exit 1 하고 메시지가 그 파일과 줄을 가리킨다.
-- [ ] sw.js:5 의 VERSION 을 flagquiz-v5 로 바꾸면 npm test 가 exit 1 하고 음원 캐시 삭제 경고가 출력된다.
+- [ ] sw.js의 AUDIO_CACHE를 flagquiz-v5로 바꾸면 npm test 가 exit 1 하고 음원 캐시 삭제 경고가 출력된다.
 - [ ] 기존 검사(데이터 기본·국기 파일·정답 판정·보상 체계 등) 중 단 한 건도 수정되지 않았다 — `git diff tests/run.mjs` 가 순수 추가만 보여준다(삽입 지점 앞뒤 줄 제외).
 
 **테스트**
@@ -1270,9 +1270,9 @@ Natural Earth 50m을 좌표 194개와 '국경선 없는 육지 실루엣 한 덩
 - 화풍 A/B 파일럿 — 먼저 jp 2장만 뽑아 도구 능력 6가지(4:3 출력·시드 고정·레퍼런스 첨부·배치·문맥 오염·안전 필터)를 확인하고, 통과하면 A 8장·B 8장을 각각 새 대화창에서 몰아 뽑는다. 8항목 채점 후 styleChoice 확정과 민규 반응 3가지 기록.
 - 앵커 1장 선정 — kr 광화문 프롬프트를 새 대화에서 5~8회 뽑아 선 굵기·채도·광원·배경색이 기준에 맞는 1장을 고르고 커밋한다. 글자가 한 글자라도 있는 장은 후보에서 제외.
 - 본 생성 342장 — 대화창 1개당 앵커 1 + 항목 8~10, 회차 35~43개, 약 18~21시간. 원본 PNG 0.6~1.2GB가 쌓이므로 맥 디스크를 미리 비워 둔다.
-- 맥에서 PNG→WebP 변환 실행 — 이 컨테이너에는 변환 도구가 하나도 없다. 에이전트는 --dry-run으로 실행 가능한 명령줄만 만들어 주고, 실행과 결과 확인은 사람이 한다.
+- 맥에서 PNG→WebP 변환 실행 — 현재 sips는 WebP 읽기 전용이고 cwebp 1.6.0이 인코딩을 지원한다. 4단계에서 --dry-run 도구를 준비하고, 실제 변환·검수는 그림이 있는 6단계에서 진행한다. 도구가 있다는 이유로 5~7단계를 먼저 시작하지 않는다.
 - 사람 눈 검수 — 글자·국기·사람·앵커 대비 이탈·사실 오류·저작권·아이 인지. 40장 컨택트시트를 앵커와 나란히 놓고 보면 30~40분에 끝난다. 기계 검수 통과가 그림이 괜찮다는 뜻이 아니다.
-- 지도 실루엣 육안 확인 — 이탈리아 장화·한반도·플로리다 반도·스칸디나비아·일본 열도가 알아보이는가, 나라를 가르는 선이 한 개도 없는가, 서사하라·팔레스타인·레소토 자리에 흰 구멍이 없는가. 못 알아보면 tol을 0.5로 낮춰 다시 뽑는다.
+- 지도 실루엣 육안 확인 — 이탈리아 장화·한반도·플로리다 반도·스칸디나비아·일본 열도가 알아보이는가, 나라를 가르는 선이 한 개도 없는가, 서사하라·팔레스타인·레소토 자리에 흰 구멍이 없는가. 현재 채택값 0.5°로도 못 알아보면 단순화와 확대 표현을 다시 검토한다.
 - 생성 도구 약관 확인 — 재배포 권리와 출처 표시 의무(C2PA 등). MIT 저장소에 그림을 넣기 전에 끝나야 하고, 확인 전까지 원본 PNG의 메타데이터는 raw/ 쪽에 보존한다.
 - 전량 공개 판정 — 342장 검수가 끝났다는 사람의 확인이 있어야 플래그 on 커밋으로 넘어간다.
 
@@ -1280,17 +1280,17 @@ Natural Earth 50m을 좌표 194개와 '국경선 없는 육지 실루엣 한 덩
 
 ## 착수 전에 정해야 할 것
 
-아래는 답이 없으면 그 과제가 막히거나 잘못 구현된다.
+아래는 착수 전에 확인할 사항이다. 미정 항목만 필요한 단계에서 사용자에게 묻고, 날짜와 함께 확정한 항목은 그대로 적용한다.
 
 - D7 화풍 A/B가 미정이다. 확정 전까지 변환 규격이 갈린다 — A는 768×576·경고 40KB·실패 60KB, B는 1024×768·경고 110KB·실패 150KB. 프롬프트 조립·변환·기계 검수 세 스크립트가 전부 이 값으로 분기하므로, 파일럿이 끝나기 전에는 styleChoice를 null로 두고 본 생성에 들어가지 않는다.
-- 그림 폴더 경로가 두 명세에서 어긋난다 — 앱 쪽은 images/symbols/·images/places/, 이미지 파이프라인 쪽은 저장소 루트의 symbols/·landmarks/다. 착수 전에 한 쪽으로 고정해야 하고(권장: images/ 아래로 모아 루트 오염을 줄인다), 명소 폴더 이름도 places/인지 landmarks/인지 같이 정한다. 고른 뒤 build-site.mjs 폴더 목록·serve.mjs MIME·테스트·ui.js 경로 함수를 같은 이름으로 맞춘다.
+- 그림 폴더 경로는 2026-09-15 사용자 결정으로 images/symbols/·images/places/로 확정했다. 새로 물을 사항이 아니다. build-site.mjs는 images 하나를 복사하고 serve.mjs MIME·테스트·ui.js 경로 함수를 같은 이름으로 맞춘다.
 - 퀴즈 모드의 손가락 조작 방식이 미정이다(끌어다 놓기 / 탭-탭 / 기존 사지선다). D2에 따라 2주 뒤 모드 작업 때 정하고, 현재 권장은 기존 사지선다 재사용이다 — 그림 1장 + 국기 4장.
 - 지도 퀴즈가 나라 단위를 채점하는지 대륙 수준을 채점하는지 미정이다. 자산 형식(나라별 좌표 194개)은 두 경우 모두에 그대로 쓰이므로 지금 어느 작업도 막지 않지만, 정답 판정의 허용 반경은 렌더링이 아니라 채점 코드의 상수 하나로 분리해 둔다.
 - 생성 도구 약관의 재배포 권리와 출처 표시 의무(C2PA 등)가 확인되지 않았다. MIT 저장소에 그림을 넣기 전에 답이 필요하고, 확인 전까지 변환 과정에서 메타데이터를 지우더라도 원본 PNG 쪽에는 보존한다.
-- 맥에 어떤 변환 도구가 있는지 모른다. 특히 sips가 webp 쓰기를 지원하는지는 `sips --formats | grep -i webp`로 먼저 확인해야 하고, 비면 sips 단독 경로는 탈락이라 인코딩을 cwebp로 넘긴다. 이 컨테이너에는 네 도구가 하나도 없다.
+- 맥 도구는 2026-09-15 확인했다: sips-316(WebP 읽기 전용), cwebp 1.6.0(쓰기 가능), ffmpeg·magick·convert는 PATH에 없음. `sips --formats | grep -i webp` 출력은 `org.webmproject.webp         webp  `이며 Writable 표시가 없다. 다른 맥에서는 다시 확인한다.
 - 생성 도구의 능력 6가지(4:3 출력·시드 고정·레퍼런스 이미지 첨부·배치 생성·대화 문맥 오염·안전 필터 거부 단어)가 파일럿 전까지 미확인이다. 특히 4:3이 안 되면 변환이 '중앙 크롭'에서 '좌우 여백 덧대기' 경로로 통째로 바뀐다.
 - 남극을 지도에 그릴 것인가. D3의 가로:세로 2:1 제약 때문에 기본은 '그린다'이고, 자르는 선택은 2:1과 좌표 공식 두 줄을 동시에 건드려 D3 재검토 안건이 된다. 실기기에서 보고 별도 결정한다.
-- 문서 수치 오기 두 건이 남아 있다 — docs/expansion/README.md의 '혼동군 53군'은 실제 파일이 58군이고, IMAGE-PROMPTS.md의 '확정 이미지 314장'은 CSV 실측 342장(상징물 194 + 명소 148)이다. 코드는 문서가 아니라 파일(confusion-groups.json, SUBJECTS.csv)을 기준으로 한다.
+- 자료 기준값은 confusion-groups.json 58군, SUBJECTS.csv 194행·상징물 194개·명소 148개(이미지 합계 342개)다. 초기 문서의 53군·314장 추정은 현재 구현 기준이 아니다. 코드는 두 원자료 파일을 계수해 검증한다.
 - PILOT.md와 SUBJECTS.csv의 nl 명소가 어긋난다(풍차 한 채 — 날개 네 장 대 킨더다이크에 줄지어 선 풍차). 공통 블록의 'one single subject'가 이기므로 한 채로 쓰되, 같은 유형('줄지어'·'여러 개'·'늘어선')이 다른 행에도 있는지 전수로 훑는 일이 아직 안 됐다.
 - D6의 '194칸 스티커 칸 안에 도장 3개(그림·명소·위치)를 겹친다'는 이번 범위 밖이다. 기록 축 분리가 들어간 뒤 별도 과제로 나가야 하고, 도장의 시각 디자인은 아직 아무것도 정해지지 않았다.
 - 화풍을 파일럿 이후에 바꾸면 그때까지 뽑은 그림 전량이 재작업이고 앵커부터 다시 만들어야 한다. '몇 장까지는 되돌릴 수 있다'는 마지노선이 정해지지 않았다 — 본 생성 착수 전에 한 번 정해 두는 편이 안전하다.
@@ -1299,6 +1299,6 @@ Natural Earth 50m을 좌표 194개와 '국경선 없는 육지 실루엣 한 덩
 
 ## 검증
 
-- 커밋 전 항상 `npm test` (현재 87개 통과). 하나라도 깨지면 커밋하지 않는다.
+- 커밋 전 항상 `npm test && npm run verify`. 하나라도 실패하면 커밋하지 않는다. 초기 기준은 node 테스트 87개였고 현재 실행 결과는 STATUS.md와 검증 로그를 따른다.
 - `npm run build`는 음원 게이트를 통과해야 한다. 새 수아 문구를 추가하면 여기서 막힌다.
 - 서비스워커·캐시 관련 변경은 **아이패드 실기기 비행기 모드 확인**이 필요하다. 가짜 DOM으로는 검증되지 않는다.

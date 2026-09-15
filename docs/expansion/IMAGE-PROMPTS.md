@@ -133,7 +133,7 @@ GPT 계열 이미지 도구에 그대로 붙여넣어 쓰는 프롬프트 모음
 - 지도 모드의 국경선 — countries.js:3이 대만·팔레스타인·코소보·서사하라를 의도적으로 제외했는데, 세계지도 SVG를 어디서 가져오든 카슈미르(인도·파키스탄·중국), 크림반도(우크라이나·러시아), 서사하라(모로코), 남중국해 구단선, 골란고원 경계가 그려진다. 지도를 대륙 덩어리 실루엣 + 핀으로 단순화하면 이 문제를 통째로 회피할 수 있고, 만 4세의 인지 수준에도 그쪽이 맞다.
 - '후진국·못사는 나라' 서열 학습 — 랜드마크 등급표를 그대로 노출하면(S등급 화려한 그림 7개국, C등급 그림 없음 146개국) 민규는 나라에 등급이 있다고 배운다. 등급은 제작 순서를 정하는 내부 문서로만 쓰고, 아이에게 보이는 화면에서는 모든 나라가 같은 크기·같은 틀의 카드 한 장을 갖게 한다. 194칸 스티커판이 이미 그 원칙으로 설계되어 있으므로(js/progress.js:78-97) 그 원칙을 깨지 않는다.
 
-### 제작량
+### 제작량 — 현재 목표 342장(상징물 194 + 명소 148); 아래 단계별 장수·비용은 초기 설계 추정 기록
 
 ```json
 {
@@ -168,7 +168,7 @@ GPT 계열 이미지 도구에 그대로 붙여넣어 쓰는 프롬프트 모음
     "아빠검수": "약 45분"
   },
   "누적_상한": {
-    "확정_이미지": 314,
+    "확정_이미지": 342, "설계_당시_추정": 314,
     "실제_생성시도": "약 465~560회",
     "아빠_검수시간": "약 3시간 45분(재생성 판단 포함)",
     "저장소_증가": "약 22MB(WebP 768px q80). 현재 audio/sua 114MB에 비하면 작지만, sw.js의 SHELL 배열(sw.js:6-31)에 넣으면 첫 설치가 무거워지므로 국기 SVG처럼 지연 프리캐시 루틴을 따로 짜야 한다",
@@ -190,7 +190,7 @@ GPT 계열 이미지 도구에 그대로 붙여넣어 쓰는 프롬프트 모음
 
 【1. 사진 vs 일러스트 → 일러스트】 근거 네 가지.
 (a) 만 4세 인지: 이 나이의 재인 단서는 세부가 아니라 전역 윤곽이다. 사진은 배경 잡음·원근·조명이 변별 단서를 덮는다. 큰 덩어리·단순 실루엣·높은 채도가 섬네일 크기에서 식별률이 높다.
-(b) 오프라인 용량: 이 앱은 PWA이고 캐시 목록이 수동이다(sw.js:6-31 SHELL, VERSION 'flagquiz-v4'). 국기 194장이 이미 1.9MB를 쓴다. 평면 색면은 색 영역이 평탄해 WebP 압축률이 압도적이다 — 768×576 q80 기준 사진풍 60~90KB vs 평면 20~40KB. 388장이면 31MB vs 12MB, 오프라인 예산에서 3배 차이다.
+(b) 오프라인 용량: 이 앱은 PWA이며 T2에서 셸·국기·그림·음원 버킷을 분리했다. 음원은 AUDIO_CACHE='flagquiz-v4'를 보존하고 그림은 ART_CACHE를 사용한다. 국기 194장이 이미 1.9MB를 쓴다. 초기 388장 비교에서는 768×576 q80 사진풍 31MB 대 평면 12MB를 추정했다. 현재 제작 목표는 342장이며 실제 용량은 화풍 확정 후 계수한다.
 (c) AI 생성 정확도: 사진풍은 '거의 맞는데 틀린' 오류(창문 수, 간판 글자, 기둥 개수)가 오히려 눈에 띈다. 양식화하면 오류 허용 범위가 넓어지고, 실존 건축물의 파노라마의 자유 문제도 함께 낮아진다.
 (d) 기존 시각 언어와의 충돌: flags/*.svg는 전부 viewBox "0 0 640 480"의 완전 평면 단색 벡터다(fr.svg = path 3개 + fill뿐, 그라데이션·그림자·아웃라인 0회). 그 옆에 사진을 놓으면 즉시 따로 논다.
 
@@ -269,7 +269,7 @@ Palette: no dark palette, no nighttime scene, no muted colors, no desaturated co
 - **파일명** — 내용 해시 방식(예: images/kr-a1b2c3d4.webp). 음성 파이프라인 관례(scripts/generate-voice.mjs:23-36의 sha256 앞 24자)를 복제한다. 단 sw.js:46-70 warmFlags()식 정규식 스크레이프가 불가능해지므로 매니페스트 기반 프리캐시가 필요하다.
 - **저장 위치 주의** — 새 이미지를 flags/ 에 넣으면 tests/run.mjs:114-124가 '목록에 없는 파일이 있으면 실패'로 막는다. images/ 로 분리하고 build-site.mjs:56의 폴더 배열('assets','css','flags','js')에 추가해야 배포된다.
 - **로컬 서버 MIME** — scripts/serve.mjs:16-29 TYPES에 '.webp': 'image/webp' 한 줄을 추가해야 한다. 없으면 배포본은 멀쩡한데 npm start 로컬에서만 그림이 깨진다.
-- **서비스워커** — sw.js:5 VERSION을 올리고, 이미지는 SHELL(:6-31)에 넣지 말고 매니페스트 기반 별도 프리캐시 루틴으로 처리한다(SHELL에 388개를 나열하면 설치가 실패한다).
+- **서비스워커** — T2의 기존 ART_CACHE와 /images/ 분기를 재사용한다. 이미지는 SHELL에 넣지 않고 activate의 별도 예열 루틴으로 처리한다. 그림 교체에는 ART_CACHE만 갱신하며 AUDIO_CACHE='flagquiz-v4'는 최초 공개 때도 바꾸지 않는다.
 
 ### A-일관성 전술
 
@@ -371,7 +371,7 @@ DO NOT INCLUDE: text, letters, numbers, captions, labels, titles, signatures, wa
 OUTPUT: exactly one illustration showing exactly one scene, 4:3 landscape if available otherwise 3:2 landscape. Do not produce variations, alternatives or a grid of options. Follow the STYLE paragraph literally; do not restyle, modernise or "improve" these instructions.
 ────────────────────────────
 
-장식 소품은 많아야 4~6장이면 충분하다. 파일명은 `assets/ornaments/compass.webp` 형태로 두고, 나라 코드 이름공간(symbols/, landmarks/)과 섞지 않는다 — tests/run.mjs:114-124가 flags/에 대해 하는 '목록에 없는 고아 파일 금지' 검사를 새 폴더에 복제할 때, 나라 코드가 아닌 파일이 섞여 있으면 검사를 쓸 수 없다.
+장식 소품은 많아야 4~6장이면 충분하다. 파일명은 `assets/ornaments/compass.webp` 형태로 두고, 나라 코드 이름공간(images/symbols/, images/places/)과 섞지 않는다 — tests/run.mjs:114-124가 flags/에 대해 하는 '목록에 없는 고아 파일 금지' 검사를 새 폴더에 복제할 때, 나라 코드가 아닌 파일이 섞여 있으면 검사를 쓸 수 없다.
 
 ---
 
@@ -379,7 +379,7 @@ OUTPUT: exactly one illustration showing exactly one scene, 4:3 landscape if ava
 
 18장. 6개 대륙, 쉬운 나라와 어려운 나라를 섞었다.
 
-### `landmarks/kr.webp` — 대한민국 (kr) · landmark
+### `images/places/kr.webp` — 대한민국 (kr) · landmark
 
 주제: 광화문과 경복궁 정문 (서울 — 수도 일치)
 
@@ -398,7 +398,7 @@ OUTPUT: exactly one illustration showing exactly one scene, 4:3 landscape if ava
 [노림수] 앵커(기준) 이미지. 민규가 가장 확실히 아는 나라이고, 현판 글씨를 빼야 하므로 '글자 금지'가 제대로 먹는지 첫 판에서 검증된다. 이 1장을 승인한 뒤 모든 후속 이미지를 여기에 맞춘다.
 ```
 
-### `symbols/jp.webp` — 일본 (jp) · symbol
+### `images/symbols/jp.webp` — 일본 (jp) · symbol
 
 주제: 후지산과 벚나무 가지 (level 1 · 아시아)
 
@@ -416,7 +416,7 @@ OUTPUT: exactly one illustration showing exactly one scene, 4:3 landscape if ava
 [노림수] countries.js의 일본 fact('가장 높은 산은 후지산이에요')와 직접 이어지는 상징물. 국기(흰 바탕 빨간 동그라미)와 해가 헷갈릴 위험이 있어 '붉은 해' 요소를 일부러 넣지 않았다 — 국기 금지 규칙과 같은 이유다.
 ```
 
-### `symbols/mn.webp` — 몽골 (mn) · symbol
+### `images/symbols/mn.webp` — 몽골 (mn) · symbol
 
 주제: 초원의 게르와 말 한 마리 (level 1 · 아시아)
 
@@ -434,7 +434,7 @@ OUTPUT: exactly one illustration showing exactly one scene, 4:3 landscape if ava
 [노림수] '사람이 사는 집' 계열 상징물의 표준형. 사람 얼굴 금지 규칙이 있는 상태에서 생활 문화를 어떻게 보여 줄지의 본보기다. 게르는 실루엣이 단순해 4세가 다른 나라와 헷갈리지 않는다.
 ```
 
-### `symbols/mv.webp` — 몰디브 (mv) · symbol
+### `images/symbols/mv.webp` — 몰디브 (mv) · symbol
 
 주제: 물 위 방갈로와 산호섬 (level 2 · 아시아)
 
@@ -452,7 +452,7 @@ OUTPUT: exactly one illustration showing exactly one scene, 4:3 landscape if ava
 [노림수] '물'이 주제인데 배경은 단색이어야 하는 충돌 사례. 물을 배경이 아니라 주제 안의 작은 덩어리로 가두는 서술법을 보여 준다. 여기서 모델이 바다를 배경 전체로 칠하면 SUBJECT 문장을 'a small round patch of turquoise water'로 더 좁혀야 한다.
 ```
 
-### `symbols/az.webp` — 아제르바이잔 (az) · symbol
+### `images/symbols/az.webp` — 아제르바이잔 (az) · symbol
 
 주제: 야나르다그 — 꺼지지 않는 불의 언덕 (level 3 · 아시아)
 
@@ -471,7 +471,7 @@ OUTPUT: exactly one illustration showing exactly one scene, 4:3 landscape if ava
 [노림수] OVERRIDE 줄의 사용법 본보기. 공통 금지 목록('fire damage', '무서운 것')과 주제가 충돌할 때, 금지 문단을 고치지 않고 이미지 하나에만 예외를 허용한다. 금지 문단을 나라마다 고치기 시작하면 텍스트 스타일 락이 무너진다. 난이도 3 나라가 실제로 그릴 만한 소재를 갖고 있는지 확인하는 사례이기도 하다(countries.js의 아제르바이잔 fact에서 그대로 가져왔다).
 ```
 
-### `landmarks/fr.webp` — 프랑스 (fr) · landmark
+### `images/places/fr.webp` — 프랑스 (fr) · landmark
 
 주제: 에펠탑 (파리 — 수도 일치, level 1 · 유럽)
 
@@ -490,7 +490,7 @@ OUTPUT: exactly one illustration showing exactly one scene, 4:3 landscape if ava
 [노림수] 세로로 긴 대상을 4:3 가로 화면에 넣는 첫 시험대. 여기서 위아래가 잘리거나 좌우 여백이 과하게 비면, 이 세로 계열(에펠탑·자유의 여신상·피사탑 등)만 COMPOSITION의 '70 percent of the frame height'를 '85 percent'로 올린 별도 변형을 원장에 따로 등록해야 한다. 야간 조명 금지는 에펠탑 조명 연출 저작권 회피 장치다.
 ```
 
-### `symbols/nl.webp` — 네덜란드 (nl) · symbol
+### `images/symbols/nl.webp` — 네덜란드 (nl) · symbol
 
 주제: 풍차와 튤립 (level 1 · 유럽)
 
@@ -508,7 +508,7 @@ OUTPUT: exactly one illustration showing exactly one scene, 4:3 landscape if ava
 [노림수] 만 4세가 실루엣만으로 즉시 알아보는 최상급 상징. 상징물 축을 '동물 하나로 통일'하지 않고 나라별 최강 상징을 고를 때 무엇이 얻어지는지 보여 주는 사례다(네덜란드의 대표 동물은 4세에게 아무 의미가 없다).
 ```
 
-### `symbols/is.webp` — 아이슬란드 (is) · symbol
+### `images/symbols/is.webp` — 아이슬란드 (is) · symbol
 
 주제: 퍼핀과 폭포 (level 2 · 유럽)
 
@@ -526,7 +526,7 @@ OUTPUT: exactly one illustration showing exactly one scene, 4:3 landscape if ava
 [노림수] 동물 축의 표준형. 의인화 금지(만화 눈·옷·웃는 입 없음)를 지키면서도 4세에게 친근하게 보이는지 확인하는 판이다. 레이캬비크의 대표 건축물은 교회라 종교 소재 회피 규칙에 걸리므로 상징물 축으로 돌린 사례이기도 하다.
 ```
 
-### `landmarks/va.webp` — 바티칸 (va) · landmark
+### `images/places/va.webp` — 바티칸 (va) · landmark
 
 주제: 성 베드로 광장의 열주와 오벨리스크 (바티칸시티 — 수도 일치, level 2 · 유럽)
 
@@ -546,7 +546,7 @@ OUTPUT: exactly one illustration showing exactly one scene, 4:3 landscape if ava
 [노림수] 종교 소재를 어디까지 허용할지의 경계 사례. 바티칸은 국가 자체가 종교적이라 회피가 불가능하므로 '외관 건축만·인물 없음·의식 없음'으로 선을 긋는다. 이 판이 통과하면 같은 규칙으로 태국·미얀마·캄보디아 사원, 중동 모스크 외관까지 일관되게 처리할 수 있다. 통과하지 못하면 해당 나라들은 전부 상징물 축으로 돌려야 한다.
 ```
 
-### `landmarks/eg.webp` — 이집트 (eg) · landmark
+### `images/places/eg.webp` — 이집트 (eg) · landmark
 
 주제: 기자의 피라미드와 스핑크스 (카이로 광역 — 수도 근접, level 1 · 아프리카)
 
@@ -565,7 +565,7 @@ OUTPUT: exactly one illustration showing exactly one scene, 4:3 landscape if ava
 [노림수] 개수가 사실인 대상('세 개')을 프롬프트에 숫자로 못박는 방법. 검수 때 피라미드가 2개나 5개로 나오면 무조건 재생성이다. 또한 기자는 행정상 카이로가 아니므로 원장 항목에 inCapital:false를 기록하고 화면 문구를 '이 나라의 명소'로 써야 하는 사례다. 스핑크스 얼굴은 '사람 얼굴'이 아니라 고대 조각이므로 금지 규칙과 충돌하지 않지만, 모델이 사람 얼굴로 해석해 거부하면 스핑크스를 빼고 피라미드만 남긴다.
 ```
 
-### `symbols/mg.webp` — 마다가스카르 (mg) · symbol
+### `images/symbols/mg.webp` — 마다가스카르 (mg) · symbol
 
 주제: 여우원숭이와 바오바브나무 (level 2 · 아프리카)
 
@@ -583,7 +583,7 @@ OUTPUT: exactly one illustration showing exactly one scene, 4:3 landscape if ava
 [노림수] 한 장에 동물 + 식물 두 요소를 넣는 표준 조합. '이 나라에만 있는 것' 두 개가 겹치면 4세도 나라 구분에 성공할 확률이 크게 오른다. 다만 요소가 셋 이상이면 그림이 복잡해져 실루엣 인지가 무너지므로 최대 2개를 원칙으로 삼는다.
 ```
 
-### `symbols/na.webp` — 나미비아 (na) · symbol
+### `images/symbols/na.webp` — 나미비아 (na) · symbol
 
 주제: 붉은 모래언덕과 오릭스 (level 3 · 아프리카)
 
@@ -601,7 +601,7 @@ OUTPUT: exactly one illustration showing exactly one scene, 4:3 landscape if ava
 [노림수] 난이도 3 나라(아프리카 54개국 중 다수)의 현실 점검. 민규가 한 번도 본 적 없는 대상이라 '학습'이 아니라 '새 암기'가 된다. 이 장을 실제로 아이에게 보여 주고 흥미를 보이는지가 194개국 전량 제작 여부를 가르는 판단 재료다 — 반응이 없으면 난이도 1의 49개국으로 범위를 줄이는 근거가 된다.
 ```
 
-### `landmarks/us.webp` — 미국 (us) · landmark
+### `images/places/us.webp` — 미국 (us) · landmark
 
 주제: 자유의 여신상 (뉴욕 — 수도 워싱턴 D.C.와 불일치, level 1 · 북아메리카)
 
@@ -620,7 +620,7 @@ OUTPUT: exactly one illustration showing exactly one scene, 4:3 landscape if ava
 [노림수] 아빠가 직접 든 예시를 그대로 구현한 장이자, 이 기획의 가장 큰 데이터 함정을 눈에 보이게 만드는 장이다. 자유의 여신상은 뉴욕에 있고 미국 수도는 워싱턴 D.C.다. '수도 ↔ 랜드마크 매칭'을 그대로 만들면 이 카드가 오답 데이터가 된다. 두 선택지 중 하나를 골라야 한다 — (a) 축을 '나라 ↔ 대표 명소'로 바꾼다, (b) 수도 축을 유지하고 미국은 링컨 기념관이나 국회의사당으로 교체한다. 태블릿의 새김글을 명시적으로 지운 것은 글자 금지 규칙의 가장 흔한 위반 지점이기 때문이다.
 ```
 
-### `symbols/tt.webp` — 트리니다드토바고 (tt) · symbol
+### `images/symbols/tt.webp` — 트리니다드토바고 (tt) · symbol
 
 주제: 스틸팬 드럼과 붉은따오기 (level 3 · 북아메리카 카리브해)
 
@@ -638,7 +638,7 @@ OUTPUT: exactly one illustration showing exactly one scene, 4:3 landscape if ava
 [노림수] 카리브해 소국(북아메리카 23개국 중 다수가 level 3)의 시험대. 금지 목록의 'chrome material'과 금속 악기가 충돌하므로, 스틸팬을 '반짝이는 크롬'이 아니라 '무광 금속의 얕은 팬'으로 서술해 충돌을 피했다. 이 요령은 모든 금속·유리 소재 상징물에 그대로 적용된다.
 ```
 
-### `landmarks/br.webp` — 브라질 (br) · landmark
+### `images/places/br.webp` — 브라질 (br) · landmark
 
 주제: 팡지아수카르 봉우리와 케이블카 (리우데자네이루 — 수도 브라질리아와 불일치, level 1 · 남아메리카)
 
@@ -657,7 +657,7 @@ OUTPUT: exactly one illustration showing exactly one scene, 4:3 landscape if ava
 [노림수] 소재 교체의 본보기. 브라질의 1순위 명소인 구세주 그리스도상은 (1) 조각가 사후 70년이 지나지 않아 저작권이 살아 있고 (2) 종교 소재 금지에도 걸린다. 두 사유가 겹치므로 자연 지형으로 갈아탔다. 원장 항목에 substitutedFrom과 사유를 기록해 두면, 나중에 왜 이 그림이 골라졌는지 다시 묻지 않아도 된다(mlx-audio의 note 필드와 같은 역할).
 ```
 
-### `landmarks/pe.webp` — 페루 (pe) · landmark
+### `images/places/pe.webp` — 페루 (pe) · landmark
 
 주제: 마추픽추와 라마 (쿠스코 지방 — 수도 리마와 불일치, level 1 · 남아메리카)
 
@@ -676,7 +676,7 @@ OUTPUT: exactly one illustration showing exactly one scene, 4:3 landscape if ava
 [노림수] 배경 없는 단색 규칙과 '풍경 자체가 주제'인 대상의 충돌 사례. 마추픽추는 산과 함께여야 알아볼 수 있으므로 뒤 봉우리를 주제의 일부로 명시했다. 이런 예외를 원장에 keepsBackdrop:true로 표시해 두면, 검수 때 '배경 오염'으로 잘못 반려하는 일이 없다.
 ```
 
-### `symbols/au.webp` — 오스트레일리아 (au) · symbol
+### `images/symbols/au.webp` — 오스트레일리아 (au) · symbol
 
 주제: 캥거루와 유칼립투스 (level 1 · 오세아니아)
 
@@ -694,7 +694,7 @@ OUTPUT: exactly one illustration showing exactly one scene, 4:3 landscape if ava
 [노림수] 오스트레일리아의 1순위 명소인 시드니 오페라하우스는 건축가 저작권이 살아 있어 배제했다(브라질 예수상과 같은 사유). 명소 축을 포기하고 상징물 축으로 가는 것이 더 안전하고 4세에게도 더 잘 통하는 사례다. 이런 나라는 원장에 landmark 항목을 비워 두고 symbol만 채운다 — 단 이 경우 quiz.js:29-45 pool()에 '자료 있는 나라만' 필터를 반드시 걸어야 데이터 없는 나라가 보기로 섞이지 않는다.
 ```
 
-### `symbols/pw.webp` — 팔라우 (pw) · symbol
+### `images/symbols/pw.webp` — 팔라우 (pw) · symbol
 
 주제: 록아일랜드와 황금해파리 (level 3 · 오세아니아)
 
@@ -716,7 +716,7 @@ OUTPUT: exactly one illustration showing exactly one scene, 4:3 landscape if ava
 
 ## 6. 생성 운영 절차
 
-수백 장을 실제로 돌리는 절차다. 이 저장소가 음악 16곡을 만든 방식(docs/mlx-audio/README.md + presets.json + prompts/ + settings.csv, 원본은 docs/artifacts/mlx-music/raw/, 앱용은 audio/music/)을 그대로 이미지에 옮겼다.
+아래 회차 설명과 단순 원장 예시는 초기 설계 기록이다. 실행 정본은 HANDOFF.md의 4단계 도구 → 5단계 영어 피사체·A/B 파일럿 16장·앵커 → 6단계 본 생성 → 7단계 전량 공개 순서다. 화풍은 미정이며 presets.json.styleChoice는 null에서 시작한다. null인 본 생성은 거부하고, 파일럿·앵커 등 사람 구간을 먼저 시작하지 않는다.
 
 ━━━ 0단계. 원장을 먼저 만들고, 그림은 나중에 ━━━
 음악 팩이 presets.json을 먼저 확정하고 생성에 들어간 것과 같은 순서다. 이미지는 그 순서가 더 중요하다 — 사실 오류와 소재 부적절은 그림이 아니라 '주제 한 문장'에서 결정되기 때문이다.
@@ -729,11 +729,11 @@ OUTPUT: exactly one illustration showing exactly one scene, 4:3 landscape if ava
   docs/image-prompts/index.html       프롬프트 보드 — 종류를 고르고 전문을 복사 (mlx-audio의 index.html과 같은 역할)
   docs/image-prompts/anchor/kr.png    승인된 기준 이미지 1장
 
-presets.json 구조에서 음악 팩과 딱 하나 달라야 하는 점: 음악은 16곡이라 프롬프트 전문을 항목마다 통째로 넣었지만, 이미지는 최대 388~776개다. 공통 4문단을 항목마다 복제하면 문구 하나 고칠 때 388곳을 고쳐야 한다. 그래서 공통은 한 번만 둔다.
+presets.json은 현재 목표 342항목(symbol 194 + landmark 148)을 담고 공통 4문단은 화풍별로 한 번만 보관한다. 아래 단순 예시는 구조 설명용이며, styleChoice:null과 common.styles.a/b를 포함한 정확한 필드는 HANDOFF.md의 T2-ledger-seed를 따른다.
 
   {
     "created": "2026-09-15",
-    "templateVersion": "FQ-IMG-v1",
+    "templateVersion": "FQ-IMG-v1", "styleChoice": null,
     "common": {
       "tool": "GPT 계열 이미지 도구",
       "aspect": "4:3 (도구가 못 내면 3:2로 뽑아 중앙 크롭)",
@@ -747,7 +747,7 @@ presets.json 구조에서 음악 팩과 딱 하나 달라야 하는 점: 음악�
     "items": [
       { "code":"kr", "kind":"landmark", "ko":"광화문", "subjectEn":"Gwanghwamun, the main gate of …",
         "inCapital":true, "override":null, "substitutedFrom":null, "keepsBackdrop":false,
-        "outputStem":"landmarks/kr", "status":"approved", "tries":3, "bytes":68420 }
+        "outputStem":"images/places/kr", "status":"approved", "tries":3, "bytes":68420 }
     ]
   }
 
@@ -795,11 +795,11 @@ settings.csv 열: code, kind, ko주제, subjectEn, inCapital, override유무, su
 
 ━━━ 6단계. 편집·변환 ━━━
  1. 4:3 중앙 크롭 (3:2로 뽑았다면 좌우를 잘라낸다. 프롬프트가 좌우 12% 여백을 요구한 이유다)
- 2. 긴 변 1024px로 축소
- 3. WebP q80으로 인코딩 → 장당 약 110KB
- 4. symbols/<code>.webp 또는 landmarks/<code>.webp 에 저장
+ 2. presets.json.styleChoice에 따라 A는 768×576, B는 1024×768로 축소한다. 기본값 null을 임의 화풍으로 치환하지 않는다.
+ 3. WebP q80으로 인코딩한다. A는 경고 40KB·실패 60KB, B는 경고 110KB·실패 150KB이며 기계 검수도 같은 프리셋을 읽는다.
+ 4. images/symbols/<code>.webp 또는 images/places/<code>.webp 에 저장
 
-주의: 이 저장소와 환경에 cwebp·avifenc·ImageMagick·Pillow가 하나도 없고 package.json에 의존성이 0개다. scripts/build-site.mjs는 변환을 전혀 하지 않는다. 즉 변환 도구는 별도로 설치해서 커밋 전에 끝내야 한다. 용량 실측 근거: 400장 WebP q80 1024면 배포가 122.5MB → 166.5MB(GitHub Pages 1GB 예산의 17%)로, 여유가 충분하다. 반면 PNG 원본을 그대로 넣으면 722MB가 되어 위험하다.
+주의: 2026-09-15 맥 실측으로 /usr/bin/sips(sips-316, WebP 읽기 전용), /opt/homebrew/bin/cwebp(1.6.0, 쓰기 가능)가 있다. ffmpeg·magick·convert는 PATH에 없다. `sips --formats | grep -i webp` 출력은 `org.webmproject.webp         webp  `이며 Writable 표시가 없다. package.json의 의존성은 0개이고 build-site.mjs는 변환하지 않는다. 원본 PNG는 보존하고 그림이 확보된 6단계에서 변환한다.
 
 ━━━ 7단계. 원장 갱신 ━━━
  · prompts/<code>-<kind>.txt 에 실제로 보낸 프롬프트 전문을 저장한다 (조립 결과 그대로)
@@ -809,9 +809,9 @@ settings.csv 열: code, kind, ko주제, subjectEn, inCapital, override유무, su
 
 ━━━ 8단계. 앱 연결 (이미지가 30장쯤 모였을 때 한 번에) ━━━
 코드 쪽에서 반드시 같이 해야 하는 것들:
- · scripts/build-site.mjs:56 의 폴더 배열 ['assets','css','flags','js'] 에 'symbols','landmarks' 추가 — 안 넣으면 배포에서 통째로 빠진다
- · sw.js:5 VERSION 올리기 + sw.js:46-70 warmFlags()와 같은 방식의 warmImages() 추가 — install이 아니라 activate에서, 20개씩 끊어, 개별 catch로. SHELL 배열(sw.js:6-31)에 넣으면 안 된다. cache.addAll은 원자적이라 한 장이라도 404면 서비스워커 설치 전체가 실패한다
- · sw.js:141-155 의 /flags/ 라우트는 순수 cache-first라 절대 재검증하지 않는다. 새 폴더를 같은 전략으로 붙이면 그림을 다시 뽑아도 아이패드에는 옛 그림이 계속 뜬다. 그림을 교체할 때마다 VERSION을 올려야 한다
+ · scripts/build-site.mjs의 폴더 배열에 T4에서 추가한 'images'를 확인한다. images/symbols/·images/places/의 .gitkeep을 유지하여 그림 0장에서도 빌드되게 한다.
+ · sw.js의 기존 ART_CACHE와 /images/ 분기를 유지하고, warmImages()는 install이 아니라 activate에서 20개씩 개별 catch로 예열한다. SHELL에 그림을 넣지 않는다. AUDIO_CACHE='flagquiz-v4'를 바꾸거나 새 IMG_CACHE를 만들지 않는다.
+ · 그림 파일명은 같고 내용만 바뀌면 cache-first가 옛 응답을 유지하므로 ART_CACHE만 갱신한다. 음원·국기·셸 캐시를 그림 교체 때문에 올리지 않는다.
  · scripts/serve.mjs:16-29 TYPES 테이블에 '.webp': 'image/webp' 추가 — 없으면 npm start 로컬에서만 그림이 안 뜬다
  · tests/run.mjs:114-124 의 '194개 다 있고 고아 파일 없음' 검사를 새 폴더용으로 복제 (부분 집합이면 'presets.json에 approved-image인 나라만 파일이 있을 것'으로 바꾼다)
  · js/ui.js:13 flagSrc() 옆에 symbolSrc()/landmarkSrc() 추가 — 코드→경로 매핑 진입점을 한 곳으로 유지한다
@@ -840,10 +840,10 @@ settings.csv 열: code, kind, ko주제, subjectEn, inCapital, override유무, su
 - [ ] [D-1 아이 인지] 아이패드 실기기에서 카드 크기로 띄우고, 정답을 알려주기 전에 민규에게 "이게 뭐야?"만 묻는다. 못 알아보면 재생성이 아니라 주제 교체다. 아빠가 알아보는 것과 만 4세가 알아보는 것은 다르다.
 - [ ] [D-2 다크모드] css/style.css:27-46의 다크 토큰(--card #1e2439) 위에 올렸을 때 #F1F5FB 배경이 흰 네모로 도드라지지 않는가. 도드라진다면 앱 쪽에서 이미지 카드에 밝은 바탕을 항상 깔거나, 투명 배경 생성으로 전환해야 한다.
 - [ ] [D-3 국기와 나란히] 같은 화면에 flags/<code>.svg와 함께 놓았을 때 크기·비율·여백이 어울리는가. 국기 194개는 전부 viewBox 640×480(4:3)이고 CSS도 aspect-ratio:4/3로 통일돼 있다. 그림이 4:3이 아니면 화면이 흔들린다.
-- [ ] [E-1 파일] 4:3, 긴 변 1024px, WebP q80, 장당 150KB 이하인가. 400장 기준 배포 총량이 166MB(1GB 예산의 17%) 안에 들어오는가.
-- [ ] [E-2 이름] 파일명이 symbols/<code>.webp 또는 landmarks/<code>.webp이고 code가 countries.js의 code와 정확히 일치하는가. 목록에 없는 고아 파일이 폴더에 남아 있지 않은가 (tests/run.mjs:114-124가 flags/에 대해 하는 검사와 같은 규칙).
+- [ ] [E-1 파일] 4:3 WebP q80이며 presets.json.styleChoice의 규격과 일치하는가. A는 768×576·경고 40KB·실패 60KB, B는 1024×768·경고 110KB·실패 150KB다. null인 본 생성은 거부하는가. 실제 배포 총량은 빌드 산출물로 잰다.
+- [ ] [E-2 이름] 파일명이 images/symbols/<code>.webp 또는 images/places/<code>.webp이고 code가 countries.js의 code와 정확히 일치하는가. 목록에 없는 고아 파일이 폴더에 남아 있지 않은가 (tests/run.mjs:114-124가 flags/에 대해 하는 검사와 같은 규칙).
 - [ ] [E-3 원장] prompts/<code>-<kind>.txt에 실제로 보낸 프롬프트 전문이 저장됐는가. presets.json의 status·tries·bytes가 갱신됐는가. 그림만 있고 원장에 없는 파일, 원장에만 있고 그림이 없는 항목이 없는가.
-- [ ] [E-4 배포] 새 폴더가 scripts/build-site.mjs:56 폴더 배열에 들어갔는가. sw.js VERSION을 올렸는가. scripts/serve.mjs TYPES에 .webp를 넣었는가. 이 셋 중 하나라도 빠지면 npm test는 초록불인데 아이패드에서는 그림이 안 보인다.
+- [ ] [E-4 배포] build-site.mjs가 images를 복사하고 serve.mjs TYPES에 .webp가 있는가. sw.js는 기존 ART_CACHE·/images/ 분기를 재사용하고 AUDIO_CACHE='flagquiz-v4'를 그대로 보존하는가. 그림 교체 때는 ART_CACHE만 갱신하는가.
 
 ---
 
@@ -872,4 +872,4 @@ settings.csv 열: code, kind, ko주제, subjectEn, inCapital, override유무, su
 - 한 나라에서 상징물과 랜드마크가 같은 그림이 되는 경우는 어떻게 가를까요? 이집트는 피라미드가 상징이자 명소이고, 일본은 후지산, 페루는 마추픽추가 그렇습니다. 두 축을 억지로 다르게 채우면 두 번째 축이 억지 소재가 됩니다. 선택지는 (a) 그런 나라는 한 장만 만들고 두 모드가 같은 그림을 공유한다, (b) 한 나라 한 장 원칙으로 아예 축을 하나로 합친다, (c) 억지로라도 두 장을 채운다. (b)가 제작량을 절반으로 줄입니다.
 - 동물·생물을 그릴 때 만화적으로 의인화할까요, 실제 비율을 지킬까요? 지금 템플릿은 '의인화 금지, 실제 비율'입니다. 4세 친화성은 만화 쪽이 높지만, 큰 눈과 웃는 입을 붙이면 '학습 자료'가 아니라 '캐릭터'가 되어 실물을 볼 때 연결이 끊길 수 있습니다. 파일럿의 퍼핀·여우원숭이·캥거루 3장에서 민규 반응을 보고 정하시면 됩니다. 바꾸신다면 앵커부터 다시 만들어야 합니다.
 - 원장의 주제 문장을 한국어와 영어 둘 다 둘까요, 영어만 둘까요? 아빠 검수는 한국어 한 줄이 압도적으로 빠릅니다(194줄 20분). 하지만 두 언어를 두면 나중에 영어만 고치고 한국어를 안 고치는 어긋남이 생깁니다. 권장은 한국어를 승인용 요약으로만 쓰고(2~10자), 실제 프롬프트에 들어가는 문장은 영어 하나만 원본으로 삼는 것입니다.
-- 그림을 다시 뽑아 교체할 때 서비스워커 버전을 매번 올릴까요? sw.js:141-155의 /flags/ 라우트는 순수 cache-first라 네트워크 재검증을 절대 하지 않습니다. 새 이미지 폴더를 같은 전략으로 붙이면, 파일명을 그대로 두고 그림만 바꿔도 민규의 아이패드에는 옛 그림이 계속 뜹니다. 선택지는 (a) 교체할 때마다 VERSION을 올린다 — 다만 캐시 버킷이 하나뿐이라 이미 받아 둔 114MB 음원 캐시까지 함께 날아갑니다, (b) 이미지만 별도 캐시 버킷으로 분리한다, (c) 파일명에 내용 해시를 붙인다. (b)가 가장 안전하지만 sw.js 손질이 필요합니다.
+- **캐시 교체 정책 — 확정**: T2의 ART_CACHE와 /images/ 분기를 재사용한다. 같은 경로의 그림을 교체할 때 ART_CACHE만 갱신하며, AUDIO_CACHE='flagquiz-v4'는 최초 공개를 포함해 절대 바꾸지 않는다. 새 이미지 버킷을 또 만들지 않는다.
