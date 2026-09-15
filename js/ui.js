@@ -12,6 +12,20 @@
 
   function flagSrc(code) { return 'flags/' + code + '.svg'; }
 
+  function artFor(code, axis) {
+    axis = axis === 'place' ? 'place' : 'symbol';
+    var subject = FQ.subjects && FQ.subjects[code] && FQ.subjects[code][axis];
+    if (!subject) return null;
+    return { src: 'images/' + (axis === 'place' ? 'places/' : 'symbols/') + code + '.webp', alt: subject.ko };
+  }
+
+  function countryArt(code) {
+    if (!FQ.features || !FQ.features.on('art')) return '';
+    var art = artFor(code);
+    return art ? '<figure class="country-art"><img src="' + esc(art.src) + '" alt="' + esc(art.alt) + '" width="1024" height="768">' +
+      '<figcaption>' + esc(art.alt) + '</figcaption></figure>' : '';
+  }
+
   function main() { return doc.getElementById('main'); }
 
   function setMain(html) {
@@ -62,6 +76,7 @@
           (rate === null ? '' : '<li><b>내 기록</b><span>' + st.seen + '번 중 ' + st.correct + '번 정답 (' + rate + '%)</span></li>') +
         '</ul>' +
         '<div class="fact-box">💡 ' + esc(country.fact) + '</div>' +
+        countryArt(country.code) +
         '<div class="hint-box" style="margin-top:10px">🚩 ' + esc(country.flagHint) + '</div>' +
         '<button class="btn btn-sm" data-explain type="button" style="margin-top:10px">🔊 설명 듣기</button>' +
         '<div class="small muted" data-audio-status role="status"></div>' +
@@ -95,6 +110,7 @@
   FQ.ui = {
     esc: esc,
     flagSrc: flagSrc,
+    artFor: artFor,
     setMain: setMain,
     main: main,
     $: $,
