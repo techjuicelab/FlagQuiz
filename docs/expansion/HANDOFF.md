@@ -180,7 +180,7 @@ Natural Earth 50m을 좌표 194개와 '국경선 없는 육지 실루엣 한 덩
 - [ ] `grep -n VERSION sw.js` 가 0건
 - [ ] activate 직후 살아남는 캐시가 정확히 `flagquiz-shell-v1 / flagquiz-flags-v1 / flagquiz-art-v1 / flagquiz-v4` 네 개이고, `another-app-v1` 같은 남의 캐시는 건드리지 않는다
 - [ ] `flagquiz-v2`·`flagquiz-v3` 는 삭제된다
-- [ ] `flagquiz-v4` 안의 `/audio/…` 항목은 남고, `/audio/` 가 아닌 항목은 activate 에서 지워진다
+- [ ] `flagquiz-v4` 안의 `/audio/…` 항목은 그대로 남는다. 옛 셸과 새 FLAG_CACHE에 확보한 국기만 정리하며, 국기 복사 실패 시 원본은 남겨 오프라인 조회에 재사용한다
 - [ ] SHELL_CACHE 이름만 v1→v2 로 올려도 `/audio/sua/*.mp3` 요청이 여전히 캐시 적중한다 (이 과제의 존재 이유를 고정하는 단언)
 - [ ] `/images/symbols/kr.webp` 응답은 ART_CACHE 에만 들어가고 404 응답은 어느 버킷에도 저장되지 않는다
 - [ ] 기존 tests/sw.test.mjs 10개 테스트가 새 이름으로 전부 통과한다
