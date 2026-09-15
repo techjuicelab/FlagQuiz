@@ -43,16 +43,26 @@
         "뿔 달린 큰 초식동물·소"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 17686,
       "outputStem": "images/symbols/ad",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "빨간 소 두 마리, 파란 발굽과 목 장식 확인.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#ad-symbol"
     },
     {
       "id": "ae-symbol",
@@ -251,16 +261,26 @@
         "맹금·검은 큰 새(ae·ec·ph는 예비)"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 3,
+      "bytes": 21196,
       "outputStem": "images/symbols/al",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "초안 갈색 몸통을 편집 재생성해 검정 쌍두 독수리로 수정. 머리 두 개·발 두 개 확인. 초안 보존.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#al-symbol"
     },
     {
       "id": "al-landmark",
@@ -283,16 +303,26 @@
         "유럽풍 구시가지·색색 집 마을"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 47888,
       "outputStem": "images/places/al",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "계단식 경사에 흰 집 여섯 채와 격자 창 확인.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#al-landmark"
     },
     {
       "id": "am-symbol",
@@ -493,9 +523,9 @@
         "초콜릿·단 과자"
       ],
       "csvStatus": "draft",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 2,
+      "bytes": 15992,
       "outputStem": "images/symbols/at",
       "curationNote": "agent-curated: CSV requires a white star-shaped edelweiss, not a fixed bract count. Botanical descriptions allow 5-15 bracts; the generated specimen has seven. Original eight-bract request is preserved in prompts/at-symbol.attempt-1.txt. Source: https://insights.sent2promo.com/id/eprint/210/1/104-Article%20Text-183-2-10-20220921.pdf",
       "textReview": {
@@ -503,7 +533,17 @@
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "일곱 흰 포엽과 다섯 금빛 중심을 관찰. 종의 자연 변이 범위 내 표본으로 승인된 큐레이션 수정 근거는 curationNote 참조.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#at-symbol"
     },
     {
       "id": "at-landmark",
@@ -524,16 +564,26 @@
       "riskNote": "대관람차는 런던아이·요코하마 관람차와 형태가 겹침 — 빨간 나무 곤돌라 상자 모양을 반드시 살릴 것",
       "confusionGroups": [],
       "csvStatus": "draft",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 2,
+      "bytes": 33710,
       "outputStem": "images/places/at",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "초안 빨간 객실 16개에서 아래 중앙 객실 하나를 제거한 재생성. 최종 15개 직접 계수.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#at-landmark"
     },
     {
       "id": "au-symbol",
@@ -698,16 +748,26 @@
       "riskNote": "",
       "confusionGroups": [],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 2,
+      "bytes": 19312,
       "outputStem": "images/symbols/ba",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "초안 주황 수술 다섯 개에서 여섯 개로 재생성. 녹색 암술 한 개와 구분하여 여섯 꽃밥 직접 계수.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#ba-symbol"
     },
     {
       "id": "ba-landmark",
@@ -730,16 +790,26 @@
         "아치 돌다리·협곡 다리"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 42104,
       "outputStem": "images/places/ba",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "단일 높은 아치, 양끝 탑 두 개와 강 확인.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#ba-landmark"
     },
     {
       "id": "bb-symbol",
@@ -905,16 +975,26 @@
         "감자·감자 요리"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 23406,
       "outputStem": "images/symbols/be",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "와플 3×4 홈 열두 개 직접 계수.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#be-symbol"
     },
     {
       "id": "bf-symbol",
@@ -1000,16 +1080,26 @@
         "붉은·분홍 꽃 클로즈업"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 15712,
       "outputStem": "images/symbols/bg",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "분홍 장미 한 송이와 녹색 잎 두 장 확인.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#bg-symbol"
     },
     {
       "id": "bg-landmark",
@@ -1032,16 +1122,26 @@
         "종교 건축 외관(결정 C 7건 + 신규 3건)"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 37160,
       "outputStem": "images/places/bg",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "흑백 아치 두 층, 붉은 지붕과 빈 마당 확인.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#bg-landmark"
     },
     {
       "id": "bh-symbol",
@@ -1602,16 +1702,26 @@
         "뿔 달린 큰 초식동물·소"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 2,
+      "bytes": 21140,
       "outputStem": "images/symbols/by",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "수정본에서 가문비 두 그루의 꼭대기가 모두 프레임 안에 들어옴. 들소 한 마리의 네 다리·뿔 두 개·수염·어깨혹 유지.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#by-symbol"
     },
     {
       "id": "bz-symbol",
@@ -1950,16 +2060,26 @@
         "초콜릿·단 과자"
       ],
       "csvStatus": "draft",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 13530,
       "outputStem": "images/symbols/ch",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "큰 원형 구멍 여섯 개와 잘린 면 가장자리 홈 확인. 모든 치즈 윤곽 프레임 안.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#ch-symbol"
     },
     {
       "id": "ch-landmark",
@@ -1982,16 +2102,26 @@
         "눈 덮인 뾰족한 산"
       ],
       "csvStatus": "draft",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 20740,
       "outputStem": "images/places/ch",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "뾰족한 마터호른 봉우리·경사면·설원 확인.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#ch-landmark"
     },
     {
       "id": "ci-symbol",
@@ -2536,16 +2666,26 @@
       "riskNote": "국기(1순위)는 올리브 가지지만 올리브를 그리스에 배정해 예비로 내림 — 아빠 확인 필요",
       "confusionGroups": [],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 2,
+      "bytes": 19728,
       "outputStem": "images/symbols/cy",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "수정본에서 앞발 두 개와 양옆 뒷발 두 개를 모두 확인. 꼬리가 발을 가리지 않고 모래·바다를 작은 장면으로 줄여 사방 여백 확보.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#cy-symbol"
     },
     {
       "id": "cz-symbol",
@@ -2565,16 +2705,26 @@
       "riskNote": "상징물(인형)과 명소(시계) 둘 다 fact 한 문장 안에 있어 음원 재사용 가능",
       "confusionGroups": [],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 15272,
       "outputStem": "images/symbols/cz",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "목각 인형 한 개, 실 다섯 줄과 팔다리 확인.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#cz-symbol"
     },
     {
       "id": "cz-landmark",
@@ -2598,16 +2748,26 @@
         "시계탑·기울어진 높은 탑"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 2,
+      "bytes": 27084,
       "outputStem": "images/places/cz",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "초안 왼쪽 인물 조각 제거 재생성. 닫힌 창 두 개·원형 다이얼 두 개 확인.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#cz-landmark"
     },
     {
       "id": "de-symbol",
@@ -2627,16 +2787,26 @@
       "riskNote": "국장 독수리는 알바니아·폴란드와 중복이라 예비로 내림. 노이슈반슈타인은 특정 테마파크 성과 닮았으므로 실제 사진 비례(길쭉한 몸체+가운데 높은 탑)로",
       "confusionGroups": [],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 15584,
       "outputStem": "images/symbols/de",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "소시지 한 개, 석쇠 자국 세 줄 확인.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#de-symbol"
     },
     {
       "id": "de-landmark",
@@ -2659,16 +2829,26 @@
         "성·요새"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 30414,
       "outputStem": "images/places/de",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "흰 성과 높은 탑, 어두운 지붕과 녹색 산마루 확인.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#de-landmark"
     },
     {
       "id": "dj-symbol",
@@ -2754,16 +2934,26 @@
         "국기 별·십자 문양·색면"
       ],
       "csvStatus": "draft",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 12182,
       "outputStem": "images/symbols/dk",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "일반 블록 네 개, 빨강·노랑·초록·파랑 네 색, 브랜드 표시 없음.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#dk-symbol"
     },
     {
       "id": "dk-landmark",
@@ -2786,16 +2976,26 @@
         "유럽풍 구시가지·색색 집 마을"
       ],
       "csvStatus": "draft",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 39316,
       "outputStem": "images/places/dk",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "집 다섯 채와 배 한 척, 운하 확인.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#dk-landmark"
     },
     {
       "id": "dm-symbol",
@@ -3042,16 +3242,26 @@
       "riskNote": "수레국화는 벨라루스에서도 쓰이는 꽃 — 벨라루스는 들소로 갔으므로 충돌 없음",
       "confusionGroups": [],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 16440,
       "outputStem": "images/symbols/ee",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "파란 수레국화 한 송이, 보라 중심과 좁은 잎 두 장 확인.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#ee-symbol"
     },
     {
       "id": "ee-landmark",
@@ -3074,16 +3284,26 @@
         "유럽풍 구시가지·색색 집 마을"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 27360,
       "outputStem": "images/places/ee",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "빨간 원뿔 지붕 원탑 세 개, 연결 성벽과 녹색 첨탑 확인.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#ee-landmark"
     },
     {
       "id": "eg-symbol",
@@ -3195,16 +3415,26 @@
         "줄 악기·관악기"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 21470,
       "outputStem": "images/symbols/es",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "빨간 치마, 흰 점무늬와 겹 프릴 세 층 확인. 사람 없음.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#es-symbol"
     },
     {
       "id": "es-landmark",
@@ -3227,16 +3457,26 @@
         "종교 건축 외관(결정 C 7건 + 신규 3건)"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 2,
+      "bytes": 28494,
       "outputStem": "images/places/es",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "작은 인물 조각을 추상 식물 모양 석조 장식으로 대체한 편집 재생성. 종탑 네 개와 출입구 세 개 유지.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#es-landmark"
     },
     {
       "id": "et-symbol",
@@ -3321,16 +3561,26 @@
       "riskNote": "사우나에 사람을 그리지 말 것(맨몸) — 빈 나무방, 돌난로, 김만. 무민은 저작권으로 제외",
       "confusionGroups": [],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 26570,
       "outputStem": "images/symbols/fi",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "순록 한 마리, 가지뿔 두 개와 다리 네 개, 눈 덮인 가문비 배경 확인.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#fi-symbol"
     },
     {
       "id": "fi-landmark",
@@ -3353,16 +3603,26 @@
         "눈·얼음·극지 하늘"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 34370,
       "outputStem": "images/places/fi",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "빈 목재 사우나, 두 단 벤치와 돌 난로·물통·국자 확인.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#fi-landmark"
     },
     {
       "id": "fj-symbol",
@@ -3504,16 +3764,26 @@
         "빵·구운 밀가루 음식"
       ],
       "csvStatus": "draft",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 19422,
       "outputStem": "images/symbols/fr",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "초기 B 시안 원본 재사용. root 개별 검수 및 map_tests 최종 WebP 교차 검수.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#fr-symbol"
     },
     {
       "id": "fr-landmark",
@@ -3536,16 +3806,26 @@
         "시계탑·기울어진 높은 탑"
       ],
       "csvStatus": "draft",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 20096,
       "outputStem": "images/places/fr",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "초기 B 시안 원본 재사용. root 개별 검수 및 map_tests 최종 WebP 교차 검수.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#fr-landmark"
     },
     {
       "id": "ga-symbol",
@@ -3630,16 +3910,26 @@
         "알록달록 탈것"
       ],
       "csvStatus": "draft",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 24178,
       "outputStem": "images/symbols/gb",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "초기 B 시안 원본 재사용. root 개별 검수 및 map_tests 최종 WebP 교차 검수.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#gb-symbol"
     },
     {
       "id": "gb-landmark",
@@ -3662,16 +3952,26 @@
         "시계탑·기울어진 높은 탑"
       ],
       "csvStatus": "draft",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 15400,
       "outputStem": "images/places/gb",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "엘리자베스 탑 시계판 두 면, 뾰족한 지붕과 좁은 강 조각 확인. 숫자·사람 없음.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#gb-landmark"
     },
     {
       "id": "gd-symbol",
@@ -3985,16 +4285,26 @@
       "riskNote": "키프로스 국기의 올리브 가지와 중복 — 그리스가 가져가고 키프로스는 고양이로. 파르테논은 4세에게 콜로세움과 구분 불가(혼동쌍)라 명소에서 제외",
       "confusionGroups": [],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 14910,
       "outputStem": "images/symbols/gr",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "돌고래 한 마리, 등에 지느러미 하나와 꼬리 두 갈래, 작은 파도 확인.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#gr-symbol"
     },
     {
       "id": "gr-landmark",
@@ -4017,16 +4327,26 @@
         "유럽풍 구시가지·색색 집 마을"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 2,
+      "bytes": 26784,
       "outputStem": "images/places/gr",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "편집 재생성으로 파란 돔 두 개를 세 개로 교정. 앞 오른쪽·뒤 상단·왼쪽 중간에 각각 독립된 돔 확인.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#gr-landmark"
     },
     {
       "id": "gt-symbol",
@@ -4309,16 +4629,26 @@
         "국기 별·십자 문양·색면"
       ],
       "csvStatus": "draft",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 16788,
       "outputStem": "images/symbols/hr",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "달마티안 한 마리, 검정 점과 처진 귀 두 개 확인.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#hr-symbol"
     },
     {
       "id": "hr-landmark",
@@ -4341,16 +4671,26 @@
         "폭포"
       ],
       "csvStatus": "draft",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 46590,
       "outputStem": "images/places/hr",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "계단식 청록 호수 세 개, 석회 둑과 폭포·숲 확인.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#hr-landmark"
     },
     {
       "id": "ht-symbol",
@@ -4411,16 +4751,26 @@
       "riskNote": "상표 위험 — 브랜드 로고 없는 일반 색 큐브로. 부다페스트 국회의사당은 규칙 8의 명시 혼동쌍(런던 국회)이라 명소에서 제외함",
       "confusionGroups": [],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 16190,
       "outputStem": "images/symbols/hu",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "큐브 보이는 세 면 각각 3×3, 노랑·빨강·파랑, 상표 없음.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#hu-symbol"
     },
     {
       "id": "hu-landmark",
@@ -4441,16 +4791,26 @@
       "riskNote": "상표 위험 — 브랜드 로고 없는 일반 색 큐브로. 부다페스트 국회의사당은 규칙 8의 명시 혼동쌍(런던 국회)이라 명소에서 제외함",
       "confusionGroups": [],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 38012,
       "outputStem": "images/places/hu",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "노란 온천 건물, 중앙 돔과 청록 수영장·수증기 확인. 빈 공간으로 인물 없음.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#hu-landmark"
     },
     {
       "id": "id-symbol",
@@ -4537,16 +4897,26 @@
         "줄 악기·관악기"
       ],
       "csvStatus": "draft",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 13980,
       "outputStem": "images/symbols/ie",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "하트 모양 소엽 정확히 세 개와 하나의 줄기 확인.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#ie-symbol"
     },
     {
       "id": "ie-landmark",
@@ -4567,16 +4937,26 @@
       "riskNote": "",
       "confusionGroups": [],
       "csvStatus": "draft",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 34304,
       "outputStem": "images/places/ie",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "짙은 수직 절벽, 초록 평평한 정상과 바다 파도 확인.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#ie-landmark"
     },
     {
       "id": "il-symbol",
@@ -4854,16 +5234,26 @@
         "말"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 11808,
       "outputStem": "images/symbols/is",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "퍼핀 한 마리, 검정 등과 흰 배·주황 삼각 부리·물갈퀴 발 두 개 확인.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#is-symbol"
     },
     {
       "id": "is-landmark",
@@ -4886,16 +5276,26 @@
         "화산·끓는 땅"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 19782,
       "outputStem": "images/places/is",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "간헐천 분출 기둥 하나, 청록 수면과 황토색 돌 가장자리 확인.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#is-landmark"
     },
     {
       "id": "it-symbol",
@@ -4917,16 +5317,26 @@
         "면 요리 그릇"
       ],
       "csvStatus": "draft",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 29326,
       "outputStem": "images/symbols/it",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "초기 B 시안 원본 재사용. root 개별 검수 및 map_tests 최종 WebP 교차 검수.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#it-symbol"
     },
     {
       "id": "it-landmark",
@@ -4949,16 +5359,26 @@
         "시계탑·기울어진 높은 탑"
       ],
       "csvStatus": "draft",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 16190,
       "outputStem": "images/places/it",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "피사 사탑 기울기, 기단 한 층·중간 아케이드 여섯 층·상단 종루 한 층을 직접 계수하여 총 여덟 층 확인.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#it-landmark"
     },
     {
       "id": "jm-symbol",
@@ -5912,16 +6332,26 @@
       "riskNote": "성·요새 혼동군(de·lt·ro·li + om·qa·sy) — 결정 A에 따라 다 그리되 파두츠는 '포도밭 비탈 위 작고 낮은 하얀 성, 네모 탑 하나, 뾰족탑 없음'으로 잡고 quiz.js에서 같은 판 배제. 상징물은 결정 B대로 우표를 유지하고(되돌리지 말 것) 톱니 테두리와 액면 숫자를 크게 강조해 명소 배경의 알프스와 겹쳐 보이지 않게 할 것. 파두츠 성이 명소로 돌아왔으므로 예비에는 같은 성을 두지 않는다",
       "confusionGroups": [],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 18828,
       "outputStem": "images/symbols/li",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "일반 우표 한 장, 산 그림과 액면 숫자 1 하나 확인. CSV 요구에 따른 숫자 한 글자 예외, 다른 글자 없음.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#li-symbol"
     },
     {
       "id": "li-landmark",
@@ -5944,16 +6374,26 @@
         "성·요새"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 38722,
       "outputStem": "images/places/li",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "파두츠 성의 높은 사각 탑과 주황 지붕·포도밭 언덕·알프스 배경 확인.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#li-landmark"
     },
     {
       "id": "lk-symbol",
@@ -6127,16 +6567,26 @@
         "광석·보석 원석 덩어리"
       ],
       "csvStatus": "draft",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 21974,
       "outputStem": "images/symbols/lt",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "불규칙한 황금 호박 한 조각, 반투명 표면과 내부 기포 확인.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#lt-symbol"
     },
     {
       "id": "lt-landmark",
@@ -6159,16 +6609,26 @@
         "성·요새"
       ],
       "csvStatus": "draft",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 30994,
       "outputStem": "images/places/lt",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "붉은 벽돌 성, 원뿔 지붕 탑 네 개·직사각형 높은 주탑·물 둘레와 다리 확인.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#lt-landmark"
     },
     {
       "id": "lu-symbol",
@@ -6190,16 +6650,26 @@
         "광석·보석 원석 덩어리"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 2,
+      "bytes": 22608,
       "outputStem": "images/symbols/lu",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "수정본에서 투명 배경을 B 지정색 계열 불투명 연청백색 배경으로 교체. 붉은 사자·왕관 하나·네 다리·두 갈래 꼬리 유지.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#lu-symbol"
     },
     {
       "id": "lu-landmark",
@@ -6223,16 +6693,26 @@
         "아치 돌다리·협곡 다리"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 3,
+      "bytes": 51826,
       "outputStem": "images/places/lu",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "3차 수정본에서 앞뒤 깊이 방향으로 나란한 두 석조 아치 리브와 사이 틈이 명확히 보임. 중앙 교각 없이 같은 골짜기 개구부를 가로지르며 절벽 위 구시가지·초록 골짜기·강 유지. 십자가 장식 제거 확인.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#lu-landmark"
     },
     {
       "id": "lv-symbol",
@@ -6254,16 +6734,26 @@
         "하얀 꽃잎 꽃"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 17988,
       "outputStem": "images/symbols/lv",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "흰 옥스아이데이지 한 송이, 넓은 노란 중심과 잎 두 장 확인.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#lv-symbol"
     },
     {
       "id": "lv-landmark",
@@ -6286,16 +6776,26 @@
         "유럽풍 구시가지·색색 집 마을"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 2,
+      "bytes": 28064,
       "outputStem": "images/places/lv",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "수정본에서 지붕 십자가를 둥근 추상 금장식으로 교체했고 계단식 박공·둥근 빈 시계 한 개를 재확인.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#lv-landmark"
     },
     {
       "id": "ly-symbol",
@@ -6411,16 +6911,26 @@
         "알록달록 탈것"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 21762,
       "outputStem": "images/symbols/mc",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "차량 한 대, 바퀴 네 개·앞뒤 날개 각 하나·빈 운전석과 숫자 8 한 글자 확인. CSV 좁은 예외만 적용.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#mc-symbol"
     },
     {
       "id": "mc-landmark",
@@ -6441,16 +6951,26 @@
       "riskNote": "실제 팀 로고·스폰서 문양 없이 그릴 것. 몬테카를로 카지노는 도박 소재라 제외",
       "confusionGroups": [],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 44406,
       "outputStem": "images/places/mc",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "정박 요트 일곱 척 직접 계수, 곡선 부두·돛대·수면과 마을 확인.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#mc-landmark"
     },
     {
       "id": "md-symbol",
@@ -6472,16 +6992,26 @@
         "뿔 달린 큰 초식동물·소"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 19056,
       "outputStem": "images/symbols/md",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "포도 스무 알(일부 가려진 알 포함) 직접 계수. 잎 두 장과 덩굴손 하나 확인.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#md-symbol"
     },
     {
       "id": "me-symbol",
@@ -6501,16 +7031,26 @@
       "riskNote": "산 소재는 스위스(마터호른)·슬로바키아(타트라)와 겹칠 수 있음 — 몬테네그로는 '바다 바로 뒤에 솟은 검은 바위산'으로 바다를 함께 넣어 구별",
       "confusionGroups": [],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 30294,
       "outputStem": "images/symbols/me",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "짙은 회색 뾰족한 바위산과 좁은 바다 조각·드문 녹색 식생 확인.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#me-symbol"
     },
     {
       "id": "me-landmark",
@@ -6534,16 +7074,26 @@
         "눈 덮인 뾰족한 산"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 38146,
       "outputStem": "images/places/me",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "작은 바위섬의 붉은 지붕 마을과 해안으로 연결된 보행로 확인.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#me-landmark"
     },
     {
       "id": "mg-symbol",
@@ -6669,16 +7219,26 @@
         "붉은 고추"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 19186,
       "outputStem": "images/symbols/mk",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "붉은 고추 다섯 개를 직접 계수. 녹색 줄기 묶음과 끈 하나 확인.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#mk-symbol"
     },
     {
       "id": "mk-landmark",
@@ -6702,16 +7262,26 @@
         "산속·섬 호수"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 51188,
       "outputStem": "images/places/mk",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "호숫가 흰 집과 붉은 지붕, 바위 비탈 아래 나무 보행로 확인.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#mk-landmark"
     },
     {
       "id": "ml-symbol",
@@ -6985,16 +7555,26 @@
         "나무배"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 23058,
       "outputStem": "images/symbols/mt",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "루추 배 한 척, 파랑·노랑·빨강 선체와 뱃머리 좌우 눈 장식 각 하나 확인. CSV 요구인 배의 눈 그림 예외.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#mt-symbol"
     },
     {
       "id": "mu-symbol",
@@ -7612,16 +8192,26 @@
         "뿔 달린 큰 초식동물·소"
       ],
       "csvStatus": "draft",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 18340,
       "outputStem": "images/symbols/nl",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "노란 나막신 한 쌍, 둥근 앞코와 타원 발 입구·꽃무늬 확인.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#nl-symbol"
     },
     {
       "id": "nl-landmark",
@@ -7642,16 +8232,26 @@
       "riskNote": "풍차를 상징물이 아니라 명소로 돌려 스페인 라만차 풍차와의 충돌을 피함",
       "confusionGroups": [],
       "csvStatus": "draft",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 38526,
       "outputStem": "images/places/nl",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "풍차 세 기, 각 격자 날개 네 개 직접 계수. 운하와 초록 갈대 확인.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#nl-landmark"
     },
     {
       "id": "no-symbol",
@@ -7673,16 +8273,26 @@
         "나무배"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 22334,
       "outputStem": "images/symbols/no",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "목선 한 척, 용 모양 선수와 말린 선미·크림색 직사각 돛 하나 확인. 사람·무기 없음.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#no-symbol"
     },
     {
       "id": "no-landmark",
@@ -7705,16 +8315,26 @@
         "폭포"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 39886,
       "outputStem": "images/places/no",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "좁고 굽은 피오르와 높은 녹색 절벽·가느다란 폭포 확인.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#no-landmark"
     },
     {
       "id": "np-symbol",
@@ -8350,16 +8970,26 @@
       "riskNote": "독수리 중복(알바니아) — 폴란드는 '하얀 몸 + 금 왕관 + 머리 하나', 알바니아는 '검은 몸 + 머리 둘'로 색과 머리 수를 확실히 대비시킬 것. 소금 광산은 성당 부분(종교) 말고 소금 기둥·샹들리에·지하 호수만",
       "confusionGroups": [],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 17416,
       "outputStem": "images/symbols/pl",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "반달형 피에로기 세 개와 주름 접합선 확인.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#pl-symbol"
     },
     {
       "id": "pl-landmark",
@@ -8383,16 +9013,26 @@
         "지하 공간(동굴·갱도·굴집)"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 27044,
       "outputStem": "images/places/pl",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "회색 소금 동굴, 바닥의 큰 소금 덩어리 세 개 확인. 성상·사람 없음.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#pl-landmark"
     },
     {
       "id": "pt-symbol",
@@ -8412,16 +9052,26 @@
       "riskNote": "",
       "confusionGroups": [],
       "csvStatus": "draft",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 24816,
       "outputStem": "images/symbols/pt",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "에그타르트 한 개, 겹 페이스트리와 갈색으로 익은 노란 커스터드 확인.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#pt-symbol"
     },
     {
       "id": "pt-landmark",
@@ -8444,16 +9094,26 @@
         "유럽풍 구시가지·색색 집 마을"
       ],
       "csvStatus": "draft",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 2,
+      "bytes": 22222,
       "outputStem": "images/places/pt",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "수정본에서 운전사와 승객 형상을 모두 제거. 창 안은 빈 나무 좌석·조종 기둥만 있고 노란 차체·전선·선로 유지.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#pt-landmark"
     },
     {
       "id": "pw-symbol",
@@ -8655,16 +9315,26 @@
       "riskNote": "브란 성은 성 혼동군(de·lt·li)이나 결정 A에 따라 그리되 '좁고 높은 하얀 몸체 + 빨간 기와 뾰족탑 여럿'으로 못박고 quiz.js에서 같은 판 배제. 반드시 밝은 낮, 드라큘라 연출 금지. 국장 독수리는 al·pl과 삼중이라 제외하고, 예비1은 카르파티아 갈색곰이 ru 예비1과 겹쳐 호레즈 도자기로 교체했다",
       "confusionGroups": [],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 31838,
       "outputStem": "images/symbols/ro",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "흰 블라우스 하나, 긴 소매 두 개와 적청 꽃 자수 띠 확인. 사람·마네킹 없음.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#ro-symbol"
     },
     {
       "id": "ro-landmark",
@@ -8687,16 +9357,26 @@
         "성·요새"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 2,
+      "bytes": 30010,
       "outputStem": "images/places/ro",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "수정본에서 오른쪽 지붕 십자가를 작은 둥근 장식으로 교체. 흰 성벽·붉은 지붕·숲 언덕 유지.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#ro-landmark"
     },
     {
       "id": "rs-symbol",
@@ -8718,16 +9398,26 @@
         "붉은 열매 클로즈업"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 20798,
       "outputStem": "images/symbols/rs",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "붉은 라즈베리 세 개와 톱니 잎 두 장 확인.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#rs-symbol"
     },
     {
       "id": "rs-landmark",
@@ -8748,16 +9438,26 @@
       "riskNote": "fact 속 조코비치는 실존 인물이라 소재에서 제외",
       "confusionGroups": [],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 21732,
       "outputStem": "images/places/rs",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "둥근 바위 위 오두막 하나, 붉은 지붕과 네모 창문 하나·녹색 강물 확인.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#rs-landmark"
     },
     {
       "id": "ru-symbol",
@@ -8777,16 +9477,26 @@
       "riskNote": "체코 꼭두각시 인형과 같은 '인형' 계열 — 마트료시카는 통통한 알 모양, 체코는 줄에 매달린 팔다리 인형으로 형태를 확실히 구분. 성 바실리는 종교 건물이라 외관 실루엣만, 성상·내부 금지",
       "confusionGroups": [],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 25154,
       "outputStem": "images/symbols/ru",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "마트료시카 세 개와 가장 큰 인형의 열린 속 확인. 단순 장난감 표정은 이 항목의 명시된 예외에 해당.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#ru-symbol"
     },
     {
       "id": "ru-landmark",
@@ -8809,16 +9519,26 @@
         "종교 건축 외관(결정 C 7건 + 신규 3건)"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 31102,
       "outputStem": "images/places/ru",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "양파 돔·붉은 본체·회오리 및 다이아몬드 무늬 확인. 돔 위는 단순 장식이며 십자가 없음.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#ru-landmark"
     },
     {
       "id": "rw-symbol",
@@ -9172,16 +9892,26 @@
         "국기 별·십자 문양·색면"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 19252,
       "outputStem": "images/symbols/se",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "붉은 달라호스 한 마리, 네 다리와 흰색·파랑·노랑 꽃무늬 확인.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#se-symbol"
     },
     {
       "id": "se-landmark",
@@ -9204,16 +9934,26 @@
         "유럽풍 구시가지·색색 집 마을"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 29548,
       "outputStem": "images/places/se",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "좁은 색집 다섯 채와 지붕·빈 광장 확인. 외벽 금속 고정부는 추상 벽장식이며 종교 형상 없음.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#se-landmark"
     },
     {
       "id": "sg-symbol",
@@ -9267,16 +10007,26 @@
         "말"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 14540,
       "outputStem": "images/symbols/si",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "흰 리피차너 한 마리의 네 다리·짧은 갈기·긴 꼬리 확인.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#si-symbol"
     },
     {
       "id": "si-landmark",
@@ -9300,16 +10050,26 @@
         "산속·섬 호수"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 25626,
       "outputStem": "images/places/si",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "블레드 호수 작은 섬·가느다란 종탑 하나·계단 확인. 인물과 십자가 없음.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#si-landmark"
     },
     {
       "id": "sk-symbol",
@@ -9333,16 +10093,26 @@
         "감자·감자 요리"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 6132,
       "outputStem": "images/symbols/sk",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "후야라의 손가락 구멍 세 개·짧은 평행 취관·결속 띠 두 개 확인.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#sk-symbol"
     },
     {
       "id": "sk-landmark",
@@ -9365,16 +10135,26 @@
         "산속·섬 호수"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 45616,
       "outputStem": "images/places/sk",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "둥근 청록 호수·회색 산봉우리·전나무·갈색 오두막 한 채 확인.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#sk-landmark"
     },
     {
       "id": "sl-symbol",
@@ -9426,16 +10206,26 @@
       "riskNote": "대표 명소가 상징물과 완전히 같은 소재라 명소는 비움 — 한 나라에 같은 그림 두 장이 되는 것을 피함",
       "confusionGroups": [],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 2,
+      "bytes": 33304,
       "outputStem": "images/symbols/sm",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "수정본에서 탑 사이 연결 성벽 제거. 독립된 탑 세 개와 그 사이 자연 바위 능선·초록 식생만 남은 것을 확인.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#sm-symbol"
     },
     {
       "id": "sn-symbol",
@@ -10497,16 +11287,26 @@
       "riskNote": "전쟁 관련 이미지·군사 요소가 섞이지 않도록 주의. 키이우 황금 돔 성당은 종교+돔 혼동 문제로 제외",
       "confusionGroups": [],
       "csvStatus": "draft",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 20414,
       "outputStem": "images/symbols/ua",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "고개 숙인 해바라기 한 송이와 갈색 원반·하트 모양 잎 두 개 확인.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#ua-symbol"
     },
     {
       "id": "ua-landmark",
@@ -10527,16 +11327,26 @@
       "riskNote": "전쟁 관련 이미지·군사 요소가 섞이지 않도록 주의. 키이우 황금 돔 성당은 종교+돔 혼동 문제로 제외",
       "confusionGroups": [],
       "csvStatus": "draft",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 42628,
       "outputStem": "images/places/ua",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "초록 아치 터널 안 레일 두 줄·나무 침목·밝은 끝부분 확인. 인물이나 차량 없음.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#ua-landmark"
     },
     {
       "id": "ug-symbol",
@@ -10801,16 +11611,26 @@
         "국기 별·십자 문양·색면"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 35622,
       "outputStem": "images/symbols/va",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "이중 나선의 구분되는 두 계단·가운데 타원 개구부·청동빛 장식 난간 확인. 인물과 명문 없음.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#va-symbol"
     },
     {
       "id": "va-landmark",
@@ -10833,16 +11653,26 @@
         "종교 건축 외관(결정 C 7건 + 신규 3건)"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 31398,
       "outputStem": "images/places/va",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "중앙 큰 돔 하나·양쪽 휘어진 열주 두 줄·빈 타원 광장 확인. 조각 인물과 십자가 없음.",
+        "independentReview": "/root/map_tests"
+      },
+      "productionRecord": "docs/image-prompts/production.json#va-landmark"
     },
     {
       "id": "vc-symbol",
