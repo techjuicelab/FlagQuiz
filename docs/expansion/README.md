@@ -1,7 +1,7 @@
 # 확장 설계 — 상징물 · 대표 명소 · 지도
 
 만 4세 민규가 국기-나라 이름을 90% 이상 외운 다음 단계를 설계한 문서다.
-**차단 질문 7개에 답이 나왔다. [DECISIONS.md](DECISIONS.md)가 이 문서의 "권장 설계"보다 우선한다.**
+**결정 10건이 나왔고 주제 표 정리가 끝났다. [DECISIONS.md](DECISIONS.md)가 이 문서의 "권장 설계"보다 우선한다.**
 
 | 문서 | 내용 |
 | --- | --- |
@@ -9,9 +9,11 @@
 | [INTERVIEW.md](INTERVIEW.md) | 역인터뷰 전문 — 차단 질문, 나머지 질문, 기본값으로 갈 가정 |
 | [IMAGE-PROMPTS.md](IMAGE-PROMPTS.md) | 이미지 프롬프트 키트 — 화풍 후보 A/B, 템플릿, 샘플 18장, 검수표 |
 | [PILOT.md](PILOT.md) | **화풍 A/B 파일럿 16장** — 지금 바로 돌릴 수 있다 |
-| [SUBJECTS.csv](SUBJECTS.csv) | 194행 주제 표 (초안 — 교정 전이므로 승인 보류) |
+| [SUBJECTS.csv](SUBJECTS.csv) | **194행 주제 표** — 정리 완료, 무결성 검사 전부 통과 |
 | [AUDIT.md](AUDIT.md) | 주제 표 전수 감사 결과와 고쳐야 할 것 |
-| [FIX-ROUND1.md](FIX-ROUND1.md) | **교정 1차 결과** — 확정된 것, 남은 것, 아빠 판단이 필요한 것 |
+| [FIX-ROUND1.md](FIX-ROUND1.md) | 교정 1차 결과 — 명소 축이 과교정된 경위 |
+| [FINAL.md](FINAL.md) | **최종 정리 결과** — 표 상태, 규칙별 통과, 남은 판단 |
+| [confusion-groups.json](confusion-groups.json) | **혼동군 53군** — quiz.js 오답 배제 규칙에 그대로 들어간다 |
 
 ---
 
