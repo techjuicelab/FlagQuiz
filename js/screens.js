@@ -242,6 +242,13 @@
           : '') +
 
         '<div class="card section">' +
+          '<h3>기록 백업</h3>' +
+          '<p class="small muted">아래 글자를 통째로 복사해 두면 기록을 되살릴 수 있어요. 저장된 곳: <code>flagquiz.v1</code></p>' +
+          '<button class="btn btn-sm" id="export" type="button">💾 기록 내보내기</button>' +
+          '<div id="export-out"></div>' +
+        '</div>' +
+
+        '<div class="card section">' +
           '<h3>정리하기</h3>' +
           '<p class="small muted">기록은 이 브라우저에만 저장돼요. 지우면 되돌릴 수 없어요.</p>' +
           '<button class="btn btn-sm" id="reset" type="button">🗑 기록 모두 지우기</button>' +
@@ -252,6 +259,12 @@
     ui.$('#back', m).addEventListener('click', function () { FQ.app.home(); });
     ui.on(m, '.wrong-item', 'click', function (e, t) {
       ui.countryModal(FQ.quiz.byCode(t.getAttribute('data-code')));
+    });
+    ui.$('#export', m).addEventListener('click', function () {
+      ui.$('#export-out', m).innerHTML = '<textarea class="text-input" id="export-text" aria-label="기록 백업 JSON" readonly rows="8" style="width:100%;font-family:monospace;font-size:.8rem"></textarea>';
+      var output = ui.$('#export-text', m);
+      output.value = FQ.storage.exportJson();
+      output.select();
     });
     ui.$('#reset', m).addEventListener('click', function () {
       if (global.confirm('스티커 판, 레벨과 경험치, 배지, 오답노트, 놀이 기록을 모두 지울까요?\n되돌릴 수 없어요.')) {
