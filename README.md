@@ -181,6 +181,7 @@ npm test
 
 - 국기 이미지: [lipis/flag-icons](https://github.com/lipis/flag-icons) (MIT License)
 - 세계지도: [Natural Earth](https://www.naturalearthdata.com/) 50m admin_0_countries (퍼블릭 도메인). 원자료는 저장소에 넣지 않고 `npm run map:fetch`로 받아 `npm run map:build`로 변환합니다. 결과는 `data/map-coords.js` · `data/map-shapes.js` 두 파일입니다.
+- 상징물·명소 그림: TechJuiceLab · OpenAI 내장 image_gen으로 생성한 AI 삽화. [제작 출처·검수 및 원본 보존](docs/image-prompts/PROVENANCE.md), [현재 작업 상태](docs/expansion/STATUS.md)를 확인하세요.
 - 음성: AI 가상 연기자 서비스 [Typecast](https://typecast.ai), Sua(수아).
   생성 음원에는 이 저장소의 MIT 라이선스를 적용하지 않습니다.
   API Free로 생성한 음원은 [Typecast API 이용약관](https://help.typecast.ai/en/articles/11872662-typecast-api-terms-of-use)의 비상업적 사용·출처 표시 조건을 따릅니다.
