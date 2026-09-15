@@ -36,6 +36,96 @@
       }
     },
     {
+      "id": "ae-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/ae-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-2735b0f9-8e1f-4995-817a-5fd0d10630cd.png",
+      "sourceSha256": "e15d7fe717a3b5e093da6d77074e05d4733ebfd4e34f54f82c1286b75a374792",
+      "output": "images/symbols/ae.webp",
+      "outputSha256": "9cf53c7c3e06900e9b178c3f485a5008ffe9844a4dfad890e79ed35a44670e90",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/ae-symbol-01.txt",
+          "sha256": "ac5127915a0624c63e1b09f140430a950478700d70ef8d6dfebc24ec7a0ef153"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "달라 1개, 뚜껑·부리 주둥이·손잡이. 금속 하이라이트가 강해 무광 요구는 추가 검토 대상.",
+        "independentReview": "/root/map_geometry_review"
+      }
+    },
+    {
+      "id": "af-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/af-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-170b4542-5678-4674-9881-46baaa333b29.png",
+      "sourceSha256": "d7b8e4352d5e316475387553ac01eb0edd8116d7cc51d2950827ef0fc713f6f1",
+      "output": "images/places/af.webp",
+      "outputSha256": "0e9d7278c1ea9fd9a102e2a5f4275febcd30134d8630ca18173b88ffe6a747b6",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/af-landmark-01.txt",
+          "sha256": "d2162c1f0da5c67e3b3e5e0271f933bf2469eead9d0291d9ccdcab4d9c9221f7"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "단차 있는 푸른 물·흰 석회 테두리·붉은 절벽. 단순화된 경관이며 실제 지형 배치의 정밀 검증은 미실시.",
+        "independentReview": "/root/map_geometry_review"
+      }
+    },
+    {
+      "id": "af-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/af-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-22981bd0-4e85-41a7-ae97-8013c24ca2db.png",
+      "sourceSha256": "e61f1248a8424766bc97bc383773ed9e65496046d377c292d1b1ce00966a808c",
+      "output": "images/symbols/af.webp",
+      "outputSha256": "3b61a641319af1d981480a3b268362f72c0fc0ad63a76afe78308f43c01a7243",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/af-symbol-01.txt",
+          "sha256": "ffb78f3a3d3a35899d27fbcc092534b95f26e17b6d008d26cd32684ed47a4aaf"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "석류 1개를 2쪽으로 표현, 붉은 씨와 크림 막. 글자·사람·국기 없음.",
+        "independentReview": "/root/map_geometry_review"
+      }
+    },
+    {
       "id": "ag-landmark",
       "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/ag-landmark.png",
       "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-dcf74e6d-8b34-4534-8b27-898ca709dbf6.png",
@@ -161,6 +251,36 @@
         "originalAndWebp": true,
         "notes": "초안 갈색 몸통을 편집 재생성해 검정 쌍두 독수리로 수정. 머리 두 개·발 두 개 확인. 초안 보존.",
         "independentReview": "/root/map_tests"
+      }
+    },
+    {
+      "id": "am-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/am-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-a43a13ed-6433-4b14-9f79-1eda0e0cf4fe.png",
+      "sourceSha256": "291a3e740294e063143510e428c6e0bdaff71d456e3f1e52b62f589c02938512",
+      "output": "images/symbols/am.webp",
+      "outputSha256": "eae6fb97c7a6728142598d9ae43cc86b880d552c5dfd3698027ce8fc32d5243f",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/am-symbol-01.txt",
+          "sha256": "0810d820001aefc4966cc481f31d31eff75d9b3427c2f91dc168982fded85dec"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "살구 2쪽과 씨 1개, 주황 껍질·붉은 볼. 복숭아와 어린이 구별 실측 미실시.",
+        "independentReview": "/root/map_geometry_review"
       }
     },
     {
@@ -366,6 +486,76 @@
       }
     },
     {
+      "id": "az-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/az-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-e8c19b96-4f8c-4443-aa23-8016b1b3179c.png",
+      "sourceSha256": "ea4b0f2591b778f76d90392192c399534057a6c862eab442a2fd38a138f80359",
+      "output": "images/places/az.webp",
+      "outputSha256": "6eea6b44bf0d358e0309425b1e8fbfcd4f26f5184681c4b7fecc93b7cda6b73e",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/az-landmark-01.txt",
+          "sha256": "2cd1c5517dbba1fffb675a45633cb25391546b59799aa830fcd98c28835d7f79"
+        },
+        {
+          "attempt": 2,
+          "path": "docs/image-prompts/generation-prompts/az-landmark-02.txt",
+          "sha256": "0f4337d4fc1a21ea2137db3b8f415071fe884740469504ef124b8d144a1831da"
+        },
+        {
+          "attempt": 3,
+          "path": "docs/image-prompts/generation-prompts/az-landmark-03.txt",
+          "sha256": "caad73e636a0c96414126f250cbb653a54ce4c8148a79a32cd239d2475c2349b"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "공식 관광청 사진과 대조한 평평한 연속 난간·하나의 원통·상단 수평 띠로 수정 확인. 톱니/추가 탑 없음. 넉넉한 여백 확보.",
+        "independentReview": "/root/map_geometry_review"
+      }
+    },
+    {
+      "id": "az-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/az-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-c0fb7d7c-d086-4185-99e2-00a41adc4c1c.png",
+      "sourceSha256": "902875756564723f213e5d22c8c942949c5da0cbdb979772774a0519c9fde41a",
+      "output": "images/symbols/az.webp",
+      "outputSha256": "25fe3db8d7dd0b5cf6ffc4261f26142218be00d3b856dfef0ebb751fa1b68862",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/az-symbol-01.txt",
+          "sha256": "69e28724c0c6cb65df0ff682b333f162ebe1b442c0f76caa403c6c232013472c"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "주요 불꽃 3개·노랑 중심·파랑 바닥·회색 돌. 연기/피해/사람 없음. 불꽃 높이는 요청보다 커 추가 구도 검토 대상.",
+        "independentReview": "/root/map_geometry_review"
+      }
+    },
+    {
       "id": "ba-landmark",
       "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/ba-landmark.png",
       "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-cb80-7703-b3d1-e560ba46c927/exec-854b9c3c-e44f-48b2-99e0-f2f609b9d953.png",
@@ -489,6 +679,66 @@
       }
     },
     {
+      "id": "bd-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/bd-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-dcdc98c7-199e-42ff-8629-4589520beabb.png",
+      "sourceSha256": "2d36a51787902131db94c55b0da3f7e528c716dc57dd0f54dc90c04d989013ab",
+      "output": "images/places/bd.webp",
+      "outputSha256": "14561084cf7f4a8c4b66affb73d1fddf06d3476d3d2ee77b286dff82e3875cc2",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/bd-landmark-01.txt",
+          "sha256": "dcd30bb67e4a42eb4e0760c51e69db3eb8a2addda21608b629b3d5ffd4bfda59"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "맹그로브 3그루, 드러난 아치형 뿌리, 진흙·조수 수로 확인. 경관 외 캔버스 단순, 금지 요소 없음.",
+        "independentReview": "/root/map_geometry_review"
+      }
+    },
+    {
+      "id": "bd-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/bd-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-30e4b894-d8b9-4dac-b018-e0a3e50350bd.png",
+      "sourceSha256": "c2eb7e269950fb6f33a1b7b17faec03aaf9f17f865e9261f35726e05c83cb906",
+      "output": "images/symbols/bd.webp",
+      "outputSha256": "1bb4ace3ceb1b16f8746c8da79eace8215f1cd58838fe2a4a346ef3afaff33b7",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/bd-symbol-01.txt",
+          "sha256": "11bab457a877141b48e94edaacb627a5abd1857445b538fb23215b1d279c5b47"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "호랑이 1마리, 발 4개, 주황/검정 줄무늬, 흰 주둥이/배, 긴 꼬리. 글자/사람/국기 없음.",
+        "independentReview": "/root/map_geometry_review"
+      }
+    },
+    {
       "id": "be-symbol",
       "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/be-symbol.png",
       "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-cb80-7703-b3d1-e560ba46c927/exec-7fd0e3fa-d394-442c-aae5-8b747649581f.png",
@@ -576,6 +826,126 @@
         "originalAndWebp": true,
         "notes": "분홍 장미 한 송이와 녹색 잎 두 장 확인.",
         "independentReview": "/root/map_tests"
+      }
+    },
+    {
+      "id": "bh-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/bh-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-384754bb-0c53-428d-ae03-ec49b5c9c655.png",
+      "sourceSha256": "962a3a45cd56b892ee517e5ebf5028df716f7eb438da3c9b81640d57cdd9581e",
+      "output": "images/places/bh.webp",
+      "outputSha256": "1059a1dc4ef01957bc4475a89974af3442393ec5e401a2e07292990ce2127ea0",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/bh-landmark-01.txt",
+          "sha256": "537286f2c41c10024da8a69d787c9ffed781d658898ec9c751a74d3d87e419c1"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "생명의 나무 1그루, 뒤틀린 굵은 줄기·낮게 펼쳐진 가지·작은 모래 바닥. 좌우 여백이 12%보다 좁아 구도 규격 재검토 필요.",
+        "independentReview": "/root/map_geometry_review"
+      }
+    },
+    {
+      "id": "bh-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/bh-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-04d42038-ad15-407a-b031-fb399d870c4c.png",
+      "sourceSha256": "8e9563501bc37b3bdee25a4423b660744253d0c67533f647289d378b56490534",
+      "output": "images/symbols/bh.webp",
+      "outputSha256": "cbd0e44d78ce4e304c41873b516b535f243a3c7588dafca12e7246d2804c9a41",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/bh-symbol-01.txt",
+          "sha256": "4f3f5b4b15900ce09e5653c25fce4e00fbc654a60cdc9f1efa1d98fcc7a19dd3"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "진주 1개, 아이보리·핑크 기운·구형. 글자/사람/국기 없음.",
+        "independentReview": "/root/map_geometry_review"
+      }
+    },
+    {
+      "id": "bn-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/bn-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-b9fd8a67-84f4-40a8-a48d-c124015fc456.png",
+      "sourceSha256": "e5ec3814f164a9be6ec294e7d4a59aa4648393944ff4e8ba58564b2390d27417",
+      "output": "images/places/bn.webp",
+      "outputSha256": "1c2b3904b6a94536ce3b12900c9ac658c6b6f1327606b2768b1a2cbe46d781a5",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/bn-landmark-01.txt",
+          "sha256": "3b3d86abbba78f88d9254b73ab7f5bd9253a6db7df34f18509196b0a74eb5ad3"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "수상 가옥 정확히 3채, 말뚝·보행로·푸른 물. 좌우 여백이 좁아 구도 규격 재검토 필요.",
+        "independentReview": "/root/map_geometry_review"
+      }
+    },
+    {
+      "id": "bn-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/bn-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-46344bb2-8c80-4329-8e74-98ea752d9223.png",
+      "sourceSha256": "ddfc25ef55d50525b581ee92d068d44922600765288b62e58a330f774c2ee6c0",
+      "output": "images/symbols/bn.webp",
+      "outputSha256": "66c86009dc3dd39f21367ae4c00bf633b96a298e4e84975f407b202930ab3133",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/bn-symbol-01.txt",
+          "sha256": "c6826319696ff0c7f7a4865d43c6eff9cee713a290d74f351d9dce3a6d147290"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "왕실 양산 1개, 노랑 금색·술장식·중앙 기둥 1개. 상단 여백이 좁아 구도 규격 재검토 필요.",
+        "independentReview": "/root/map_geometry_review"
       }
     },
     {
@@ -721,6 +1091,66 @@
         "result": "accepted",
         "originalAndWebp": true,
         "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "bt-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/bt-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-5c79a365-9d85-4d92-b069-0cbbeea51611.png",
+      "sourceSha256": "1745f002fd4d15c3fef5bb7350c1b2b9ab25c89b2b3693c84f84ae1414a4fe3a",
+      "output": "images/places/bt.webp",
+      "outputSha256": "432c28d2f9e123b952246489ad2b4bec9ca7d87dcc624ce9d49980606748c9a8",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/bt-landmark-01.txt",
+          "sha256": "efbe75d862447635beb6ff9cb30d94f850e8cc2445d58b5337d79a23d8fb9ac2"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "절벽 위 흰 벽·붉은 띠·금빛 지붕 외관, 사람/성상/글자 없음. 상단 여백이 좁아 구도 재검토 필요.",
+        "independentReview": "/root/map_geometry_review"
+      }
+    },
+    {
+      "id": "bt-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/bt-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-411671e3-ac81-4479-8d2a-34a4e4570bb5.png",
+      "sourceSha256": "1f6f04353edb6d889b412e8a77fe739a4b8397f962fe48d3bc5b3d060f6b2191",
+      "output": "images/symbols/bt.webp",
+      "outputSha256": "f04d81a84364495e15b5888a134afefdcca957b80a07fc665535aadcd65a3af0",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/bt-symbol-01.txt",
+          "sha256": "2ea1134237e736e1decad8a5b539a6024d864aa30c7718a2730e18811faf54b3"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "흰 용 1마리, 다리 4개·긴 굽은 몸·뿔·갈기. 실제 국기 도상 복제 여부나 어린이 구별 실측은 미실시.",
+        "independentReview": "/root/map_geometry_review"
       }
     },
     {
@@ -995,6 +1425,71 @@
         "result": "accepted",
         "originalAndWebp": true,
         "notes": "잘린 줄기 끝을 복원한 2차 그림. 꽃과 잎 전체를 보존."
+      }
+    },
+    {
+      "id": "cn-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/cn-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-468c34ae-23ac-44bc-bd51-300cc8c3b036.png",
+      "sourceSha256": "b34587a37fa552b02b868b746b487aee2a6106dad2729e0b2c4558a0ff5bfd5f",
+      "output": "images/places/cn.webp",
+      "outputSha256": "abe50a5be9162719bf47b58d338c7f7031408f130f7d879bc8e7bab929c9ab86",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/cn-landmark-01.txt",
+          "sha256": "ba856b9754a3490af3ae45ce9abfc09b9d1a80d640a1a3f3f8a5168a9b83cffa"
+        },
+        {
+          "attempt": 2,
+          "path": "docs/image-prompts/generation-prompts/cn-landmark-02.txt",
+          "sha256": "a0ba14ca4b85c527b06fcb0cac74cea92ecbf2568acfd5594edf1622e4d6b94b"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "기존 B 수정 시안 재사용. 회색 돌의 굽은 성벽과 큰 아치문이 있는 망루 1개, 산 배경 없음. 먼 끝의 높아진 성벽 마감은 작은 탑처럼 인식될 여지가 있어 교차검수에서 확인할 것.",
+        "independentReview": "/root/map_geometry_review"
+      }
+    },
+    {
+      "id": "cn-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/cn-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-b543506f-6f46-407c-bbde-a3403f65fa99.png",
+      "sourceSha256": "341308a58e3fa276d9c8b2806ec9e4c40e49a3797b4ca248642aa2174ebada2c",
+      "output": "images/symbols/cn.webp",
+      "outputSha256": "3e12e5a52d3f3fbe37aeef8397d760806fcbc985056001096f4722c9c8ce706e",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/cn-symbol-01.txt",
+          "sha256": "c2b05de2f214a7d9bb31382b334b6b5a51b978c66545c772124630c9f2611faf"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "기존 B 비교 시안 재사용. 판다 1마리와 대나무 줄기 1개, 흑백 무늬·둥근 귀·앉은 전신 확인. 글자·사람 없음.",
+        "independentReview": "/root/map_geometry_review"
       }
     },
     {
@@ -1915,6 +2410,66 @@
       }
     },
     {
+      "id": "ge-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/ge-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-ecc31fe1-6e10-4f89-b918-994ea202892b.png",
+      "sourceSha256": "4e6fe9838f74dba28d774d7837e0ec83c34a0244659b5e01d5eed660e53ead4c",
+      "output": "images/places/ge.webp",
+      "outputSha256": "caef2d35437c2148e7d432df735e8fd5f92ec82253c1244ea377eddcfe624068",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/ge-landmark-01.txt",
+          "sha256": "f47a4f54ef0410c5381f9b3a7e0a2527b742281756a9f4b264773ea59a6bce95"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "교회 외관·원추형 지붕·잔디 언덕·눈산 확인, 인물/성상/의식 없음. 실제 단지의 종탑도 함께 나타나 세부 건축 정확성 검수 필요.",
+        "independentReview": "/root/map_geometry_review"
+      }
+    },
+    {
+      "id": "ge-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/ge-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-0e87c736-4de8-4960-958f-30a7d6e95591.png",
+      "sourceSha256": "4a8f35d8f9ffeca806d75c245aabb708be115ecaca8bf285123dc012ab862714",
+      "output": "images/symbols/ge.webp",
+      "outputSha256": "bf3556a1ac42fd9bb75783b8207e9e1b3b28deb28c3a6035b4471986da2f88c4",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/ge-symbol-01.txt",
+          "sha256": "e64863f0056ae8c53ffad77cce67407b0ff543ec8f60268892e445b2317cea88"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "추르치헬라 1줄, 포도색 붉은 코팅·호두 돌기·짧은 매달림 실. 글자/사람 없음.",
+        "independentReview": "/root/map_geometry_review"
+      }
+    },
+    {
       "id": "gr-landmark",
       "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/gr-landmark.png",
       "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-cb80-7703-b3d1-e560ba46c927/exec-8df2ba3b-7b51-4b74-9df7-d08c5b298b92.png",
@@ -2274,6 +2829,66 @@
       }
     },
     {
+      "id": "id-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/id-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-7f74caae-d00c-4074-90a6-1a5adb878b32.png",
+      "sourceSha256": "bb89aec0c4521d702120b887cc1c7231d04e329813a0ef12419be89d0bf5f44a",
+      "output": "images/places/id.webp",
+      "outputSha256": "54a4c6aaeb9a135499f5c084580bb0bfdc0f147e05fff09c973e58a2d089d034",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/id-landmark-01.txt",
+          "sha256": "0775f195f99ac522c0ee289eaaf529b3d7c3cd8c1d152044ef3efcc3f1da8e99"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "큰 중심 스투파와 타공 종 모양 작은 스투파·3단 원형 상부 확인. 성상/글자/사람 없음. 좌우 여백이 좁아 규격 재검토 필요.",
+        "independentReview": "/root/map_geometry_review"
+      }
+    },
+    {
+      "id": "id-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/id-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-47325457-a0a1-4887-b12e-cfa531c33416.png",
+      "sourceSha256": "587a104296c3444d0b8ef7773624d5c01d34659630b01d0fb8966dd784931f96",
+      "output": "images/symbols/id.webp",
+      "outputSha256": "ad7cf2f8b875fb03dfa5b7e53a946fae2ec6e427edd749deae114ce7dce32f0b",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/id-symbol-01.txt",
+          "sha256": "5d8f1237323850504620550b31d4a8378f69e7995ad8cec8736fa8fdfa1c4b84"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "코모도왕도마뱀 1마리, 4다리·갈회색 비늘·긴 꼬리 확인. 오른쪽 꼬리 여백이 좁아 구도 재검토 필요.",
+        "independentReview": "/root/map_geometry_review"
+      }
+    },
+    {
       "id": "ie-landmark",
       "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/ie-landmark.png",
       "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-cb80-7703-b3d1-e560ba46c927/exec-8a7b14b9-cc9d-4c76-a373-c1f70c70c864.png",
@@ -2331,6 +2946,251 @@
         "originalAndWebp": true,
         "notes": "하트 모양 소엽 정확히 세 개와 하나의 줄기 확인.",
         "independentReview": "/root/map_tests"
+      }
+    },
+    {
+      "id": "il-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/il-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-ae3adee0-2ff0-44ec-b7af-61c5ec0bd2ca.png",
+      "sourceSha256": "21707c6cec3dba97aabc7cfa0237e83a9ee35a4f118a2f1810c4c1106b606541",
+      "output": "images/places/il.webp",
+      "outputSha256": "d564e27e378c032611524efbfd2c680c96fc428fd66c3340f22fd61d6861bc32",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/il-landmark-01.txt",
+          "sha256": "1d56832a0b35c6e523955cfa5357513d6fc759e2873ba6a5a8e1e7329a2e0e7d"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "황토색 평평한 마사다 고원·굽은 오르막길·멀리 푸른 물. 소금 해변/사람/글자 없음.",
+        "independentReview": "/root/map_geometry_review"
+      }
+    },
+    {
+      "id": "il-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/il-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-6d7b7cef-7bf0-43c5-94e1-b017d6896a2a.png",
+      "sourceSha256": "655b4b399a9c367f2ce8dd2006080f58abfa2a4ac55f985d96470353e5e6377c",
+      "output": "images/symbols/il.webp",
+      "outputSha256": "0bc8f5766c74139d702f5f46636ff1280c49e56e4ea68ca6f2c01b639e74c3d5",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/il-symbol-01.txt",
+          "sha256": "b2f94db2246a8dcce49561bc6dad39dad3b16ad276839483f96de879bc5fd96d"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "흰 입방체 소금 덩어리 무더기, 옅은 파랑 음영. 글자/사람/국기 없음.",
+        "independentReview": "/root/map_geometry_review"
+      }
+    },
+    {
+      "id": "in-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/in-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-17f62dca-4e8d-4d31-951e-e04c5fc5692c.png",
+      "sourceSha256": "d34dc8a608713d121d7d6d5422d8712e123db2ff62dd6ee03eb0ac2b6ac02fbe",
+      "output": "images/places/in.webp",
+      "outputSha256": "08029a890b2de1d93f16a74f4a9960af4222619d7208306f25571e7e3fa3f290",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/in-landmark-01.txt",
+          "sha256": "2bd181f7b485db2a49763fc7d66fa31c3cbc539c9d548ac39f7c4e765e174db5"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "타지마할 큰 중앙 돔·분리된 미나레트 4개·작은 옥상 돔. 외관·글자/사람/성상 없음.",
+        "independentReview": "/root/map_geometry_review"
+      }
+    },
+    {
+      "id": "in-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/in-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-a2a74490-6943-4517-8b2d-0dc8e2f45470.png",
+      "sourceSha256": "b87f41d00ed413c3da2c9e8dc077343b25b0a54c40ca68834353b84ccf2435ad",
+      "output": "images/symbols/in.webp",
+      "outputSha256": "8ffb6c6ba50772588968e4cf7671c98947dbe209ae99a665d7980471c071f0fb",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/in-symbol-01.txt",
+          "sha256": "d39353756fabf66d13cb9c3fbad55842845a58f77b60efbaf9a0d63a6721f8c0"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "공작 1마리, 푸른 목·초록 부채 꼬리·눈무늬·벼슬, 발 2개. 상단 여백 좁음.",
+        "independentReview": "/root/map_geometry_review"
+      }
+    },
+    {
+      "id": "iq-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/iq-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-00df554a-ee9c-40aa-b811-8081a7e1fd2b.png",
+      "sourceSha256": "53495e2889548c5bd9b9387363b7d0608143f39fd819f9bfb2fd13afd2a969bb",
+      "output": "images/places/iq.webp",
+      "outputSha256": "839ac3b6d3d877b3d57731a40acffd19cb2c8f39915a01baf298839ffcc63ee4",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/iq-landmark-01.txt",
+          "sha256": "b2222e5ab6e3dfa97d942d48e6b28378e32b6984a11e8731f13aefb86ff7a641"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "파란 문·양쪽 사각 탑 2개·아치 1개·금빛 황소와 용 부조. 사람/현대 문자 없음.",
+        "independentReview": "/root/map_geometry_review"
+      }
+    },
+    {
+      "id": "iq-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/iq-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-c5228c30-b6a3-4ecd-8e44-df6e2c0d97ad.png",
+      "sourceSha256": "8bc684a8ca9c6da5dc07d70d31872b1f143bb254d2a391e2e915aa363e40c37b",
+      "output": "images/symbols/iq.webp",
+      "outputSha256": "6581d1bf75b7332b816cbcb9c0a8fef862a08ae6d530c362d1ac98e6874ec10e",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/iq-symbol-01.txt",
+          "sha256": "acc2dc18a4825d604fffe0139a8dc9ce13d9eec755101a8b8d3eea55d366e214"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "점토판 1개에 크게 확대된 쐐기/삼각 도장 자국. 현대 글자·숫자 없음; 실제 쐐기문자 판독 검증은 하지 않았으며 문장 재현용이 아님.",
+        "independentReview": "/root/map_geometry_review"
+      }
+    },
+    {
+      "id": "ir-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/ir-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-a9dbac90-cef1-4ba0-8dc4-431a875cf357.png",
+      "sourceSha256": "27155973f079136798b4f80cf4ade925e36bf3131c2bcb580308854b8dabcea0",
+      "output": "images/places/ir.webp",
+      "outputSha256": "eeebf2be378d577927aff7af351b3f613d435e2ecc04bc308b6fe01f79b5ec86",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/ir-landmark-01.txt",
+          "sha256": "86647b129d0f3f3185922b55098bcb9ca9b82c75f16d9b1176761102a7136f2c"
+        },
+        {
+          "attempt": 2,
+          "path": "docs/image-prompts/generation-prompts/ir-landmark-02.txt",
+          "sha256": "df086c278689ef6b6194388adb399e1bf5a3e088163ee3fdf39a8950c3d2363e"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "기둥 정확히 2개, 각 기둥에 양방향 황소 머리 한 쌍. 양 기둥 전체·사이 간격 확인. 글자/사람 없음.",
+        "independentReview": "/root/map_geometry_review"
+      }
+    },
+    {
+      "id": "ir-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/ir-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-d48d3da9-dd06-4eb6-9524-9931fc363748.png",
+      "sourceSha256": "3a34a93d6c1a768b61fc2cd7234b947acc337fd7c72d14e9bd56120fa8a35f86",
+      "output": "images/symbols/ir.webp",
+      "outputSha256": "723ef9f9ff2b98df35d9b25058f4334b5f2da2a044d22e3b3612cc832831921a",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/ir-symbol-01.txt",
+          "sha256": "f39117405de612cbab1724c09f2491b892318bb2d0b8ce24008577baddad2aef"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "양탄자 1장, 빨강 바탕·파랑 중앙무늬·크림 테두리·양끝 술. 글자/인물 없음.",
+        "independentReview": "/root/map_geometry_review"
       }
     },
     {
@@ -2518,6 +3378,221 @@
       }
     },
     {
+      "id": "jo-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/jo-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-330145fb-b4bf-43e1-b940-a7bc1ae1b50d.png",
+      "sourceSha256": "fef118484bc23da0ba1736849ecdcf9ef19dd8c8f85fec083dd6f965951f2832",
+      "output": "images/places/jo.webp",
+      "outputSha256": "329b4eca0302e38218cf859380a1c88f3d486571576ba9f5d2db73ab9bed6081",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/jo-landmark-01.txt",
+          "sha256": "e257337ac5f62dd38a1511fa8bdbf22899288e33bb955b7194fc7b56fbbf08b3"
+        },
+        {
+          "attempt": 2,
+          "path": "docs/image-prompts/generation-prompts/jo-landmark-02.txt",
+          "sha256": "6696c6128343180aa4042962e2ebd72d95859fc140cecb36ca87f55b49e28cb0"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "하단 좌우 성상 같은 조각 삭제·빈 받침 확인. 하단 기둥 6개 유지, 전체 절벽 여백 확보.",
+        "independentReview": "/root/map_geometry_review"
+      }
+    },
+    {
+      "id": "jo-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/jo-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-4182c9dd-7ee5-4367-82fe-5ad450bbe3b5.png",
+      "sourceSha256": "a25ab85ebd421358e36bdf2a62993fd534ce34d3e613256e5bb46ae8637703cb",
+      "output": "images/symbols/jo.webp",
+      "outputSha256": "5b8d941ed2f0988e3338bdf522f00931ec5fa392a6d0a9a255c1fa80e68bfab4",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/jo-symbol-01.txt",
+          "sha256": "725dd936d0cf09d9f78f7d7eb0ebf07b87b6c812b643f1c1f70f0a3b1d4d1385"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "짙은 보라 붓꽃, 위 꽃잎 3개·아래 3개. 글자/사람/국기 없음.",
+        "independentReview": "/root/map_geometry_review"
+      }
+    },
+    {
+      "id": "jp-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/jp-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-223d4542-1582-49ba-8a23-7339589231ca.png",
+      "sourceSha256": "2ce0d137394af2eef8b8f0aaaa5fc513ce0395201565b45b5231cf0e9a124fb4",
+      "output": "images/places/jp.webp",
+      "outputSha256": "65f4282d1bb6e97c32f2e5164d4947bfacfb8f04aa9cdef8a7bfe46dcd327e60",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/jp-landmark-01.txt",
+          "sha256": "f8b16c4ce194d882f1f2f8a53e4c3d29bc7c394031543a52b4a80de8443e4222"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "기존 parent 생성물 재사용. 후지산 단일 넓은 원뿔, 작게 평평한 정상과 흰 눈·파란 사면 확인. 태양 원판·탑·글자·사람 없음.",
+        "independentReview": "/root/map_geometry_review"
+      }
+    },
+    {
+      "id": "jp-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/jp-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-1bec413d-9692-467c-807a-88863feedaa7.png",
+      "sourceSha256": "7736f6dab38117ad627d473f9420327941cf6a399992db8c73a23dcd67749e88",
+      "output": "images/symbols/jp.webp",
+      "outputSha256": "606cb0aee18225b1b23762c0eeef1b9af61fd9444d2410753ad402e9f7afdd1b",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/jp-symbol-01.txt",
+          "sha256": "6732708226aaf8adeed9518c59df639dbdf3fe32f782c2d0d2817f0c3f278d99"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "기존 parent 생성물 재사용. 벚꽃 3송이, 각각 끝이 갈라진 꽃잎 5개, 분홍 봉오리 2개와 짧은 가지 확인. 글자 없음.",
+        "independentReview": "/root/map_geometry_review"
+      }
+    },
+    {
+      "id": "kg-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/kg-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-75c02971-374c-4592-aebc-c1116e8078e6.png",
+      "sourceSha256": "d58904fa338c456ac66673f385d2ddbf85b3a3d37312226ff95158b9b7b81aa3",
+      "output": "images/places/kg.webp",
+      "outputSha256": "1db4928b9f21ff9ffcd908125d656c6270ee507f6eee5a38f2798b4422b10bfd",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/kg-landmark-01.txt",
+          "sha256": "b57feb515ae7aa7170e4d314f7e2ae3c52266aabacf58e7213f69175a61f4e15"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "푸른 넓은 호수·눈산·자갈 해변·말 정확히 2마리. 말이 요청의 small보다 커서 호수 중심성 추가 검토 필요.",
+        "independentReview": "/root/map_geometry_review"
+      }
+    },
+    {
+      "id": "kg-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/kg-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-2680ec02-9137-4d4c-976b-7ce9afdc12bf.png",
+      "sourceSha256": "59098713ea41a240c6ce972c6399acc98ca93753b29352dc96bcd10bf484b1c0",
+      "output": "images/symbols/kg.webp",
+      "outputSha256": "bfebd9b1a0f0b827de022b47ea260d3aeae2ea063fd87bf35e700063cda58ea9",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/kg-symbol-01.txt",
+          "sha256": "c0ef7397d8eaed107a4969e03cc29c94db79f427facc469f825efe6e08a36fea"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "눈표범 1마리, 회백색 두꺼운 털·검은 점·매우 굵은 꼬리·눈바위. 얼굴이 순한 어린 개체로 단순화됨.",
+        "independentReview": "/root/map_geometry_review"
+      }
+    },
+    {
+      "id": "kh-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/kh-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-b77fde5b-5e73-469c-9a92-bc8022b39f71.png",
+      "sourceSha256": "a54bfea9a8a044716698fc1c0472776625f796e1e0b3b85e8581ceb101662d22",
+      "output": "images/symbols/kh.webp",
+      "outputSha256": "45f195688f5b30e9fe736b46fcac52ce68c165b9fbe5b2c20de21b2b2c35c229",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/kh-symbol-01.txt",
+          "sha256": "22ac37b6559694de623019890ccf08d6a0022847aa41640d4422c182032868f9"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "앙코르와트 높은 주요 탑 5개 확인, 외관만·성상/글자/사람 없음. 좌우 여백 미달.",
+        "independentReview": "/root/map_geometry_review"
+      }
+    },
+    {
       "id": "ki-landmark",
       "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/ki-landmark.png",
       "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-873ae4ce-22f8-4d0a-b214-3224c128c601.png",
@@ -2602,6 +3677,336 @@
         "result": "accepted",
         "originalAndWebp": true,
         "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "kp-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/kp-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-51635590-fdc3-4e3e-8583-8620e0ad6f4d.png",
+      "sourceSha256": "2814d70e1a68bea279d6c55759b64c8be1c6b9289d75594db4b1b8278f1190f1",
+      "output": "images/places/kp.webp",
+      "outputSha256": "7f1a92a7fc836a5de97b2acb02b4fbcf00aec71df7b1f0f74a9b49326cf395e6",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/kp-landmark-01.txt",
+          "sha256": "a0c25a1627ba3b756d07728a6f2529006bc64c586979f76692c5fae9407d10ad"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "푸른 타원형 천지·주위 회색 화산 능선·눈 조각. 정치/사람/글자 없음, 좌우 여백 미달.",
+        "independentReview": "/root/map_geometry_review"
+      }
+    },
+    {
+      "id": "kp-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/kp-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-cf4cdbb8-fb3f-4206-b69a-192185907126.png",
+      "sourceSha256": "d19ef9a8b673e39dc547a66df8a8e693a7d211a322e7e054cec586363ff3f827",
+      "output": "images/symbols/kp.webp",
+      "outputSha256": "18e8ff9a9f8f08c24f3ac3d0bbb20d5d7d96ac1f27fa5ab22b2e7e4abc0a09f6",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/kp-symbol-01.txt",
+          "sha256": "373f951539a3680e18519dccad754ef1326da91ddd2cb3bc5a580134350630c1"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "흰 목란 꽃 1개·붉은 수술·짧은 가지·초록 잎 2개. 글자/사람/국기 없음.",
+        "independentReview": "/root/map_geometry_review"
+      }
+    },
+    {
+      "id": "kr-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/kr-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-9631a63c-8d0e-4fd5-9a93-89e512a3fb84.png",
+      "sourceSha256": "0fa98dc9da21a39d07d7aae9ad1fda3763449423ef984a1e64744851a560285e",
+      "output": "images/places/kr.webp",
+      "outputSha256": "cc0f3040b4ff4a487ba4fa74add7059a04707e9d7b601f34860bc379d16f8a69",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/kr-landmark-01.txt",
+          "sha256": "4203fe69b96be9a95505b114a000499b978ad0e5072755c069d93bf199518cbc"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "기존 parent의 임시 앵커 재사용. 광화문 흰 석축과 아치문 3개·청회색 2층 기와지붕·초록 단청 확인. 현판 문자·사람 없음. 최종 사람 앵커 승인과는 구분.",
+        "independentReview": "/root/map_geometry_review"
+      }
+    },
+    {
+      "id": "kr-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/kr-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-48f52b1f-763c-4aca-ab20-1253313e507b.png",
+      "sourceSha256": "e6bb9babe5833845455b49311211ca31d6682001fd7580c0c7f63968534583cd",
+      "output": "images/symbols/kr.webp",
+      "outputSha256": "9519588a566fed64b5c3a4e90d1ebaf868d808de5632446325cc6f5a01bfbb88",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/kr-symbol-01.txt",
+          "sha256": "e8f0f5add15a12d1a46b22ab76e2f95fc367014d1eaa70bc1e831d7644822915"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "기존 parent 생성물 재사용. 김치 1접시, 두꺼운 흰 배추 줄기와 주름진 잎·붉은 양념 확인. 글자·식기·손 없음.",
+        "independentReview": "/root/map_geometry_review"
+      }
+    },
+    {
+      "id": "kw-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/kw-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-c2f067ad-3f7f-48c5-b1b3-0708b9cb07fe.png",
+      "sourceSha256": "9f90292801e1b090e68c6c07cba4c4efaa14a51caaa2e424fd68e3e8468b17ef",
+      "output": "images/symbols/kw.webp",
+      "outputSha256": "6eb23728ff1f49570054d7052b09d3781b2c8037347d11ce6dc4b1b01a82b39a",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/kw-symbol-01.txt",
+          "sha256": "61a47eaa6e4448bedadbd70f88a30b15ace4154e2fca61e8c31d79814e72f957"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "다우 1척, 목재 선체·돛대 1개·삼각 크림 돛 1개. 글자/사람/깃발 없음.",
+        "independentReview": "/root/map_geometry_review"
+      }
+    },
+    {
+      "id": "kz-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/kz-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-af87f5cf-2b2d-414d-b93f-aeab8161c94b.png",
+      "sourceSha256": "0b1bb9909cd2ff4194bf91a7c0ba276ae7ab2fa44b69319c9dd8ef05ab5ade2e",
+      "output": "images/places/kz.webp",
+      "outputSha256": "c15a7a4d2d407180934890870882596212b6f0c9941d6f728139460df219d7ae",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/kz-landmark-01.txt",
+          "sha256": "b2d75f649f603f9c9711d47236f1795599b41b457a2064e6f16b251e258ac52a"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "베이지 벽돌·청록 골 있는 돔 1개·큰 아치 입구. 외관만·문자/사람/성상 없음.",
+        "independentReview": "/root/map_geometry_review"
+      }
+    },
+    {
+      "id": "kz-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/kz-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-ce31e63f-8195-433c-8db5-aa8fbe04ec46.png",
+      "sourceSha256": "b004cd2e3cf8be44c23fd7fa3c0928e4d0d1120d471d07e0d2af229c97f183a3",
+      "output": "images/symbols/kz.webp",
+      "outputSha256": "30d251c4052d2bcc110a664b3416ddce71faa5cc1ba7b917ffd328f5779c7ab9",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/kz-symbol-01.txt",
+          "sha256": "5c714ed64b0134965cd3b9296013f2a256d4e0bbbdd43abc525fad1b75dc88f7"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "사과 1개, 빨강·노랑 초록 부분·갈색 줄기 1개·잎 1개. 글자/사람 없음.",
+        "independentReview": "/root/map_geometry_review"
+      }
+    },
+    {
+      "id": "la-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/la-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-fab92397-947f-47be-b28f-11beb805e935.png",
+      "sourceSha256": "7b66fb0b9325ac9934295397165caba56435b2d873819521e309fbce439bb165",
+      "output": "images/places/la.webp",
+      "outputSha256": "87956b3d43888fa3b7eefeb6dd24b06d53351958846938cf99b261f1c8a4d121",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/la-landmark-01.txt",
+          "sha256": "8cd7a04c72026c92fadd3b79e84bb9aa05c985ef039d26805a7b1429d663fc81"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "연한 우윳빛 청록 물·흰 석회 계단·양옆 정글, 다리/사람/건물 없음.",
+        "independentReview": "/root/map_geometry_review"
+      }
+    },
+    {
+      "id": "la-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/la-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-97c76f31-2d19-4339-9660-ba1800c72ef0.png",
+      "sourceSha256": "8061625a698aac6412773d70e3f3d3a9948b965fa396b92b78934e4e378dec52",
+      "output": "images/symbols/la.webp",
+      "outputSha256": "bc830fa6859da9bd43dbe49ea55ce36050919366226ec06125d1f546e183b4cc",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/la-symbol-01.txt",
+          "sha256": "da5465faf3689cdbf773d9b0037afa891cfcf06388f0fe845008c77b9321f0a5"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "아시아코끼리 1마리, 다리 4개·작은 귀·두둑한 이마·위로 굽은 코. 글자/사람 없음.",
+        "independentReview": "/root/map_geometry_review"
+      }
+    },
+    {
+      "id": "lb-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/lb-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-a2b7c65b-dcba-479f-a580-55e43cab3f99.png",
+      "sourceSha256": "3b6681a81d6d42273c53b443a0714c3e42c879413d26ffef12844026f6d9fd1a",
+      "output": "images/places/lb.webp",
+      "outputSha256": "ff6d3b8ccb9cd779142fc14e7c33216ae19cb784f9309253d315dde088a7172e",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/lb-landmark-01.txt",
+          "sha256": "d56ff36ddb33d27cb7b46a741cd5d162f80a932b82105f430ca5d691276c41cf"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "해상 석회 바위 정확히 2개, 큰 바위 아치 1개·작은 단단한 바위 1개. 사람/글자 없음.",
+        "independentReview": "/root/map_geometry_review"
+      }
+    },
+    {
+      "id": "lb-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/lb-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-2639cd46-0692-47f6-b263-fddf198158e6.png",
+      "sourceSha256": "9f1471b7f9303cd5576e213f7029394d13869fec61982e4c1bda28b6c3ef0d8a",
+      "output": "images/symbols/lb.webp",
+      "outputSha256": "81ac1d775fc6aac9c20da4367a3c024d2ed8cbd3b43cb84454f828ef350dac99",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/lb-symbol-01.txt",
+          "sha256": "6e8bbd1a0c4e4dbfca277b1c334d1d55c71aebff4fd07c9f99e8b082ee27fc0e"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "레바논 삼나무 1그루, 굵은 줄기·수평 층 가지·넓은 윗수관. 좌우 여백 미달.",
+        "independentReview": "/root/map_geometry_review"
       }
     },
     {
@@ -2691,6 +4096,66 @@
         "originalAndWebp": true,
         "notes": "일반 우표 한 장, 산 그림과 액면 숫자 1 하나 확인. CSV 요구에 따른 숫자 한 글자 예외, 다른 글자 없음.",
         "independentReview": "/root/map_tests"
+      }
+    },
+    {
+      "id": "lk-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/lk-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-72e17d9e-b287-431f-8de7-1ac84fc62af8.png",
+      "sourceSha256": "dce1804ce2e32962ae9c7aa55ecf73e81592c448b5e35b65284e07dfad8a5264",
+      "output": "images/places/lk.webp",
+      "outputSha256": "f23058e5ed01eb6232ba02f09b41e3b842092966488f66893549688a90d88e9f",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/lk-landmark-01.txt",
+          "sha256": "7da3d36b000502b92f77a83025d2675dcbfc6c012616c20e65256cc5bc1b4874"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "큰 평평한 꼭대기 바위 1개, 상부 낮은 벽돌 유적, 기슭 녹색 수목을 확인. 사람·글자·인물상 없음. 수목 좌우 여백은 12% 기준 최종 구도 검토 필요.",
+        "independentReview": "/root/map_geometry_review"
+      }
+    },
+    {
+      "id": "lk-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/lk-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-39d7f2fe-e8ad-4ca5-9099-429c3afd1692.png",
+      "sourceSha256": "2627809b9a52c62bb9720c8d623fe9817a03cb3e91136087c6136e1cdbc59a96",
+      "output": "images/symbols/lk.webp",
+      "outputSha256": "78d91585be2a53cf451b5e6fd2eebfd01d894cbda8c775559c2772cbd2f5c431",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/lk-symbol-01.txt",
+          "sha256": "5bb56097a235ae0d311ffb8eebf3b87b697a222118d50f54fa9006b5b62f6fd5"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "실론 홍차 잔 1개·받침 1개·찻잎 2장, 호박색 차. 글자/사람 없음.",
+        "independentReview": "/root/map_geometry_review"
       }
     },
     {
@@ -3133,6 +4598,126 @@
       }
     },
     {
+      "id": "mm-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/mm-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-51e5f78f-e9ff-4ee0-9080-41dd4b41eb48.png",
+      "sourceSha256": "389575bf5dd226b07ae7caa58613f0924fbc2f9a2280bae589a780769accceb6",
+      "output": "images/places/mm.webp",
+      "outputSha256": "f94d070576314cabb04d266e97daac5b6dd3dfad8cee2194676308c7fb8e0e1b",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/mm-landmark-01.txt",
+          "sha256": "463b8d8950a4e9ccf4f858476f46c43edcf8f28eea91b913ef1a9b3c2402c3bf"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "중앙 금색 종 모양 탑 1개와 낮은 기단, 가는 첨탑 외관 확인. 부속 작은 첨탑 6개가 붙어 있음. 성상·사람·문자 없음. 꼭대기 여백이 좁아 최종 구도 검토 필요.",
+        "independentReview": "/root/map_geometry_review"
+      }
+    },
+    {
+      "id": "mm-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/mm-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-c2837385-61da-497d-929e-008f5fd7e263.png",
+      "sourceSha256": "ee7b9d7377610912ca19e3236f97036d4279904f4ed188ab12654d03922faa45",
+      "output": "images/symbols/mm.webp",
+      "outputSha256": "a9ed77e985113f988dd1e884c7271bb6d181f793cc145936bfd23f60bf68fdd6",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/mm-symbol-01.txt",
+          "sha256": "a97c610f52604c3e2ba9a2fd4be70a94f9137d6bc9f0151c686fce0f17fbc565"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "회색 원형 갈돌 1개 위 노란 타나카 반죽과 짧은 나무 조각 1개 확인. 얼굴·손·글자 없이 물건 정물로 표현.",
+        "independentReview": "/root/map_geometry_review"
+      }
+    },
+    {
+      "id": "mn-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/mn-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-d12e116e-2d00-4df4-a90e-d93d594c5d23.png",
+      "sourceSha256": "141770b48e378de28ea86ddbdeafb67c1e5fd009226845d2d9702667abe327ae",
+      "output": "images/places/mn.webp",
+      "outputSha256": "1878ec0c13afa031b5a7e8d8437b7a04a8cc03118cab03c485184843583c1544",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/mn-landmark-01.txt",
+          "sha256": "024b7e6fcb64d5828f092bfd39fa2e6af5175acb500e9187e12f4156d50ced44"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "고비 모래언덕 위 낙타 정확히 3마리, 각 등에 혹 2개를 확인. 긴 털과 사람·굴레 없는 구도. 모래 경관 좌우 여백은 최종 검수 필요.",
+        "independentReview": "/root/map_geometry_review"
+      }
+    },
+    {
+      "id": "mn-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/mn-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-a3835151-4d84-4a59-8138-8b6de0981bd6.png",
+      "sourceSha256": "2be913462cb3d9bf97390a6a7dfb7631620f3213ef242c913def4a164e2fec5d",
+      "output": "images/symbols/mn.webp",
+      "outputSha256": "9ead046ab513ac4c548169a5cefe37928d7dea5551b01537234e8caa2696536e",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/mn-symbol-01.txt",
+          "sha256": "7860a47a39711644e3abf2a9875f0a6ffb1330ac4b59110eecddeefb1d900b86"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "흰 원형 게르 1채, 주황색 문 1개, 지붕 원형 연기구멍과 갈색 굴뚝 확인. 다른 천막·가축·사람·글자 없음.",
+        "independentReview": "/root/map_geometry_review"
+      }
+    },
+    {
       "id": "mt-symbol",
       "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/mt-symbol.png",
       "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-cb80-7703-b3d1-e560ba46c927/exec-a7d2d940-0a84-42fd-af60-de80470debd2.png",
@@ -3160,6 +4745,66 @@
         "originalAndWebp": true,
         "notes": "루추 배 한 척, 파랑·노랑·빨강 선체와 뱃머리 좌우 눈 장식 각 하나 확인. CSV 요구인 배의 눈 그림 예외.",
         "independentReview": "/root/map_tests"
+      }
+    },
+    {
+      "id": "mv-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/mv-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-bb48e979-40cd-4842-8320-d163bf31730a.png",
+      "sourceSha256": "f4bba1fb6af4e12c59567a1b3d0e6ee15925153d15c482e69e309e5f7542ece7",
+      "output": "images/places/mv.webp",
+      "outputSha256": "edf62202b79629af1a0b7dad1eb1f1e3d561045231bfa0095b4c107306809dd4",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/mv-landmark-01.txt",
+          "sha256": "7ffe93077bc5ebe1e6e0d85068ec0d2feae4cb3fa15de51401b2adc91634ac17"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "초승달 모양의 흰 모래섬과 청록색 얕은 바다, 단순 야자수가 보임. 건물·배·사람 없음. 바다 외곽이 넓어 좌우 여백 기준은 최종 검수 필요.",
+        "independentReview": "/root/map_geometry_review"
+      }
+    },
+    {
+      "id": "mv-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/mv-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-f3ede7ed-3130-4161-8ca3-cd10bd68690d.png",
+      "sourceSha256": "ede9d75b9fead30e4ff2b12d25d1b11aedd07ca14281b1fa536d6c417ca815a9",
+      "output": "images/symbols/mv.webp",
+      "outputSha256": "14274ee8caf972717efbc44e0f3846b7a3a0cba4095e5b7defb60bef6b76e371",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/mv-symbol-01.txt",
+          "sha256": "db87355b26b46d418c471fb1d8db1f0e2306f5363ca1e30d00e7991636cf5541"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "만타가오리 1마리, 넓은 삼각 날개 2개·머리 앞 말린 지느러미 2개·가는 꼬리를 확인. 날개·꼬리 끝 여백은 좁으므로 배포 구도에서 재검토 필요.",
+        "independentReview": "/root/map_geometry_review"
       }
     },
     {
@@ -3218,6 +4863,36 @@
         "result": "accepted",
         "originalAndWebp": true,
         "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "my-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/my-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-868f4e02-3901-4c8f-a8d5-e70a57f3c6c3.png",
+      "sourceSha256": "845f290b4e5fedb53cbdea50fc13affe7929af5c18416f6c92229ba6e8c532b1",
+      "output": "images/symbols/my.webp",
+      "outputSha256": "90882f846413b8614577aaaf62bde81e1cadf35691d5359173c98e51fefd2c17",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/my-symbol-01.txt",
+          "sha256": "8ef9880bca68805c6178d43b46963d53ffb66e1d3f9252192cb730f841825ed2"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "히비스커스 1송이, 빨간 꽃잎 정확히 5개·길게 돌출한 수술·초록 잎 2개 확인. 현대 건축물·글자 없음.",
+        "independentReview": "/root/map_geometry_review"
       }
     },
     {
@@ -3399,6 +5074,66 @@
       }
     },
     {
+      "id": "np-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/np-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-12560647-11a4-4a43-bb9a-f28a0c5a7c39.png",
+      "sourceSha256": "36a6dd5715d1c8b4fa5ff546d069c8146614d210ace74e1bbd6f8f501645a43d",
+      "output": "images/places/np.webp",
+      "outputSha256": "eb5998871e8b3bd4342cc64fb3a346feff4bdf6ca228709c6deaf44f27b19221",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/np-landmark-01.txt",
+          "sha256": "8f397dc0d4329d52b00bc04ff52195dfa828fe7dc62449da1482d3b4e5271e0d"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "설산과 베이스캠프 텐트 정확히 5개(파랑·노랑·초록·빨강·흰색), 깃발·사람·문자 없음. 높은 눈 덮인 주봉 형태 확인. 산 좌우 여백은 최종 검토 필요.",
+        "independentReview": "/root/map_geometry_review"
+      }
+    },
+    {
+      "id": "np-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/np-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-0e188f91-f222-4c53-a76f-5ce33ed60773.png",
+      "sourceSha256": "4baf1e9850bf3c40880d77f3aa2527b0fe70001b2ebdbf06f1cab369c828f1e5",
+      "output": "images/symbols/np.webp",
+      "outputSha256": "994f2edd720c07997c827e7ac9e4fc0a145c28044d0ad59f057902134882781a",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/np-symbol-01.txt",
+          "sha256": "db56a064d7aeef96805605923e1dfde2f936d35ff96a79e4e22d86f06190b84d"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "붉은 로도덴드론 꽃송이 무리 1개와 짙은 초록 잎 확인. 꽃 안의 점무늬와 수술 표현, 사람·문자 없음. 위쪽 여백은 12% 기준 최종 검토 필요.",
+        "independentReview": "/root/map_geometry_review"
+      }
+    },
+    {
       "id": "nr-landmark",
       "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/nr-landmark.png",
       "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-a6eeb0c8-a66c-4a70-be69-a371dc39d7cd.png",
@@ -3512,6 +5247,66 @@
         "result": "accepted",
         "originalAndWebp": true,
         "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "om-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/om-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-50cca1b0-dae7-40b3-9906-12eff1ee168c.png",
+      "sourceSha256": "a7763dcbfec3aff3642a04ce295558e5a0f1ebd3ee50c76d3cc716b3aad53d21",
+      "output": "images/places/om.webp",
+      "outputSha256": "204669fcab68e20110279f62201ddbc2213d04d3a7cfc872bd2f81571cf70f45",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/om-landmark-01.txt",
+          "sha256": "e77ec0c880979fac7b86518be63567b4209bb7fcfaf1969585a7fede32fb9892"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "니즈와 요새의 넓고 낮은 원형 황토색 탑과 주변 야자수 확인. 사람·대포·무기·깃발·문자 없음. 야자수 좌우 여백은 최종 검토 필요.",
+        "independentReview": "/root/map_geometry_review"
+      }
+    },
+    {
+      "id": "om-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/om-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-3f151817-f357-4b57-976d-df80a41a9048.png",
+      "sourceSha256": "daf985c88103ef1a11038a367de791458fc7a862b6ae6f49dc4127c700f1f8b2",
+      "output": "images/symbols/om.webp",
+      "outputSha256": "f1591448d344736a2e4f068d0e6c495e4a58c1dfd582186e4238d504c7e8f56b",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/om-symbol-01.txt",
+          "sha256": "fad50b556e6d4552e70669f9e859fb78097f5a17de01d9f25494aa222d8241e0"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "황금색·크림색의 불규칙한 유향 수지 작은 덩어리 무리 1개, 받침·불꽃·연기·용기·문자 없음. 사탕 포장처럼 표현하지 않음.",
+        "independentReview": "/root/map_geometry_review"
       }
     },
     {
@@ -3657,6 +5452,126 @@
         "result": "accepted",
         "originalAndWebp": true,
         "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "ph-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/ph-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-c1c358ac-50ff-4517-8192-93ffafe5665e.png",
+      "sourceSha256": "ec37505e4852ef20690f48e1acd9f9e494e8cbab6a3c91a07a2b3035e0fbdec8",
+      "output": "images/places/ph.webp",
+      "outputSha256": "869561a594f6ffe52ae9e2a7a2535774ec769232a56ff196335994cf328f55af",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/ph-landmark-01.txt",
+          "sha256": "f9a06a2106978f4a1a6daa70cacec22fa99efd87fb2b91e558e6d5e127a3357e"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "둥근 원뿔형 갈색 초콜릿 힐 언덕 무리와 사이 초록 수목을 확인. 인공 초콜릿·건물·사람·글자 없음. 넓은 경관 좌우 여백 최종 검토 필요.",
+        "independentReview": "/root/map_geometry_review"
+      }
+    },
+    {
+      "id": "ph-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/ph-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-74e06cbc-a806-4a00-b4da-307e466f2c76.png",
+      "sourceSha256": "e0eed839f5b88b8cf87bf75fbba110b30388effcf27bb16995d08a8c8528a686",
+      "output": "images/symbols/ph.webp",
+      "outputSha256": "b29ec1030ed432602af782dfa5db36284013b3b89337c83c02c5d3c02fe8b496",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/ph-symbol-01.txt",
+          "sha256": "d6ae848026a5ea8550dec089f8df1faaa1cb2111a28e6d47c5b93589b8891381"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "지프니 1대, 길쭉한 은색 차체·빨강/노랑 장식·열린 옆 창과 빈 좌석·둥근 전조등 2개 확인. 상표·번호판 문자·운전자 없음. 좌우 여백 최종 검토 필요.",
+        "independentReview": "/root/map_geometry_review"
+      }
+    },
+    {
+      "id": "pk-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/pk-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-5bcb67d3-d455-4e75-a5e1-7fae4b10b7cf.png",
+      "sourceSha256": "b2317dbabaad7db83d98b4cc32f4815400f5133cdb9e7f18cd29b0fcef903e21",
+      "output": "images/places/pk.webp",
+      "outputSha256": "b529ee28b828f2d4219ac42a1bedee4966f538f7e2915430a8b1c34b4efc1cf0",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/pk-landmark-01.txt",
+          "sha256": "b056aa2fd19faa6e9dda21d2944abdf2bd7fed6540547459d2f0f4eeb08d3395"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "뾰족한 피라미드 모양 K2 주봉 1개, 짙은 바위와 흰 눈의 홈을 확인. np 에베레스트보다 단독·가파른 형태, 텐트·깃발·사람 없음. 꼭대기 여백은 최종 검토 필요.",
+        "independentReview": "/root/map_geometry_review"
+      }
+    },
+    {
+      "id": "pk-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/pk-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-8d0dfb40-ed6b-4050-abb3-e1291bf984f5.png",
+      "sourceSha256": "9444931a7058cf3e19367110af4e29b1184d0d586b2c66f166af9b085e02a7ca",
+      "output": "images/symbols/pk.webp",
+      "outputSha256": "2786603b7dd9e0c5110f30a56b0af3489aae4428b47b733334c5827f24225039",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/pk-symbol-01.txt",
+          "sha256": "5a8e68cc606504d8bbf1d7f1ecc377a66913e309553cede2b03ff338bac4d358"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "분홍색 암염 결정 덩어리와 흰 결정이 섞인 한 무더기 확인. 붉은 피·고기처럼 표현되지 않으며 용기·글자 없음.",
+        "independentReview": "/root/map_geometry_review"
       }
     },
     {
@@ -3872,6 +5787,66 @@
       }
     },
     {
+      "id": "qa-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/qa-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-4df93347-f927-45f8-88a2-b7586278bea1.png",
+      "sourceSha256": "1afbc527b4568e11ecaf884c0828c715f3dab6497779d2983ad6001c9c4df981",
+      "output": "images/places/qa.webp",
+      "outputSha256": "747ef9cc51aa85015c149d7656ef6a0f674e4446b8a2782bd2a09598838c104f",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/qa-landmark-01.txt",
+          "sha256": "c641539106116d6b5878991bd41d3304405b76660dde6f78f9e7ac17870178b9"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "알 주바라 요새의 네 모서리 탑을 모두 확인: 원형 3개와 사각형 1개. 성벽으로 둘러싼 사각 마당, 무기·사람·글자 없음. 좌우 여백 최종 검토 필요.",
+        "independentReview": "/root/map_geometry_review"
+      }
+    },
+    {
+      "id": "qa-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/qa-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-60deeb50-e3c5-4e4b-8ede-cfcdcd95bd56.png",
+      "sourceSha256": "77bce9d5d24f40ccb615ae7835db1ea8e98884458a0d3c2917f25a6666ba3fef",
+      "output": "images/symbols/qa.webp",
+      "outputSha256": "3efebc742274289e2b1f2703d5662b352ac778f505b957456914a2ac99ad4932",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/qa-symbol-01.txt",
+          "sha256": "e5a024d7ad67ca7852738312dc75d69615fcf3ccd58294cf555a4da343fa3502"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "아라비아오릭스 1마리, 흰 몸·검은 얼굴 무늬·직선으로 긴 평행 뿔 정확히 2개·다리 4개 확인. 뿔 끝이 상단에 너무 가까워 배포 규격의 여백 보정 필요.",
+        "independentReview": "/root/map_geometry_review"
+      }
+    },
+    {
       "id": "ro-landmark",
       "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/ro-landmark.png",
       "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-cb80-7703-b3d1-e560ba46c927/exec-ae63e95d-3eeb-4f10-8f00-5053a6afa983.png",
@@ -4057,6 +6032,66 @@
       }
     },
     {
+      "id": "sa-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/sa-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-e0b8d8e7-cf29-4de0-bce2-9de0980af5e8.png",
+      "sourceSha256": "c3495b0aef9b6b9953ddb689a3e48e234c57c0c54962373cc1976798ed6069b2",
+      "output": "images/places/sa.webp",
+      "outputSha256": "dbc12b125ef66e3a0156fa65906290875e2adc2ffac2e3fb85da8fef640bd575",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/sa-landmark-01.txt",
+          "sha256": "140d8964bbef9c7433df3018cfaea7c89cf0720cb0018a7e110b5a7b692bbac0"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "주황색 모래사막에서 낙타 정확히 3마리, 각 혹 1개와 다리 4개 확인. mn의 쌍봉낙타와 구별됨. 기수·밧줄·글자 없음. 모래 경관 좌우 여백 최종 검토 필요.",
+        "independentReview": "/root/map_geometry_review"
+      }
+    },
+    {
+      "id": "sa-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/sa-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-4f72f616-bb85-4f4a-881d-66421684aee4.png",
+      "sourceSha256": "3f145d4d885793e1ebdcaab8f0d9bea10feedd8e1f2b3b26156303861eb2c451",
+      "output": "images/symbols/sa.webp",
+      "outputSha256": "5e7d4568dcfe35bad8fad94ddbd87a2a349389fcf412829f2f2d1cc6128fa3b9",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/sa-symbol-01.txt",
+          "sha256": "f227210cb26608b9196436ffac63735e092709bcacfee50511decd8e52fa8c4e"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "아라비아표범 1마리, 검은 고리무늬·황금색 몸·밝은 배·긴 꼬리·다리 4개 확인. 웃는 인간 얼굴·이빨 노출·사냥감 없음. 귀와 꼬리 여백 최종 검토 필요.",
+        "independentReview": "/root/map_geometry_review"
+      }
+    },
+    {
       "id": "sb-landmark",
       "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/sb-landmark.png",
       "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-f983859e-ee66-4ca6-a34b-3d52687d589b.png",
@@ -4172,6 +6207,36 @@
         "originalAndWebp": true,
         "notes": "붉은 달라호스 한 마리, 네 다리와 흰색·파랑·노랑 꽃무늬 확인.",
         "independentReview": "/root/map_tests"
+      }
+    },
+    {
+      "id": "sg-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/sg-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-263e4472-8fb3-4a63-b58c-bb1f8b1516cd.png",
+      "sourceSha256": "c65a3b40bc383894500a9c286ed0b3b68793305f387378d595f70d51bd2aa5ef",
+      "output": "images/symbols/sg.webp",
+      "outputSha256": "e377abedd0d4e08d9776dc1733dbfe7cec84d5946dfa233fcc718af6b7c84ddb",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/sg-symbol-01.txt",
+          "sha256": "4e2aa71926d6fa95838b1d20de37a881a19e89279977f55ce1a83c0f2c198612"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "난초 1송이, 연보라 꽃덮이와 짙은 자주색 입술꽃잎·주황 중심·초록 짧은 줄기 확인. 상단 여백은 축소 변환으로 확보 필요.",
+        "independentReview": "/root/map_geometry_review"
       }
     },
     {
@@ -4427,6 +6492,196 @@
       }
     },
     {
+      "id": "sy-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/sy-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-c59dfd2f-71dc-4513-9075-7b7099e2d860.png",
+      "sourceSha256": "13fc8205001ca82a9d70bf49d7592c586f7312208172d93e61fb1f682633fcf0",
+      "output": "images/symbols/sy.webp",
+      "outputSha256": "eda024d37409a0b88be8c0eeef3db2541dbc9dca16d64c136a8f3869d04c0f71",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/sy-symbol-01.txt",
+          "sha256": "154d2d728d6f7e12090b01bd7b2690dda07f947f8e10c9e0b1bcf6517da3b4fa"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "각인 없는 알레포 비누 1개, 네모난 두툼한 모양·올리브녹색 중심·황토색 얇은 겉껍질 확인. 글자·브랜드·용기 없음.",
+        "independentReview": "/root/map_geometry_review"
+      }
+    },
+    {
+      "id": "th-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/th-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-e330d1e9-b09d-4bd1-8594-b59863448b46.png",
+      "sourceSha256": "31a174b6f2e59a6c68b6ce7813451250e993465826235b3953dee1c5485552ce",
+      "output": "images/places/th.webp",
+      "outputSha256": "987198e60b02eb614d5fb9faa318c777af07642f613c37f95a8dd5d93bc1ddd7",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/th-landmark-01.txt",
+          "sha256": "cc1066933b0e54795028b2b8eb44c89941fc96d6e98d7e2d851f3981a0d859b1"
+        },
+        {
+          "attempt": 2,
+          "path": "docs/image-prompts/generation-prompts/th-landmark-02.txt",
+          "sha256": "b330b8db970abd35aab8650c2354e7043a807e0bc852d7de70961dec3ae9a08a"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "편집 후 중앙 상층의 인물상처럼 보이던 작은 형태가 삭제되어 벽감이 빈 녹색 공간으로 남음. 중앙 주탑1+소탑4와 자기 기하무늬 보존, 사람·성상·문자 없음.",
+        "independentReview": "/root/map_geometry_review"
+      }
+    },
+    {
+      "id": "th-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/th-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-aef68644-227c-441f-a704-6b8936477a66.png",
+      "sourceSha256": "62d82d7f530f0b3c7d679c6c94f88186785f3d90ba361e21ad5c65970e81ee24",
+      "output": "images/symbols/th.webp",
+      "outputSha256": "9d4e0e420a82a48fc40f3008816f5580cd7e6965b080828e64e56c6289a4f9af",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/th-symbol-01.txt",
+          "sha256": "2b5897ba188da2e5f0a03a42bd95f4662a445bd3cb71e03c8c230d16875be9b4"
+        },
+        {
+          "attempt": 2,
+          "path": "docs/image-prompts/generation-prompts/th-symbol-02.txt",
+          "sha256": "dc1942acd72e9fb8a556a125618f6f5e7157489c82ff6dfdba2b131e5dc708a4"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "편집 후 앞바퀴 1개와 뒷바퀴 2개가 분리되어 총 3개를 셀 수 있음. 먼 뒷바퀴는 뒷축 아래에 연결되고, 차체·지붕·빈 좌석·색상 보존. 글자·사람 없음.",
+        "independentReview": "/root/map_geometry_review"
+      }
+    },
+    {
+      "id": "tj-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/tj-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-14767fa8-a6e1-4b73-ba29-1e22ae6b5b58.png",
+      "sourceSha256": "8c6a5c2a8df77f895f56c927578722da166c96cfe8cd287c66e7eef7b4e33fce",
+      "output": "images/symbols/tj.webp",
+      "outputSha256": "96f25dc441d554ac78c30962c0b5c1510a89a604fedd8b82256c2573c41c6264",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/tj-symbol-01.txt",
+          "sha256": "5ddd1a7c6ed180539e289f613bba8a9cb3572428cf789e7a49f62b705528526e"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "금색 왕관 1개에 높은 뾰족점 3개, 그 위 반원에 별 정확히 7개 확인. 국기 천·배경 줄무늬·문자 없음.",
+        "independentReview": "/root/map_geometry_review"
+      }
+    },
+    {
+      "id": "tl-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/tl-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-aaa33f71-a414-4f60-bc3d-0223c822a881.png",
+      "sourceSha256": "e4f30eac4486f18f21d8a6014e5fe09599ceb22a177e0b4ce84892e7b1bb9163",
+      "output": "images/symbols/tl.webp",
+      "outputSha256": "33cfcb0731b092250a613deac93054835b979914a9befdfae387202c7e16ce12",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/tl-symbol-01.txt",
+          "sha256": "c28cd8aedd85d2ac16418a32fa83afbb3d76fadedf1e1e7289e87cc0d93a46f6"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "타이스 천 1장, 빨강·검정·크림색 직조 줄무늬와 양 끝 술을 확인. 착용자·글자·국기·현대 로고 없음. 양 끝 술은 프레임 내 보존.",
+        "independentReview": "/root/map_geometry_review"
+      }
+    },
+    {
+      "id": "tm-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/tm-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-7bd5d195-6983-492e-87cb-19b3ec6c0a06.png",
+      "sourceSha256": "ed30c56f96f51b0aacdcd0e746f3e03a0b2d68ef5a50110b5a48b3b41dc0d237",
+      "output": "images/symbols/tm.webp",
+      "outputSha256": "f47b9b302926ab0684d517be65bc7df71b5810e8282fac6667ae1900f3d36d7d",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/tm-symbol-01.txt",
+          "sha256": "953157607838a6f9ea1308bd126eeb88ea3b98677d08b1a17017dfa26d141f1f"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "아할테케 말 1마리, 긴 가는 다리 4개·좁은 머리·길게 굽은 목·금빛 털·연한 갈기와 꼬리 확인. 안장·기수·장비·문자 없음.",
+        "independentReview": "/root/map_geometry_review"
+      }
+    },
+    {
       "id": "to-landmark",
       "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/to-landmark.png",
       "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-917e18b5-cf8a-4144-9558-c99c529acfb0.png",
@@ -4482,6 +6737,66 @@
         "result": "accepted",
         "originalAndWebp": true,
         "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "tr-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/tr-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-a433ce40-6b03-4a8b-a311-7442a861a2ea.png",
+      "sourceSha256": "ffb52bb36c7530583342c9d96328fd0980ea026869ba237f221d61a00f7cd609",
+      "output": "images/places/tr.webp",
+      "outputSha256": "7d64282956bdaf86499da580adc1ade87c187b72fe4afa4317c06c3f46d23fdb",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/tr-landmark-01.txt",
+          "sha256": "4662263d19d570e721fc24cd8187f0c3f68ca3f5ee4fabf0ba65a4f83fc3a63b"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "요정 굴뚝 바위 무리와 열기구 정확히 3개, 각각 빈 바구니 1개 확인. 탑승자·문자·브랜드 없음. 열기구 꼭대기 여백은 변환에서 확보 필요.",
+        "independentReview": "/root/map_geometry_review"
+      }
+    },
+    {
+      "id": "tr-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/tr-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-2ee4e957-391d-4729-bc8b-8b06d260540d.png",
+      "sourceSha256": "af0453abfcbc3b0b47d92306b66494191794816dc1c826f672ad8995165d1e2f",
+      "output": "images/symbols/tr.webp",
+      "outputSha256": "6e668e50e2a3003a8d2ebfc5f6ade302f64af81aef0ae13bf316cde7e1408a17",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/tr-symbol-01.txt",
+          "sha256": "af1bfb3c576a93c75ed824a625cab748571da4be43e9af6e137e49ba372f9c69"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "나자르 유리 구슬 1개, 코발트 원판 안 흰 원·연파랑 원·검정 중심점과 작은 걸이 구멍 확인. 사람의 실제 눈·얼굴·문자 없음.",
+        "independentReview": "/root/map_geometry_review"
       }
     },
     {
@@ -4719,6 +7034,71 @@
       }
     },
     {
+      "id": "uz-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/uz-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-0a4b3c10-8062-43f8-a486-3583dbef4f3e.png",
+      "sourceSha256": "55e0d38718bc6527a7bc226f2a40cbf3eed96a3f71719c17d4925f9f28d85b09",
+      "output": "images/places/uz.webp",
+      "outputSha256": "1e97812e48aa9edcba9752e04af28dea50f303fb5fe6f350643f05cc019a021f",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/uz-landmark-01.txt",
+          "sha256": "b8e277f27f3b4e5dbfb1f11a1d053ea4bd1fd60f22f6739c63e88d2e1d0bffe9"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "레기스탄 광장의 세 방향에 큰 아치 정면 3개, 파랑 타일·청록 돔·빈 중앙 마당을 확인. 실제 문자 대신 기하무늬이며 사람·동물상 없음. 좌우 끝 건물은 프레임 안에 보존.",
+        "independentReview": "/root/map_geometry_review"
+      }
+    },
+    {
+      "id": "uz-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/uz-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-76dab684-6f0a-4222-a9e9-b11bb4535bc4.png",
+      "sourceSha256": "809f8121f76a05e910e8f4c60b248cb111193d7b20d0e8450acf74abc8725ced",
+      "output": "images/symbols/uz.webp",
+      "outputSha256": "59119a390e37562f748488ffd0013857ffb52904c1cf3386aab0a48f2083e1e1",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/uz-symbol-01.txt",
+          "sha256": "45d7d65f6445dbf63113baca69d5952789e4588e637d6bd03119cd9ec84159d9"
+        },
+        {
+          "attempt": 2,
+          "path": "docs/image-prompts/generation-prompts/uz-symbol-02.txt",
+          "sha256": "76dfb3bb1639598f334c937830615bd520d516381632187d4a3b786ae08ae45f"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "편집 후 하나의 열린 목화송이 안에서 흰 솜 덩어리 정확히 5개를 구별해 셀 수 있음. 갈색 줄기·초록 잎1개·마른 갈색 포엽 보존. 문자·추가 송이 없음.",
+        "independentReview": "/root/map_geometry_review"
+      }
+    },
+    {
       "id": "va-landmark",
       "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/va-landmark.png",
       "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-cb80-7703-b3d1-e560ba46c927/exec-0472cad2-f4fc-44bf-a08c-e9f6e7c207af.png",
@@ -4866,6 +7246,66 @@
       }
     },
     {
+      "id": "vn-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/vn-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-746b20b9-05fe-4f80-b8c5-a69b74ba6f4c.png",
+      "sourceSha256": "5d45883f66d9d2ab46e59b0119f7dd9eb2594ce487d5599420df13d850302d3b",
+      "output": "images/places/vn.webp",
+      "outputSha256": "76f6c0c998550fa8762369e09493d421959357821f289133bd025356b1127589",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/vn-landmark-01.txt",
+          "sha256": "c60f4226dc0bc662365476c656ec00464db1658302f7145ac0357bd15554f247"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "하롱베이의 가파른 석회암 섬들이 초록 바다 수로로 분리됨. 회색 수직 절벽과 초록 수목 확인, 배·건물·사람·문자 없음.",
+        "independentReview": "/root/map_geometry_review"
+      }
+    },
+    {
+      "id": "vn-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/vn-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-10927e7c-6242-43eb-bc6d-2a8566df3ece.png",
+      "sourceSha256": "e394f7702a5e87b81995712bc4d4b66fe0feadf67d3902334cc91cd803e0df11",
+      "output": "images/symbols/vn.webp",
+      "outputSha256": "5b772533eaf97ef906e9949a400a3fedca14b997869976a1e3c8c203a145412c",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/vn-symbol-01.txt",
+          "sha256": "a2fa7ec28ddd4ecf22ac36f4693a1423d127c1d92f95da60816e938c3e54d328"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "포 한 그릇과 숙주·라임 작은 접시 1개 확인. 맑은 국물·넓적한 흰 쌀국수·초록 허브가 보임. 생고기 같은 유혈 표현·젓가락·글자 없음.",
+        "independentReview": "/root/map_geometry_review"
+      }
+    },
+    {
       "id": "vu-landmark",
       "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/vu-landmark.png",
       "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-db613683-db5d-45d5-86de-2b81945258ca.png",
@@ -4979,6 +7419,66 @@
         "result": "accepted",
         "originalAndWebp": true,
         "notes": "지붕 밑 기둥 8개 확인."
+      }
+    },
+    {
+      "id": "ye-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/ye-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-b9834a66-539e-48f9-9133-6d8337b55a54.png",
+      "sourceSha256": "c9db98ebe40335bce23d82988d56bfedcfbcda2ac1a9dab0b2d076c7ed3e2c58",
+      "output": "images/places/ye.webp",
+      "outputSha256": "1daa88d9617cc3f23e8b32e70d4c63b275f7cb23c4aa8beb378b50385999892e",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/ye-landmark-01.txt",
+          "sha256": "b4deb1b04ac8561412fdd65e4beefa2e5ecc418d7b53773cd80107ec8c514680"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "시밤의 황토색 다층 흙벽돌 탑집 무리, 평평한 지붕·작은 네모 창·상단 흰 띠 확인. 현대 고층빌딩·폭력·사람·문자 없음.",
+        "independentReview": "/root/map_geometry_review"
+      }
+    },
+    {
+      "id": "ye-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/ye-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-a317-7983-898b-dc26df3d5468/exec-76d4459a-3231-4b31-8a6a-cccaac73235a.png",
+      "sourceSha256": "c5707f8be530fff1166e02bca67aacc1f7c04f7975b2c7d5312cb4a952fd3f89",
+      "output": "images/symbols/ye.webp",
+      "outputSha256": "56b19a3550520e7bf9e160bebdd2ad277cbb162726a8b351b2ba7afe9409aad5",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/ye-symbol-01.txt",
+          "sha256": "12f3695bf4f61f6d24c400b768f21fa0a9ebc847651110d80b3caa52066470fd"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "용혈수 1그루, 우산처럼 넓게 퍼진 수관·굵은 회갈색 줄기·촘촘한 가지와 뾰족한 초록 잎 확인. 붉은 수액·용·사람·문자 없음.",
+        "independentReview": "/root/map_geometry_review"
       }
     }
   ]
