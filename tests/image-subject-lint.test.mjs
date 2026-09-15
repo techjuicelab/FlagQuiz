@@ -4,7 +4,7 @@ import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { lintLedger, readLedger } from '../scripts/image-ledger.mjs';
+import { lintLedger, readLedger, writeLedger } from '../scripts/image-ledger.mjs';
 
 const sentence = 'A small red clay teapot with a round body, short curved spout, smooth loop handle and a matching flat lid.';
 const item = (subjectEn = sentence, patch = {}) => ({ id: 'zz-symbol', kind: 'symbol', koRaw: '찻주전자', subjectEn, confusionGroups: [], ...patch });
@@ -58,7 +58,7 @@ test('lint CLI는 금지 문구에서 1, 미작성·경고만 있으면 0으로 
   t.after(() => fs.rmSync(directory, { recursive: true, force: true }));
   fs.mkdirSync(path.join(directory, 'docs/image-prompts'), { recursive: true });
   const run = (entry) => {
-    fs.writeFileSync(path.join(directory, 'docs/image-prompts/presets.json'), JSON.stringify({ items: [entry] }));
+    writeLedger({ items: [entry] }, directory);
     return spawnSync(process.execPath, [new URL('../scripts/image-ledger.mjs', import.meta.url).pathname, 'lint', '--root', directory], { encoding: 'utf8' });
   };
   const invalid = run(item(sentence.replace('small', 'majestic')));
