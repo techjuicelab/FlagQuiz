@@ -21,9 +21,11 @@
 
   function countryArt(code) {
     if (!FQ.features || !FQ.features.on('art')) return '';
-    var art = artFor(code);
-    return art ? '<figure class="country-art"><img src="' + esc(art.src) + '" alt="' + esc(art.alt) + '" width="1024" height="768">' +
-      '<figcaption>' + esc(art.alt) + '</figcaption></figure>' : '';
+    return ['symbol', 'place'].map(function (axis) {
+      var art = artFor(code, axis);
+      return art ? '<figure class="country-art"><img src="' + esc(art.src) + '" alt="' + esc(art.alt) + '" width="1024" height="768" loading="lazy">' +
+        '<figcaption>' + (axis === 'place' ? '나라 대표 명소 · ' : '나라를 떠올리는 그림 · ') + esc(art.alt) + '</figcaption></figure>' : '';
+    }).join('');
   }
 
   function main() { return doc.getElementById('main'); }

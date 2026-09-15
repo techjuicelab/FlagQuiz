@@ -22,8 +22,10 @@ test('도감 그림을 켜기 전 HTML은 그대로이며 켜면 설명과 국�
   assert.ok(!before.includes('country-art'));
   f.storage.updateSettings({dev: {art: true}});
   const after = render();
-  assert.equal(after.replace(/<figure class="country-art">[\s\S]*?<\/figure>/, ''), before);
+  assert.equal(after.replace(/<figure class="country-art">[\s\S]*?<\/figure>/g, ''), before);
   assert.match(after, /images\/symbols\/kr.webp/);
+  assert.match(after, /images\/places\/kr.webp/);
+  assert.match(after, /나라 대표 명소 · 경복궁 광화문/);
   assert.match(after, /alt="김치"/);
   assert.ok(after.indexOf('fact-box') < after.indexOf('country-art'));
   assert.ok(after.indexOf('country-art') < after.indexOf('hint-box'));
@@ -35,11 +37,13 @@ test('누락 자료는 그림을 만들지 않고 제목의 HTML을 이스케이
   const {f, render} = fixture();
   f.storage.updateSettings({dev: {art: true}});
   delete f.subjects.kr.symbol;
-  assert.ok(!render().includes('country-art'));
+  assert.ok(!render().includes('images/symbols/kr.webp'));
+  assert.ok(render().includes('images/places/kr.webp'));
   assert.equal(f.ui.artFor('zz'), null);
   f.subjects.kr.symbol = {ko: '<img onerror="bad">'};
   assert.match(render(), /&lt;img onerror=&quot;bad&quot;&gt;/);
   assert.ok(!render().includes('alt="<img'));
   assert.equal(f.ui.artFor('ae', 'place'), null);
   assert.equal(f.ui.artFor('kr', 'place').src, 'images/places/kr.webp');
+  assert.ok(!render('ae').includes('images/places/'));
 });
