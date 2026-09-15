@@ -1,0 +1,6 @@
+npm notice run flagquiz@1.0.0 build
+npm notice run npm run voice:check && node scripts/build-site.mjs
+npm notice run flagquiz@1.0.0 voice:check
+npm notice run node scripts/generate-voice.mjs --check
+{"voice":"Sua","ready":true,"total":977,"missing":0,"characters":0,"mode":"full","selectedMissing":0,"selectedCharacters":0}
+배포 파일 준비 완료: Sua 음원 977개, 새 음악 16개

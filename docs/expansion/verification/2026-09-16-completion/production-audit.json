@@ -1,0 +1,53 @@
+{
+  "items": 341,
+  "uniqueIds": 341,
+  "checkedSourceNativeOutputFiles": 1023,
+  "checkedPromptFiles": 384,
+  "problems": [],
+  "promptRows": [],
+  "attemptRows": [],
+  "gn": {
+    "production": false,
+    "ledger": {
+      "id": "gn-symbol",
+      "code": "gn",
+      "kind": "symbol",
+      "koRaw": "커다란 박에 줄을 스물한 개 맨 악기 코라",
+      "koApprove": "코라 악기",
+      "subjectEn": "One kora has a large round brown calabash body covered by a pale hide soundboard, a long upright wooden neck and exactly twenty one fine strings spreading over a tall central bridge.",
+      "accuracy": false,
+      "override": "Keep exactly twenty one strings, the large gourd resonator and two short handgrips clearly visible; no musician, face, writing or decorative flag pattern.",
+      "substitutedFrom": null,
+      "keepsBackdrop": false,
+      "continent": "아프리카",
+      "category": "만든것",
+      "inCapital": false,
+      "factReuse": null,
+      "riskNote": "명소 빈칸 유지: 기니의 대표 명소가 전부 푸타잘롱의 폭포인데 디틴 폭포는 ve 앙헬(탁자산에서 한 줄기)과 같은 형태이고 킨콘·캄바다가는 폭포군 포화(12개국)다. '신의 다리' 천연 바위 아치는 td 상징물 엔네디 돌 아치 및 사막 돌 아치군(dj·st·td)과 형태가 겹치고, 푸타잘롱의 둥근 초가집은 둥근 전통 가옥 상징물군(6개국)과 겹친다",
+      "confusionGroups": [
+        "줄 악기·관악기"
+      ],
+      "csvStatus": "final",
+      "status": "held",
+      "tries": 5,
+      "bytes": null,
+      "outputStem": "images/symbols/gn",
+      "textReview": {
+        "reviewer": "Codex",
+        "method": "나라별 문장 작성 및 병렬 교차 검토",
+        "humanApproval": false,
+        "date": "2026-09-15"
+      },
+      "failureCount": 5,
+      "holdReason": "원본과 4회 재생성에서 코라의 21현을 확인하지 못함. 예비 젬베 북 변경 여부 사용자 답변 대기.",
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "held",
+        "notes": "21현·높은 브리지 조건 미충족. 배포 파일 없음."
+      }
+    }
+  },
+  "createdAt": "2026-09-15T15:06:48.160Z"
+}

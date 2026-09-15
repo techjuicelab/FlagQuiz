@@ -1,0 +1,9 @@
+{
+  "command": "FQ_REQUIRE_ART=1 node scripts/build-site.mjs",
+  "exitCode": 1,
+  "filesBefore": 1564,
+  "filesAfter": 1564,
+  "sitePreservedContentAndMetadata": true,
+  "changed": [],
+  "log": "file:///Users/techjuice/Documents/Dev/AI/FlagQuiz/scripts/build-site.mjs:64\nif (artErrors.length) throw new Error('그림 배포 검사 실패:\\n' + artErrors.join('\\n'));\n                            ^\n\nError: 그림 배포 검사 실패:\n필요한 그림 없음: symbols/gn.webp\n    at file:///Users/techjuice/Documents/Dev/AI/FlagQuiz/scripts/build-site.mjs:64:29\n\nNode.js v24.20.0\n"
+}

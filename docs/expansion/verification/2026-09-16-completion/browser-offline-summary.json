@@ -1,0 +1,50 @@
+{
+  "headAtFinish": "e0faf8ad4ed42fdea9e59010f7bedd0c1bcd2d06",
+  "primaryFilesDuringTest": "제품 코드 수정 없이 실제 primary 서버와 service worker 캐시로 검증",
+  "sameOnlineOfflineBytes": true,
+  "cacheNames": [
+    "flagquiz-shell-v1",
+    "flagquiz-flags-v1",
+    "flagquiz-art-v1",
+    "flagquiz-v4"
+  ],
+  "offlineRange": [
+    {
+      "bytes": 2,
+      "contentRange": "bytes 0-1/57512",
+      "request": "bytes=0-1",
+      "status": 206
+    },
+    {
+      "bytes": 16,
+      "contentRange": "bytes 57496-57511/57512",
+      "request": "bytes=-16",
+      "status": 206
+    },
+    {
+      "bytes": 0,
+      "contentRange": "bytes */57512",
+      "request": "bytes=999999-",
+      "status": 416
+    }
+  ],
+  "shellMatchesCurrentPrimary": {
+    "./js/app.js": true,
+    "./js/quiz.js": true,
+    "./js/storage.js": true,
+    "./js/features.js": true,
+    "./js/map.js": true
+  },
+  "primaryImageCount": 341,
+  "browser": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/150.0.0.0 Safari/537.36",
+  "viewport": [
+    390,
+    844
+  ],
+  "physicalIPad": false,
+  "serverPid": 17364,
+  "serverPort": 8144,
+  "serverStopped": true,
+  "browserSession": "fq-final-maptests-1f66a9b2e1a4",
+  "setup": "새 격리 origin/session, settings.dev.art=true만 시험 세션에 설정. 각 모드는 홈 버튼으로 고르고 FQ.app.startGame([kr])로 대한민국 1문제를 선택한 뒤 실제 브라우저 클릭으로 답함. 기록 값을 직접 생성하지 않음."
+}
