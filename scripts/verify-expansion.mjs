@@ -379,6 +379,76 @@ function parsePathData(d) {
   return subs;
 }
 
+function signedPathArea(points) {
+  const [ox, oy] = points[0] || [0, 0];
+  let area = 0;
+  for (let i = 0; i < points.length; i++) {
+    const [x1, y1] = points[i], [x2, y2] = points[(i + 1) % points.length];
+    area += (x1 - ox) * (y2 - oy) - (x2 - ox) * (y1 - oy);
+  }
+  return area / 2;
+}
+
+function pathWinding([px, py], points) {
+  let winding = 0;
+  for (let i = 0; i < points.length; i++) {
+    const [x1, y1] = points[i], [x2, y2] = points[(i + 1) % points.length];
+    const side = (x2 - x1) * (py - y1) - (px - x1) * (y2 - y1);
+    if (y1 <= py && y2 > py && side > 0) winding++;
+    else if (y1 > py && y2 <= py && side < 0) winding--;
+  }
+  return winding;
+}
+
+/** 생성기와 독립적으로 최종 SVG fill과 핀의 관계를 검사한다. */
+export function verifyMapGeometry(t, land, coords) {
+  const subs = parsePathData(land.d);
+  t.ok(subs.length >= 300, '육지 서브패스가 300개 미만이다', subs.length + '개');
+  const areas = subs.map(signedPathArea);
+  const zero = areas.flatMap((area, index) => Math.abs(area) < 1e-9 ? [index] : []);
+  t.ok(zero.length === 0, '면적 0인 육지 서브패스가 있다', zero.join(', '));
+  const directions = new Set(areas.filter(area => Math.abs(area) >= 1e-9).map(Math.sign));
+  t.ok(directions.size === 1, '육지 서브패스의 방향이 통일되지 않았다 — nonzero fill이 서로 상쇄될 수 있다');
+  const pins = Object.entries(coords);
+  t.ok(pins.length === 194, '실루엣에 대조할 핀이 194개가 아니다', pins.length + '개');
+  const outside = pins.filter(([, point]) => {
+    if (!Array.isArray(point) || point.length !== 2 || !point.every(Number.isFinite)) return true;
+    const [lng, lat] = point;
+    const projected = [(lng + 180) / 360 * 2000, (90 - lat) / 180 * 1000];
+    return subs.reduce((sum, points) => sum + pathWinding(projected, points), 0) === 0;
+  }).map(([code]) => code);
+  t.ok(outside.length === 0, '생성 실루엣의 육지 밖에 있는 핀', outside.join(', '));
+  t.note('최종 도형 면적·방향 및 핀 ' + pins.length + '개의 winding number 검사');
+}
+
+/** 국가 코드 목록을 하드코딩해 통과할 수 없도록 가상 국가와 배제 지역을 직접 생성한다. */
+export function verifySmallLandPreservation(t, buildLand) {
+  t.ok(typeof buildLand === 'function', 'buildLand를 export하지 않는다');
+  if (typeof buildLand !== 'function') return;
+  const tiny = (name, [lng, lat]) => ({
+    type: 'Feature',
+    properties: { ADMIN: name, LABEL_X: lng, LABEL_Y: lat },
+    geometry: { type: 'Polygon', coordinates: [[
+      [lng - 0.001, lat - 0.001], [lng + 0.001, lat - 0.001],
+      [lng + 0.001, lat + 0.001], [lng - 0.001, lat + 0.001],
+      [lng - 0.001, lat - 0.001]
+    ]] }
+  });
+  const country = tiny('Tiny country fixture', [12.43, 41.9]);
+  const excluded = tiny('Excluded land fixture', [30, 20]);
+  const result = buildLand([country, excluded], new Map([['zz', country]]));
+  const subs = parsePathData(result.mapLand.d);
+  t.ok(subs.length === 2, '초소형 국가와 배제 지역의 두 도형이 모두 보존되지 않았다', subs.length + '개');
+  t.ok(subs.every(points => signedPathArea(points) > 1e-9), 'bbox 대체 도형이 반올림 뒤 면적 0이거나 방향이 다르다');
+  for (const feature of [country, excluded]) {
+    const { ADMIN, LABEL_X: lng, LABEL_Y: lat } = feature.properties;
+    const projected = [(lng + 180) / 360 * 2000, (90 - lat) / 180 * 1000];
+    t.ok(subs.reduce((sum, points) => sum + pathWinding(projected, points), 0) !== 0,
+      '초소형 도형의 내부 점이 최종 실루엣에서 사라졌다: ' + ADMIN);
+  }
+  t.note('가상 코드 zz와 배제 지역을 생성해 bbox 대체·면적·내부 점 보존 확인');
+}
+
 /* 여러 검사가 함께 쓰는 기준선 — Codex 작업 전 이 저장소에서 실측한 값이다. */
 const BASE_SCRIPTS = [
   'js/util.js', 'js/storage.js', 'js/voice-manifest.js', 'js/audio.js', 'js/recorded-audio.js',
@@ -876,7 +946,7 @@ await check({
     kr: [[124, 132], [33, 39]],
     au: [[112, 154], [-44, -10]],
     br: [[-74, -34], [-34, 5]],
-    va: [[12.3, 12.6], [41.8, 42.0]],
+    va: [[12.428, 12.439], [41.898, 41.906]],
     ru: [[30, 100], [40, 78]]
   };
   for (const [code, [lngR, latR]] of Object.entries(SAMPLES)) {
@@ -917,7 +987,9 @@ await check({
   }
 
   const subs = parsePathData(land.d);
-  t.ok(subs.length > 0, 'd 에서 서브패스를 하나도 읽지 못했다');
+  readOrSkip(t, 'data/map-coords.js', '지도 트랙');
+  vm.runInNewContext(read('data/map-coords.js'), ctx, { filename: 'data/map-coords.js' });
+  verifyMapGeometry(t, land, ctx.window.FQ.mapCoords || {});
   let outOfRange = 0, notRounded = 0, crossing = 0, tooShort = 0, seams = 0;
   for (const pts of subs) {
     if (pts.length < 4) tooShort++;
@@ -1309,7 +1381,7 @@ await check({
   label: 'build-map.mjs 의 실루엣 생성 규칙과 라벨 검증',
   severity: 'acceptance',
   why: '내부 링을 살려두면 레소토·산마리노·바티칸 자리에 흰 구멍이 뚫리고, 작은 나라 링 보존 예외가 없으면 싱가포르·바티칸이 지도에서 사라진다.'
-}, (t) => {
+}, async (t) => {
   const src = readOrSkip(t, 'scripts/build-map.mjs', '지도 T3/T4');
   const headers = Object.fromEntries(['data/map-coords.js', 'data/map-shapes.js']
     .filter(exists).map(file => [file, headerComment(read(file))]));
@@ -1321,10 +1393,8 @@ await check({
   t.ok(pipeline.includes('MultiPolygon') && pipeline.includes('Polygon'), 'MultiPolygon/Polygon 분기가 없다');
   t.ok(/throw/.test(pipeline), '예상 밖 형태에서 멈추는 throw 가 없다');
   t.ok(/180/.test(src), '날짜변경선 검사(경도 차 180)가 보이지 않는다');
-  for (const code of ['sg', 'mc', 'va', 'tv']) {
-    t.ok(src.includes("'" + code + "'") || src.includes('"' + code + '"'),
-      '작은 나라 누락 점검 대상이 명시되지 않았다: ' + code);
-  }
+  const { buildLand } = await import('./build-map.mjs');
+  verifySmallLandPreservation(t, buildLand);
   t.ok(/process\.exit\(1\)|exitCode\s*=\s*1/.test(src), '누락 시 exit 1 하는 경로가 없다');
   t.ok(src.includes('2000') && src.includes('1000'), '좌표 변환식의 2000·1000 이 없다');
   t.ok(/toFixed\(1\)/.test(src), 'toFixed(1) 이 없다');

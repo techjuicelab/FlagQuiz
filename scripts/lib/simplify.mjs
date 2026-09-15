@@ -94,7 +94,7 @@ export function topologySimplifier(features, tolerance) {
     const keys = arc.map(pointKey);
     const reverse = keys[0] > keys[keys.length - 1];
     const canonical = reverse ? [...arc].reverse() : arc;
-    const cacheKey = (reverse ? keys.reverse() : keys).join('|');
+    const cacheKey = (reverse ? [...keys].reverse() : keys).join('|');
     let reduced = cache.get(cacheKey);
     if (!reduced) {
       reduced = simplify(canonical, tolerance);

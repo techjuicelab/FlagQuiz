@@ -1,7 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { verifyAudioCache, verifyActivateKeepsAudio, verifyMapTolerance } from '../scripts/verify-expansion.mjs';
+import vm from 'node:vm';
+import { buildLand } from '../scripts/build-map.mjs';
+import { verifyAudioCache, verifyActivateKeepsAudio, verifyMapTolerance,
+  verifyMapGeometry, verifySmallLandPreservation } from '../scripts/verify-expansion.mjs';
 
 const sw = fs.readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
 const buildMap = fs.readFileSync(new URL('../scripts/build-map.mjs', import.meta.url), 'utf8');
@@ -91,4 +94,41 @@ test('지도 검사기는 임의 허용 오차·선택 근거 삭제·생성 헤
   assert.ok((await problems(verifyMapTolerance, noReason, headers)).some(message => /근거/.test(message)));
   const mismatch = { ...headers, 'map-shapes.js': headers['map-shapes.js'].replace('허용 오차: 0.5', '허용 오차: 0.7') };
   assert.ok((await problems(verifyMapTolerance, buildMap, mismatch)).some(message => /헤더.*상수와 다르다/.test(message)));
+});
+
+function mapAssets() {
+  const context = { window: {} };
+  for (const name of ['map-coords.js', 'map-shapes.js']) {
+    vm.runInNewContext(fs.readFileSync(new URL('../data/' + name, import.meta.url), 'utf8'), context);
+  }
+  return { land: context.window.FQ.mapLand, coords: context.window.FQ.mapCoords };
+}
+
+test('지도 검사기는 실제 최종 도형의 면적·방향·194개 핀을 검사한다', async () => {
+  const { land, coords } = mapAssets();
+  assert.deepEqual(await problems(verifyMapGeometry, land, coords), []);
+  const collapsed = await problems(verifyMapGeometry, { ...land, d: 'M0 0Z' }, coords);
+  assert.ok(collapsed.some(message => /300개 미만/.test(message)), collapsed.join('\n'));
+  assert.ok(collapsed.some(message => /면적 0/.test(message)), collapsed.join('\n'));
+  assert.ok(collapsed.some(message => /육지 밖/.test(message)), collapsed.join('\n'));
+});
+
+test('지도 검사기는 일부 링의 면적 소실과 반대 방향 및 바다 핀도 거부한다', async () => {
+  const { land, coords } = mapAssets();
+  const zero = await problems(verifyMapGeometry, { ...land, d: land.d + 'M0 0L1 0L0 0Z' }, coords);
+  assert.ok(zero.some(message => /면적 0/.test(message)), zero.join('\n'));
+  // 새 외곽은 나머지 최종 도형과 반대 방향이므로 nonzero fill 상쇄 위험이다.
+  const reverse = await problems(verifyMapGeometry, { ...land, d: land.d + 'M0 0L0 1L1 1L1 0L0 0Z' }, coords);
+  assert.ok(reverse.some(message => /방향이 통일되지/.test(message)), reverse.join('\n'));
+  const sea = await problems(verifyMapGeometry, land, { ...coords, kr: [0, 90] });
+  assert.ok(sea.some(message => /육지 밖.*kr/.test(message)), sea.join('\n'));
+});
+
+test('작은 육지 검사기는 임의 코드와 배제 지역의 보존을 실제 생성으로 검증한다', async () => {
+  assert.deepEqual(await problems(verifySmallLandPreservation, buildLand), []);
+  const dropExcluded = (features, matched) => buildLand(features.filter(feature => [...matched.values()].includes(feature)), matched);
+  const missing = await problems(verifySmallLandPreservation, dropExcluded);
+  assert.ok(missing.some(message => /배제 지역|Excluded land fixture/.test(message)), missing.join('\n'));
+  const collapsed = await problems(verifySmallLandPreservation, () => ({ mapLand: { d: 'M1069 267.2L1069.1 267.2L1069 267.2Z' } }));
+  assert.ok(collapsed.some(message => /면적 0/.test(message)), collapsed.join('\n'));
 });

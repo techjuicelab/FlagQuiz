@@ -151,7 +151,7 @@ group('지도 자료', () => {
   ok(inside('kr', 124, 33, 132, 39), '한국 지도 좌표는 한반도 안에 있어야 함', 'kr');
   ok(inside('au', 112, -44, 154, -10), '호주 지도 좌표는 남반구 본토에 있어야 함', 'au');
   ok(inside('br', -74, -34, -34, 6), '브라질 지도 좌표는 남미 안에 있어야 함', 'br');
-  ok(inside('va', 12.4, 41.85, 12.5, 41.95), '바티칸 지도 좌표는 로마 안쪽이어야 함', 'va');
+  ok(inside('va', 12.428, 41.898, 12.439, 41.906), '바티칸 지도 좌표는 실제 바티칸 경계 상자 안이어야 함', 'va');
   ok(inside('ru', 30, 50, 100, 72), '러시아 지도 좌표는 서쪽 본토에 있어야 함', 'ru');
 
   const land = FQ.mapLand || {};
@@ -160,6 +160,44 @@ group('지도 자료', () => {
   ok(typeof land.d === 'string' && land.d.length < 400000, '지도 육지 경로는 400000자 미만이어야 함');
   ok(typeof land.d === 'string' && land.d.includes('M'), '지도 육지에는 닫힌 링의 시작점이 있어야 함');
   ok(Object.keys(land).sort().join(',') === 'd,viewBox', '지도 육지에는 나라별 키가 없어야 함');
+
+  // 생성기와 독립적으로 최종 SVG를 검사한다. 원자료나 생성기의 도형 헬퍼는 읽지 않는다.
+  const subpaths = typeof land.d === 'string' ? land.d.split('Z').filter((s) => s.trim()) : [];
+  const number = '-?\\d+(?:\\.\\d+)?';
+  const ringPattern = new RegExp('^M' + number + ' ' + number + '(?:L' + number + ' ' + number + '){2,}$');
+  const rings = subpaths.map((s, i) => {
+    ok(ringPattern.test(s), '지도 subpath는 3개 이상 점을 가진 M/L 링이어야 함', String(i));
+    const values = s.match(/-?\d+(?:\.\d+)?/g) || [];
+    const points = [];
+    for (let j = 0; j + 1 < values.length; j += 2) points.push([Number(values[j]), Number(values[j + 1])]);
+    return points;
+  });
+  const area = (points) => points.reduce((sum, [x1, y1], i) => {
+    const [x2, y2] = points[(i + 1) % points.length];
+    return sum + x1 * y2 - x2 * y1;
+  }, 0) / 2;
+  function winding(px, py, points) {
+    let w = 0;
+    for (let i = 0; i < points.length; i++) {
+      const [x1, y1] = points[i], [x2, y2] = points[(i + 1) % points.length];
+      const cross = (x2 - x1) * (py - y1) - (px - x1) * (y2 - y1);
+      if (y1 <= py && y2 > py && cross > 0) w++;
+      else if (y1 > py && y2 <= py && cross < 0) w--;
+    }
+    return w;
+  }
+  ok(typeof land.d === 'string' && land.d.endsWith('Z'), '지도 마지막 subpath도 닫혀 있어야 함');
+  ok(rings.length >= 300, '지도 육지 subpath는 300개 이상이어야 함', String(rings.length));
+  const areas = rings.map(area);
+  areas.forEach((a, i) => ok(Math.abs(a) >= 1e-9, '지도 subpath 면적은 0이 아니어야 함', String(i)));
+  ok(areas.length > 0 && areas.every((a) => Math.sign(a) === Math.sign(areas[0])), '지도 subpath 방향이 모두 같아야 함');
+  for (const c of countries) {
+    const point = coords[c.code];
+    if (!Array.isArray(point) || point.length !== 2 || !point.every(Number.isFinite)) continue;
+    const x = (point[0] + 180) / 360 * 2000, y = (90 - point[1]) / 180 * 1000;
+    const w = rings.reduce((sum, ring) => sum + winding(x, y, ring), 0);
+    ok(w !== 0, '지도 핀은 생성된 육지 실루엣 안에 있어야 함', c.code);
+  }
 
   const build = fs.readFileSync(path.join(root, 'scripts/build-site.mjs'), 'utf8');
   const sw = fs.readFileSync(path.join(root, 'sw.js'), 'utf8');
