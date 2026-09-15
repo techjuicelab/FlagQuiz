@@ -37,7 +37,7 @@
 
 ## 혼동군 — `quiz.js`에 넣을 것
 
-[confusion-groups.json](confusion-groups.json)에 **53군**을 담았다. 명소 축 25군, 상징물 축 28군.
+[confusion-groups.json](confusion-groups.json)에 53군을 담았다(명소 25 · 상징물 28). → D11~D14 이후 **58군**으로 늘었다. 최신 수치는 [ROUND-D11-D14.md](ROUND-D11-D14.md)와 파일 자체를 보라.
 
 만 4세에게 사실상 같은 그림인 나라들이다. 정답과 같은 묶음에 속한 나라는 보기에서 제외해야
 아이가 그림을 보고 고르는 것이 되지, 넷 중 찍는 것이 되지 않는다. 테스트로 고정할 것.

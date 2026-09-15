@@ -1,11 +1,12 @@
 # 확장 설계 — 상징물 · 대표 명소 · 지도
 
 만 4세 민규가 국기-나라 이름을 90% 이상 외운 다음 단계를 설계한 문서다.
-**결정 10건이 나왔고 주제 표 정리가 끝났다. [DECISIONS.md](DECISIONS.md)가 이 문서의 "권장 설계"보다 우선한다.**
+**결정 14건이 나왔고 주제 표 정리가 끝났다. [DECISIONS.md](DECISIONS.md)가 이 문서의 "권장 설계"보다 우선한다.**
 
 | 문서 | 내용 |
 | --- | --- |
-| [DECISIONS.md](DECISIONS.md) | **확정된 결정 7개**와 각각에 따라오는 작업 |
+| [HANDOFF.md](HANDOFF.md) | **인계 명세** — 외부 코딩 에이전트가 읽을 단계·과제·금지 사항 |
+| [DECISIONS.md](DECISIONS.md) | **확정된 결정 14건**(D1~D14)과 각각에 따라오는 작업 |
 | [INTERVIEW.md](INTERVIEW.md) | 역인터뷰 전문 — 차단 질문, 나머지 질문, 기본값으로 갈 가정 |
 | [IMAGE-PROMPTS.md](IMAGE-PROMPTS.md) | 이미지 프롬프트 키트 — 화풍 후보 A/B, 템플릿, 샘플 18장, 검수표 |
 | [PILOT.md](PILOT.md) | **화풍 A/B 파일럿 16장** — 지금 바로 돌릴 수 있다 |
@@ -14,7 +15,7 @@
 | [FIX-ROUND1.md](FIX-ROUND1.md) | 교정 1차 결과 — 명소 축이 과교정된 경위 |
 | [FINAL.md](FINAL.md) | 최종 정리 결과 — 표 상태, 규칙별 통과 |
 | [ROUND-D11-D14.md](ROUND-D11-D14.md) | **아프리카 발굴·모자 재배치 결과** — 불변식 10가지 전부 통과 |
-| [confusion-groups.json](confusion-groups.json) | **혼동군 53군** — quiz.js 오답 배제 규칙에 그대로 들어간다 |
+| [confusion-groups.json](confusion-groups.json) | **혼동군 58군** — quiz.js 오답 배제 규칙에 그대로 들어간다 |
 
 ---
 
