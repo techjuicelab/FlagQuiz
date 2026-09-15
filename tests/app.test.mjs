@@ -516,4 +516,37 @@ test('느린 그림 다운로드 중에는 제한 시간·제출이 시작되지
   assert.equal(a.state.timedOut,true);assert.equal(f.c.FQ.storage.axisStat('symbol','kr').seen,1);
 });
 
+test('숨긴 화면에서 그림이 도착하면 복귀 전까지 기다리고 전체 제한 시간을 준다',()=>{
+  const f=fixture();f.c.FQ.app.boot();
+  f.c.FQ.storage.updateSettings({mode:'symbol',timer:10,dev:{art:true}});f.c.FQ.app.startGame(['kr']);
+  const a=f.c.FQ.test;
+  f.c.document.hidden=true;f.events.visibilitychange[0]();
+  f.node('#question-art').handlers.load();
+  for(let i=0;i<12;i++)f.runDelay(1000);
+  assert.equal(a.state.timerId,null);assert.equal(a.state.answered,false);assert.equal(a.state.timedOut,false);
+  assert.equal(f.c.FQ.storage.axisStat('symbol','kr').seen,0);
+  f.c.document.hidden=false;f.events.visibilitychange[0]();
+  assert.equal(a.state.timeLeft,10);
+  for(let i=0;i<9;i++)f.runDelay(1000);
+  assert.equal(a.state.answered,false);assert.equal(a.state.timeLeft,1);
+  f.runDelay(1000);
+  assert.equal(a.state.timedOut,true);assert.equal(f.c.FQ.storage.axisStat('symbol','kr').seen,1);
+});
+
+test('숨긴 동안 그림 오류가 나면 복귀해도 제한 시간을 재개하지 않고 재수신을 기다린다',()=>{
+  const f=fixture();f.c.FQ.app.boot();
+  f.c.FQ.storage.updateSettings({mode:'place',timer:10,dev:{art:true}});f.c.FQ.app.startGame(['kr']);
+  const a=f.c.FQ.test;
+  f.node('#question-art').handlers.load();f.runDelay(1000);
+  f.c.document.hidden=true;f.events.visibilitychange[0]();
+  f.node('#question-art').handlers.error();
+  f.c.document.hidden=false;f.events.visibilitychange[0]();
+  for(let i=0;i<12;i++)f.runDelay(1000);
+  assert.equal(a.state.artUnavailable,true);assert.equal(a.state.timerId,null);
+  assert.equal(a.state.answered,false);assert.equal(a.state.timedOut,false);
+  assert.equal(f.c.FQ.storage.axisStat('place','kr').seen,0);
+  f.node('#art-retry').click();f.node('#question-art').handlers.load();
+  assert.equal(a.state.timeLeft,10);assert.notEqual(a.state.timerId,null);
+});
+
 console.log('앱 흐름 회귀 검사 '+passed+'건 통과');

@@ -1216,9 +1216,13 @@
   /* --------- 제한 시간 --------- */
   function startTimer(remaining) {
     stopTimer();
+    state.timerPaused = false;
+    if (!state.game || state.answered || state.artUnavailable) return;
     var limit = remaining === undefined ? Number(store.settings().timer) || 0 : remaining;
     if (!limit) return;
     state.timeLeft = limit;
+    // 숨겨진 동안 그림이 준비되면 화면 복귀 후부터 온전한 제한 시간을 준다.
+    if (doc.hidden) { state.timerPaused = true; return; }
     var chip = ui.$('#timer-chip');
     if (chip) chip.textContent = '⏱ ' + state.timeLeft;
     state.timerId = global.setInterval(function () {
