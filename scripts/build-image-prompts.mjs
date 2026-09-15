@@ -2,7 +2,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { ROOT, readLedger, lintLedger, cliArguments } from './image-ledger.mjs';
+import { ROOT, readLedger, lintLedger, reportLedger, cliArguments } from './image-ledger.mjs';
+
+import { writeBoard } from './lib/image-board.mjs';
 
 export const ORDER = Object.freeze({
   a: [['subject'], ['style'], ['exclusions']],
@@ -42,7 +44,8 @@ export function selectItems(ledger, { kind = 'all', codes, ids } = {}) {
   return ledger.items.filter((item) => (kind === 'all' || item.kind === kind) && (!selectedCodes || selectedCodes.includes(item.code)) && (!selectedIds || selectedIds.includes(item.id)));
 }
 
-export function buildPrompts({ root = ROOT, style, kind = 'all', codes, ids, out = 'docs/image-prompts/prompts', stdout = false, force = false, dropBlockHeaders = false } = {}) {
+export function buildPrompts({ root = ROOT, style, kind = 'all', codes, ids, out = 'docs/image-prompts/prompts', stdout = false, force = false, dropBlockHeaders = false, board = false } = {}) {
+  if (board && stdout) throw new Error('--board와 --stdout을 함께 사용할 수 없습니다.');
   const ledger = readLedger(root);
   if (!['a', 'b'].includes(style)) throw new Error('--style a|b를 지정하세요.');
   // 다른 출력 폴더와 --force도 화풍 미선택 상태의 본 생성 거부를 우회하지 못한다.
@@ -71,12 +74,16 @@ export function buildPrompts({ root = ROOT, style, kind = 'all', codes, ids, out
     for (const id of new Set([...skipped.unwritten, ...skipped.blocked])) fs.rmSync(path.join(outputDirectory, id + '.txt'), { force: true });
     for (const file of written) fs.writeFileSync(file.path, file.content);
   }
+  if (board) {
+    const prompts = new Map(ledger.items.filter((item) => item.subjectEn && item.status !== 'blocked-approval').map((item) => [item.id, buildPrompt(item, ledger, style, { dropBlockHeaders })]));
+    writeBoard(root, ledger, reportLedger(ledger), prompts);
+  }
   return { written, skipped, warnings: lint.warnings };
 }
 
 export function main(args = process.argv.slice(2)) {
   const options = cliArguments(args);
-  const booleans = ['stdout', 'force', 'drop-block-headers'];
+  const booleans = ['stdout', 'force', 'drop-block-headers', 'board'];
   const strings = ['root', 'style', 'kind', 'codes', 'ids', 'out'];
   if (options.positional.length) throw new Error('알 수 없는 인자: ' + options.positional.join(' '));
   for (const [key, value] of Object.entries(options)) {
