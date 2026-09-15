@@ -9,6 +9,8 @@ var SHELL = [
   './manifest.webmanifest',
   './css/style.css',
   './data/countries.js',
+  './data/map-coords.js',
+  './data/map-shapes.js',
   './js/util.js',
   './js/storage.js',
   './js/audio.js',

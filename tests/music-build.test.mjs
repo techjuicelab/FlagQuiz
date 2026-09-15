@@ -12,7 +12,7 @@ async function fixture(t) {
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   for (const folder of ['scripts', 'js', 'assets', 'css', 'flags', 'data', 'audio/sua', 'audio/music', '_site']) await fs.mkdir(path.join(root, folder), { recursive: true });
   await fs.copyFile(build, path.join(root, 'scripts/build-site.mjs'));
-  for (const file of ['index.html', 'sw.js', 'manifest.webmanifest', 'data/countries.js']) await fs.writeFile(path.join(root, file), file);
+  for (const file of ['index.html', 'sw.js', 'manifest.webmanifest', 'data/countries.js', 'data/map-coords.js', 'data/map-shapes.js']) await fs.writeFile(path.join(root, file), file);
   await fs.writeFile(path.join(root, 'js/voice-manifest.js'), 'window.FQ={voiceManifest:{ready:true,expectedClips:1,clips:{hello:{src:"audio/sua/abcdef.mp3"}}}};');
   await fs.writeFile(path.join(root, 'audio/sua/abcdef.mp3'), 'voice');
   await fs.writeFile(path.join(root, '_site/previous-release'), 'preserve on validation failure');
