@@ -335,6 +335,57 @@ export async function verifyActivateKeepsAudio(t, src) {
   t.note('v4 수아·음악 바이트 보존, 음원 읽기·복사·삭제·다운로드 없음, 타 앱 캐시 보존을 실행 확인했다');
 }
 
+/** 실제 나라 모달의 두 버튼을 눌러 음원 목록에 없는 문구가 추가되지 않았는지 검사한다. */
+export function verifyUiVoicePhrases(t, src, countries, manifest) {
+  const sandbox = makeSandbox();
+  let modal = null;
+  const spoken = [];
+  sandbox.document.createElement = () => ({
+    innerHTML: '',
+    listeners: new Map(),
+    addEventListener(type, listener) { this.listeners.set(type, listener); },
+    querySelector() { return { textContent: '', focus() {} }; },
+    remove() { if (modal === this) modal = null; }
+  });
+  sandbox.document.querySelector = (selector) => selector === '.modal-back' ? modal : null;
+  sandbox.document.body.appendChild = (node) => { modal = node; };
+  // 상태와 음성 장치는 격리하고, 화면 생성과 이벤트 처리 코드는 실제 ui.js를 실행한다.
+  sandbox.FQ = {
+    storage: { countryStat: () => ({ seen: 0 }), updateSettings() {} },
+    quiz: { LEVEL_LABEL: {} },
+    audio: {
+      stopSpeaking() {}, setSpeakEnabled() {},
+      say(lines) { spoken.push(Array.isArray(lines) ? [...lines] : [lines]); }
+    }
+  };
+  vm.runInContext(src, sandbox, { filename: 'js/ui.js' });
+  t.ok(countries.length === 194, '음성 버튼 검사 대상이 194개국이 아니다', countries.length);
+  t.ok(typeof sandbox.FQ.ui?.countryModal === 'function', '나라 모달을 실행할 수 없다');
+  if (typeof sandbox.FQ.ui?.countryModal !== 'function') return;
+  let buttons = 0;
+  for (const country of countries) {
+    sandbox.FQ.ui.countryModal(country);
+    for (const attribute of ['data-speak', 'data-explain']) {
+      const label = country.code + ' ' + attribute;
+      t.ok(modal && new RegExp('\\b' + attribute + '\\b').test(modal.innerHTML), '나라 모달에 음성 버튼이 없다', label);
+      const click = modal?.listeners.get('click');
+      t.ok(typeof click === 'function', '나라 모달의 클릭 처리가 없다', label);
+      if (typeof click !== 'function') continue;
+      const start = spoken.length;
+      const target = { closest(selector) { return selector === '[' + attribute + ']' ? target : null; } };
+      click({ target });
+      const lines = spoken.slice(start).flat();
+      t.ok(lines.length > 0, '음성 버튼을 눌러도 재생 문구가 없다', label);
+      for (const line of lines) {
+        t.ok(typeof line === 'string' && Object.hasOwn(manifest.clips, line),
+          '기존 수아 음원에 없는 UI 문구', label + ': ' + JSON.stringify(line));
+      }
+      buttons++;
+    }
+  }
+  t.note('194개국 이름·설명 버튼 ' + buttons + '회 실행: 실제 발화 문구를 기존 manifest와 대조했다');
+}
+
 export function verifyMapTolerance(t, src, headers = {}) {
   const match = /\b(?:const|let|var)\s+SIMPLIFY_TOLERANCE_DEG\s*=\s*(\d+(?:\.\d+)?)\s*;/.exec(src);
   t.ok(!!match, 'SIMPLIFY_TOLERANCE_DEG 상수가 없다');
@@ -604,9 +655,8 @@ await check({
   t.ok(clips === m.expectedClips, 'clips 개수와 expectedClips 가 어긋난다 — 이 상태로는 배포 게이트가 막는다',
     clips + ' vs ' + m.expectedClips);
   t.ok(exists('data/voice-config.json'), 'data/voice-config.json 이 사라졌다');
-  const sizes = ['data/voice-config.json', 'js/ui.js'].filter(exists)
-    .map((f) => f + ' ' + fs.statSync(p(f)).size + 'B');
-  t.note('참고 크기: ' + sizes.join(' / ') + ' (ui.js 의 lines 배열이 늘지 않았는지 사람이 한 번 본다)');
+  const { list } = countryCodes();
+  verifyUiVoicePhrases(t, read('js/ui.js'), list, m);
 });
 
 await check({

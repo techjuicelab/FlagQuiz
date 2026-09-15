@@ -4,9 +4,10 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 import { buildLand } from '../scripts/build-map.mjs';
 import { verifyAudioCache, verifyActivateKeepsAudio, verifyMapTolerance,
-  verifyMapGeometry, verifySmallLandPreservation } from '../scripts/verify-expansion.mjs';
+  verifyMapGeometry, verifySmallLandPreservation, verifyUiVoicePhrases } from '../scripts/verify-expansion.mjs';
 
 const sw = fs.readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
+const ui = fs.readFileSync(new URL('../js/ui.js', import.meta.url), 'utf8');
 const buildMap = fs.readFileSync(new URL('../scripts/build-map.mjs', import.meta.url), 'utf8');
 const headers = Object.fromEntries(['map-coords.js', 'map-shapes.js'].map(name => [name,
   fs.readFileSync(new URL('../data/' + name, import.meta.url), 'utf8').split('\n').filter(line => line.startsWith('//')).join('\n')
@@ -28,6 +29,39 @@ async function problems(check, ...args) {
   catch (error) { failures.push(error.message); }
   return failures;
 }
+
+function voiceAssets() {
+  const context = { window: {} };
+  for (const file of ['data/countries.js', 'js/voice-manifest.js']) {
+    vm.runInNewContext(fs.readFileSync(new URL('../' + file, import.meta.url), 'utf8'), context);
+  }
+  return [context.window.FQ.countries, context.window.FQ.voiceManifest];
+}
+
+test('금지6 검사는 194개국의 실제 이름·설명 버튼 발화를 기존 음원과 대조한다', async () => {
+  assert.deepEqual(await problems(verifyUiVoicePhrases, ui, ...voiceAssets()), []);
+  const renamed = ui.replaceAll('var lines =', 'var spokenLines =').replaceAll('FQ.audio.say(lines,', 'FQ.audio.say(spokenLines,');
+  assert.notEqual(renamed, ui);
+  assert.deepEqual(await problems(verifyUiVoicePhrases, renamed, ...voiceAssets()), [], '변수 이름은 음성 문구 계약이 아니다');
+});
+
+test('금지6 검사는 이름·설명 버튼의 미등록 문구와 발화 제거를 모두 거부한다', async () => {
+  const assets = voiceAssets();
+  const extraExplain = replaceOnce(ui, '[country.ko, country.flagHint, country.fact]',
+    "[country.ko, country.flagHint, country.fact, '새 지도 안내 문구']");
+  const extraName = replaceOnce(ui, ': [country.ko];', ": [country.ko, '새 나라 이름 문구'];");
+  for (const [source, button] of [[extraExplain, 'data-explain'], [extraName, 'data-speak']]) {
+    const failed = await problems(verifyUiVoicePhrases, source, ...assets);
+    assert.ok(failed.some(message => message.includes('기존 수아 음원에 없는 UI 문구') && message.includes(button)), failed.join('\n'));
+  }
+  // 마지막 나라만 새 문구를 읽게 하여 일부 국가 표본만 검사하는 회귀도 잡는다.
+  const lastCode = assets[0].at(-1).code;
+  const oneCountry = replaceOnce(ui, ': [country.ko];',
+    ': [country.code === ' + JSON.stringify(lastCode) + " ? '마지막 나라의 새 문구' : country.ko];");
+  assert.ok((await problems(verifyUiVoicePhrases, oneCountry, ...assets)).some(message => message.includes(lastCode + ' data-speak')));
+  const silent = replaceOnce(ui, 'FQ.audio.say(lines,', 'void (lines,');
+  assert.ok((await problems(verifyUiVoicePhrases, silent, ...assets)).some(message => /재생 문구가 없다/.test(message)));
+});
 
 test('확장 검사기는 헬퍼를 통한 실제 v4 음원 조회·저장과 활성화를 통과시킨다', async () => {
   assert.deepEqual(await problems(verifyAudioCache, sw), []);
