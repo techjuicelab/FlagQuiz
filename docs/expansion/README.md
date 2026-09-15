@@ -12,7 +12,8 @@
 | [SUBJECTS.csv](SUBJECTS.csv) | **194행 주제 표** — 정리 완료, 무결성 검사 전부 통과 |
 | [AUDIT.md](AUDIT.md) | 주제 표 전수 감사 결과와 고쳐야 할 것 |
 | [FIX-ROUND1.md](FIX-ROUND1.md) | 교정 1차 결과 — 명소 축이 과교정된 경위 |
-| [FINAL.md](FINAL.md) | **최종 정리 결과** — 표 상태, 규칙별 통과, 남은 판단 |
+| [FINAL.md](FINAL.md) | 최종 정리 결과 — 표 상태, 규칙별 통과 |
+| [ROUND-D11-D14.md](ROUND-D11-D14.md) | **아프리카 발굴·모자 재배치 결과** — 불변식 10가지 전부 통과 |
 | [confusion-groups.json](confusion-groups.json) | **혼동군 53군** — quiz.js 오답 배제 규칙에 그대로 들어간다 |
 
 ---
