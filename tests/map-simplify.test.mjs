@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { simplify, topologySimplifier } from '../scripts/lib/simplify.mjs';
+import { simplify, topologySimplifier, hasSelfIntersections } from '../scripts/lib/simplify.mjs';
 
 const feature = (ring) => ({ geometry: { type: 'Polygon', coordinates: [ring] } });
 const same = (a, b) => a[0] === b[0] && a[1] === b[1];
@@ -55,4 +55,50 @@ test('긴 링은 명시적 스택으로 처리하며 닫힘과 끝점을 유지�
   assert.ok(output.length < ring.length / 10);
   assert.deepEqual(output[0], ring[0]);
   assert.deepEqual(output.at(-1), ring[0]);
+});
+
+test('비인접 선분 교차는 링의 전체 면적 부호와 무관하게 발견한다', () => {
+  const crossed = [[0,0],[4,3],[2,0],[2,4],[0,0]];
+  assert.equal(hasSelfIntersections(crossed), true);
+  assert.equal(hasSelfIntersections([...crossed].reverse()), true);
+  assert.equal(hasSelfIntersections([[0,0],[4,0],[4,4],[0,4],[0,0]]), false);
+  assert.equal(hasSelfIntersections([[0,0],[0,0],[4,0],[4,4],[0,4],[0,0]]), false);
+});
+
+test('단순화가 새로 만든 자기교차는 해당 arc를 단계적으로 정밀하게 만들면 사라진다', () => {
+  // 실제 해안의 좁은 만을 줄인 형태: 원본은 교차하지 않지만 0.5도 DP 결과는 교차한다.
+  const ring = [[0,1.16],[0.44,1.14],[0.85,0.62],[0.38,0.96],[0.09,0.09],[0,1.16]];
+  const original = JSON.stringify(ring);
+  assert.equal(hasSelfIntersections(ring), false);
+  const topology = topologySimplifier([feature(ring)], 0.5);
+  assert.equal(hasSelfIntersections(topology.simplifyRing(ring)), true);
+  assert.equal(topology.refineRings([ring]), true);
+  assert.equal(topology.refineRings([ring]), true);
+  const result = topology.simplifyRing(ring);
+  assert.equal(hasSelfIntersections(result), false);
+  assert.deepEqual(result[0], result.at(-1));
+  assert.equal(JSON.stringify(ring), original);
+});
+
+test('한 나라의 정밀도 보완은 공유 arc를 쓰는 이웃 나라에도 똑같이 반영된다', () => {
+  const left = [[0,0],[4,0],[4.1,0.5],[3.9,1],[4.1,1.5],[3.9,2],[4,2.5],[0,2.5],[0,0]];
+  const right = [[4,2.5],[3.9,2],[4.1,1.5],[3.9,1],[4.1,0.5],[4,0],[8,0],[8,2.5],[4,2.5]];
+  const create = (features) => topologySimplifier(features.map(feature), 0.2);
+  const topology = create([left, right]);
+  const before = arc(topology.simplifyRing(left), [4,0], [4,2.5]);
+  topology.simplifyRing(right);
+  topology.refineRings([left]);
+  const leftAfter = topology.simplifyRing(left), rightAfter = topology.simplifyRing(right);
+  const common = arc(leftAfter, [4,0], [4,2.5]);
+  assert.ok(common.length > before.length, '실제로 정밀도가 높아져야 한다');
+  assert.deepEqual(common, arc(rightAfter, [4,2.5], [4,0]).reverse());
+  const reversed = create([right, left]);
+  reversed.simplifyRing(right); reversed.simplifyRing(left);
+  reversed.refineRings([left]);
+  assert.deepEqual(reversed.simplifyRing(left), leftAfter);
+  assert.deepEqual(reversed.simplifyRing(right), rightAfter);
+  // 같은 공유 arc를 양쪽 링에서 요청해도 이번 패스에서는 한 단계만 높인다.
+  const both = create([left, right]);
+  both.refineRings([left, right]);
+  assert.deepEqual(arc(both.simplifyRing(left), [4,0], [4,2.5]), common);
 });

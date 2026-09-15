@@ -4,7 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { SOURCE_RELATIVE_PATH, SOURCE_VERSION, verifySource } from './fetch-map-source.mjs';
 import { joinFeatures, readCountryCodes } from './lib/ne-join.mjs';
-import { exteriorRings, largestRing, ringBounds, assertDateline, topologySimplifier } from './lib/simplify.mjs';
+import { exteriorRings, largestRing, ringBounds, assertDateline, hasSelfIntersections, topologySimplifier } from './lib/simplify.mjs';
 
 // 0.7°의 육안 검사에서 한반도·일본·반도 해안이 거칠어, HANDOFF의 허용 대안 0.5°를 채택.
 export const SIMPLIFY_TOLERANCE_DEG = 0.5;
@@ -55,28 +55,41 @@ export function buildLand(features, matched, tolerance = SIMPLIFY_TOLERANCE_DEG,
     const kb = bb ? '0:' + bb : '1:' + b.properties.ADMIN;
     return ka < kb ? -1 : ka > kb ? 1 : 0;
   });
-  for (const feature of ordered) {
-    for (const ring of exteriorRings(feature)) {
-      sourcePoints += ring.length;
-      assertDateline(ring, feature.properties.ADMIN);
-      const bbox = ringBounds(ring);
-      const protect = protectedRings.has(ring);
-      if (!protect && bbox[2] - bbox[0] < tolerance && bbox[3] - bbox[1] < tolerance) continue;
-      const reduced = topology.simplifyRing(ring);
-      let points = reduced.map((point) => roundPoint(project(point)));
-      // 점이 남아 있어도 반올림 뒤 면적이 0이면 SVG fill에는 아무것도 그려지지 않는다.
-      if (points.length < 4 || Math.abs(signedArea(points)) < 1e-9) {
-        if (!protect) continue;
-        points = bboxPath(bbox);
-        bboxFallbackFeatures.add(feature);
+  let refinementPasses = 0;
+  for (;;) {
+    // 앞선 패스에서 공유 arc를 정밀하게 만들었으면 이웃 나라의 도형도 다시 구성한다.
+    positiveAreaFeatures.clear(); bboxFallbackFeatures.clear(); parts.length = 0;
+    sourcePoints = 0; outputPoints = 0; outputRings = 0;
+    const crossingRings = [];
+    for (const feature of ordered) {
+      for (const ring of exteriorRings(feature)) {
+        sourcePoints += ring.length;
+        assertDateline(ring, feature.properties.ADMIN);
+        const bbox = ringBounds(ring);
+        const protect = protectedRings.has(ring);
+        if (!protect && bbox[2] - bbox[0] < tolerance && bbox[3] - bbox[1] < tolerance) continue;
+        const reduced = topology.simplifyRing(ring);
+        let points = reduced.map((point) => roundPoint(project(point)));
+        // 점이 남아 있어도 반올림 뒤 면적이 0이면 SVG fill에는 아무것도 그려지지 않는다.
+        if (points.length < 4 || Math.abs(signedArea(points)) < 1e-9) {
+          if (!protect) continue;
+          points = bboxPath(bbox);
+          bboxFallbackFeatures.add(feature);
+        }
+        if (hasSelfIntersections(points)) { crossingRings.push(ring); continue; }
+        // 교차를 해소한 화면 외곽의 방향을 통일한다. 면적 부호만으로 교차를 판단하지 않는다.
+        if (signedArea(points) < 0) points.reverse();
+        if (!(signedArea(points) > 1e-9)) throw new Error('지도 링 면적 0: ' + feature.properties.ADMIN);
+        parts.push(points.map((point, index) => (index ? 'L' : 'M') + point.join(' ')).join('') + 'Z');
+        outputPoints += points.length; outputRings++;
+        positiveAreaFeatures.add(feature);
       }
-      // 화면 좌표 변환 뒤 모든 외곽을 같은 방향으로 맞춰 nonzero fill 상쇄를 막는다.
-      if (signedArea(points) < 0) points.reverse();
-      if (!(signedArea(points) > 1e-9)) throw new Error('지도 링 면적 0: ' + feature.properties.ADMIN);
-      parts.push(points.map((point, index) => (index ? 'L' : 'M') + point.join(' ')).join('') + 'Z');
-      outputPoints += points.length; outputRings++;
-      positiveAreaFeatures.add(feature);
     }
+    if (!crossingRings.length) break;
+    if (refinementPasses >= 64 || !topology.refineRings(crossingRings)) {
+      throw new Error('반올림 뒤 지도 자기교차를 해소하지 못했습니다. 원자료와 정밀도를 확인하세요.');
+    }
+    refinementPasses++;
   }
   const missing = [...matched].filter(([, feature]) => !positiveAreaFeatures.has(feature)).map(([code]) => code);
   if (missing.length) throw new Error('지도 실루엣에서 빠진 국가: ' + missing.join(', '));
@@ -89,7 +102,7 @@ export function buildLand(features, matched, tolerance = SIMPLIFY_TOLERANCE_DEG,
   if (Buffer.byteLength(JSON.stringify(mapLand)) >= 250000) throw new Error('지도 실루엣이 250KB를 넘었습니다.');
   assertPinsOnLand(coords, mapLand);
   return { mapLand, stats: { sourcePoints, outputPoints, outputRings, preservedCountries: matched.size, preservedFeatures: positiveAreaFeatures.size,
-    bboxFallbacks: [...bboxFallbackFeatures].map((f) => countryByFeature.get(f) || f.properties.ADMIN), ...topology.stats } };
+    bboxFallbacks: [...bboxFallbackFeatures].map((f) => countryByFeature.get(f) || f.properties.ADMIN), refinementPasses, ...topology.stats } };
 }
 
 export function prepareMap({ sourcePath = path.join(root, SOURCE_RELATIVE_PATH) } = {}) {
