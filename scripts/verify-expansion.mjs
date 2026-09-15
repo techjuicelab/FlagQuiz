@@ -1791,12 +1791,16 @@ await check({
   if (!DEEP) t.skip('저장소 사본을 만들어 돌리는 느린 검사다 — --deep 으로 포함');
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'flagquiz-mut-'));
   try {
-    for (const link of ['flags', 'audio', 'assets', 'css', 'design', 'docs', 'images']) {
+    for (const link of ['flags', 'audio', 'assets', 'css', 'design', 'docs']) {
       if (exists(link)) fs.symlinkSync(p(link), path.join(tmp, link));
     }
-    for (const copy of ['data', 'tests', 'js', 'scripts', 'index.html', 'sw.js', 'package.json']) {
+    // 그림 검사기는 symlink를 거부하므로 실제 사본으로 검증한다.
+    for (const copy of ['data', 'tests', 'js', 'scripts', 'images', 'index.html', 'sw.js', 'package.json']) {
       if (exists(copy)) fs.cpSync(p(copy), path.join(tmp, copy), { recursive: true });
     }
+    // 정상 사본부터 통과해야 이후 실패가 주입한 변이 때문이라고 말할 수 있다.
+    try { execFileSync(process.execPath, ['tests/run.mjs'], { cwd: tmp, encoding: 'utf8', stdio: 'pipe' }); }
+    catch (error) { t.ok(false, '변이 주입 전 정상 사본의 테스트가 실패한다: '+String(error.stdout || error.message).slice(-1600)); }
     const MUT = [
       ['data/map-coords.js', (s) => s.split('\n').filter((l) => !/["']?kr["']?\s*:/.test(l)).join('\n'), 'kr'],
       ['data/map-coords.js', (s) => s.replace(/(\n\s*["']?kr["']?\s*:)/, '\n  "tw": [121.0, 23.6],$1'), '쓰이지 않는'],
