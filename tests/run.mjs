@@ -6,6 +6,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
 import { fileURLToPath } from 'node:url';
+import { checkArtSet } from '../scripts/lib/art-gate.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -83,6 +84,17 @@ function group(name, fn) {
 }
 
 const CONTINENTS = ['아시아', '유럽', '아프리카', '북아메리카', '남아메리카', '오세아니아'];
+
+group('그림 자료', () => {
+  const required = FQ.features.on('art') || process.env.FQ_REQUIRE_ART === '1';
+  const result = checkArtSet(root, FQ.subjects, countries.map(c => c.code), required);
+  for (const error of result.errors) ok(false, error);
+  ok(Object.values(FQ.subjects).filter(s => s.symbol).length === 194, '상징물 자료 194개');
+  ok(Object.values(FQ.subjects).filter(s => s.place).length === 148, '명소 자료 148개');
+  console.log('  · 상징물 그림 ' + result.counts.symbol + '/194, 명소 그림 ' + result.counts.place + '/148');
+  if (required) ok(result.counts.symbol === 194 && result.counts.place === 148, '전량 공개에는 그림 342개가 필요함');
+  for (const file of fs.readdirSync(path.join(root, 'flags'))) ok(file === 'README.md' || /^[a-z]{2}\.svg$/.test(file), '국기 폴더에는 SVG 국기와 출처 문서만', file);
+});
 
 group('데이터 기본', () => {
   ok(Array.isArray(countries), '데이터가 배열이어야 함');
