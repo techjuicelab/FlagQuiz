@@ -158,6 +158,10 @@
   }
   function history() { return state.history; }
   function allCountryStats() { return state.countries; }
+  function exportJson() {
+    try { return JSON.stringify(state, null, 2); }
+    catch (e) { return '{}'; }
+  }
   function badges() { return state.badges; }
 
   function awardBadge(id) {
@@ -195,6 +199,7 @@
     setDaily: setDaily,
     history: history,
     allCountryStats: allCountryStats,
+    exportJson: exportJson,
     badges: badges,
     awardBadge: awardBadge,
     resetAll: resetAll,
