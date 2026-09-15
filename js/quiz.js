@@ -9,10 +9,10 @@
 
   var MODES = {
     choice4: { label: '국기 보고 나라 고르기', kind: 'choice', hasOptions: true },
-    reverse: { label: '나라 보고 국기 고르기', kind: 'choice', hasOptions: true },
-    capital: { label: '나라 보고 수도 고르기', kind: 'choice', hasOptions: true },
-    typing:  { label: '국기 보고 이름 쓰기', kind: 'text', hasOptions: false },
-    voice:   { label: '국기 보고 말하기', kind: 'text', hasOptions: false }
+    reverse: { label: '나라 보고 국기 찾기', kind: 'choice', hasOptions: true },
+    capital: { label: '수도 맞히기', kind: 'choice', hasOptions: true },
+    typing:  { label: '이름 써서 맞히기', kind: 'text', hasOptions: false },
+    voice:   { label: '말로 답하기', kind: 'text', hasOptions: false }
   };
 
   var LEVEL_LABEL = { 1: '쉬움', 2: '보통', 3: '어려움' };
