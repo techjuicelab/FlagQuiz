@@ -19,7 +19,8 @@
       correctMusic: false,
       speak: true,
       reviewFirst: true,
-      timer: 0
+      timer: 0,
+      dev: {}
     },
     stats: {
       games: 0,

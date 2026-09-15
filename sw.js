@@ -18,6 +18,7 @@ var SHELL = [
   './data/map-shapes.js',
   './js/util.js',
   './js/storage.js',
+  './js/features.js',
   './js/audio.js',
   './js/recorded-audio.js',
   './js/voice-manifest.js',
