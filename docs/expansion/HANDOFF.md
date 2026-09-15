@@ -1,6 +1,6 @@
 # 인계 명세 — 외부 코딩 에이전트용
 
-설계는 끝났고 **코드는 아직 한 줄도 바뀌지 않았다.** 이 문서는 구현을 넘겨받는 에이전트가 읽는다.
+이 문서는 최초 인계 때 작성한 구현 명세다. 현재 완료 범위는 [STATUS.md](STATUS.md)를 따른다. **2026-09-15 사용자 결정으로 화풍은 B로 확정했다.** 이후의 A/B 비교 계획은 당시 절차이며, 화풍을 다시 묻지 않는다.
 
 각 과제의 터치포인트는 실제 소스를 열어 확인한 줄 번호다. 다만 **커밋이 쌓이면 줄이 밀린다** —
 항상 인용된 코드 조각을 `grep`으로 찾아 현재 위치를 확인하고 작업하라.
@@ -84,7 +84,7 @@ D2의 첫 배포 대상. ui.js:64(fact-box)와 :65(hint-box) 사이에 그림 �
 이 계획에서 가장 길고 에이전트가 대신할 수 없는 구간. 한국어 주제 문자열을 영어 피사체 문장으로 '재작성'하고, 화풍 A/B를 파일럿으로 비교해 styleChoice를 확정하고, 드리프트 계측기인 앵커 1장을 고정한다. 에이전트는 배치 표를 뽑아 주고 lint를 돌리고 결과를 원장에 기록하는 일만 한다.
 
 - **과제** — `T3-subject-en`, `T7-pilot`, `T8-anchor`
-- **사람이 먼저** — ①SUBJECTS.csv의 draft 31행을 아빠가 먼저 승인해야 그 행의 영어 문장을 쓸 수 있다(파일럿 8종 중 nl·kr·jp·bf 4개가 draft다) ②화풍 A/B 판정과 styleChoice 확정은 사람이 한다(D7 미정) ③그림 생성 자체를 에이전트가 못 한다.
+- **사람이 먼저** — ①SUBJECTS.csv의 draft 31행을 아빠가 먼저 승인해야 그 행의 영어 문장을 쓸 수 있다(파일럿 8종 중 nl·kr·jp·bf 4개가 draft다) ②사용자가 B를 선택해 D7 화풍 결정은 완료했다. 소재·앵커·그림 승인은 별도다 ③이 환경에서는 내장 image_gen으로 생성 가능하며, 이번에는 확정 소재 비교 시안만 만들었다.
 - **배포되면** — 배포 없음. 아이 화면 변화 0. 커밋되는 것은 원장(presets.json·settings.csv), 8항목 채점표가 들어간 docs/image-prompts/README.md, 앵커 PNG 1장뿐이다.
 
 ### 6단계 — 본 생성 342장 · WebP 변환 · 앱 배선
@@ -543,7 +543,7 @@ Natural Earth 50m을 좌표 194개와 '국경선 없는 육지 실루엣 한 덩
 **고칠 곳**
 
 - 신규 scripts/image-ledger.mjs — 서브커맨드 seed|lint|record|report. 의존성 0. node scripts/image-ledger.mjs seed 로 원장을 만든다.
-- 신규 docs/image-prompts/presets.json — 최상위: {created, templateVersion:'FQ-IMG-v1', styleChoice:null, common:{tool, aspect, styles:{a:{composition,style,exclusions,output}, b:{composition,style,exclusions,output}}}, items:[…342]}. common.styles.a에는 IMAGE-PROMPTS.md:220-236(A-스타일 블록)과 :240-254(A-금지 블록)을, common.styles.b에는 :296-313(B-상징물 템플릿)과 :317-339(B-랜드마크 템플릿)의 COMPOSITION/STYLE/DO NOT INCLUDE/OUTPUT 네 문단을 한 글자도 바꾸지 않고 옮긴다. 두 화풍의 공통 블록은 서로 다르므로 둘 다 보관한다(D7이 아직 미정).
+- 신규 docs/image-prompts/presets.json — 최상위: {created, templateVersion:'FQ-IMG-v1', styleChoice:null, common:{tool, aspect, styles:{a:{composition,style,exclusions,output}, b:{composition,style,exclusions,output}}}, items:[…342]}. common.styles.a에는 IMAGE-PROMPTS.md:220-236(A-스타일 블록)과 :240-254(A-금지 블록)을, common.styles.b에는 :296-313(B-상징물 템플릿)과 :317-339(B-랜드마크 템플릿)의 COMPOSITION/STYLE/DO NOT INCLUDE/OUTPUT 네 문단을 한 글자도 바꾸지 않고 옮긴다. 두 화풍의 공통 블록은 서로 다르므로 둘 다 보관한다. 미선택 기본값은 null이며, 이 프로젝트는 D7의 사용자 확정값 b를 별도 반영한다.
 - items[] 한 항목의 필드: {id:'<code>-<kind>', code, kind:'symbol'|'landmark', koRaw(CSV 원문 그대로), koApprove(아빠 승인용 2~10자 요약), subjectEn:null, accuracy(landmark만 true), override:null, substitutedFrom:null, keepsBackdrop:false, continent, category(symbol만), grade(landmark만), city(landmark만), inCapital, factReuse, riskNote(CSV 위험 열 원문), confusionGroups:[군 이름…], csvStatus:'final'|'draft'|'fixed-r1', status:'draft', tries:0, bytes:null, outputStem:'images/symbols/<code>'|'images/places/<code>'}
 - inCapital은 CSV '수도에있음' 열이 'Y'인 17행만 true, 나머지는 false로 굳힌다(빈칸=false). IMAGE-PROMPTS.md:341-342가 요구한 필드다 — false면 화면 문구가 '수도의 명소'가 아니라 '이 나라의 명소'여야 한다.
 - confusionGroups는 docs/expansion/confusion-groups.json의 groups[].codes를 code로 역인덱싱해 채운다. 이 값은 프롬프트에 들어가지 않는다 — 구별 지침을 얼마나 세게 써야 하는지 판단하는 사람용 표시다.
@@ -603,7 +603,7 @@ Natural Earth 50m을 좌표 194개와 '국경선 없는 육지 실루엣 한 덩
 
 ### `T5-build-prompts` 프롬프트 조립 스크립트 (scripts/build-image-prompts.mjs, 화풍 A/B 인자)
 
-**왜** — 수백 장을 뽑는 동안 프롬프트를 손으로 붙여 만들면 반드시 한 장에서 문단이 빠지거나 순서가 바뀐다. IMAGE-PROMPTS.md:276이 '어순을 바꾸거나 스타일 블록을 한 줄이라도 다듬는 순간 그 장만 다른 세계가 된다'고 못박았다. 조립을 기계에 맡기면 이 실수가 구조적으로 불가능해진다. 화풍은 D7에서 아직 미정이므로 A/B를 인자로 고를 수 있어야 하고, 파일럿에서는 두 화풍의 프롬프트가 '피사체 문장만 같고 스타일 블록만 다른' 상태로 나와야 한다(PILOT.md:3).
+**왜** — 수백 장을 뽑는 동안 프롬프트를 손으로 붙여 만들면 반드시 한 장에서 문단이 빠지거나 순서가 바뀐다. IMAGE-PROMPTS.md:276이 '어순을 바꾸거나 스타일 블록을 한 줄이라도 다듬는 순간 그 장만 다른 세계가 된다'고 못박았다. 조립을 기계에 맡기면 이 실수가 구조적으로 불가능해진다. 미선택 기본값 null과 A/B 분기 구조를 유지하되 현재 프로젝트 화풍은 D7의 B이며, 파일럿에서는 두 화풍의 프롬프트가 '피사체 문장만 같고 스타일 블록만 다른' 상태로 나와야 한다(PILOT.md:3).
 
 **독립 배포** — 가능 · 선행: `T2-ledger-seed`, `T4-subject-lint`
 
@@ -1282,7 +1282,7 @@ Natural Earth 50m을 좌표 194개와 '국경선 없는 육지 실루엣 한 덩
 
 아래는 착수 전에 확인할 사항이다. 미정 항목만 필요한 단계에서 사용자에게 묻고, 날짜와 함께 확정한 항목은 그대로 적용한다.
 
-- D7 화풍 A/B가 미정이다. 확정 전까지 변환 규격이 갈린다 — A는 768×576·경고 40KB·실패 60KB, B는 1024×768·경고 110KB·실패 150KB. 프롬프트 조립·변환·기계 검수 세 스크립트가 전부 이 값으로 분기하므로, 파일럿이 끝나기 전에는 styleChoice를 null로 두고 본 생성에 들어가지 않는다.
+- D7 화풍은 2026-09-15 사용자 선택으로 B 확정이다. 이 프로젝트 원장 생성 시 styleChoice b를 반영하며 규격은 1024×768·경고 110KB·실패 150KB다. 미선택 기본값 null과 null 본 생성 거부, A/B 분기 자체는 유지한다. 화풍 선택이 소재·앵커 승인이나 본 생성 선행 조건 전체의 완료는 아니다.
 - 그림 폴더 경로는 2026-09-15 사용자 결정으로 images/symbols/·images/places/로 확정했다. 새로 물을 사항이 아니다. build-site.mjs는 images 하나를 복사하고 serve.mjs MIME·테스트·ui.js 경로 함수를 같은 이름으로 맞춘다.
 - 퀴즈 모드의 손가락 조작 방식이 미정이다(끌어다 놓기 / 탭-탭 / 기존 사지선다). D2에 따라 2주 뒤 모드 작업 때 정하고, 현재 권장은 기존 사지선다 재사용이다 — 그림 1장 + 국기 4장.
 - 지도 퀴즈가 나라 단위를 채점하는지 대륙 수준을 채점하는지 미정이다. 자산 형식(나라별 좌표 194개)은 두 경우 모두에 그대로 쓰이므로 지금 어느 작업도 막지 않지만, 정답 판정의 허용 반경은 렌더링이 아니라 채점 코드의 상수 하나로 분리해 둔다.
