@@ -16,7 +16,13 @@
     "music:prepare": "node scripts/prepare-music.mjs",
     "map:fetch": "node scripts/fetch-map-source.mjs",
     "map:build": "node scripts/build-map.mjs",
-    "subjects:build": "node scripts/build-subjects.mjs"
+    "subjects:build": "node scripts/build-subjects.mjs",
+    "images:lint": "node scripts/image-ledger.mjs lint",
+    "images:prompts": "node scripts/build-image-prompts.mjs --board",
+    "images:prepare": "node scripts/prepare-images.mjs",
+    "images:check": "node scripts/check-images.mjs",
+    "images:contact": "node scripts/image-ledger.mjs contact",
+    "images:report": "node scripts/image-ledger.mjs report --status --budget"
   },
   "license": "MIT"
 }

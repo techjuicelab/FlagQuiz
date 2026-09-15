@@ -1791,7 +1791,7 @@ await check({
   if (!DEEP) t.skip('저장소 사본을 만들어 돌리는 느린 검사다 — --deep 으로 포함');
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'flagquiz-mut-'));
   try {
-    for (const link of ['flags', 'audio', 'assets', 'css', 'design', 'docs']) {
+    for (const link of ['flags', 'audio', 'assets', 'css', 'design', 'docs', 'images']) {
       if (exists(link)) fs.symlinkSync(p(link), path.join(tmp, link));
     }
     for (const copy of ['data', 'tests', 'js', 'scripts', 'index.html', 'sw.js', 'package.json']) {

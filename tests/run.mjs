@@ -7,6 +7,7 @@ import path from 'node:path';
 import vm from 'node:vm';
 import { fileURLToPath } from 'node:url';
 import { checkArtSet } from '../scripts/lib/art-gate.mjs';
+import { checkImages } from '../scripts/check-images.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -89,6 +90,8 @@ group('그림 자료', () => {
   const required = FQ.features.on('art') || process.env.FQ_REQUIRE_ART === '1';
   const result = checkArtSet(root, FQ.subjects, countries.map(c => c.code), required);
   for (const error of result.errors) ok(false, error);
+  const inspected = checkImages({root});
+  ok(inspected.ok, '그림 원장·WebP 치수·용량·프롬프트 검사', inspected.errors.join('; '));
   ok(Object.values(FQ.subjects).filter(s => s.symbol).length === 194, '상징물 자료 194개');
   ok(Object.values(FQ.subjects).filter(s => s.place).length === 148, '명소 자료 148개');
   console.log('  · 상징물 그림 ' + result.counts.symbol + '/194, 명소 그림 ' + result.counts.place + '/148');

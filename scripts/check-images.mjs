@@ -16,6 +16,7 @@ export function checkImages({root = projectRoot} = {}) {
       if (!['symbols','places'].includes(entry.name) || !entry.isDirectory() || entry.isSymbolicLink()) { errors.push('허용되지 않은 그림 경로: images/'+entry.name); continue; }
       for (const file of fs.readdirSync(path.join(images,entry.name),{withFileTypes:true})) {
         const relative = 'images/'+entry.name+'/'+file.name;
+        if (file.name === '.gitkeep' && file.isFile() && fs.statSync(path.join(root,relative)).size === 0) continue;
         if (!file.isFile() || file.isSymbolicLink()) { errors.push('일반 WebP 파일만 허용합니다: '+relative); continue; }
         files.push({relative,folder:entry.name,name:file.name});
       }
