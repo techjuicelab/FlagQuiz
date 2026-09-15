@@ -517,6 +517,16 @@ const BASE_JS_FILES = [
   'app.js', 'audio.js', 'badges.js', 'effects.js', 'music-manifest.js', 'music.js', 'progress.js',
   'quiz.js', 'recorded-audio.js', 'screens.js', 'speech.js', 'storage.js', 'ui.js', 'util.js', 'voice-manifest.js'
 ];
+
+export function verifyMapScriptScope(t, actual) {
+  const extra = actual.filter((file) => !BASE_JS_FILES.includes(file));
+  const allowed = ['features.js', 'map.js'];
+  const unexpected = extra.filter((file) => !allowed.includes(file));
+  t.ok(unexpected.length === 0, 'js/ 에 승인 범위 밖의 새 파일이 들어왔다', unexpected.join(', '));
+  const missing = BASE_JS_FILES.filter((file) => !actual.includes(file));
+  t.ok(missing.length === 0, 'js/ 에서 기존 파일이 사라졌다', missing.join(', '));
+}
+
 const DISPUTED = ['tw', 'ps', 'xk', 'eh', 'ck', 'nu'];
 const BASE_RUN_CHECKS = 7424;
 const BASE_NODE_TESTS = 87;
@@ -1471,18 +1481,12 @@ await check({
 await check({
   id: 'no-new-js-files',
   task: '지도 T5-register',
-  label: 'js/ 아래 새 파일 0개 (지도 화면 코드 없음)',
+  label: '지도 화면은 승인된 map.js만 추가하고 기존 스크립트를 보존한다',
   severity: 'acceptance',
-  why: '이 트랙의 범위는 자산 등록까지다. 지도 화면·핀 렌더링은 T7 의 제약을 받아 별도 과제이고, 지금 들어오면 제약 없이 굳는다.'
+  why: '사용자가 나라 위치 핀 퀴즈 구현을 승인했다. MAP-RENDER-CONSTRAINTS를 따르는 map.js만 추가 허용하며 다른 새 스크립트를 포괄 허용하지 않는다.'
 }, (t) => {
   const actual = fs.readdirSync(p('js')).filter((f) => f.endsWith('.js')).sort();
-  const extra = actual.filter((f) => !BASE_JS_FILES.includes(f));
-  const outOfScope = extra.filter((f) => f === 'features.js');
-  const inScope = extra.filter((f) => f !== 'features.js');
-  t.ok(inScope.length === 0, 'js/ 에 지도 트랙 범위 밖의 새 파일이 들어왔다', inScope.join(', '));
-  if (outOfScope.length) t.note('이 area 범위 밖 파일(다른 트랙): ' + outOfScope.join(', '));
-  const missing = BASE_JS_FILES.filter((f) => !actual.includes(f));
-  t.ok(missing.length === 0, 'js/ 에서 기존 파일이 사라졌다', missing.join(', '));
+  verifyMapScriptScope(t, actual);
 });
 
 await check({

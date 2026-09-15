@@ -50,7 +50,7 @@ sandbox.window = sandbox;
 sandbox.global = sandbox;
 vm.createContext(sandbox);
 
-for (const file of ['js/util.js', 'js/storage.js', 'js/features.js', 'data/countries.js', 'data/subjects.js', 'data/confusion-groups.js', 'data/map-coords.js', 'data/map-shapes.js', 'js/progress.js', 'js/quiz.js']) {
+for (const file of ['js/util.js', 'js/storage.js', 'js/features.js', 'data/countries.js', 'data/subjects.js', 'data/confusion-groups.js', 'data/map-coords.js', 'data/map-shapes.js', 'js/map.js', 'js/progress.js', 'js/quiz.js']) {
   const full = path.join(root, file);
   if (!fs.existsSync(full)) {
     console.error('✗ 파일이 없어요: ' + file);
