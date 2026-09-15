@@ -82,3 +82,17 @@ test('기존 다섯 모드는 국기 축이며 게임 제출은 모드 축에만
     assert.equal(FQ.storage.allCountryStats().kr, undefined);
   }
 });
+
+test('저장분에 없던 settings 객체를 제자리로 고쳐도 기본값이 오염되지 않는다', () => {
+  // 옛 저장분에는 dev 가 없다. 병합이 DEFAULTS 의 실물을 넘기면
+  // settings().dev.art = true 한 줄이 기본값 자체를 바꾸고 '모두 지우기'로도 안 지워진다.
+  const { FQ } = fixture({ settings: { players: ['민규'], speak: true } });
+  const store = FQ.storage;
+  // vm 컨텍스트 밖에서는 프로토타입이 달라 deepEqual 이 못 쓰인다 — 문자열로 비교한다.
+  assert.equal(JSON.stringify(store.settings().dev), '{}');
+  store.settings().dev.art = true;
+  store.settings().players.push('덧붙은 이름');
+  store.resetAll();
+  assert.equal(JSON.stringify(store.settings().dev), '{}', '초기화한 설정에 dev 오염이 남았다');
+  assert.equal(JSON.stringify(store.settings().players), '["민규"]', '초기화한 설정에 players 오염이 남았다');
+});

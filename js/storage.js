@@ -55,7 +55,9 @@
               : Object.assign({}, DEFAULTS[k], saved[k]);
           }
         });
-        if (saved.settings) data.settings = Object.assign({}, DEFAULTS.settings, saved.settings);
+        // DEFAULTS 를 그대로 병합하면 저장분에 없던 객체 값(dev·players)이 DEFAULTS 의
+        // 실물 참조로 들어와, 제자리로 고치는 순간 기본값 자체가 오염되고 초기화로도 안 지워진다.
+        if (saved.settings) data.settings = Object.assign(deepClone(DEFAULTS.settings), saved.settings);
       }
     } catch (e) {
       /* 시크릿 모드나 저장소 차단 환경에서도 게임은 그대로 돌아간다 */
