@@ -2,6 +2,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { buildContactSheets } from './lib/image-contact.mjs';
 import { readSubjects, toItems, counts, crossCheck } from './lib/subjects.mjs';
 
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -171,14 +172,17 @@ export function cliArguments(args) {
 export function main(args = process.argv.slice(2)) {
   const [command, ...rest] = args;
   const options = cliArguments(rest);
-  const flags = { seed: ['root', 'style'], record: ['root', 'bytes', 'tries', 'status', 'date'], report: ['root', 'todo', 'status', 'budget'], lint: ['root'] }[command] || [];
+  const flags = { seed: ['root', 'style'], record: ['root', 'bytes', 'tries', 'status', 'date'], report: ['root', 'todo', 'status', 'budget'], lint: ['root'], contact: ['root', 'anchor'] }[command] || [];
   for (const [key, value] of Object.entries(options)) {
     if (key === 'positional') continue;
     if (!flags.includes(key)) throw new Error('알 수 없는 인자: --' + key);
     if (!(command === 'report' && ['status', 'budget'].includes(key)) && typeof value !== 'string') throw new Error('--' + key + ' 값이 필요합니다.');
   }
   const root = options.root ? path.resolve(options.root) : ROOT;
-  if (command === 'seed') {
+  if (command === 'contact') {
+    if (options.positional.length) throw new Error('contact에는 위치 인자를 받지 않습니다.');
+    console.log(JSON.stringify(buildContactSheets(root, readLedger(root), { anchor: options.anchor || 'kr.png' }), null, 2));
+  } else if (command === 'seed') {
     const ledger = seedLedger(root, options.style ? { styleChoice: options.style === 'null' ? null : options.style } : {});
     console.log(JSON.stringify(reportLedger(ledger, readSubjects(root)), null, 2));
   } else if (command === 'record') {
@@ -206,7 +210,7 @@ export function main(args = process.argv.slice(2)) {
       const limits = ledger.styleChoice === 'a' ? [40000, 60000] : ledger.styleChoice === 'b' ? [110000, 150000] : null;
       console.log(JSON.stringify({ budget: limits ? { estimatedBytes: limits[0] * ledger.items.length, maximumBytes: limits[1] * ledger.items.length } : null }));
     }
-  } else throw new Error('사용법: node scripts/image-ledger.mjs seed|lint|record|report [--root 경로]');
+  } else throw new Error('사용법: node scripts/image-ledger.mjs seed|lint|record|report|contact [--root 경로] (contact: [--anchor kr.png])');
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

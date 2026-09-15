@@ -84,3 +84,54 @@ test('stdout과 board를 함께 요청하면 아무 파일도 쓰지 않는다',
   assert.throws(() => buildPrompts({ root, style:'b', stdout:true, board:true }), /함께/);
   assert.equal(fs.existsSync(path.join(root, 'docs/image-prompts/index.html')), false);
 });
+
+const { buildContactSheets, contactClient } = await import('../scripts/lib/image-contact.mjs');
+
+test('컨택트시트는 승인된 항목을 40개씩 나누고 앵커·그림·국기를 로컬 상대 경로로 읽는다', (t) => {
+  const { root, ledger } = fixture(t);
+  ledger.items.forEach((item, index) => { item.status = index < 81 ? 'approved-image' : 'generated'; });
+  for (const file of ['docs/image-prompts/anchor/kr.png', 'images/symbols/ad.webp', 'flags/ad.svg']) {
+    fs.mkdirSync(path.dirname(path.join(root, file)), { recursive: true }); fs.writeFileSync(path.join(root, file), 'fixture');
+  }
+  const result = buildContactSheets(root, ledger);
+  assert.equal(result.pages, 3); assert.equal(result.items, 81); assert.equal(result.anchor, 'kr.png');
+  const htmls = result.files.map((file) => fs.readFileSync(file, 'utf8'));
+  assert.deepEqual(htmls.map((html) => (html.match(/class="item"/g) || []).length), [40,40,1]);
+  for (const html of htmls) {
+    assert.match(html, /repeat\(8,/); assert.match(html, /repeat\(5,/); assert.match(html, /aspect-ratio:4\/3/);
+    assert.match(html, /src="..\/anchor\/kr.png"/);
+    for (const [, resource] of html.matchAll(/(?:src|href)="([^"]+)"/g)) {
+      assert.doesNotMatch(resource, /^(?:[a-z]+:|\/\/|\/)/i);
+      assert.ok(fs.existsSync(path.resolve(path.dirname(result.files[0]), resource)), resource);
+    }
+    assert.doesNotMatch(html, /fetch\s*\(|@import|url\s*\(|data:image/);
+  }
+  assert.match(htmls[0], /src="..\/..\/..\/images\/symbols\/ad.webp"/);
+  assert.match(htmls[0], /src="..\/..\/..\/flags\/ad.svg"/);
+  assert.doesNotMatch(htmls[0], /src="[^"]*ae.webp"/);
+  assert.match(htmls[0], /<span class="missing">ae<\/span>/);
+  fs.writeFileSync(path.join(root, 'docs/image-prompts/contact/notes.html'), 'keep');
+  ledger.items.forEach((item) => { item.status = 'draft'; });
+  assert.equal(buildContactSheets(root, ledger).pages, 0);
+  assert.deepEqual(fs.readdirSync(path.join(root, 'docs/image-prompts/contact')), ['notes.html']);
+});
+
+test('컨택트시트 토글은 실제 테마·국기 나란히 표시·깨진 파일 대체를 작동시킨다', () => {
+  const make = () => ({ events:{}, attrs:{}, addEventListener(type, handler) { this.events[type] = handler; }, setAttribute(key, value) { this.attrs[key] = value; } });
+  const buttons = { light:make(), dark:make(), flags:make() }, image = { ...make(), hidden:false, nextElementSibling:{ hidden:true } };
+  const document = { getElementById:(id) => buttons[id], body:{ dataset:{ theme:'light' }, classList:{ toggle(name, value) { this[name] = value; } } }, querySelectorAll:() => [image] };
+  contactClient(document);
+  buttons.dark.events.click(); assert.equal(document.body.dataset.theme, 'dark'); assert.equal(buttons.dark.attrs['aria-pressed'], 'true');
+  buttons.light.events.click(); assert.equal(document.body.dataset.theme, 'light');
+  buttons.flags.events.change({ target:{ checked:true } }); assert.equal(document.body.classList['show-flags'], true);
+  image.events.error(); assert.equal(image.hidden, true); assert.equal(image.nextElementSibling.hidden, false);
+});
+
+test('컨택트시트 경로 주입과 중복 ID는 파일을 쓰기 전에 거부한다', (t) => {
+  const { root, ledger } = fixture(t);
+  assert.throws(() => buildContactSheets(root, ledger, { anchor:'../../else.png' }), /앵커/);
+  assert.throws(() => buildContactSheets(root, ledger, { anchor:'https://x.invalid/a.png' }), /앵커/);
+  ledger.items[0].status = 'approved-image'; ledger.items[0].code = '../x';
+  assert.throws(() => buildContactSheets(root, ledger), /형식/);
+  assert.equal(fs.existsSync(path.join(root, 'docs/image-prompts/contact')), false);
+});

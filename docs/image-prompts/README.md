@@ -27,6 +27,8 @@
 
 [CHECK.md](CHECK.md)의 개별 항목과 컨택트시트에서 개수·형태·여백·색·밝고 어두운 배경을 확인합니다. 기계 검사와 이미지 검토가 끝난 항목만 approved-image로 기록합니다. 에이전트 큐레이션은 사람 승인으로 표시하지 않습니다.
 
+`node scripts/image-ledger.mjs contact`는 approved-image 항목을 40장씩 나눠 contact/1.html부터 만듭니다. 기본 앵커는 anchor/kr.png이며 다른 파일은 `--anchor 파일명.png`로 고릅니다. 앵커가 없으면 미등록으로 표시합니다. 각 페이지에서 밝은·어두운 배경과 국기 비교를 전환할 수 있습니다.
+
 ## 진행 현황
 
 | 항목 | 개수 |
