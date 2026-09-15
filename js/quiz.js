@@ -12,7 +12,8 @@
     reverse: { label: '나라 보고 국기 찾기', kind: 'choice', hasOptions: true, axis: 'flag' },
     capital: { label: '수도 맞히기', kind: 'choice', hasOptions: true, axis: 'flag' },
     typing:  { label: '이름 써서 맞히기', kind: 'text', hasOptions: false, axis: 'flag' },
-    voice:   { label: '말로 답하기', kind: 'text', hasOptions: false, axis: 'flag' }
+    voice:   { label: '말로 답하기', kind: 'text', hasOptions: false, axis: 'flag' },
+    map:     { label: '지도에서 나라 찾기', kind: 'choice', hasOptions: true, axis: 'map' }
   };
 
   var LEVEL_LABEL = { 1: '쉬움', 2: '보통', 3: '어려움' };
@@ -131,7 +132,9 @@
   /** 한 문제를 만든다. */
   function makeQuestion(answer, mode, source, opts) {
     var q = { mode: mode, country: answer, options: null };
-    if (MODES[mode] && MODES[mode].hasOptions) {
+    if (mode === 'map') {
+      q.options = FQ.map.chooseOptions(answer, source, FQ.map.MIN_WIDTH);
+    } else if (MODES[mode] && MODES[mode].hasOptions) {
       var choices = distractors(answer, 3, source, mode, opts).concat([answer]);
       q.options = util.shuffle(choices);
     }

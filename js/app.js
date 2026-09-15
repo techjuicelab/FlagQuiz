@@ -20,7 +20,8 @@
     { id: 'reverse', emo: '🔎', title: '나라 보고 국기 찾기', desc: '이름을 보고 국기를 골라요' },
     { id: 'voice',   emo: '🎤', title: '말로 답하기', desc: '누르지 않고 바로 말하면 돼요' },
     { id: 'typing',  emo: '⌨️', title: '이름 써서 맞히기', desc: '글자로 입력해요' },
-    { id: 'capital', emo: '🏙️', title: '수도 맞히기', desc: '나라의 수도를 골라요' }
+    { id: 'capital', emo: '🏙️', title: '수도 맞히기', desc: '나라의 수도를 골라요' },
+    { id: 'map', emo: '🗺️', title: '지도에서 나라 찾기', desc: '나라가 있는 위치 핀을 골라요' }
   ];
 
   function totalCountries() { return quiz.all().length; }
@@ -114,7 +115,7 @@
     musicScreen('home');
     var wrongCount = store.wrongList().length;
     var duel = s.players.length > 1;
-    var poolSize = quiz.pool({ level: s.level, continent: s.continent }).length;
+    var poolSize = quiz.pool({ level: s.level, continent: s.continent, axis: quiz.MODES[s.mode] && quiz.MODES[s.mode].axis }).length;
 
     var html =
       '<section class="screen">' +
@@ -307,6 +308,7 @@
     if (reviewBtn) {
       reviewBtn.addEventListener('click', function () {
         savePlayers(m);
+        store.updateSettings({ mode: 'choice4' });
         startGame(store.wrongList());
       });
     }
@@ -450,7 +452,13 @@
     var duel = g.players.length > 1;
 
     var stage;
-    if (q.mode === 'reverse') {
+    if (q.mode === 'map') {
+      stage = '<div class="flag-stage map-question">' +
+        '<div class="q-label">이 나라는 어디에 있을까요?</div>' +
+        '<img class="map-question-flag" src="' + ui.flagSrc(q.country.code) + '" alt="' + esc(q.country.ko) + ' 국기">' +
+        '<div class="big-name">' + esc(q.country.ko) + '</div>' +
+        '<button class="btn btn-sm" data-speak="' + esc(q.country.ko) + '" type="button">🔊 들어보기</button></div>';
+    } else if (q.mode === 'reverse') {
       stage =
         '<div class="flag-stage">' +
           '<div class="q-label">이 나라의 국기를 찾아보세요</div>' +
@@ -511,7 +519,7 @@
         '</div>' +
 
         '<div class="qdots">' + dots + '</div>' +
-        '<div class="quiz-body">' +
+        '<div class="quiz-body' + (q.mode === 'map' ? ' map-quiz' : '') + '">' +
           '<div>' + stage + '</div>' +
           '<div>' +
             '<div id="answer-area">' + answerArea(q) + '</div>' +
@@ -585,6 +593,7 @@
   }
 
   function answerArea(q) {
+    if (q.mode === 'map') return FQ.map.render(q.options);
     if (q.mode === 'choice4') {
       return '<div class="answer-grid">' + q.options.map(function (c, i) {
         return '<button class="answer-btn" type="button" data-code="' + c.code + '">' +
@@ -849,7 +858,9 @@
     state.usedHint = true;
     var box = ui.$('#hint-area');
     var lines = [];
-    if (q.mode === 'capital') {
+    if (q.mode === 'map') {
+      lines.push('🗺️ ' + esc(q.country.continent) + ' · ' + esc(q.country.region) + '에서 찾아보세요');
+    } else if (q.mode === 'capital') {
       lines.push('첫 글자는 <b>' + esc(util.initialOf(q.country.capital)) + '</b> 로 시작해요');
       lines.push(esc(q.country.continent) + ' · ' + esc(q.country.region) + ' 에 있어요');
     } else if (q.mode === 'reverse') {
@@ -887,7 +898,8 @@
     var g = state.game;
     var q = g.current();
     // 스티커는 "이 나라를 처음 맞혔는가" 로 정해지므로 기록하기 전에 확인해야 한다
-    var isNewSticker = q && !FQ.progress.hasSticker(q.country.code);
+    var flagAxis = q && quiz.MODES[q.mode].axis === 'flag';
+    var isNewSticker = flagAxis && !FQ.progress.hasSticker(q.country.code);
 
     var res = g.submit(payload, state.usedHint);
     if (!res) return;
@@ -902,7 +914,7 @@
         state.newStickers.push(q.country);
         res.newSticker = true;
       }
-      res.dailyDone = FQ.progress.noteDaily(q.country, true);
+      if (flagAxis) res.dailyDone = FQ.progress.noteDaily(q.country, true);
     }
     // recordAnswer는 제출 때 딱 한 번 증가한다. 오답·건너뛰기도 쌓이고 다음 판에 이어진다.
     res.chest = FQ.progress.chestOpensAt(store.stats().asked);
@@ -964,8 +976,9 @@
 
     // 정오답 모두 이름 한 번과 쉬운 설명 한 문장만 읽는다.
     var isCapitalQ = q.mode === 'capital';
+    var isMapQ = q.mode === 'map';
     state.lastSpeech = {
-      lines: isCapitalQ ? [c.capital, c.ko + '의 수도예요'] : [c.ko, c.flagHint],
+      lines: isCapitalQ ? [c.capital, c.ko + '의 수도예요'] : isMapQ ? [c.ko, c.fact] : [c.ko, c.flagHint],
       opts: { rate: 0.93, pitch: 1.1 }
     };
     var feedbackSpeech = state.lastSpeech;
@@ -1016,7 +1029,7 @@
           '<div><div class="kname">' + esc(isCapitalQ ? c.capital : c.ko) + '</div></div>' +
         '</div>' +
         '<div class="remember-box"><div class="remember-hint">' +
-          (isCapitalQ ? '🏙️ ' + esc(c.ko) + '의 수도예요' : '🚩 ' + esc(c.flagHint)) +
+          (isCapitalQ ? '🏙️ ' + esc(c.ko) + '의 수도예요' : isMapQ ? '🗺️ ' + esc(c.continent) + ' · ' + esc(c.region) + '<br>' + esc(c.fact) : '🚩 ' + esc(c.flagHint)) +
         '</div></div>' +
         (store.settings().speak
           ? '<button class="btn btn-sm" id="replay" type="button" style="margin-top:8px">🔊 설명 다시 듣기</button>'

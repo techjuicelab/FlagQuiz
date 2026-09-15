@@ -51,7 +51,7 @@ function fixture() {
         abort(){c.listening=false;},stopAnd(cb){c.listening=false;releases.push(cb);},isListening:()=>!!c.listening}
     }};
   c.window=c;vm.createContext(c);
-  for(const file of ['js/util.js','js/storage.js','js/features.js','data/countries.js', 'data/subjects.js', 'data/confusion-groups.js','js/progress.js','js/quiz.js']) vm.runInContext(fs.readFileSync(path.join(root,file),'utf8'),c,{filename:file});
+  for(const file of ['js/util.js','js/storage.js','js/features.js','data/countries.js', 'data/subjects.js', 'data/confusion-groups.js','data/map-coords.js','data/map-shapes.js','js/map.js','js/progress.js','js/quiz.js']) vm.runInContext(fs.readFileSync(path.join(root,file),'utf8'),c,{filename:file});
   // 제품 코드에는 테스트 전용 진입점을 추가하지 않고 VM 안에서만 내부 상태를 노출한다.
   const source=fs.readFileSync(path.join(root,'js/app.js'),'utf8').replace('FQ.app = { home:',
     'FQ.test = {state:state,startListening:startListening,submit:submit,goNext:goNext,toggleMic:toggleMic};\n  FQ.app = { home:');
@@ -441,6 +441,25 @@ test('같은 홈에서 배경음 설정을 바꿔도 최신 해제 요청만 재
   f.c.FQ.storage.updateSettings({homeMusic:false});f.c.FQ.app.musicScreen('home');
   f.c.FQ.storage.updateSettings({homeMusic:true});f.c.FQ.app.musicScreen('home');const latest=f.releases.at(-1);
   first();assert.equal(f.music.length,0);latest();assert.equal(f.music.length,1);
+});
+
+test('지도 핀 제출은 지도 기록만 쌓고 기존 국기 스티커와 오늘의 도전을 바꾸지 않는다',()=>{
+  for(const correct of [true,false]) {
+    const f=fixture();f.c.FQ.storage.updateSettings({mode:'map'});
+    const before=JSON.stringify(f.c.FQ.storage.daily());
+    f.c.FQ.app.startGame(['kr']);const a=f.c.FQ.test,q=a.state.game.current();
+    assert.match(f.node('main').innerHTML,/이 나라는 어디에 있을까요/);
+    assert.equal((f.node('main').innerHTML.match(/class="map-pin answer-btn"/g)||[]).length,4);
+    const code=correct?'kr':q.options.find(c=>c.code!=='kr').code;
+    a.submit({code});a.submit({code});
+    assert.equal(f.c.FQ.storage.axisStat('map','kr').seen,1);
+    assert.equal(f.c.FQ.storage.axisStat('map','kr').correct,correct?1:0);
+    assert.equal(f.c.FQ.storage.countryStat('kr').seen,0);
+    assert.equal(a.state.newStickers.length,0);
+    assert.equal(JSON.stringify(f.c.FQ.storage.daily()),before);
+    f.releases.at(-1)();f.finishMusic();
+    assert.deepEqual(f.spoken.at(-1),[q.country.ko,q.country.fact]);
+  }
 });
 
 console.log('앱 흐름 회귀 검사 '+passed+'건 통과');
