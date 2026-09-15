@@ -33,7 +33,7 @@ export function contactHtml({ root, items, page, pages, anchor = 'kr.png' }) {
 <script>(${contactClient.toString()})(document);</script></body></html>\n`;
 }
 
-export function buildContactSheets(root, ledger, { anchor = 'kr.png' } = {}) {
+export function buildContactSheets(root, ledger, { anchor = path.basename(ledger.anchor?.file || 'kr.png') } = {}) {
   if (!/^[a-zA-Z0-9][a-zA-Z0-9._-]*\.(png|webp|jpg|jpeg)$/i.test(anchor)) throw new Error('앵커는 anchor/ 안의 PNG/WebP/JPEG 파일 이름이어야 합니다.');
   const items = ledger.items.filter((item) => item.status === 'approved-image');
   const seen = new Set();

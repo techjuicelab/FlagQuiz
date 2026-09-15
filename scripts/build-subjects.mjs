@@ -35,7 +35,8 @@ export function buildSubjects(projectRoot = root) {
       const axis = item.kind === 'landmark' ? 'place' : item.kind === 'symbol' ? 'symbol' : null;
       if (!axis || ids.has(item.id) || item.id !== item.code + '-' + item.kind || !subjects[item.code]?.[axis]) throw new Error('원장 소재가 원자료와 다릅니다: ' + item.id);
       ids.add(item.id);
-      if (['agent-curated', 'approved-text', 'generated', 'approved-image'].includes(item.status) && item.subjectEn && item.koApprove?.trim()) {
+      // 그림 재시도·보류는 이미 검토한 화면 이름을 원문 긴 문장으로 되돌리지 않는다.
+      if (['agent-curated', 'approved-text', 'generated', 'approved-image', 'rejected', 'held'].includes(item.status) && item.subjectEn && item.koApprove?.trim()) {
         subjects[item.code][axis].ko = item.koApprove.trim();
       }
     }

@@ -76,7 +76,7 @@ test('342개 전체 조립도 2MB 이하이고 README는 실제 승인 상태에
   const populated = ledger.items.map((item) => ({ ...item, subjectEn:'A single test subject with green leaves.', status:'agent-curated' }));
   const html = boardHtml(populated.map((item) => ({ ...item, prompt: buildPrompt(item, ledger, 'b') })));
   assert.ok(Buffer.byteLength(html) < 2_000_000);
-  ledger.items[0].status = 'approved-image'; ledger.items[1].status = 'generated';
+  ledger.items[0].status = 'approved-image'; ledger.items[1].status = 'generated'; ledger.items[2].status = 'draft';
   const report = reportLedger(ledger), readme = boardReadme(ledger, report);
   assert.ok(readme.startsWith('342개 중 ' + report.statuses['approved-image'] + '개 생성·검수 완료'));
   assert.match(readme, /agent-curated|draft/);
@@ -93,6 +93,7 @@ const { buildContactSheets, contactClient } = await import('../scripts/lib/image
 
 test('컨택트시트는 승인된 항목을 40개씩 나누고 앵커·그림·국기를 로컬 상대 경로로 읽는다', (t) => {
   const { root, ledger } = fixture(t);
+  delete ledger.anchor; // 앵커 미등록 원장의 기존 kr.png 폴백을 검사한다.
   ledger.items.forEach((item, index) => { item.status = index < 81 ? 'approved-image' : 'generated'; });
   for (const file of ['docs/image-prompts/anchor/kr.png', 'images/symbols/ad.webp', 'flags/ad.svg']) {
     fs.mkdirSync(path.dirname(path.join(root, file)), { recursive: true }); fs.writeFileSync(path.join(root, file), 'fixture');
@@ -118,6 +119,16 @@ test('컨택트시트는 승인된 항목을 40개씩 나누고 앵커·그림·
   ledger.items.forEach((item) => { item.status = 'draft'; });
   assert.equal(buildContactSheets(root, ledger).pages, 0);
   assert.deepEqual(fs.readdirSync(path.join(root, 'docs/image-prompts/contact')), ['notes.html']);
+});
+
+test('컨택트시트는 별도 인자 없이 원장에 등록한 B 앵커를 읽는다', (t) => {
+  const {root,ledger}=fixture(t);
+  ledger.anchor={file:'docs/image-prompts/anchor/b-kr-landmark.png'};
+  const file=path.join(root,ledger.anchor.file);
+  fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,'fixture');
+  const result=buildContactSheets(root,ledger);
+  assert.equal(result.anchor,'b-kr-landmark.png');
+  assert.match(fs.readFileSync(result.files[0],'utf8'),/src="..\/anchor\/b-kr-landmark.png"/);
 });
 
 test('컨택트시트 토글은 실제 테마·국기 나란히 표시·깨진 파일 대체를 작동시킨다', () => {

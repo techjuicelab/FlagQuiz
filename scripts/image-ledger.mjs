@@ -208,7 +208,7 @@ export function main(args = process.argv.slice(2)) {
   const root = options.root ? path.resolve(options.root) : ROOT;
   if (command === 'contact') {
     if (options.positional.length) throw new Error('contact에는 위치 인자를 받지 않습니다.');
-    console.log(JSON.stringify(buildContactSheets(root, readLedger(root), { anchor: options.anchor || 'kr.png' }), null, 2));
+    console.log(JSON.stringify(buildContactSheets(root, readLedger(root), options.anchor ? { anchor: options.anchor } : {}), null, 2));
   } else if (command === 'seed') {
     const ledger = seedLedger(root, options.style ? { styleChoice: options.style === 'null' ? null : options.style } : {});
     console.log(JSON.stringify(reportLedger(ledger, readSubjects(root)), null, 2));

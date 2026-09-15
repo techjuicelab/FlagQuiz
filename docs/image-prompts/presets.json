@@ -4755,8 +4755,8 @@
         "줄 악기·관악기"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
+      "status": "held",
+      "tries": 5,
       "bytes": null,
       "outputStem": "images/symbols/gn",
       "textReview": {
@@ -4764,6 +4764,15 @@
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
+      },
+      "failureCount": 5,
+      "holdReason": "원본과 4회 재생성에서 코라의 21현을 확인하지 못함. 예비 젬베 북 변경 여부 사용자 답변 대기.",
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "held",
+        "notes": "21현·높은 브리지 조건 미충족. 배포 파일 없음."
       }
     },
     {
@@ -14052,5 +14061,31 @@
     "authorization": "사용자의 전체 완성 요청 및 B 화풍 선택",
     "humanApproval": false,
     "review": "에이전트 검수이며 보호자 개별 승인 또는 아이패드 검수를 뜻하지 않음"
+  },
+  "anchor": {
+    "file": "docs/image-prompts/anchor/b-kr-landmark.png",
+    "style": "b",
+    "generatedAt": "2026-09-15",
+    "tries": 1,
+    "sha256": "272710375d0bec6f9ca52f78784b87d0a4810e67cd1340af20165d19b319f75b",
+    "derived": true,
+    "humanApproval": false,
+    "review": "docs/image-prompts/anchor-review.json",
+    "selection": "기존 후보 1개를 검수하고 배포본과 같은 12% 여백 적용. 새 후보 5~8개 비교는 수행하지 않음."
+  },
+  "toolCapabilities": {
+    "aspect43": true,
+    "referenceImage": true,
+    "seedLock": false,
+    "batch": false,
+    "contextBleed": null,
+    "rejections": [],
+    "evidence": "docs/image-prompts/PILOT-REVIEW.md"
+  },
+  "productionMode": {
+    "kind": "builtin-independent-calls",
+    "description": "각 자산별 전문 프롬프트와 필요한 기존 이미지 참조로 병렬 생성. 정규 대화 회차를 사후 구성하지 않음.",
+    "batchesBackfilled": false,
+    "humanApproval": false
   }
 }
