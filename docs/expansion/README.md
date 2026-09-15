@@ -8,6 +8,9 @@
 | [DECISIONS.md](DECISIONS.md) | **확정된 결정 7개**와 각각에 따라오는 작업 |
 | [INTERVIEW.md](INTERVIEW.md) | 역인터뷰 전문 — 차단 질문, 나머지 질문, 기본값으로 갈 가정 |
 | [IMAGE-PROMPTS.md](IMAGE-PROMPTS.md) | 이미지 프롬프트 키트 — 화풍 후보 A/B, 템플릿, 샘플 18장, 검수표 |
+| [PILOT.md](PILOT.md) | **화풍 A/B 파일럿 16장** — 지금 바로 돌릴 수 있다 |
+| [SUBJECTS.csv](SUBJECTS.csv) | 194행 주제 표 (초안 — 교정 전이므로 승인 보류) |
+| [AUDIT.md](AUDIT.md) | 주제 표 전수 감사 결과와 고쳐야 할 것 |
 
 ---
 
