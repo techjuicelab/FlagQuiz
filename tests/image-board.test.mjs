@@ -27,6 +27,10 @@ function controls(html, clipboard) {
 
 test('보드는 원장 342개를 인라인하고 조립 파일과 복사 본문이 바이트까지 같다', async (t) => {
   const { root, ledger } = fixture(t);
+  // 실제 제작이 전부 끝나도 미작성 항목의 복사 차단을 계속 검사한다.
+  ledger.items[0].subjectEn = null;
+  ledger.items[0].status = 'draft';
+  writeLedger(ledger, root);
   const result = buildPrompts({ root, style: 'b', board: true });
   const html = fs.readFileSync(path.join(root, 'docs/image-prompts/index.html'), 'utf8');
   const items = embedded(html);
