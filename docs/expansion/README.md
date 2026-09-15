@@ -11,6 +11,7 @@
 | [PILOT.md](PILOT.md) | **화풍 A/B 파일럿 16장** — 지금 바로 돌릴 수 있다 |
 | [SUBJECTS.csv](SUBJECTS.csv) | 194행 주제 표 (초안 — 교정 전이므로 승인 보류) |
 | [AUDIT.md](AUDIT.md) | 주제 표 전수 감사 결과와 고쳐야 할 것 |
+| [FIX-ROUND1.md](FIX-ROUND1.md) | **교정 1차 결과** — 확정된 것, 남은 것, 아빠 판단이 필요한 것 |
 
 ---
 
