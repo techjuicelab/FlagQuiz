@@ -5,8 +5,8 @@ import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 export const IMAGE_STYLES = Object.freeze({
-  a: Object.freeze({ width: 768, height: 576, quality: 80, warnBytes: 40 * 1024, maxBytes: 60 * 1024, background: '#FFFFFF' }),
-  b: Object.freeze({ width: 1024, height: 768, quality: 80, warnBytes: 110 * 1024, maxBytes: 150 * 1024, background: '#F1F5FB' })
+  a: Object.freeze({ width: 768, height: 576, quality: 80, warnBytes: 40 * 1000, maxBytes: 60 * 1000, background: '#FFFFFF' }),
+  b: Object.freeze({ width: 1024, height: 768, quality: 80, warnBytes: 110 * 1000, maxBytes: 150 * 1000, background: '#F1F5FB' })
 });
 const projectRoot = fileURLToPath(new URL('../', import.meta.url));
 const pngSignature = Buffer.from([137,80,78,71,13,10,26,10]);
