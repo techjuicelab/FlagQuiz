@@ -125,6 +125,36 @@ export function reportLedger(ledger, rows) {
   };
 }
 
+export function lintLedger(ledger) {
+  const errors = [], warnings = [], seen = new Map();
+  let unwritten = 0;
+  const adjective = /\b(majestic|beautiful|detailed|intricate|iconic|stunning|cinematic|vibrant|whimsical|charming|epic|dramatic)\b/i;
+  const noun = /\b(flag|banner|text|letters|sign|signage|inscription|logo|watermark|person|people|face|crowd)\b/i;
+  const numericKo = /\d+|(?:한|두|세|네|다섯|여섯|일곱|여덟)\s*(?:개|장|채|겹|층|쌍|줄기|마리|봉우리|갈래)/;
+  const numericEn = /\b(single|one|two|three|four|five|six|seven|eight|\d+)\b/i;
+  const visible = /\b(black|white|blue|grey|gray|red|green|yellow|golden|gold|brown|orange|pink|purple|cream|round|square|rectangular|circular|triangular|curved|flat|pointed|arched|domed|conical|layered)\b/i;
+  for (const item of ledger.items) {
+    const subject = item.subjectEn;
+    if (subject === null || subject === undefined || subject === '') { unwritten++; continue; }
+    const add = (collection, rule, message) => collection.push({ id: item.id, rule, message });
+    if (typeof subject !== 'string') { add(errors, 'ascii', 'subjectEn은 문자열이어야 합니다.'); continue; }
+    if (/[^\x20-\x7e\r\n]/.test(subject)) add(errors, 'ascii', 'ASCII 문자와 일반 문장부호만 쓸 수 있습니다.');
+    // 하이픈 복합어(blue-grey)는 공백으로 나뉘지 않으므로 한 단어로 센다.
+    const words = subject.trim() ? subject.trim().split(/\s+/).length : 0;
+    if (words < 18 || words > 35) add(errors, 'word-count', '단어 수 ' + words + ' (18~35 필요)');
+    if (adjective.test(subject)) add(errors, 'adjective', '금지 형용사: ' + subject.match(adjective)[0]);
+    if (noun.test(subject)) add(errors, 'noun', '금지 명사: ' + subject.match(noun)[0]);
+    if (!subject.endsWith('.') || /[\r\n]/.test(subject)) add(errors, 'sentence', '줄바꿈 없는 한 문장을 마침표로 끝내세요.');
+    const normalized = subject.trim().toLowerCase();
+    if (seen.has(normalized)) add(errors, 'duplicate', '다른 항목과 문장 중복: ' + seen.get(normalized));
+    else seen.set(normalized, item.id);
+    if (numericKo.test(item.koRaw || '') && !numericEn.test(subject)) add(warnings, 'number', '한국어 개수 표현에 대응하는 영어 수사를 확인하세요.');
+    if (item.kind === 'landmark' && words < 25) add(warnings, 'silhouette', '명소 25단어 미만: 실루엣 요소 세 가지를 확인하세요.');
+    if ((item.confusionGroups || []).length >= 2 && !visible.test(subject)) add(warnings, 'distinction', '혼동군이 겹칩니다. 색·형태 구별 지침을 확인하세요.');
+  }
+  return { errors, warnings, unwritten };
+}
+
 export function cliArguments(args) {
   const result = { positional: [] };
   for (let i = 0; i < args.length; i++) {
@@ -141,7 +171,7 @@ export function cliArguments(args) {
 export function main(args = process.argv.slice(2)) {
   const [command, ...rest] = args;
   const options = cliArguments(rest);
-  const flags = { seed: ['root', 'style'], record: ['root', 'bytes', 'tries', 'status', 'date'], report: ['root', 'todo', 'status', 'budget'] }[command] || [];
+  const flags = { seed: ['root', 'style'], record: ['root', 'bytes', 'tries', 'status', 'date'], report: ['root', 'todo', 'status', 'budget'], lint: ['root'] }[command] || [];
   for (const [key, value] of Object.entries(options)) {
     if (key === 'positional') continue;
     if (!flags.includes(key)) throw new Error('알 수 없는 인자: --' + key);
@@ -159,6 +189,11 @@ export function main(args = process.argv.slice(2)) {
     if (!Object.keys(patch).length) throw new Error('record에는 --bytes/--tries/--status/--date 중 하나가 필요합니다.');
     console.log(JSON.stringify(recordItem(ledger, options.positional[0], patch)));
     writeLedger(ledger, root);
+  } else if (command === 'lint') {
+    const result = lintLedger(readLedger(root));
+    console.log('오류 ' + result.errors.length + ' · 경고 ' + result.warnings.length + ' · 미작성 ' + result.unwritten + '건');
+    for (const [label, entries] of [['오류', result.errors], ['경고', result.warnings]]) for (const entry of entries) console.log(label + ' [' + entry.id + '] ' + entry.rule + ': ' + entry.message);
+    if (result.errors.length) process.exitCode = 1;
   } else if (command === 'report') {
     const ledger = readLedger(root);
     console.log(JSON.stringify(reportLedger(ledger, readSubjects(root)), null, 2));
@@ -171,7 +206,7 @@ export function main(args = process.argv.slice(2)) {
       const limits = ledger.styleChoice === 'a' ? [40000, 60000] : ledger.styleChoice === 'b' ? [110000, 150000] : null;
       console.log(JSON.stringify({ budget: limits ? { estimatedBytes: limits[0] * ledger.items.length, maximumBytes: limits[1] * ledger.items.length } : null }));
     }
-  } else throw new Error('사용법: node scripts/image-ledger.mjs seed|record|report [--root 경로]');
+  } else throw new Error('사용법: node scripts/image-ledger.mjs seed|lint|record|report [--root 경로]');
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
