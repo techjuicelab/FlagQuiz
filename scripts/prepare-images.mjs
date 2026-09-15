@@ -63,7 +63,32 @@ export function imageGeometry({ width, height }) {
     width: adjustedWidth, height, x: width > adjustedWidth ? Math.floor((width - adjustedWidth) / 2) : Math.round((adjustedWidth - width) / 2), y: 0 };
 }
 
-export function conversionCommands({ tool, input, output, temp, dimensions, style }) {
+export function insetGeometry(dimensions, style, inset = 0) {
+  if (typeof inset !== 'number' || !Number.isFinite(inset) || inset < 0 || inset >= 0.4) throw new Error('inset은 0 이상 0.4 미만의 숫자여야 합니다.');
+  imageGeometry(dimensions);
+  const scale = Math.min(style.width * (1 - 2 * inset) / dimensions.width, style.height * (1 - 2 * inset) / dimensions.height);
+  const width = Math.max(1, Math.floor(dimensions.width * scale)), height = Math.max(1, Math.floor(dimensions.height * scale));
+  return { width, height, x: Math.floor((style.width - width) / 2), y: Math.floor((style.height - height) / 2) };
+}
+
+export function conversionCommands({ tool, input, output, temp, dimensions, style, inset = 0 }) {
+  const inner = insetGeometry(dimensions, style, inset);
+  // 여백을 요청하면 기존 중앙 크롭 대신 원본 전체를 담는다. 원본은 임시 파일로만 처리한다.
+  if (inset > 0) {
+    const bg = style.background.slice(1), commands = [];
+    if (tool === 'ffmpeg') {
+      const filters = [`scale=${inner.width}:${inner.height}:flags=lanczos`, `pad=${style.width}:${style.height}:${inner.x}:${inner.y}:0x${bg}`];
+      commands.push({ command: 'ffmpeg', args: ['-y','-i',input,'-vf',filters.join(','),'-c:v','libwebp','-quality','80','-compression_level','6','-preset','picture','-an','-frames:v','1',output] });
+    } else if (tool === 'magick') {
+      commands.push({ command: 'magick', args: [input,'-resize',`${inner.width}x${inner.height}!`,'-gravity','center','-background',style.background,'-extent',`${style.width}x${style.height}`,'-strip','-define','webp:method=6','-quality','80',output] });
+    } else if (tool === 'sips' || tool === 'cwebp') {
+      const processed = path.join(temp,'prepared.png');
+      commands.push({ command:'sips', args:['-z',String(inner.height),String(inner.width),input,'--out',processed] });
+      commands.push({ command:'sips', args:['-p',String(style.height),String(style.width),'--padColor',bg,processed,'--out',processed] });
+      commands.push({ command:'cwebp', args:['-q','80','-m','6','-metadata','none',processed,'-o',output] });
+    } else throw new Error('지원하지 않는 도구: ' + tool);
+    return commands;
+  }
   const g = imageGeometry(dimensions), size = `${style.width}:${style.height}`, bg = style.background.slice(1);
   const commands = [];
   if (tool === 'ffmpeg') {
@@ -119,7 +144,8 @@ function outputFor(root, item) {
   return path.join(root,expected+'.webp');
 }
 
-export function prepareImages({ root = projectRoot, inputDir = 'docs/artifacts/images/raw', tool = 'cwebp', style: requested, only, dryRun = false, log = console.log, run = execFileSync, resolveTool = executable } = {}) {
+export function prepareImages({ root = projectRoot, inputDir = 'docs/artifacts/images/raw', tool = 'cwebp', style: requested, only, inset = 0, dryRun = false, log = console.log, run = execFileSync, resolveTool = executable } = {}) {
+  insetGeometry({width:4,height:3}, IMAGE_STYLES.b, inset);
   const inputRoot = path.resolve(root,inputDir), packPath = path.join(root,'docs/image-prompts/presets.json');
   const files = fs.existsSync(inputRoot) ? fs.readdirSync(inputRoot).filter(f=>f.endsWith('.png')) : [];
   if (!fs.existsSync(packPath) && !files.length) { log('원장·원본 이미지 없음: 변환 0건'); return []; }
@@ -142,27 +168,27 @@ export function prepareImages({ root = projectRoot, inputDir = 'docs/artifacts/i
   for (const job of jobs) {
     const targetDir = path.dirname(job.output);
     const plannedTemp = path.join(targetDir,'.prepare-'+job.item.id);
-    const planned = conversionCommands({tool,input:job.input,output:path.join(plannedTemp,'output.webp'),temp:plannedTemp,dimensions:job.dimensions,style});
+    const planned = conversionCommands({tool,input:job.input,output:path.join(plannedTemp,'output.webp'),temp:plannedTemp,dimensions:job.dimensions,style,inset});
     if (dryRun) {
-      log('# '+job.item.id+' '+imageGeometry(job.dimensions).mode);
+      log('# '+job.item.id+' '+(inset > 0 ? 'contain inset='+inset : imageGeometry(job.dimensions).mode));
       log(formatCommand({command:'mkdir',args:['-p',plannedTemp]}));
       planned.forEach(c=>log(formatCommand(c)));
       log('# 실제 실행은 치수·용량 검증 후 최종 경로로 원자적 교체: '+job.output);
-      log('# 검증을 포함한 실행: '+formatCommand({command:process.execPath,args:[fileURLToPath(import.meta.url),'--root',root,'--tool',tool,'--in',inputDir,'--only',job.item.id]}));
-      reports.push({id:job.item.id,output:job.output,commands:planned}); continue;
+      log('# 검증을 포함한 실행: '+formatCommand({command:process.execPath,args:[fileURLToPath(import.meta.url),'--root',root,'--tool',tool,'--in',inputDir,'--only',job.item.id,'--inset',String(inset)]}));
+      reports.push({id:job.item.id,output:job.output,inset,commands:planned}); continue;
     }
     const tools = new Map(planned.map(c=>[c.command,resolveTool(c.command)]));
     fs.mkdirSync(targetDir,{recursive:true});
     const temp = fs.mkdtempSync(path.join(targetDir,'.prepare-'));
     try {
       const staging = path.join(temp,'output.webp');
-      const commands = conversionCommands({tool,input:job.input,output:staging,temp,dimensions:job.dimensions,style});
+      const commands = conversionCommands({tool,input:job.input,output:staging,temp,dimensions:job.dimensions,style,inset});
       for (const command of commands) run(tools.get(command.command),command.args,{stdio:'pipe',maxBuffer:8*1024*1024});
       safeRegular(staging); const bytes = fs.readFileSync(staging), dimensions = readWebpDimensions(bytes);
       if (dimensions.width !== style.width || dimensions.height !== style.height) throw new Error('변환 치수 불일치: '+job.item.id);
       if (bytes.length > style.maxBytes) throw new Error('변환 용량 상한 초과: '+job.item.id+' '+bytes.length);
       fs.renameSync(staging,job.output);
-      const report = {id:job.item.id,output:path.relative(root,job.output),bytes:bytes.length,warning:bytes.length>style.warnBytes};
+      const report = {id:job.item.id,output:path.relative(root,job.output),bytes:bytes.length,warning:bytes.length>style.warnBytes,inset};
       reports.push(report); log(JSON.stringify(report));
     } finally { fs.rmSync(temp,{recursive:true,force:true}); }
   }
@@ -176,9 +202,9 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     for (let i=2;i<process.argv.length;i++) {
       const arg=process.argv[i];
       if (arg==='--dry-run') options.dryRun=true;
-      else if (['--tool','--style','--in','--only','--root'].includes(arg)) {
+      else if (['--tool','--style','--in','--only','--root','--inset'].includes(arg)) {
         const value=process.argv[++i]; if (!value || value.startsWith('--')) throw new Error('인자 값이 없습니다: '+arg);
-        options[{'--in':'inputDir','--only':'only','--tool':'tool','--style':'style','--root':'root'}[arg]]=value;
+        options[{'--in':'inputDir','--only':'only','--tool':'tool','--style':'style','--root':'root','--inset':'inset'}[arg]]=arg === '--inset' ? (value.trim() ? Number(value) : NaN) : value;
       } else throw new Error('알 수 없는 인자: '+arg);
     }
     prepareImages(options);
