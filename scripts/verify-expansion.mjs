@@ -351,7 +351,7 @@ export function verifyUiVoicePhrases(t, src, countries, manifest) {
   sandbox.document.body.appendChild = (node) => { modal = node; };
   // 상태와 음성 장치는 격리하고, 화면 생성과 이벤트 처리 코드는 실제 ui.js를 실행한다.
   sandbox.FQ = {
-    storage: { countryStat: () => ({ seen: 0 }), updateSettings() {} },
+    storage: { countryStat: () => ({ seen: 0 }), allCountryStats: () => ({}), updateSettings() {} },
     quiz: { LEVEL_LABEL: {} },
     audio: {
       stopSpeaking() {}, setSpeakEnabled() {},

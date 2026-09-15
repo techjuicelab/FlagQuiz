@@ -59,7 +59,7 @@
     if (!country) return;
     if (FQ.music) FQ.music.stop();
     closeModal();
-    var st = FQ.storage.countryStat(country.code);
+    var st = FQ.storage.allCountryStats()[country.code] || { seen: 0, correct: 0, wrong: 0, streak: 0 };
     var rate = st.seen ? Math.round((st.correct / st.seen) * 100) : null;
     var back = doc.createElement('div');
     back.className = 'modal-back';
