@@ -1,7 +1,3 @@
-Edit this botanical illustration only: it currently has FIVE orange-tipped stamens and one green-tipped central pistil. Add exactly ONE more slender yellow filament ending in an orange anther, clearly separated from the existing five, so there are exactly SIX orange-tipped stamens plus ONE green-tipped pistil. Preserve the six recurved yellow flower petals, green curved stem, leaves, gouache style, colors and background. Do not add another flower or any text.
-
-Preserve the original style specification below; apply only the repair described above.
-
 SUBJECT: A single Bosnian lily hanging from one curved green stem, six unspotted golden yellow petals curling strongly backward around six slender stamens, with narrow green leaves along the stem.
 OVERRIDE: Draw the actual yellow turks-cap lily flower, not a white trumpet lily, fleur-de-lis emblem, shield or flag.
 

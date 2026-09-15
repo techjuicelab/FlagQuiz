@@ -1,5 +1,3 @@
-Edit this single existing illustration. Remove every small human-shaped statue or figure from the facade, including the little figures inside the three pointed portal recesses. Replace these with simple abstract branching stone relief and empty dark recesses. Preserve exactly four bell towers, exactly three main entrances, the stone color, outline style and framing. Do not add any crosses, people or letters. The following original production prompt still applies:
-
 SUBJECT: A single Sagrada Familia Nativity facade, pale sandy stone rising into four slender tapering bell towers with honeycomb openings, above three deeply recessed pointed entrances and branching stone surface patterns.
 ACCURACY: keep the real silhouette, the real number of major parts and the real material colour of this place correct, then simplify it into the STYLE below. Clear soft daytime light. No people, no vehicles, no modern signage, no night-time illumination or light show.
 OVERRIDE: Show only the Gaudi-designed Nativity facade and its four original bell towers; exclude modern central towers, crosses, saints, sculpted figures, interiors and worshippers.

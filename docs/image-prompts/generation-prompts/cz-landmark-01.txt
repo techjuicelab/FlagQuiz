@@ -1,7 +1,3 @@
-Edit this architectural illustration only: remove every human-shaped sculpted figure or statue from the clock structure, especially the small figure in the niche to the lower left of the upper clock dial. Replace each figure niche with plain pale stone masonry or an empty shallow recess. Keep both large circular dials, both CLOSED upper windows, stone architectural columns, blank clock markings, roof, dimensions and gouache style unchanged. No people, portraits, sacred figures, skeletons, letters or numbers.
-
-Preserve the original style specification below; apply only the repair described above.
-
 SUBJECT: A single Prague astronomical clock facade, two large circular gold and blue dials stacked vertically within a pale stone frame, beneath two small closed windows and a short tiled canopy.
 ACCURACY: keep the real silhouette, the real number of major parts and the real material colour of this place correct, then simplify it into the STYLE below. Clear soft daytime light. No people, no vehicles, no modern signage, no night-time illumination or light show.
 OVERRIDE: Use the exterior clock structure with closed upper windows; omit apostle figures, skeletons, sacred figures, weapons, readable numerals, lettering and zodiac characters.

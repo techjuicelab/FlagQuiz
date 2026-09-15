@@ -1,8 +1,3 @@
-Use case: precise-object-edit.
-Input image: edit target.
-Remove the connecting stone curtain walls between the three towers. Retain exactly three separate pale stone towers standing on their separate rocky outcrops. Between towers show only uneven natural grey mountain and greenery, no masonry wall, bridge or walkway linking them. Keep each tower crenellated, the three-tower count, overall rocky ridge, colors, composition and illustrated style.
-
-Original production specification (preserve all unaffected requirements):
 SUBJECT: A single rocky San Marino ridge carrying exactly three separate pale stone towers, each with a small crenellated top, linked only by the uneven grey mountain beneath their green bases.
 OVERRIDE: Retain only the intrinsic landscape components explicitly described in SUBJECT as one compact scene against the pale background. This overrides the no-scenery restriction for these necessary components only. Show the three real towers along the mountain ridge, not a shield or national flag; no feather emblem, weapons, soldiers or lettering.
 
@@ -13,4 +8,3 @@ STYLE (copy this paragraph unchanged into every image of this set): a modern chi
 DO NOT INCLUDE: text, letters, numbers, captions, labels, titles, signatures, watermarks or logos of any kind; any national flag or flag-like striped emblem; any recognisable human face, portrait, crowd or named person; worship, sacred figures or religious ceremony; soldiers, uniforms, weapons, blood, destruction or anything frightening; maps, globes, borders, compass roses; photorealism, photography, 3D render, CGI, clay, plastic or chrome material, neon glow, lens flare, bokeh, vignette, dramatic rim light; picture frames, borders, drop shadows around the picture, collage, multiple panels, sticker sheets, grids, mock-ups; more than one copy of the subject.
 
 OUTPUT: exactly one illustration showing exactly one scene, 4:3 landscape if available otherwise 3:2 landscape. Do not produce variations, alternatives or a grid of options. Follow the STYLE paragraph literally; do not restyle, modernise or "improve" these instructions.
-

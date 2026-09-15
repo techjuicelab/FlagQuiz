@@ -428,6 +428,11 @@
         {
           "attempt": 1,
           "path": "docs/image-prompts/generation-prompts/at-landmark-01.txt",
+          "sha256": "eae8246da27fc06cbe1f49091abdd556e312b5757ff5559eec03d1ce0c431cb8"
+        },
+        {
+          "attempt": 2,
+          "path": "docs/image-prompts/generation-prompts/at-landmark-02.txt",
           "sha256": "20593b05214637bbd6ff703d20524abd3d0c14b31f4e5c489236d56645c7f23a"
         }
       ],
@@ -641,6 +646,11 @@
         {
           "attempt": 1,
           "path": "docs/image-prompts/generation-prompts/ba-symbol-01.txt",
+          "sha256": "051a9e97e6b27030c7febd5845083723b5bafd0e5e4ce4c996e410e36854e376"
+        },
+        {
+          "attempt": 2,
+          "path": "docs/image-prompts/generation-prompts/ba-symbol-02.txt",
           "sha256": "eb2e65c3e028e88b19e3483cc04015677c5a3ff657f303d54433a57dd946857f"
         }
       ],
@@ -1414,6 +1424,11 @@
         {
           "attempt": 1,
           "path": "docs/image-prompts/generation-prompts/by-symbol-01.txt",
+          "sha256": "4288bfbed07db1364170f8513d031752bf7d50900cfdfac921ba82b307b635cd"
+        },
+        {
+          "attempt": 2,
+          "path": "docs/image-prompts/generation-prompts/by-symbol-02.txt",
           "sha256": "39ebeb1860fcc8d3510955bf114005f5d574771a9224520cc084d736db774165"
         }
       ],
@@ -2228,6 +2243,11 @@
         {
           "attempt": 1,
           "path": "docs/image-prompts/generation-prompts/cy-symbol-01.txt",
+          "sha256": "5a55c404eeb390bf41fefd3ca2b4f74c7d31d1c498237b05e5106d43224fcbc4"
+        },
+        {
+          "attempt": 2,
+          "path": "docs/image-prompts/generation-prompts/cy-symbol-02.txt",
           "sha256": "c786985ccb10e8241e12d805689e1f9fa17d9d17e6e96d9de1d515e8b9da6718"
         }
       ],
@@ -2258,6 +2278,11 @@
         {
           "attempt": 1,
           "path": "docs/image-prompts/generation-prompts/cz-landmark-01.txt",
+          "sha256": "4efe0e4b228fd33f47b6b48a3cf1fbbe96702a2392aecdc65e7085f909237e36"
+        },
+        {
+          "attempt": 2,
+          "path": "docs/image-prompts/generation-prompts/cz-landmark-02.txt",
           "sha256": "49f669e13c04270f4bf43c34a7a57abf1e5303e69ca7bb368156b998b4a0871d"
         }
       ],
@@ -2824,6 +2849,11 @@
         {
           "attempt": 1,
           "path": "docs/image-prompts/generation-prompts/es-landmark-01.txt",
+          "sha256": "dcd4d646d3a121728a2d7441171010c7879c1b4725640022b58a18839bae98a3"
+        },
+        {
+          "attempt": 2,
+          "path": "docs/image-prompts/generation-prompts/es-landmark-02.txt",
           "sha256": "38cbed0236b94ef22b3e5836339658ac76dce7f86b641f60fa49678c8f49ea70"
         }
       ],
@@ -3530,6 +3560,11 @@
         {
           "attempt": 1,
           "path": "docs/image-prompts/generation-prompts/gr-landmark-01.txt",
+          "sha256": "7a52045bb4971675a44212c0970519e9d5eaafb116b7efc4d8c37a15af68faf8"
+        },
+        {
+          "attempt": 2,
+          "path": "docs/image-prompts/generation-prompts/gr-landmark-02.txt",
           "sha256": "df7f1b42d4985b8bc33d906c828c537721487de65ece2483dac5d82ca272ec3c"
         }
       ],
@@ -5554,11 +5589,16 @@
         {
           "attempt": 1,
           "path": "docs/image-prompts/generation-prompts/lu-landmark-01.txt",
-          "sha256": "d41b3c0f5c33ea599d91d0c6f636f22ef8b210e1e12ada29fefaee1f970e1738"
+          "sha256": "1155701b3d7a11199948854fa2449b6d49b8a669a5323fe807838f00596a109d"
         },
         {
           "attempt": 2,
           "path": "docs/image-prompts/generation-prompts/lu-landmark-02.txt",
+          "sha256": "d41b3c0f5c33ea599d91d0c6f636f22ef8b210e1e12ada29fefaee1f970e1738"
+        },
+        {
+          "attempt": 3,
+          "path": "docs/image-prompts/generation-prompts/lu-landmark-03.txt",
           "sha256": "faff45ef981ca710adba42d8513defa23591c96b447dc7ae687847231b6523df"
         }
       ],
@@ -5589,6 +5629,11 @@
         {
           "attempt": 1,
           "path": "docs/image-prompts/generation-prompts/lu-symbol-01.txt",
+          "sha256": "26259db28a745312e9d5a1cd5b56687795e17367a3ef7e41a88a61ec9e297e90"
+        },
+        {
+          "attempt": 2,
+          "path": "docs/image-prompts/generation-prompts/lu-symbol-02.txt",
           "sha256": "789dce71c5338c9eb9464b7305c91b9d9a7d04b9657ca728bf835f3f26466f9c"
         }
       ],
@@ -5619,6 +5664,11 @@
         {
           "attempt": 1,
           "path": "docs/image-prompts/generation-prompts/lv-landmark-01.txt",
+          "sha256": "d0e48e3791c36f83d934f2ffaea62b4d0fe91ee0ee7b04ee21ce2fe499c15f5b"
+        },
+        {
+          "attempt": 2,
+          "path": "docs/image-prompts/generation-prompts/lv-landmark-02.txt",
           "sha256": "bf919b92941ea6da5a23afcf2a0d71817cc032eef1fbb9067a46dfb918b42fb2"
         }
       ],
@@ -6871,10 +6921,10 @@
     {
       "id": "nl-landmark",
       "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/nl-landmark.png",
-      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-cb80-7703-b3d1-e560ba46c927/exec-1550e8d5-fdcc-4955-ac62-d3c82204b7b0.png",
-      "sourceSha256": "d4ed533b08c66344b819697657fd64b7e9d662a2d3e4e64a3ac77bb89e5abcb6",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-cb80-7703-b3d1-e560ba46c927/exec-a487d5ab-ac24-49ec-afeb-056465bb7637.png",
+      "sourceSha256": "b12cdc01d4d991b874784410f45aa2a5f063d74fc70b29dbbe08363abbccba3e",
       "output": "images/places/nl.webp",
-      "outputSha256": "4344c01632df303420fec710f7000663207039f23e2e9203e89c7e7f3abaa7fe",
+      "outputSha256": "48797271aa6b91ccd002c008dc2cb771b30ae7340c23896bf08ba5e03ae886e9",
       "actualPrompts": [
         {
           "attempt": 1,
@@ -6899,7 +6949,7 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "풍차 세 기, 각 격자 날개 네 개 직접 계수. 운하와 초록 갈대 확인.",
+        "notes": "파일럿 우선 규칙에 따라 기존 풍차 3기 장면을 1기로 교정. 한 기와 상하좌우 격자 날개 4개, 전체 여백, 글자·사람 없음 직접 확인. 문은 흰 테두리와 초록 패널로 표현됨.",
         "independentReview": "/root/map_tests"
       }
     },
@@ -7565,6 +7615,11 @@
         {
           "attempt": 1,
           "path": "docs/image-prompts/generation-prompts/pt-landmark-01.txt",
+          "sha256": "506259164fb35ca6b5d1a0b08cfda09e3044583395800ad56fa1386c38835e57"
+        },
+        {
+          "attempt": 2,
+          "path": "docs/image-prompts/generation-prompts/pt-landmark-02.txt",
           "sha256": "923e370ccf37060ec5d8daaf3ee128fdc0ec46f6bc802ecd8630912df1e4a1df"
         }
       ],
@@ -7772,6 +7827,11 @@
         {
           "attempt": 1,
           "path": "docs/image-prompts/generation-prompts/ro-landmark-01.txt",
+          "sha256": "7db5f415696d5d8ec09f107509bece4819d20735517d662e388d3b5e1919ece4"
+        },
+        {
+          "attempt": 2,
+          "path": "docs/image-prompts/generation-prompts/ro-landmark-02.txt",
           "sha256": "a7f9b283440bbccb5fc35681d925ac58de96f81a7a0315ef3d792d2469856173"
         }
       ],
@@ -8495,6 +8555,11 @@
         {
           "attempt": 1,
           "path": "docs/image-prompts/generation-prompts/sm-symbol-01.txt",
+          "sha256": "0e41aac2b999288b15bff589935bb934cf43914df965d520074b6fc4c91409a6"
+        },
+        {
+          "attempt": 2,
+          "path": "docs/image-prompts/generation-prompts/sm-symbol-02.txt",
           "sha256": "15ee3f1aa38df55f1341feab8a193f70c4a54c93e827920adce2e5a52143e2a0"
         }
       ],

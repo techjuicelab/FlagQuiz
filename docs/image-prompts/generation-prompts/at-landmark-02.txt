@@ -1,6 +1,10 @@
-SUBJECT: A single Luxembourg old town scene, pale stone houses gathered atop a high green cliff above a deep narrow valley crossed by one broad stone bridge with two parallel arches.
+Edit this illustration only: it currently has SIXTEEN red passenger cabins. Remove exactly the bottommost red cabin centered directly at the six oclock position above the base building. Leave the other fifteen red cabins present and intact. There must be exactly FIFTEEN red rectangular cabins around this wheel and no extra cabins anywhere. Keep the wheel, spokes, supports, base, gouache style and blank pale background unchanged. Do not add any text or numbers.
+
+Preserve the original style specification below; apply only the repair described above.
+
+SUBJECT: A single Vienna Giant Ferris Wheel, a tall circular metal wheel with slender spokes and fifteen red rectangular wooden cabins, supported by two wide triangular legs above a small plain base.
 ACCURACY: keep the real silhouette, the real number of major parts and the real material colour of this place correct, then simplify it into the STYLE below. Clear soft daytime light. No people, no vehicles, no modern signage, no night-time illumination or light show.
-OVERRIDE: Retain only the intrinsic landscape components explicitly described in SUBJECT as one compact scene against the pale background. This overrides the no-scenery restriction for these necessary components only. Keep the high cliff, deep valley and bridge as one compact city landscape; no people, flags, modern buildings or religious figures.
+OVERRIDE: Retain the red box-shaped cabins and slender wheel structure; no capsule pods, people, logos, letters or numbers.
 
 COMPOSITION (identical for every image in this set): one single subject, centered, whole, never touched or cut by the frame edge. Eye-level camera tilted about 10 degrees above the subject; the subject turned slightly toward the viewer's left. The subject fills about 70 percent of the frame height. Keep empty background on all four sides, and at least 12 percent of the frame width empty at the left and right edges so the picture can be cropped to a 4:3 rectangle later without touching the subject. The background is one flat solid colour, pale blue-grey #F1F5FB — no gradient, no texture, no horizon line, no ground plane, no scenery, no props. The only shadow is one small soft blurred oval directly under the subject.
 

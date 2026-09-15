@@ -1,6 +1,5 @@
-SUBJECT: A single Kinderdijk canal bank with three tall brown windmills in a receding row, each carrying four long lattice sails above a dark tapered body, beside calm blue water and green reeds.
+SUBJECT: A single Dutch polder windmill, a round brick tower with a thatched conical cap, a small green door with a white frame, and exactly four straight lattice sails arranged in an even cross.
 ACCURACY: keep the real silhouette, the real number of major parts and the real material colour of this place correct, then simplify it into the STYLE below. Clear soft daytime light. No people, no vehicles, no modern signage, no night-time illumination or light show.
-Keep the straight canal and windmills as one compact scene; each windmill has exactly four sails, with no people, flags, modern buildings or extra mills.
 
 COMPOSITION (identical for every image in this set): one single subject, centered, whole, never touched or cut by the frame edge. Eye-level camera tilted about 10 degrees above the subject; the subject turned slightly toward the viewer's left. The subject fills about 70 percent of the frame height. Keep empty background on all four sides, and at least 12 percent of the frame width empty at the left and right edges so the picture can be cropped to a 4:3 rectangle later without touching the subject. The background is one flat solid colour, pale blue-grey #F1F5FB — no gradient, no texture, no horizon line, no ground plane, no scenery, no props. The only shadow is one small soft blurred oval directly under the subject.
 

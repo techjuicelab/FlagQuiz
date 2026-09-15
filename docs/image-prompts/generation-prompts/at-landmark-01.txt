@@ -1,7 +1,3 @@
-Edit this illustration only: it currently has SIXTEEN red passenger cabins. Remove exactly the bottommost red cabin centered directly at the six oclock position above the base building. Leave the other fifteen red cabins present and intact. There must be exactly FIFTEEN red rectangular cabins around this wheel and no extra cabins anywhere. Keep the wheel, spokes, supports, base, gouache style and blank pale background unchanged. Do not add any text or numbers.
-
-Preserve the original style specification below; apply only the repair described above.
-
 SUBJECT: A single Vienna Giant Ferris Wheel, a tall circular metal wheel with slender spokes and fifteen red rectangular wooden cabins, supported by two wide triangular legs above a small plain base.
 ACCURACY: keep the real silhouette, the real number of major parts and the real material colour of this place correct, then simplify it into the STYLE below. Clear soft daytime light. No people, no vehicles, no modern signage, no night-time illumination or light show.
 OVERRIDE: Retain the red box-shaped cabins and slender wheel structure; no capsule pods, people, logos, letters or numbers.

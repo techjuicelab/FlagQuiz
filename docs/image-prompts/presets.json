@@ -625,7 +625,7 @@
       "confusionGroups": [],
       "csvStatus": "draft",
       "status": "approved-image",
-      "tries": 1,
+      "tries": 2,
       "bytes": 33710,
       "outputStem": "images/places/at",
       "textReview": {
@@ -829,7 +829,7 @@
       "confusionGroups": [],
       "csvStatus": "final",
       "status": "approved-image",
-      "tries": 1,
+      "tries": 2,
       "bytes": 19312,
       "outputStem": "images/symbols/ba",
       "textReview": {
@@ -1933,7 +1933,7 @@
       ],
       "csvStatus": "final",
       "status": "approved-image",
-      "tries": 1,
+      "tries": 2,
       "bytes": 21140,
       "outputStem": "images/symbols/by",
       "textReview": {
@@ -3027,7 +3027,7 @@
       "confusionGroups": [],
       "csvStatus": "final",
       "status": "approved-image",
-      "tries": 1,
+      "tries": 2,
       "bytes": 19728,
       "outputStem": "images/symbols/cy",
       "textReview": {
@@ -3109,7 +3109,7 @@
       ],
       "csvStatus": "final",
       "status": "approved-image",
-      "tries": 1,
+      "tries": 2,
       "bytes": 27084,
       "outputStem": "images/places/cz",
       "textReview": {
@@ -3888,7 +3888,7 @@
       ],
       "csvStatus": "final",
       "status": "approved-image",
-      "tries": 1,
+      "tries": 2,
       "bytes": 28494,
       "outputStem": "images/places/es",
       "textReview": {
@@ -4868,7 +4868,7 @@
       ],
       "csvStatus": "final",
       "status": "approved-image",
-      "tries": 1,
+      "tries": 2,
       "bytes": 26784,
       "outputStem": "images/places/gr",
       "textReview": {
@@ -7581,7 +7581,7 @@
       ],
       "csvStatus": "final",
       "status": "approved-image",
-      "tries": 1,
+      "tries": 2,
       "bytes": 22608,
       "outputStem": "images/symbols/lu",
       "textReview": {
@@ -7624,7 +7624,7 @@
       ],
       "csvStatus": "final",
       "status": "approved-image",
-      "tries": 2,
+      "tries": 3,
       "bytes": 51826,
       "outputStem": "images/places/lu",
       "textReview": {
@@ -7707,7 +7707,7 @@
       ],
       "csvStatus": "final",
       "status": "approved-image",
-      "tries": 1,
+      "tries": 2,
       "bytes": 28064,
       "outputStem": "images/places/lv",
       "textReview": {
@@ -9418,12 +9418,12 @@
       "code": "nl",
       "kind": "landmark",
       "koRaw": "킨더다이크 강둑에 줄지어 선 풍차",
-      "koApprove": "킨더다이크 풍차",
-      "subjectEn": "A single Kinderdijk canal bank with three tall brown windmills in a receding row, each carrying four long lattice sails above a dark tapered body, beside calm blue water and green reeds.",
+      "koApprove": "킨더다이크 풍차 한 채",
+      "subjectEn": "A single Dutch polder windmill, a round brick tower with a thatched conical cap, a small green door with a white frame, and exactly four straight lattice sails arranged in an even cross.",
       "accuracy": true,
-      "override": "Keep the straight canal and windmills as one compact scene; each windmill has exactly four sails, with no people, flags, modern buildings or extra mills.",
+      "override": null,
       "substitutedFrom": null,
-      "keepsBackdrop": true,
+      "keepsBackdrop": false,
       "continent": "유럽",
       "grade": "S",
       "city": "킨더다이크",
@@ -9434,7 +9434,7 @@
       "csvStatus": "draft",
       "status": "approved-image",
       "tries": 2,
-      "bytes": 38526,
+      "bytes": 16786,
       "outputStem": "images/places/nl",
       "textReview": {
         "reviewer": "Codex",
@@ -9448,10 +9448,11 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "풍차 세 기, 각 격자 날개 네 개 직접 계수. 운하와 초록 갈대 확인.",
+        "notes": "파일럿 우선 규칙에 따라 기존 풍차 3기 장면을 1기로 교정. 한 기와 상하좌우 격자 날개 4개, 전체 여백, 글자·사람 없음 직접 확인. 문은 흰 테두리와 초록 패널로 표현됨.",
         "independentReview": "/root/map_tests"
       },
-      "productionRecord": "docs/image-prompts/production.json#nl-landmark"
+      "productionRecord": "docs/image-prompts/production.json#nl-landmark",
+      "curationNote": "HANDOFF T3-subject-en은 PILOT 풍차 한 채가 CSV 줄지어 표현보다 우선한다고 명시. 3기 최초 큐레이션과 원본·프롬프트는 별도 보존. 같은 Kinderdijk 소재의 규정 개수 교정이며 사람의 최종 이미지 승인으로 표시하지 않는다."
     },
     {
       "id": "no-symbol",
@@ -10375,7 +10376,7 @@
       ],
       "csvStatus": "draft",
       "status": "approved-image",
-      "tries": 1,
+      "tries": 2,
       "bytes": 22222,
       "outputStem": "images/places/pt",
       "textReview": {
@@ -10658,7 +10659,7 @@
       ],
       "csvStatus": "final",
       "status": "approved-image",
-      "tries": 1,
+      "tries": 2,
       "bytes": 30010,
       "outputStem": "images/places/ro",
       "textReview": {
@@ -11607,7 +11608,7 @@
       "confusionGroups": [],
       "csvStatus": "final",
       "status": "approved-image",
-      "tries": 1,
+      "tries": 2,
       "bytes": 33304,
       "outputStem": "images/symbols/sm",
       "textReview": {

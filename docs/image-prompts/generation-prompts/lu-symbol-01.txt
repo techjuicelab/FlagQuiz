@@ -1,8 +1,3 @@
-Use case: precise-object-edit.
-Input image: edit target.
-Change only the background. Replace every transparent background pixel with a completely opaque, flat pale blue-white color #F1F5FB, RGB 241 245 251. No transparency, no checkerboard, no black, no gradient, no texture on the background. Keep the red lion exactly as drawn: four limbs, one gold crown, split two-branched tail, mane, pose and delicate ground shadow. Preserve generous pale margins all around.
-
-Original production specification (preserve all unaffected requirements):
 SUBJECT: A single red heraldic lion rearing upright, its four clawed legs spread, one small golden crown above its head and a long tail splitting into exactly two curling branches.
 OVERRIDE: Show only the isolated red symbolic lion with crown and bifurcated tail; no shield, striped field, full coat of arms, flag, weapon or realistic lion fur.
 
@@ -13,4 +8,3 @@ STYLE (copy this paragraph unchanged into every image of this set): a modern chi
 DO NOT INCLUDE: text, letters, numbers, captions, labels, titles, signatures, watermarks or logos of any kind; any national flag or flag-like striped emblem; any recognisable human face, portrait, crowd or named person; worship, sacred figures or religious ceremony; soldiers, uniforms, weapons, blood, destruction or anything frightening; maps, globes, borders, compass roses; photorealism, photography, 3D render, CGI, clay, plastic or chrome material, neon glow, lens flare, bokeh, vignette, dramatic rim light; picture frames, borders, drop shadows around the picture, collage, multiple panels, sticker sheets, grids, mock-ups; more than one copy of the subject.
 
 OUTPUT: exactly one illustration showing exactly one scene, 4:3 landscape if available otherwise 3:2 landscape. Do not produce variations, alternatives or a grid of options. Follow the STYLE paragraph literally; do not restyle, modernise or "improve" these instructions.
-
