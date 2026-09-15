@@ -25,7 +25,7 @@ test('도감 그림을 켜기 전 HTML은 그대로이며 켜면 설명과 국�
   assert.equal(after.replace(/<figure class="country-art">[\s\S]*?<\/figure>/g, ''), before);
   assert.match(after, /images\/symbols\/kr.webp/);
   assert.match(after, /images\/places\/kr.webp/);
-  assert.match(after, /나라 대표 명소 · 경복궁 광화문/);
+  assert.match(after, /나라 대표 명소 · 광화문/);
   assert.match(after, /alt="김치"/);
   assert.ok(after.indexOf('fact-box') < after.indexOf('country-art'));
   assert.ok(after.indexOf('country-art') < after.indexOf('hint-box'));

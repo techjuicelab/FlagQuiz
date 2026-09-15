@@ -1,4 +1,4 @@
-/* 생성물: npm run subjects:build. 원문은 docs/expansion/에 있습니다. */
+/* 생성물: npm run subjects:build. 원문은 docs/expansion/, 검토한 화면 이름은 docs/image-prompts/presets.json에 있습니다. */
 (function () {
   var FQ = window.FQ = window.FQ || {};
   FQ.confusionGroups = [

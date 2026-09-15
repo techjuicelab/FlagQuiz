@@ -26,6 +26,20 @@ export function buildSubjects(projectRoot = root) {
   }
   const missing = [...codes].filter((code) => !seen.has(code));
   if (missing.length) throw new Error('주제에서 빠진 나라: ' + missing.join(', '));
+  // 원문과 출제 대상은 CSV로 유지하고, 제작 중 검토한 짧은 이름만 화면에 반영한다.
+  const ledgerPath = path.join(projectRoot, 'docs/image-prompts/presets.json');
+  if (fs.existsSync(ledgerPath)) {
+    const ledger = JSON.parse(fs.readFileSync(ledgerPath, 'utf8'));
+    const ids = new Set();
+    for (const item of ledger.items) {
+      const axis = item.kind === 'landmark' ? 'place' : item.kind === 'symbol' ? 'symbol' : null;
+      if (!axis || ids.has(item.id) || item.id !== item.code + '-' + item.kind || !subjects[item.code]?.[axis]) throw new Error('원장 소재가 원자료와 다릅니다: ' + item.id);
+      ids.add(item.id);
+      if (['agent-curated', 'approved-text', 'generated', 'approved-image'].includes(item.status) && item.subjectEn && item.koApprove?.trim()) {
+        subjects[item.code][axis].ko = item.koApprove.trim();
+      }
+    }
+  }
   const raw = JSON.parse(fs.readFileSync(path.join(projectRoot, 'docs/expansion/confusion-groups.json'), 'utf8'));
   const groups = raw.groups.map(({ name, axis, codes: groupCodes }) => {
     if (!name || !['상징물', '명소'].includes(axis) || !Array.isArray(groupCodes) || groupCodes.some((code) => !codes.has(code))) {
@@ -33,7 +47,7 @@ export function buildSubjects(projectRoot = root) {
     }
     return { name, axis, codes: groupCodes };
   });
-  const emit = (key, value) => '/* 생성물: npm run subjects:build. 원문은 docs/expansion/에 있습니다. */\n' +
+  const emit = (key, value) => '/* 생성물: npm run subjects:build. 원문은 docs/expansion/, 검토한 화면 이름은 docs/image-prompts/presets.json에 있습니다. */\n' +
     '(function () {\n  var FQ = window.FQ = window.FQ || {};\n  FQ.' + key + ' = ' + JSON.stringify(value, null, 2) + ';\n})();\n';
   return { subjects, groups, files: { 'data/subjects.js': emit('subjects', subjects), 'data/confusion-groups.js': emit('confusionGroups', groups) } };
 }
