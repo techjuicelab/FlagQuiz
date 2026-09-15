@@ -482,6 +482,7 @@ test('두 그림 퀴즈는 실제 그림 경로·4개 보기·별도 기록·기
     f.c.FQ.app.startGame(['kr']);const a=f.c.FQ.test,q=a.state.game.current();
     assert.match(f.node('main').innerHTML,new RegExp('images/'+(mode==='place'?'places':'symbols')+'/kr.webp'));
     assert.equal((f.node('main').innerHTML.match(/class="answer-btn art-choice"/g)||[]).length,4);
+    f.node('#question-art').handlers.load();
     const before=JSON.stringify(f.c.FQ.storage.daily());
     a.submit({code:'kr'});f.releases.at(-1)();f.finishMusic();
     assert.equal(f.c.FQ.storage.axisStat(mode,'kr').correct,1);
@@ -500,6 +501,19 @@ test('그림 다운로드 실패를 오답으로 기록하지 않고 다시 받�
   f.node('#art-retry').click();assert.equal(img.src,'images/symbols/kr.webp');
   img.handlers.load();a.submit({code:'kr'});
   assert.equal(f.c.FQ.storage.axisStat('symbol','kr').seen,1);
+});
+
+test('느린 그림 다운로드 중에는 제한 시간·제출이 시작되지 않고 load 뒤에 시작한다',()=>{
+  const f=fixture();f.c.FQ.storage.updateSettings({mode:'symbol',timer:10,dev:{art:true}});f.c.FQ.app.startGame(['kr']);
+  const a=f.c.FQ.test;
+  assert.equal(a.state.artUnavailable,true);assert.equal(f.node('#skip').disabled,true);
+  for(let i=0;i<15;i++)f.runDelay(1000);
+  a.submit({code:'kr'});a.submit({text:''},true);
+  assert.equal(f.c.FQ.storage.stats().asked,0);assert.equal(a.state.answered,false);
+  f.node('#question-art').handlers.load();
+  assert.equal(a.state.artUnavailable,false);assert.equal(f.node('#skip').disabled,false);
+  for(let i=0;i<10;i++)f.runDelay(1000);
+  assert.equal(a.state.timedOut,true);assert.equal(f.c.FQ.storage.axisStat('symbol','kr').seen,1);
 });
 
 console.log('앱 흐름 회귀 검사 '+passed+'건 통과');

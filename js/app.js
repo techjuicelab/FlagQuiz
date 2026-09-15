@@ -458,10 +458,12 @@
 
     var stage;
     if (q.mode === 'symbol' || q.mode === 'place') {
+      state.artUnavailable = true;
       var art = ui.artFor(q.country.code, q.mode);
       stage = '<div class="flag-stage art-question"><div class="q-label">' +
         (q.mode === 'place' ? '이 명소가 있는 나라는 어디일까요?' : '이 그림은 어느 나라를 떠올리게 하나요?') + '</div>' +
         '<img id="question-art" src="' + esc(art.src) + '" alt="' + esc(art.alt) + '" width="1024" height="768">' +
+        '<p id="art-loading" role="status">그림을 불러오고 있어요…</p>' +
         '<div id="art-error" hidden><p>그림을 불러오지 못했어요.</p><button class="btn" id="art-retry" type="button">다시 불러오기</button></div></div>';
     } else if (q.mode === 'map') {
       stage = '<div class="flag-stage map-question">' +
@@ -593,25 +595,28 @@
     bindAnswerArea(m, q);
     var questionArt = ui.$('#question-art', m);
     if ((q.mode === 'symbol' || q.mode === 'place') && questionArt) {
-      function artState(failed) {
+      function artState(status) {
         if (state.game !== g || g.current() !== q || state.answered) return;
-        state.artUnavailable = failed;
-        ui.$('#art-error', m).hidden = !failed;
-        questionArt.hidden = failed;
+        var unavailable = status !== 'ready';
+        state.artUnavailable = unavailable;
+        ui.$('#art-error', m).hidden = status !== 'error';
+        ui.$('#art-loading', m).hidden = status !== 'loading';
+        questionArt.hidden = status === 'error';
         ui.$$('.answer-btn', m).forEach(function (button) {
-          button.disabled = failed || state.removed.indexOf(button.getAttribute('data-code')) !== -1;
+          button.disabled = unavailable || state.removed.indexOf(button.getAttribute('data-code')) !== -1;
         });
-        ui.$('#skip', m).disabled = failed;
-        ui.$('#hint', m).disabled = failed || state.usedHint;
-        if (failed) stopTimer();
+        ui.$('#skip', m).disabled = unavailable;
+        ui.$('#hint', m).disabled = unavailable || state.usedHint;
+        if (unavailable) stopTimer();
         else if (s.timer && !state.timerId) startTimer();
       }
-      questionArt.addEventListener('error', function () { artState(true); });
-      questionArt.addEventListener('load', function () { artState(false); });
-      ui.$('#art-retry', m).addEventListener('click', function () { questionArt.src = art.src; });
+      questionArt.addEventListener('error', function () { artState('error'); });
+      questionArt.addEventListener('load', function () { artState('ready'); });
+      ui.$('#art-retry', m).addEventListener('click', function () { artState('loading'); questionArt.src = art.src; });
+      artState(questionArt.complete ? (questionArt.naturalWidth > 0 ? 'ready' : 'error') : 'loading');
     }
     preloadNext();
-    startTimer();
+    if (!state.artUnavailable && !state.timerId) startTimer();
 
     if (q.mode === 'voice') {
       state.listenOn = true;
