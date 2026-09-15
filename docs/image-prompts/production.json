@@ -6,35 +6,6 @@
   "reviewBoundary": "에이전트의 원본 및 최종 WebP 시각 검수. 실제 아이패드 확인은 별도.",
   "items": [
     {
-      "id": "ag-symbol",
-      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/ag-symbol.png",
-      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-0adb028f-b2fb-47d6-99cb-5a0deca2a2c2.png",
-      "sourceSha256": "25d7228a85ff74d112e2b326356b9915ffb1680d6b568d6941fc8f720c96968b",
-      "output": "images/symbols/ag.webp",
-      "outputSha256": "8b7dda4d7dc9975922781f63403612fc4fdcd1a7a90620a1afa342e906a0b501",
-      "actualPrompts": [
-        {
-          "attempt": 1,
-          "path": "docs/image-prompts/generation-prompts/ag-symbol-01.txt",
-          "sha256": "db3135c71524afa41c2ff1699438258ee15a488da7ca33fa7d548a64c8363154"
-        }
-      ],
-      "conversion": {
-        "tool": "sips + cwebp",
-        "width": 1024,
-        "height": 768,
-        "quality": 80,
-        "inset": 0.12
-      },
-      "review": {
-        "reviewer": "Codex",
-        "humanApproval": false,
-        "result": "accepted",
-        "originalAndWebp": true,
-        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
-      }
-    },
-    {
       "id": "ag-landmark",
       "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/ag-landmark.png",
       "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-dcf74e6d-8b34-4534-8b27-898ca709dbf6.png",
@@ -64,17 +35,17 @@
       }
     },
     {
-      "id": "ar-symbol",
-      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/ar-symbol.png",
-      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-8906f8a5-9074-47cd-b546-d4017a854fc0.png",
-      "sourceSha256": "5f441152c629b372e74b3ca9f2b4b92562897edbf0a744b198b3950e922dc361",
-      "output": "images/symbols/ar.webp",
-      "outputSha256": "6b39fe50acc3b90ba226f72d4249dc2ebe933ad53e44bd6c50174153b95ca6a1",
+      "id": "ag-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/ag-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-0adb028f-b2fb-47d6-99cb-5a0deca2a2c2.png",
+      "sourceSha256": "25d7228a85ff74d112e2b326356b9915ffb1680d6b568d6941fc8f720c96968b",
+      "output": "images/symbols/ag.webp",
+      "outputSha256": "8b7dda4d7dc9975922781f63403612fc4fdcd1a7a90620a1afa342e906a0b501",
       "actualPrompts": [
         {
           "attempt": 1,
-          "path": "docs/image-prompts/generation-prompts/ar-symbol-01.txt",
-          "sha256": "ca58f131c2d390678e78722920956e2a7bf35995415b5b1d34e89206c4a741c1"
+          "path": "docs/image-prompts/generation-prompts/ag-symbol-01.txt",
+          "sha256": "db3135c71524afa41c2ff1699438258ee15a488da7ca33fa7d548a64c8363154"
         }
       ],
       "conversion": {
@@ -122,17 +93,32 @@
       }
     },
     {
-      "id": "au-symbol",
-      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/au-symbol.png",
-      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-8221580c-ea8a-40f4-97b7-e3da26903e31.png",
-      "sourceSha256": "a5ae767b8f4a6840458b76eeb871ad9d43c98b17e18671dd8710edc6de347f07",
-      "output": "images/symbols/au.webp",
-      "outputSha256": "678906810fb7f3528292387542a1200d2e591bc525a3f374a3d59c10754d132f",
+      "id": "ar-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/ar-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-d322b0ac-bb7c-4171-8a5a-dc10962f0b9f.png",
+      "sourceSha256": "f1d241c5168f397dded7a4b24fc1d127e3071d95c604e81e147cc680aa8df9f3",
+      "output": "images/symbols/ar.webp",
+      "outputSha256": "7fbe75c2d9c63068c7de008040a6d8b8039d44e55c4e781c0a521acde89de2e1",
       "actualPrompts": [
         {
           "attempt": 1,
-          "path": "docs/image-prompts/generation-prompts/au-symbol-01.txt",
-          "sha256": "44e5d081ad161a404c936e21394cb2f2ecff28280079dbf834a9d4c3dd4edc95"
+          "path": "docs/image-prompts/generation-prompts/ar-symbol-01.txt",
+          "sha256": "ca58f131c2d390678e78722920956e2a7bf35995415b5b1d34e89206c4a741c1"
+        },
+        {
+          "attempt": 2,
+          "path": "docs/image-prompts/generation-prompts/ar-symbol-02.txt",
+          "sha256": "5aef7a9dc7a677fd18296a44fe4bccb7963a4243c49ce5b55259834086791d52"
+        },
+        {
+          "attempt": 3,
+          "path": "docs/image-prompts/generation-prompts/ar-symbol-03.txt",
+          "sha256": "662987dff1e49b234b136a965634792a217919491bf0cb876af874559b452771"
+        },
+        {
+          "attempt": 4,
+          "path": "docs/image-prompts/generation-prompts/ar-symbol-04.txt",
+          "sha256": "fd3dc1f6701b83510553d37a12f04377baed5aba96c9c14708cdc9eaea0d6302"
         }
       ],
       "conversion": {
@@ -147,7 +133,8 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+        "notes": "직선 16개와 곡선 16개, 총 32개 교대 광선을 두 에이전트가 각각 계수. 1~3차의 18/38/31개 오류를 4차 편집에서 수정.",
+        "independentReview": "/root/map_geometry_review"
       }
     },
     {
@@ -180,17 +167,17 @@
       }
     },
     {
-      "id": "bb-symbol",
-      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/bb-symbol.png",
-      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-1b150b6a-af4d-4596-8d06-3230d2d8b2e1.png",
-      "sourceSha256": "54b43f3e142c181cde6d5d356eea6a40ad59be6137ac5bee738d0e8ad7932329",
-      "output": "images/symbols/bb.webp",
-      "outputSha256": "f227e705fbc8f8a9aebb7889c904f0cf6e004dd488c33386abf98ca11e6102fb",
+      "id": "au-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/au-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-8221580c-ea8a-40f4-97b7-e3da26903e31.png",
+      "sourceSha256": "a5ae767b8f4a6840458b76eeb871ad9d43c98b17e18671dd8710edc6de347f07",
+      "output": "images/symbols/au.webp",
+      "outputSha256": "678906810fb7f3528292387542a1200d2e591bc525a3f374a3d59c10754d132f",
       "actualPrompts": [
         {
           "attempt": 1,
-          "path": "docs/image-prompts/generation-prompts/bb-symbol-01.txt",
-          "sha256": "f23fbe6c7c2549160da4a1f7c57e1f76457ac4e91876a2a48da0cd09489c51c1"
+          "path": "docs/image-prompts/generation-prompts/au-symbol-01.txt",
+          "sha256": "44e5d081ad161a404c936e21394cb2f2ecff28280079dbf834a9d4c3dd4edc95"
         }
       ],
       "conversion": {
@@ -238,17 +225,17 @@
       }
     },
     {
-      "id": "bo-symbol",
-      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/bo-symbol.png",
-      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-d9ffcbb1-e99b-414a-a27d-ee52bbae69df.png",
-      "sourceSha256": "ea2a2a0b5391fd5e54517b644dca387278560ad249534f2b7957cff2d3097e1e",
-      "output": "images/symbols/bo.webp",
-      "outputSha256": "5673f6e4ff4e42928df1e3e0fae6b943a0cb3e34fc2f89cffda41491f689e75e",
+      "id": "bb-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/bb-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-1b150b6a-af4d-4596-8d06-3230d2d8b2e1.png",
+      "sourceSha256": "54b43f3e142c181cde6d5d356eea6a40ad59be6137ac5bee738d0e8ad7932329",
+      "output": "images/symbols/bb.webp",
+      "outputSha256": "f227e705fbc8f8a9aebb7889c904f0cf6e004dd488c33386abf98ca11e6102fb",
       "actualPrompts": [
         {
           "attempt": 1,
-          "path": "docs/image-prompts/generation-prompts/bo-symbol-01.txt",
-          "sha256": "59cde11a9d32c62d312aa9fa768f1a7084163f47387d46c3f8b71f54eedb8f29"
+          "path": "docs/image-prompts/generation-prompts/bb-symbol-01.txt",
+          "sha256": "f23fbe6c7c2549160da4a1f7c57e1f76457ac4e91876a2a48da0cd09489c51c1"
         }
       ],
       "conversion": {
@@ -296,17 +283,17 @@
       }
     },
     {
-      "id": "br-symbol",
-      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/br-symbol.png",
-      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-b03e0b71-615b-4caa-b51f-4ce9049bf888.png",
-      "sourceSha256": "3f09471dde92fc61c8804a1c95b21566966c240f64873a2b15d52ccd6fd01d0d",
-      "output": "images/symbols/br.webp",
-      "outputSha256": "b967faa56769aeea190db5181f5cb5635c703d9d840fa1d92abbb7e4005a7dd6",
+      "id": "bo-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/bo-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-d9ffcbb1-e99b-414a-a27d-ee52bbae69df.png",
+      "sourceSha256": "ea2a2a0b5391fd5e54517b644dca387278560ad249534f2b7957cff2d3097e1e",
+      "output": "images/symbols/bo.webp",
+      "outputSha256": "5673f6e4ff4e42928df1e3e0fae6b943a0cb3e34fc2f89cffda41491f689e75e",
       "actualPrompts": [
         {
           "attempt": 1,
-          "path": "docs/image-prompts/generation-prompts/br-symbol-01.txt",
-          "sha256": "ac6c6c3043c6178e7723b9662f30e08fc61693adb7f17f19dedd835be644c789"
+          "path": "docs/image-prompts/generation-prompts/bo-symbol-01.txt",
+          "sha256": "59cde11a9d32c62d312aa9fa768f1a7084163f47387d46c3f8b71f54eedb8f29"
         }
       ],
       "conversion": {
@@ -354,17 +341,17 @@
       }
     },
     {
-      "id": "bs-symbol",
-      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/bs-symbol.png",
-      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-4010223e-9478-4ed4-85ee-157933804976.png",
-      "sourceSha256": "69d691772befae1aa2b8e3b3acf1a8f983fe410c49bfbeaf56612f9d50737139",
-      "output": "images/symbols/bs.webp",
-      "outputSha256": "afebf2d7ba4020f066872dcdac35f84343894558273e2885cc357a538c34062b",
+      "id": "br-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/br-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-b03e0b71-615b-4caa-b51f-4ce9049bf888.png",
+      "sourceSha256": "3f09471dde92fc61c8804a1c95b21566966c240f64873a2b15d52ccd6fd01d0d",
+      "output": "images/symbols/br.webp",
+      "outputSha256": "b967faa56769aeea190db5181f5cb5635c703d9d840fa1d92abbb7e4005a7dd6",
       "actualPrompts": [
         {
           "attempt": 1,
-          "path": "docs/image-prompts/generation-prompts/bs-symbol-01.txt",
-          "sha256": "c42139f1240be73c66dbb3d957470971867fca29ebfebf4a06fbdc0db21fe3af"
+          "path": "docs/image-prompts/generation-prompts/br-symbol-01.txt",
+          "sha256": "ac6c6c3043c6178e7723b9662f30e08fc61693adb7f17f19dedd835be644c789"
         }
       ],
       "conversion": {
@@ -383,17 +370,17 @@
       }
     },
     {
-      "id": "bz-symbol",
-      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/bz-symbol.png",
-      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-d094db1e-f196-40d2-b1a3-5a22c77ade34.png",
-      "sourceSha256": "1f9e98b188a099349fa69a817c500f16056491916801ce06ec082a51e1b829d3",
-      "output": "images/symbols/bz.webp",
-      "outputSha256": "2e072cdecb7ecc7f76fa23666fa196ea1d8140821fae16adb9103a37dc576a48",
+      "id": "bs-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/bs-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-4010223e-9478-4ed4-85ee-157933804976.png",
+      "sourceSha256": "69d691772befae1aa2b8e3b3acf1a8f983fe410c49bfbeaf56612f9d50737139",
+      "output": "images/symbols/bs.webp",
+      "outputSha256": "afebf2d7ba4020f066872dcdac35f84343894558273e2885cc357a538c34062b",
       "actualPrompts": [
         {
           "attempt": 1,
-          "path": "docs/image-prompts/generation-prompts/bz-symbol-01.txt",
-          "sha256": "8f7c4f49df79468462b399c96000305915812706dbe32d908a98d6d30a3e3afc"
+          "path": "docs/image-prompts/generation-prompts/bs-symbol-01.txt",
+          "sha256": "c42139f1240be73c66dbb3d957470971867fca29ebfebf4a06fbdc0db21fe3af"
         }
       ],
       "conversion": {
@@ -441,17 +428,17 @@
       }
     },
     {
-      "id": "ca-symbol",
-      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/ca-symbol.png",
-      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-3ef68394-de1e-46b6-aa33-52cbf0f3038c.png",
-      "sourceSha256": "06bfa6529527fcb885b74a03b635c2711057bbda1ddd736f0c654ebc18b9aaeb",
-      "output": "images/symbols/ca.webp",
-      "outputSha256": "1d4773f9d21be813995afca4bec4e091ba55846d36f0dfa11d1a6ce6c8c2471d",
+      "id": "bz-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/bz-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-d094db1e-f196-40d2-b1a3-5a22c77ade34.png",
+      "sourceSha256": "1f9e98b188a099349fa69a817c500f16056491916801ce06ec082a51e1b829d3",
+      "output": "images/symbols/bz.webp",
+      "outputSha256": "2e072cdecb7ecc7f76fa23666fa196ea1d8140821fae16adb9103a37dc576a48",
       "actualPrompts": [
         {
           "attempt": 1,
-          "path": "docs/image-prompts/generation-prompts/ca-symbol-01.txt",
-          "sha256": "bb3f7e7a6fd051b6080e0ccf4db893c9a42d96496530af66c1734dcff496fa12"
+          "path": "docs/image-prompts/generation-prompts/bz-symbol-01.txt",
+          "sha256": "8f7c4f49df79468462b399c96000305915812706dbe32d908a98d6d30a3e3afc"
         }
       ],
       "conversion": {
@@ -481,6 +468,64 @@
           "attempt": 1,
           "path": "docs/image-prompts/generation-prompts/ca-landmark-01.txt",
           "sha256": "97b5aabd90d55e9ed98645d605e178ba6c46c89a9aae033673ffccb35068dcda"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "ca-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/ca-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-3ef68394-de1e-46b6-aa33-52cbf0f3038c.png",
+      "sourceSha256": "06bfa6529527fcb885b74a03b635c2711057bbda1ddd736f0c654ebc18b9aaeb",
+      "output": "images/symbols/ca.webp",
+      "outputSha256": "1d4773f9d21be813995afca4bec4e091ba55846d36f0dfa11d1a6ce6c8c2471d",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/ca-symbol-01.txt",
+          "sha256": "bb3f7e7a6fd051b6080e0ccf4db893c9a42d96496530af66c1734dcff496fa12"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "cl-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/cl-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-2612838d-42df-4d8a-827e-abb939566ddd.png",
+      "sourceSha256": "8e215fb69e7d51f1bbb62d6631b4ea0c58a4cc2134b83fba0dad1189ad59a2d3",
+      "output": "images/places/cl.webp",
+      "outputSha256": "5ccecdaa78c5facf47ba0abdc69c15e0fd8ac957119009da65d06741b03dbef2",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/cl-landmark-01.txt",
+          "sha256": "8231688d7bce4c066253c6ed97c3b73a7f1ef2f7f284de69e048ef0b705fcbba"
         }
       ],
       "conversion": {
@@ -533,17 +578,17 @@
       }
     },
     {
-      "id": "cl-landmark",
-      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/cl-landmark.png",
-      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-2612838d-42df-4d8a-827e-abb939566ddd.png",
-      "sourceSha256": "8e215fb69e7d51f1bbb62d6631b4ea0c58a4cc2134b83fba0dad1189ad59a2d3",
-      "output": "images/places/cl.webp",
-      "outputSha256": "5ccecdaa78c5facf47ba0abdc69c15e0fd8ac957119009da65d06741b03dbef2",
+      "id": "co-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/co-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-aa964e91-e4d2-4771-94b1-80d0e7982008.png",
+      "sourceSha256": "a0bef66a2c49bd159eb0c50042db6041b1ba2965ad8253b903602013bcbc9617",
+      "output": "images/places/co.webp",
+      "outputSha256": "af20bdb01617548d1b619ae340256558a3c3128b9d881eec9cce9d162d6356b2",
       "actualPrompts": [
         {
           "attempt": 1,
-          "path": "docs/image-prompts/generation-prompts/cl-landmark-01.txt",
-          "sha256": "8231688d7bce4c066253c6ed97c3b73a7f1ef2f7f284de69e048ef0b705fcbba"
+          "path": "docs/image-prompts/generation-prompts/co-landmark-01.txt",
+          "sha256": "18a1f5ca9198c0f3616fc89bbff07d8e07f9b0a96d51d32f15599422b1878b62"
         }
       ],
       "conversion": {
@@ -591,17 +636,17 @@
       }
     },
     {
-      "id": "co-landmark",
-      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/co-landmark.png",
-      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-aa964e91-e4d2-4771-94b1-80d0e7982008.png",
-      "sourceSha256": "a0bef66a2c49bd159eb0c50042db6041b1ba2965ad8253b903602013bcbc9617",
-      "output": "images/places/co.webp",
-      "outputSha256": "af20bdb01617548d1b619ae340256558a3c3128b9d881eec9cce9d162d6356b2",
+      "id": "cr-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/cr-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-97fe484a-26e2-4a76-9035-9915874210a3.png",
+      "sourceSha256": "1aad0dee263f6f2d9659e1f1a996ed58d1891b99aa893e02e749331e850ef26b",
+      "output": "images/places/cr.webp",
+      "outputSha256": "6cbb11203bb8c998cbcf2e51c04b1afcd2d2f37c2b8d4614ea650ef6413a883e",
       "actualPrompts": [
         {
           "attempt": 1,
-          "path": "docs/image-prompts/generation-prompts/co-landmark-01.txt",
-          "sha256": "18a1f5ca9198c0f3616fc89bbff07d8e07f9b0a96d51d32f15599422b1878b62"
+          "path": "docs/image-prompts/generation-prompts/cr-landmark-01.txt",
+          "sha256": "c5af60fe39f306aa00847c49105a16c7586d10346c5eba44b2d02c33034c4f01"
         }
       ],
       "conversion": {
@@ -649,35 +694,6 @@
       }
     },
     {
-      "id": "cr-landmark",
-      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/cr-landmark.png",
-      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-97fe484a-26e2-4a76-9035-9915874210a3.png",
-      "sourceSha256": "1aad0dee263f6f2d9659e1f1a996ed58d1891b99aa893e02e749331e850ef26b",
-      "output": "images/places/cr.webp",
-      "outputSha256": "6cbb11203bb8c998cbcf2e51c04b1afcd2d2f37c2b8d4614ea650ef6413a883e",
-      "actualPrompts": [
-        {
-          "attempt": 1,
-          "path": "docs/image-prompts/generation-prompts/cr-landmark-01.txt",
-          "sha256": "c5af60fe39f306aa00847c49105a16c7586d10346c5eba44b2d02c33034c4f01"
-        }
-      ],
-      "conversion": {
-        "tool": "sips + cwebp",
-        "width": 1024,
-        "height": 768,
-        "quality": 80,
-        "inset": 0.12
-      },
-      "review": {
-        "reviewer": "Codex",
-        "humanApproval": false,
-        "result": "accepted",
-        "originalAndWebp": true,
-        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
-      }
-    },
-    {
       "id": "cu-symbol",
       "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/cu-symbol.png",
       "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-762d164b-3639-410c-b1e5-a5037b57e076.png",
@@ -707,17 +723,17 @@
       }
     },
     {
-      "id": "dm-symbol",
-      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/dm-symbol.png",
-      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-0b05ddfc-95fb-4826-ba5a-f31522b059ac.png",
-      "sourceSha256": "3573527cfa91bbf164151e7a6b3b7df5becc8eb0def993254fff5caf262beade",
-      "output": "images/symbols/dm.webp",
-      "outputSha256": "8ba882ee7b6123fa8a4fa5ad46db60b5e8ee7e9b10c00c5b5ddd95a478735b0b",
+      "id": "dm-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/dm-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-4effa4ab-bbbe-4934-8073-0e93e661a64a.png",
+      "sourceSha256": "67995c891afeba6f911608416c976fc85600019a189df2472d6d4ce0aa0c372b",
+      "output": "images/places/dm.webp",
+      "outputSha256": "4e79e1ef19267f12189b7d52b0a9ab425bf1cfbb6f6a3451bbc163c927478fc4",
       "actualPrompts": [
         {
           "attempt": 1,
-          "path": "docs/image-prompts/generation-prompts/dm-symbol-01.txt",
-          "sha256": "69ac9f0a1b6403470ebce52faf5f99e6f5b195e6b9089072fdb6cd00993769b3"
+          "path": "docs/image-prompts/generation-prompts/dm-landmark-01.txt",
+          "sha256": "d4bba7e306c281b0e81d4e9bd04d56aff64288f92af2d8b22977e8673aff57d5"
         }
       ],
       "conversion": {
@@ -736,17 +752,17 @@
       }
     },
     {
-      "id": "dm-landmark",
-      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/dm-landmark.png",
-      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-4effa4ab-bbbe-4934-8073-0e93e661a64a.png",
-      "sourceSha256": "67995c891afeba6f911608416c976fc85600019a189df2472d6d4ce0aa0c372b",
-      "output": "images/places/dm.webp",
-      "outputSha256": "4e79e1ef19267f12189b7d52b0a9ab425bf1cfbb6f6a3451bbc163c927478fc4",
+      "id": "dm-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/dm-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-0b05ddfc-95fb-4826-ba5a-f31522b059ac.png",
+      "sourceSha256": "3573527cfa91bbf164151e7a6b3b7df5becc8eb0def993254fff5caf262beade",
+      "output": "images/symbols/dm.webp",
+      "outputSha256": "8ba882ee7b6123fa8a4fa5ad46db60b5e8ee7e9b10c00c5b5ddd95a478735b0b",
       "actualPrompts": [
         {
           "attempt": 1,
-          "path": "docs/image-prompts/generation-prompts/dm-landmark-01.txt",
-          "sha256": "d4bba7e306c281b0e81d4e9bd04d56aff64288f92af2d8b22977e8673aff57d5"
+          "path": "docs/image-prompts/generation-prompts/dm-symbol-01.txt",
+          "sha256": "69ac9f0a1b6403470ebce52faf5f99e6f5b195e6b9089072fdb6cd00993769b3"
         }
       ],
       "conversion": {
@@ -862,35 +878,6 @@
       }
     },
     {
-      "id": "fm-symbol",
-      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/fm-symbol.png",
-      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-76ae19c0-08ae-48f3-924c-d9c055bf081f.png",
-      "sourceSha256": "ee037685a5f3d1cabe81e537ec026823ef092238c3bc4d4d473a23ddc35bbfae",
-      "output": "images/symbols/fm.webp",
-      "outputSha256": "7d56f917b99d177a52691bedb4f0b2c5e0438157980a4f3399bd4b88f52e7756",
-      "actualPrompts": [
-        {
-          "attempt": 1,
-          "path": "docs/image-prompts/generation-prompts/fm-symbol-01.txt",
-          "sha256": "14a277ab5415eaeedaa9bdc5df216cc5bab43ce1c921e8be7f68ccb0ce2444aa"
-        }
-      ],
-      "conversion": {
-        "tool": "sips + cwebp",
-        "width": 1024,
-        "height": 768,
-        "quality": 80,
-        "inset": 0.12
-      },
-      "review": {
-        "reviewer": "Codex",
-        "humanApproval": false,
-        "result": "accepted",
-        "originalAndWebp": true,
-        "notes": "사람보다 큰 돌돈의 크기 비교용 인물은 뒷모습만 표시."
-      }
-    },
-    {
       "id": "fm-landmark",
       "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/fm-landmark.png",
       "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-a0a06981-a3c4-4a8b-9eb1-8c989b35b122.png",
@@ -925,17 +912,17 @@
       }
     },
     {
-      "id": "gd-symbol",
-      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/gd-symbol.png",
-      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-30f5e05a-2d78-4ca2-9f50-2b68a01976f3.png",
-      "sourceSha256": "dd2140d3e1f8db0824129b853e59bb5c807aa214d23ab338bdfa7da6c4b69f8f",
-      "output": "images/symbols/gd.webp",
-      "outputSha256": "7a7ebef89f694b4b6f57ef87e9565039901a7d4cb5e7140a48cfc18ced62d3be",
+      "id": "fm-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/fm-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-76ae19c0-08ae-48f3-924c-d9c055bf081f.png",
+      "sourceSha256": "ee037685a5f3d1cabe81e537ec026823ef092238c3bc4d4d473a23ddc35bbfae",
+      "output": "images/symbols/fm.webp",
+      "outputSha256": "7d56f917b99d177a52691bedb4f0b2c5e0438157980a4f3399bd4b88f52e7756",
       "actualPrompts": [
         {
           "attempt": 1,
-          "path": "docs/image-prompts/generation-prompts/gd-symbol-01.txt",
-          "sha256": "6f6501db587f841eac11722476851172b29664006adb926203a147d80ccd8860"
+          "path": "docs/image-prompts/generation-prompts/fm-symbol-01.txt",
+          "sha256": "14a277ab5415eaeedaa9bdc5df216cc5bab43ce1c921e8be7f68ccb0ce2444aa"
         }
       ],
       "conversion": {
@@ -950,21 +937,21 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+        "notes": "사람보다 큰 돌돈의 크기 비교용 인물은 뒷모습만 표시."
       }
     },
     {
-      "id": "gt-symbol",
-      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/gt-symbol.png",
-      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-27065d12-4abc-48ce-88f8-821ee25eb432.png",
-      "sourceSha256": "c64e6943c1ab745154f04b70d89926a6b3949eced9558ac9e800270b9efa5ebd",
-      "output": "images/symbols/gt.webp",
-      "outputSha256": "38fc654c8e92379f64968a58b84b639dd9c309e7a57e83edb079005b16ce39e7",
+      "id": "gd-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/gd-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-30f5e05a-2d78-4ca2-9f50-2b68a01976f3.png",
+      "sourceSha256": "dd2140d3e1f8db0824129b853e59bb5c807aa214d23ab338bdfa7da6c4b69f8f",
+      "output": "images/symbols/gd.webp",
+      "outputSha256": "7a7ebef89f694b4b6f57ef87e9565039901a7d4cb5e7140a48cfc18ced62d3be",
       "actualPrompts": [
         {
           "attempt": 1,
-          "path": "docs/image-prompts/generation-prompts/gt-symbol-01.txt",
-          "sha256": "ccf74f236c4f592ae95cd08d3053383b273e95d10651dfdb40d5c793669f2d1e"
+          "path": "docs/image-prompts/generation-prompts/gd-symbol-01.txt",
+          "sha256": "6f6501db587f841eac11722476851172b29664006adb926203a147d80ccd8860"
         }
       ],
       "conversion": {
@@ -1012,17 +999,17 @@
       }
     },
     {
-      "id": "gy-symbol",
-      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/gy-symbol.png",
-      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-d243a013-bc23-4aa0-b7de-7395f0f1d884.png",
-      "sourceSha256": "26cd65e32b534d5ecc4b874e53d260f11f0b2c4fced7b8fbaa998f5060525732",
-      "output": "images/symbols/gy.webp",
-      "outputSha256": "a3d080684316452047d0be3a0a2338b1988d3bea0706a30eb84de8f16d74651b",
+      "id": "gt-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/gt-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-27065d12-4abc-48ce-88f8-821ee25eb432.png",
+      "sourceSha256": "c64e6943c1ab745154f04b70d89926a6b3949eced9558ac9e800270b9efa5ebd",
+      "output": "images/symbols/gt.webp",
+      "outputSha256": "38fc654c8e92379f64968a58b84b639dd9c309e7a57e83edb079005b16ce39e7",
       "actualPrompts": [
         {
           "attempt": 1,
-          "path": "docs/image-prompts/generation-prompts/gy-symbol-01.txt",
-          "sha256": "0aa0ed23395d0fa5187044a3db618c2dc4948817d72143d17f7276bd185c1974"
+          "path": "docs/image-prompts/generation-prompts/gt-symbol-01.txt",
+          "sha256": "ccf74f236c4f592ae95cd08d3053383b273e95d10651dfdb40d5c793669f2d1e"
         }
       ],
       "conversion": {
@@ -1041,17 +1028,17 @@
       }
     },
     {
-      "id": "hn-symbol",
-      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/hn-symbol.png",
-      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-a41bc27d-66f3-4473-bb9f-a43b1c37279e.png",
-      "sourceSha256": "b845b084514d21a779dce882fcdf0c36052b9f75bc9358ecebb3b7becd707bc2",
-      "output": "images/symbols/hn.webp",
-      "outputSha256": "1314b956c38016184d9d842da71ae21df1ea5fd16f5ed351e3bbb4b027382504",
+      "id": "gy-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/gy-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-d243a013-bc23-4aa0-b7de-7395f0f1d884.png",
+      "sourceSha256": "26cd65e32b534d5ecc4b874e53d260f11f0b2c4fced7b8fbaa998f5060525732",
+      "output": "images/symbols/gy.webp",
+      "outputSha256": "a3d080684316452047d0be3a0a2338b1988d3bea0706a30eb84de8f16d74651b",
       "actualPrompts": [
         {
           "attempt": 1,
-          "path": "docs/image-prompts/generation-prompts/hn-symbol-01.txt",
-          "sha256": "ecbeec9ed3af9d19edf3b589469b91263a04695980a2ec694b6ebda456ea13b0"
+          "path": "docs/image-prompts/generation-prompts/gy-symbol-01.txt",
+          "sha256": "0aa0ed23395d0fa5187044a3db618c2dc4948817d72143d17f7276bd185c1974"
         }
       ],
       "conversion": {
@@ -1099,17 +1086,17 @@
       }
     },
     {
-      "id": "ht-symbol",
-      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/ht-symbol.png",
-      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-2d064918-e98b-4c40-aeba-e821581e7e1d.png",
-      "sourceSha256": "bc7d08a3e86290c08ac3c2191556768aadd4603ba23111754959fdd4c7f6bfe8",
-      "output": "images/symbols/ht.webp",
-      "outputSha256": "8d84eca455bac5cba8bef63540cbd33d6f5f7d6bed3aaace705becbd491a0b3b",
+      "id": "hn-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/hn-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-a41bc27d-66f3-4473-bb9f-a43b1c37279e.png",
+      "sourceSha256": "b845b084514d21a779dce882fcdf0c36052b9f75bc9358ecebb3b7becd707bc2",
+      "output": "images/symbols/hn.webp",
+      "outputSha256": "1314b956c38016184d9d842da71ae21df1ea5fd16f5ed351e3bbb4b027382504",
       "actualPrompts": [
         {
           "attempt": 1,
-          "path": "docs/image-prompts/generation-prompts/ht-symbol-01.txt",
-          "sha256": "dcfe03cc71c96ed3c8ce9c6d56092a2f21d642062088e44c4b817a0cc8fb34c3"
+          "path": "docs/image-prompts/generation-prompts/hn-symbol-01.txt",
+          "sha256": "ecbeec9ed3af9d19edf3b589469b91263a04695980a2ec694b6ebda456ea13b0"
         }
       ],
       "conversion": {
@@ -1128,17 +1115,17 @@
       }
     },
     {
-      "id": "jm-symbol",
-      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/jm-symbol.png",
-      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-676a8deb-5179-4e74-b9ba-8307d8a3926c.png",
-      "sourceSha256": "9dbc882110cd25b24edf6d77d5799a83d5155bb8f65234d7e64e41bf42675d9a",
-      "output": "images/symbols/jm.webp",
-      "outputSha256": "bc8669a4b476f73a01664b756cf6edbcce7c991b2b9114fab5f8f3a029da0140",
+      "id": "ht-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/ht-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-2d064918-e98b-4c40-aeba-e821581e7e1d.png",
+      "sourceSha256": "bc7d08a3e86290c08ac3c2191556768aadd4603ba23111754959fdd4c7f6bfe8",
+      "output": "images/symbols/ht.webp",
+      "outputSha256": "8d84eca455bac5cba8bef63540cbd33d6f5f7d6bed3aaace705becbd491a0b3b",
       "actualPrompts": [
         {
           "attempt": 1,
-          "path": "docs/image-prompts/generation-prompts/jm-symbol-01.txt",
-          "sha256": "c2956e81b3bb46625f665df88d98076d69f26eec2386589981888fc80b6dcaae"
+          "path": "docs/image-prompts/generation-prompts/ht-symbol-01.txt",
+          "sha256": "dcfe03cc71c96ed3c8ce9c6d56092a2f21d642062088e44c4b817a0cc8fb34c3"
         }
       ],
       "conversion": {
@@ -1186,17 +1173,52 @@
       }
     },
     {
-      "id": "ki-symbol",
-      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/ki-symbol.png",
-      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-cd4651a0-e25a-4053-89ce-1c9197025539.png",
-      "sourceSha256": "46183a7cbb1c7478413dc4c465f62faa8135103871fff29d57a9b9ce33469332",
-      "output": "images/symbols/ki.webp",
-      "outputSha256": "fe06618596d110508f89c21d36b44de3d46b6b0424dbd49ed92bae76dc7a9863",
+      "id": "jm-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/jm-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-cb80-7703-b3d1-e560ba46c927/exec-70026a04-ec9d-4ea0-a74a-e04d187c7d29.png",
+      "sourceSha256": "a969b21b00287633c05a0fd3ba12da73b3d1882bd22dbe6c7d04be6909fde380",
+      "output": "images/symbols/jm.webp",
+      "outputSha256": "0239334a5474c262439e94a27dc73cc8fb34b02cdd7ae169abd7a08add18cf83",
       "actualPrompts": [
         {
           "attempt": 1,
-          "path": "docs/image-prompts/generation-prompts/ki-symbol-01.txt",
-          "sha256": "af4a0515ebe09549b9d34a92e6a52d699536b52fc7514a3797dd153f9737a887"
+          "path": "docs/image-prompts/generation-prompts/jm-symbol-01.txt",
+          "sha256": "c2956e81b3bb46625f665df88d98076d69f26eec2386589981888fc80b6dcaae"
+        },
+        {
+          "attempt": 2,
+          "path": "docs/image-prompts/generation-prompts/jm-symbol-02.txt",
+          "sha256": "6d97eb931a28456e55c5106cf99036d4800f03f4d242e22bba1592ccb2a72b2a"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "내장 이미지 편집 2차에서 파랑·노랑 날개와 흰 배를 제거. 검은 머리깃, 초록 가슴·배, 짙은 회흑색 날개, 빨간 부리와 길게 분리된 꼬리 두 가닥을 직접 확인. 모든 신체와 꼬리 끝이 프레임 안에 있고 연한 불투명 배경 유지.",
+        "independentReview": "/root/map_geometry_review"
+      }
+    },
+    {
+      "id": "ki-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/ki-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-873ae4ce-22f8-4d0a-b214-3224c128c601.png",
+      "sourceSha256": "f65e929c63b6d13160df7d3d1a5313e0378e3fd7a6dbfd4f7cf0c189ede34372",
+      "output": "images/places/ki.webp",
+      "outputSha256": "d98971248ba8ee01b94b81b810f1b788e24af1444edf3c0bf9bb41e7939068c8",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/ki-landmark-01.txt",
+          "sha256": "574a9c6b86ed69ef3841b1080f5e94da4e9c9af2fe9ce56ee8835a9bf6a65a13"
         }
       ],
       "conversion": {
@@ -1215,17 +1237,17 @@
       }
     },
     {
-      "id": "ki-landmark",
-      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/ki-landmark.png",
-      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-873ae4ce-22f8-4d0a-b214-3224c128c601.png",
-      "sourceSha256": "f65e929c63b6d13160df7d3d1a5313e0378e3fd7a6dbfd4f7cf0c189ede34372",
-      "output": "images/places/ki.webp",
-      "outputSha256": "d98971248ba8ee01b94b81b810f1b788e24af1444edf3c0bf9bb41e7939068c8",
+      "id": "ki-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/ki-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-cd4651a0-e25a-4053-89ce-1c9197025539.png",
+      "sourceSha256": "46183a7cbb1c7478413dc4c465f62faa8135103871fff29d57a9b9ce33469332",
+      "output": "images/symbols/ki.webp",
+      "outputSha256": "fe06618596d110508f89c21d36b44de3d46b6b0424dbd49ed92bae76dc7a9863",
       "actualPrompts": [
         {
           "attempt": 1,
-          "path": "docs/image-prompts/generation-prompts/ki-landmark-01.txt",
-          "sha256": "574a9c6b86ed69ef3841b1080f5e94da4e9c9af2fe9ce56ee8835a9bf6a65a13"
+          "path": "docs/image-prompts/generation-prompts/ki-symbol-01.txt",
+          "sha256": "af4a0515ebe09549b9d34a92e6a52d699536b52fc7514a3797dd153f9737a887"
         }
       ],
       "conversion": {
@@ -1331,35 +1353,6 @@
       }
     },
     {
-      "id": "mx-symbol",
-      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/mx-symbol.png",
-      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-ff6a2b9a-52d1-4d30-ad52-ee4350575dc9.png",
-      "sourceSha256": "ce5e8c24d32c2b5cdd51f8f464c801e73188795bb4ed7dc379776d3e9cc97cb4",
-      "output": "images/symbols/mx.webp",
-      "outputSha256": "7fd882bd9c52ce4f16c0905a33a6bb67a5adfbe122e8bc2cde8bb0e440d0959e",
-      "actualPrompts": [
-        {
-          "attempt": 1,
-          "path": "docs/image-prompts/generation-prompts/mx-symbol-01.txt",
-          "sha256": "df3c8570b35bb9e54369c006511d14309f5d2f686a59761a562fd8fc21ec6625"
-        }
-      ],
-      "conversion": {
-        "tool": "sips + cwebp",
-        "width": 1024,
-        "height": 768,
-        "quality": 80,
-        "inset": 0.12
-      },
-      "review": {
-        "reviewer": "Codex",
-        "humanApproval": false,
-        "result": "accepted",
-        "originalAndWebp": true,
-        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
-      }
-    },
-    {
       "id": "mx-landmark",
       "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/mx-landmark.png",
       "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-c10f9c49-7155-43e0-a600-91d073bfa67d.png",
@@ -1389,17 +1382,17 @@
       }
     },
     {
-      "id": "ni-symbol",
-      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/ni-symbol.png",
-      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-5c3d5010-428a-4498-afa0-857b1e1e0321.png",
-      "sourceSha256": "24f72bd59c9ae8b2af1c0fc943f8eee8a1a6c13f4fbd5c363e82b41c7b4cdabc",
-      "output": "images/symbols/ni.webp",
-      "outputSha256": "a46c225f4853f4ce23a90abb3d0bd2f2e744feb518380e18ed3066780f18e4b2",
+      "id": "mx-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/mx-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-ff6a2b9a-52d1-4d30-ad52-ee4350575dc9.png",
+      "sourceSha256": "ce5e8c24d32c2b5cdd51f8f464c801e73188795bb4ed7dc379776d3e9cc97cb4",
+      "output": "images/symbols/mx.webp",
+      "outputSha256": "7fd882bd9c52ce4f16c0905a33a6bb67a5adfbe122e8bc2cde8bb0e440d0959e",
       "actualPrompts": [
         {
           "attempt": 1,
-          "path": "docs/image-prompts/generation-prompts/ni-symbol-01.txt",
-          "sha256": "eaa36444979f5803c488b2778fea5ad8571bc85c308e57a9de7fd630aeed5e09"
+          "path": "docs/image-prompts/generation-prompts/mx-symbol-01.txt",
+          "sha256": "df3c8570b35bb9e54369c006511d14309f5d2f686a59761a562fd8fc21ec6625"
         }
       ],
       "conversion": {
@@ -1447,17 +1440,17 @@
       }
     },
     {
-      "id": "nr-symbol",
-      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/nr-symbol.png",
-      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-532a3383-8e92-49f8-87b2-7cc51a86aaa3.png",
-      "sourceSha256": "d990c0b585e088136df75b14cfea4b68be19565bb3784a1ce5c6e9ba67642893",
-      "output": "images/symbols/nr.webp",
-      "outputSha256": "06a9b7931f15f94b3ec3f64b81142d5374699de9a6c50abb5490f90ba5db5e1a",
+      "id": "ni-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/ni-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-5c3d5010-428a-4498-afa0-857b1e1e0321.png",
+      "sourceSha256": "24f72bd59c9ae8b2af1c0fc943f8eee8a1a6c13f4fbd5c363e82b41c7b4cdabc",
+      "output": "images/symbols/ni.webp",
+      "outputSha256": "a46c225f4853f4ce23a90abb3d0bd2f2e744feb518380e18ed3066780f18e4b2",
       "actualPrompts": [
         {
           "attempt": 1,
-          "path": "docs/image-prompts/generation-prompts/nr-symbol-01.txt",
-          "sha256": "79a338aa2eb7e8a16fb6b09728084499aa0132aa8b968d12bbd9af496d500a10"
+          "path": "docs/image-prompts/generation-prompts/ni-symbol-01.txt",
+          "sha256": "eaa36444979f5803c488b2778fea5ad8571bc85c308e57a9de7fd630aeed5e09"
         }
       ],
       "conversion": {
@@ -1505,17 +1498,17 @@
       }
     },
     {
-      "id": "nz-symbol",
-      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/nz-symbol.png",
-      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-d2056f93-6568-41b1-a9eb-e13253c881ce.png",
-      "sourceSha256": "57e605d7f25bc03bb56b183fd5396cb760e6c2642781da0d7405d7a3b305b931",
-      "output": "images/symbols/nz.webp",
-      "outputSha256": "e0c50e7c0f81b336c5b11d3561f9ecbb78a7baab3947f140bb82deaf714ae348",
+      "id": "nr-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/nr-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-532a3383-8e92-49f8-87b2-7cc51a86aaa3.png",
+      "sourceSha256": "d990c0b585e088136df75b14cfea4b68be19565bb3784a1ce5c6e9ba67642893",
+      "output": "images/symbols/nr.webp",
+      "outputSha256": "06a9b7931f15f94b3ec3f64b81142d5374699de9a6c50abb5490f90ba5db5e1a",
       "actualPrompts": [
         {
           "attempt": 1,
-          "path": "docs/image-prompts/generation-prompts/nz-symbol-01.txt",
-          "sha256": "db5d839e33bbc160b9c74d973e9227b1245109411a74e28313d962326fcac0e1"
+          "path": "docs/image-prompts/generation-prompts/nr-symbol-01.txt",
+          "sha256": "79a338aa2eb7e8a16fb6b09728084499aa0132aa8b968d12bbd9af496d500a10"
         }
       ],
       "conversion": {
@@ -1563,17 +1556,17 @@
       }
     },
     {
-      "id": "pa-symbol",
-      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/pa-symbol.png",
-      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-5cdce6ca-6a9c-4fa8-b6f5-614638e7920f.png",
-      "sourceSha256": "27b28a90562dbf532061e3a946a6083aa8ff598a8c7aa9950b85e43c43501bea",
-      "output": "images/symbols/pa.webp",
-      "outputSha256": "8091e1183e365a95fc562fdab7ba222190acfc6f033a293df4856c155d026ed1",
+      "id": "nz-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/nz-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-d2056f93-6568-41b1-a9eb-e13253c881ce.png",
+      "sourceSha256": "57e605d7f25bc03bb56b183fd5396cb760e6c2642781da0d7405d7a3b305b931",
+      "output": "images/symbols/nz.webp",
+      "outputSha256": "e0c50e7c0f81b336c5b11d3561f9ecbb78a7baab3947f140bb82deaf714ae348",
       "actualPrompts": [
         {
           "attempt": 1,
-          "path": "docs/image-prompts/generation-prompts/pa-symbol-01.txt",
-          "sha256": "04b4fa838e9ea16bf5ce99f8dd7e98605e8e69419e932d354ecf9d481bbb8ece"
+          "path": "docs/image-prompts/generation-prompts/nz-symbol-01.txt",
+          "sha256": "db5d839e33bbc160b9c74d973e9227b1245109411a74e28313d962326fcac0e1"
         }
       ],
       "conversion": {
@@ -1621,17 +1614,17 @@
       }
     },
     {
-      "id": "pe-symbol",
-      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/pe-symbol.png",
-      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-c94a9be0-1f4d-4d72-82bf-6adcf143fbda.png",
-      "sourceSha256": "35d8c4907b997a610e4df32c47f760b6c725ab0be5c0fd559eb6f95f735763fe",
-      "output": "images/symbols/pe.webp",
-      "outputSha256": "45f61665420864ef11bc538def4ba59fd6ff6d66ca753ad314cda8b0c707ade0",
+      "id": "pa-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/pa-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-5cdce6ca-6a9c-4fa8-b6f5-614638e7920f.png",
+      "sourceSha256": "27b28a90562dbf532061e3a946a6083aa8ff598a8c7aa9950b85e43c43501bea",
+      "output": "images/symbols/pa.webp",
+      "outputSha256": "8091e1183e365a95fc562fdab7ba222190acfc6f033a293df4856c155d026ed1",
       "actualPrompts": [
         {
           "attempt": 1,
-          "path": "docs/image-prompts/generation-prompts/pe-symbol-01.txt",
-          "sha256": "d454f1ade6a623f325d215e969dd4804864c128169ae9c4ebdcaf753a6e86a7d"
+          "path": "docs/image-prompts/generation-prompts/pa-symbol-01.txt",
+          "sha256": "04b4fa838e9ea16bf5ce99f8dd7e98605e8e69419e932d354ecf9d481bbb8ece"
         }
       ],
       "conversion": {
@@ -1679,17 +1672,17 @@
       }
     },
     {
-      "id": "pg-symbol",
-      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/pg-symbol.png",
-      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-8e239823-8042-454a-a8d2-8357441a91e9.png",
-      "sourceSha256": "8bc7194f094136e3a0de2ee5f3f96a848a17e7cfd000d9c44fea6cf94a0a555c",
-      "output": "images/symbols/pg.webp",
-      "outputSha256": "75a837ed4016bce718492fa6f7555d8b1ebd6ab6da73b13d747b94408daa2da3",
+      "id": "pe-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/pe-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-c94a9be0-1f4d-4d72-82bf-6adcf143fbda.png",
+      "sourceSha256": "35d8c4907b997a610e4df32c47f760b6c725ab0be5c0fd559eb6f95f735763fe",
+      "output": "images/symbols/pe.webp",
+      "outputSha256": "45f61665420864ef11bc538def4ba59fd6ff6d66ca753ad314cda8b0c707ade0",
       "actualPrompts": [
         {
           "attempt": 1,
-          "path": "docs/image-prompts/generation-prompts/pg-symbol-01.txt",
-          "sha256": "9289fcb88e7949ecfbd5a146d181e66288747edd1778c32409bc33a0ea6b76e1"
+          "path": "docs/image-prompts/generation-prompts/pe-symbol-01.txt",
+          "sha256": "d454f1ade6a623f325d215e969dd4804864c128169ae9c4ebdcaf753a6e86a7d"
         }
       ],
       "conversion": {
@@ -1708,17 +1701,17 @@
       }
     },
     {
-      "id": "pw-symbol",
-      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/pw-symbol.png",
-      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-98a11e7d-dea1-4b8a-803c-e38159ef57a1.png",
-      "sourceSha256": "5d1007e5b7c2001edcad752ef78030affeb254a9f1d5b8f155cd461f75c533eb",
-      "output": "images/symbols/pw.webp",
-      "outputSha256": "11f439aa753188bf4c923cedc4701392205c99320a9350c1f170797ad2ef4c82",
+      "id": "pg-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/pg-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-8e239823-8042-454a-a8d2-8357441a91e9.png",
+      "sourceSha256": "8bc7194f094136e3a0de2ee5f3f96a848a17e7cfd000d9c44fea6cf94a0a555c",
+      "output": "images/symbols/pg.webp",
+      "outputSha256": "75a837ed4016bce718492fa6f7555d8b1ebd6ab6da73b13d747b94408daa2da3",
       "actualPrompts": [
         {
           "attempt": 1,
-          "path": "docs/image-prompts/generation-prompts/pw-symbol-01.txt",
-          "sha256": "7c256584439c76d3b99957c7b1b9be08a3bc3998d2d56b940403cc9cd1513296"
+          "path": "docs/image-prompts/generation-prompts/pg-symbol-01.txt",
+          "sha256": "9289fcb88e7949ecfbd5a146d181e66288747edd1778c32409bc33a0ea6b76e1"
         }
       ],
       "conversion": {
@@ -1766,6 +1759,35 @@
       }
     },
     {
+      "id": "pw-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/pw-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-98a11e7d-dea1-4b8a-803c-e38159ef57a1.png",
+      "sourceSha256": "5d1007e5b7c2001edcad752ef78030affeb254a9f1d5b8f155cd461f75c533eb",
+      "output": "images/symbols/pw.webp",
+      "outputSha256": "11f439aa753188bf4c923cedc4701392205c99320a9350c1f170797ad2ef4c82",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/pw-symbol-01.txt",
+          "sha256": "7c256584439c76d3b99957c7b1b9be08a3bc3998d2d56b940403cc9cd1513296"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
       "id": "py-symbol",
       "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/py-symbol.png",
       "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-f83b8ff3-9494-455b-9460-5246cc23b3cb.png",
@@ -1795,17 +1817,17 @@
       }
     },
     {
-      "id": "sb-symbol",
-      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/sb-symbol.png",
-      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-b5ad9a86-d724-41c8-8133-57ebede93776.png",
-      "sourceSha256": "bea985be33a5b1c9571f6001635de169deb91eeaed7db305a964610212ce0fb8",
-      "output": "images/symbols/sb.webp",
-      "outputSha256": "ed0491db6aedd5af1715c02c6ffafa0e7efce1595e1ecbd37ffea2bd18d9cb25",
+      "id": "sb-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/sb-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-f983859e-ee66-4ca6-a34b-3d52687d589b.png",
+      "sourceSha256": "91ccbb31320e67a1dd02cb3f8be44fb5e968f881d48ecb2647753037b59c80fd",
+      "output": "images/places/sb.webp",
+      "outputSha256": "cc1171ab3be68250860b9ae44a70489ddcceb7760f82f1d24d076c0bb0fa6052",
       "actualPrompts": [
         {
           "attempt": 1,
-          "path": "docs/image-prompts/generation-prompts/sb-symbol-01.txt",
-          "sha256": "43a3130cfb5b678acd102ac7bd207529a187720ef4ccb59230d1c82beed1b7e6"
+          "path": "docs/image-prompts/generation-prompts/sb-landmark-01.txt",
+          "sha256": "fbd079739de7a3c7fe05b8b4ec946578a38a6ebf6230e3b8c9a2f22647f20708"
         }
       ],
       "conversion": {
@@ -1824,17 +1846,17 @@
       }
     },
     {
-      "id": "sb-landmark",
-      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/sb-landmark.png",
-      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-f983859e-ee66-4ca6-a34b-3d52687d589b.png",
-      "sourceSha256": "91ccbb31320e67a1dd02cb3f8be44fb5e968f881d48ecb2647753037b59c80fd",
-      "output": "images/places/sb.webp",
-      "outputSha256": "cc1171ab3be68250860b9ae44a70489ddcceb7760f82f1d24d076c0bb0fa6052",
+      "id": "sb-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/sb-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-b5ad9a86-d724-41c8-8133-57ebede93776.png",
+      "sourceSha256": "bea985be33a5b1c9571f6001635de169deb91eeaed7db305a964610212ce0fb8",
+      "output": "images/symbols/sb.webp",
+      "outputSha256": "ed0491db6aedd5af1715c02c6ffafa0e7efce1595e1ecbd37ffea2bd18d9cb25",
       "actualPrompts": [
         {
           "attempt": 1,
-          "path": "docs/image-prompts/generation-prompts/sb-landmark-01.txt",
-          "sha256": "fbd079739de7a3c7fe05b8b4ec946578a38a6ebf6230e3b8c9a2f22647f20708"
+          "path": "docs/image-prompts/generation-prompts/sb-symbol-01.txt",
+          "sha256": "43a3130cfb5b678acd102ac7bd207529a187720ef4ccb59230d1c82beed1b7e6"
         }
       ],
       "conversion": {
@@ -1892,35 +1914,6 @@
       }
     },
     {
-      "id": "sv-symbol",
-      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/sv-symbol.png",
-      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-a9c62c4b-64f0-424c-acbf-6574e8498c00.png",
-      "sourceSha256": "e6e18c7fdfacec822ca671ed5e49f02b33ec0d7592d03143d54915ddcb84b16c",
-      "output": "images/symbols/sv.webp",
-      "outputSha256": "584bad0e4ed4d8d0a1960bef413119ab9812ccbc29cea905c2a6157e03a0ab79",
-      "actualPrompts": [
-        {
-          "attempt": 1,
-          "path": "docs/image-prompts/generation-prompts/sv-symbol-01.txt",
-          "sha256": "9bbf67033b15bfa6e5a022c8d28ef2e27d674e9b45255b5c30230ab6d91b963a"
-        }
-      ],
-      "conversion": {
-        "tool": "sips + cwebp",
-        "width": 1024,
-        "height": 768,
-        "quality": 80,
-        "inset": 0.12
-      },
-      "review": {
-        "reviewer": "Codex",
-        "humanApproval": false,
-        "result": "accepted",
-        "originalAndWebp": true,
-        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
-      }
-    },
-    {
       "id": "sv-landmark",
       "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/sv-landmark.png",
       "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-53b9eee4-a680-4d0e-9b67-7a58f3d8c64a.png",
@@ -1950,17 +1943,17 @@
       }
     },
     {
-      "id": "to-symbol",
-      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/to-symbol.png",
-      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-b17bff6c-cad7-4315-9c58-d04a5a5473fc.png",
-      "sourceSha256": "0d1f79805ca81c9690fe4cbac0794d4948c96f49bfe43565e12eca9c5cd7730a",
-      "output": "images/symbols/to.webp",
-      "outputSha256": "36351c8fc1892d3fc7a996405b08219b02c2aa4154882732f89f80dd31146661",
+      "id": "sv-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/sv-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-a9c62c4b-64f0-424c-acbf-6574e8498c00.png",
+      "sourceSha256": "e6e18c7fdfacec822ca671ed5e49f02b33ec0d7592d03143d54915ddcb84b16c",
+      "output": "images/symbols/sv.webp",
+      "outputSha256": "584bad0e4ed4d8d0a1960bef413119ab9812ccbc29cea905c2a6157e03a0ab79",
       "actualPrompts": [
         {
           "attempt": 1,
-          "path": "docs/image-prompts/generation-prompts/to-symbol-01.txt",
-          "sha256": "295bcc661c4ec5cd1610fcf7219e0898b6622ef2c485689a7c145468cf460f34"
+          "path": "docs/image-prompts/generation-prompts/sv-symbol-01.txt",
+          "sha256": "9bbf67033b15bfa6e5a022c8d28ef2e27d674e9b45255b5c30230ab6d91b963a"
         }
       ],
       "conversion": {
@@ -2008,17 +2001,17 @@
       }
     },
     {
-      "id": "tt-symbol",
-      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/tt-symbol.png",
-      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-a05da601-fa60-4b15-904a-8722e8f13d52.png",
-      "sourceSha256": "ddc7508e01a1324b56de1de9a90078a6f87cc6214a1dd67ad2bcfb2783ccb4e8",
-      "output": "images/symbols/tt.webp",
-      "outputSha256": "1246c9916a643f4a67eb1ab2a650382d375e7c42a36dd396d8723c31ecdd882d",
+      "id": "to-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/to-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-b17bff6c-cad7-4315-9c58-d04a5a5473fc.png",
+      "sourceSha256": "0d1f79805ca81c9690fe4cbac0794d4948c96f49bfe43565e12eca9c5cd7730a",
+      "output": "images/symbols/to.webp",
+      "outputSha256": "36351c8fc1892d3fc7a996405b08219b02c2aa4154882732f89f80dd31146661",
       "actualPrompts": [
         {
           "attempt": 1,
-          "path": "docs/image-prompts/generation-prompts/tt-symbol-01.txt",
-          "sha256": "625f08bf2d32b2a6614925b3d6defe4c4ae331f207eb7b29c14323873f2b5e54"
+          "path": "docs/image-prompts/generation-prompts/to-symbol-01.txt",
+          "sha256": "295bcc661c4ec5cd1610fcf7219e0898b6622ef2c485689a7c145468cf460f34"
         }
       ],
       "conversion": {
@@ -2037,17 +2030,17 @@
       }
     },
     {
-      "id": "tv-symbol",
-      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/tv-symbol.png",
-      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-3d369605-7f7d-4a57-bd73-b4b4f965b12d.png",
-      "sourceSha256": "75947267d2cf08751d08d3a7c230583e12a7ee5d1719234571e2f707231dea38",
-      "output": "images/symbols/tv.webp",
-      "outputSha256": "d2c98a3bc0ac17a0714c080d720e647fe28b7dfaaf51b7dbcfde86358995a669",
+      "id": "tt-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/tt-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-a05da601-fa60-4b15-904a-8722e8f13d52.png",
+      "sourceSha256": "ddc7508e01a1324b56de1de9a90078a6f87cc6214a1dd67ad2bcfb2783ccb4e8",
+      "output": "images/symbols/tt.webp",
+      "outputSha256": "1246c9916a643f4a67eb1ab2a650382d375e7c42a36dd396d8723c31ecdd882d",
       "actualPrompts": [
         {
           "attempt": 1,
-          "path": "docs/image-prompts/generation-prompts/tv-symbol-01.txt",
-          "sha256": "4c303f018e13f318c8031264f625e2317ec8cbc967f82324be43e7ce82b99337"
+          "path": "docs/image-prompts/generation-prompts/tt-symbol-01.txt",
+          "sha256": "625f08bf2d32b2a6614925b3d6defe4c4ae331f207eb7b29c14323873f2b5e54"
         }
       ],
       "conversion": {
@@ -2095,17 +2088,17 @@
       }
     },
     {
-      "id": "us-symbol",
-      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/us-symbol.png",
-      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-ff57ea77-acc8-4026-af16-dec57f1b137b.png",
-      "sourceSha256": "27e9559fcd6f8d69d411288defb277f9e44c9fbd60b3191acee4d97153151e68",
-      "output": "images/symbols/us.webp",
-      "outputSha256": "c4a2d336d24b1a4e1db9bc2120e193abd8335f5ee1b8c7dba618f43345016ba2",
+      "id": "tv-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/tv-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-3d369605-7f7d-4a57-bd73-b4b4f965b12d.png",
+      "sourceSha256": "75947267d2cf08751d08d3a7c230583e12a7ee5d1719234571e2f707231dea38",
+      "output": "images/symbols/tv.webp",
+      "outputSha256": "d2c98a3bc0ac17a0714c080d720e647fe28b7dfaaf51b7dbcfde86358995a669",
       "actualPrompts": [
         {
           "attempt": 1,
-          "path": "docs/image-prompts/generation-prompts/us-symbol-01.txt",
-          "sha256": "05c2d4d8197c9799ea0c6e01648584be2495604346a983eca63da4b178482196"
+          "path": "docs/image-prompts/generation-prompts/tv-symbol-01.txt",
+          "sha256": "4c303f018e13f318c8031264f625e2317ec8cbc967f82324be43e7ce82b99337"
         }
       ],
       "conversion": {
@@ -2135,6 +2128,35 @@
           "attempt": 1,
           "path": "docs/image-prompts/generation-prompts/us-landmark-01.txt",
           "sha256": "2256e9fb27d75aca09aa01c5fe2158a1d062f386731ff2c2cc3f9feb4bd9b064"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "us-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/us-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-ff57ea77-acc8-4026-af16-dec57f1b137b.png",
+      "sourceSha256": "27e9559fcd6f8d69d411288defb277f9e44c9fbd60b3191acee4d97153151e68",
+      "output": "images/symbols/us.webp",
+      "outputSha256": "c4a2d336d24b1a4e1db9bc2120e193abd8335f5ee1b8c7dba618f43345016ba2",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/us-symbol-01.txt",
+          "sha256": "05c2d4d8197c9799ea0c6e01648584be2495604346a983eca63da4b178482196"
         }
       ],
       "conversion": {
@@ -2211,6 +2233,35 @@
       }
     },
     {
+      "id": "ve-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/ve-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-518b2c82-31d2-4f39-b744-cfe56e36f4c1.png",
+      "sourceSha256": "09dee79e6eeb6b31c37287a25752960e6de9c0ec9359fb02460ee8c5bd9b8282",
+      "output": "images/places/ve.webp",
+      "outputSha256": "ee72630646a315d253e2c62f064151226ab72707c367d52eb883ec5f3993cfff",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/ve-landmark-01.txt",
+          "sha256": "cb8589311fe72a6ec52e4bc524f972c2964504484481e522276e6d9f3b91ee74"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
       "id": "ve-symbol",
       "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/ve-symbol.png",
       "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-73be8d81-31c5-4dea-b5a4-a8155c4674fb.png",
@@ -2240,17 +2291,17 @@
       }
     },
     {
-      "id": "ve-landmark",
-      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/ve-landmark.png",
-      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-518b2c82-31d2-4f39-b744-cfe56e36f4c1.png",
-      "sourceSha256": "09dee79e6eeb6b31c37287a25752960e6de9c0ec9359fb02460ee8c5bd9b8282",
-      "output": "images/places/ve.webp",
-      "outputSha256": "ee72630646a315d253e2c62f064151226ab72707c367d52eb883ec5f3993cfff",
+      "id": "vu-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/vu-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-db613683-db5d-45d5-86de-2b81945258ca.png",
+      "sourceSha256": "a46dd5b3ca2467527b268e908caa5dbc8bd76077a0847bb6994ef2addc0f270b",
+      "output": "images/places/vu.webp",
+      "outputSha256": "8a56cdb25d3a5fc5ab5bb441987047d858d1e36fe7217e737de18573a1d5a28c",
       "actualPrompts": [
         {
           "attempt": 1,
-          "path": "docs/image-prompts/generation-prompts/ve-landmark-01.txt",
-          "sha256": "cb8589311fe72a6ec52e4bc524f972c2964504484481e522276e6d9f3b91ee74"
+          "path": "docs/image-prompts/generation-prompts/vu-landmark-01.txt",
+          "sha256": "b4e000bc2eba07aa3bb04b1edf78e7a8880a98e37b06666cbd2811b0acb4d8ff"
         }
       ],
       "conversion": {
@@ -2298,17 +2349,17 @@
       }
     },
     {
-      "id": "vu-landmark",
-      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/vu-landmark.png",
-      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-db613683-db5d-45d5-86de-2b81945258ca.png",
-      "sourceSha256": "a46dd5b3ca2467527b268e908caa5dbc8bd76077a0847bb6994ef2addc0f270b",
-      "output": "images/places/vu.webp",
-      "outputSha256": "8a56cdb25d3a5fc5ab5bb441987047d858d1e36fe7217e737de18573a1d5a28c",
+      "id": "ws-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/ws-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-5f97827b-11c1-4b81-a6fd-f5504c45e122.png",
+      "sourceSha256": "9f41bc5e9f44a9a5a4fc0738ca4fcfaabec0d70cfddd54d0cbcd9a0a71cecc42",
+      "output": "images/places/ws.webp",
+      "outputSha256": "79c03ad493978490f685c9687df4a1a7e66fc7650b45da4b8e4565bd1fd6e18a",
       "actualPrompts": [
         {
           "attempt": 1,
-          "path": "docs/image-prompts/generation-prompts/vu-landmark-01.txt",
-          "sha256": "b4e000bc2eba07aa3bb04b1edf78e7a8880a98e37b06666cbd2811b0acb4d8ff"
+          "path": "docs/image-prompts/generation-prompts/ws-landmark-01.txt",
+          "sha256": "bfc244f1f5d70428785b5e9aed5b545b471f32732d4445970101f7b8956649a9"
         }
       ],
       "conversion": {
@@ -2353,35 +2404,6 @@
         "result": "accepted",
         "originalAndWebp": true,
         "notes": "지붕 밑 기둥 8개 확인."
-      }
-    },
-    {
-      "id": "ws-landmark",
-      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/ws-landmark.png",
-      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-5f97827b-11c1-4b81-a6fd-f5504c45e122.png",
-      "sourceSha256": "9f41bc5e9f44a9a5a4fc0738ca4fcfaabec0d70cfddd54d0cbcd9a0a71cecc42",
-      "output": "images/places/ws.webp",
-      "outputSha256": "79c03ad493978490f685c9687df4a1a7e66fc7650b45da4b8e4565bd1fd6e18a",
-      "actualPrompts": [
-        {
-          "attempt": 1,
-          "path": "docs/image-prompts/generation-prompts/ws-landmark-01.txt",
-          "sha256": "bfc244f1f5d70428785b5e9aed5b545b471f32732d4445970101f7b8956649a9"
-        }
-      ],
-      "conversion": {
-        "tool": "sips + cwebp",
-        "width": 1024,
-        "height": 768,
-        "quality": 80,
-        "inset": 0.12
-      },
-      "review": {
-        "reviewer": "Codex",
-        "humanApproval": false,
-        "result": "accepted",
-        "originalAndWebp": true,
-        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
       }
     }
   ]

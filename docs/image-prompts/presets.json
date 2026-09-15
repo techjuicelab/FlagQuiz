@@ -411,8 +411,8 @@
       ],
       "csvStatus": "final",
       "status": "approved-image",
-      "tries": 1,
-      "bytes": 22584,
+      "tries": 4,
+      "bytes": 34414,
       "outputStem": "images/symbols/ar",
       "textReview": {
         "reviewer": "Codex",
@@ -426,7 +426,8 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+        "notes": "직선 16개와 곡선 16개, 총 32개 교대 광선을 두 에이전트가 각각 계수. 1~3차의 18/38/31개 오류를 4차 편집에서 수정.",
+        "independentReview": "/root/map_geometry_review"
       },
       "productionRecord": "docs/image-prompts/production.json#ar-symbol"
     },
@@ -4965,7 +4966,7 @@
       "kind": "symbol",
       "koRaw": "닥터버드(꼬리 깃 두 가닥이 긴 벌새)",
       "koApprove": "닥터버드",
-      "subjectEn": "A single doctor bird hovering with green breast and spread wings, its red bill pointing forward and two long black ribbonlike tail feathers trailing separately below.",
+      "subjectEn": "A single male doctor bird hovering, with an emerald green breast and belly, a black crown, dark green grey wings, a red bill and two very long black ribbonlike tail feathers.",
       "accuracy": false,
       "override": null,
       "substitutedFrom": null,
@@ -4978,8 +4979,8 @@
       "confusionGroups": [],
       "csvStatus": "final",
       "status": "approved-image",
-      "tries": 1,
-      "bytes": 15698,
+      "tries": 2,
+      "bytes": 13158,
       "outputStem": "images/symbols/jm",
       "textReview": {
         "reviewer": "Codex",
@@ -4993,9 +4994,11 @@
         "humanApproval": false,
         "result": "accepted",
         "originalAndWebp": true,
-        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+        "notes": "내장 이미지 편집 2차에서 파랑·노랑 날개와 흰 배를 제거. 검은 머리깃, 초록 가슴·배, 짙은 회흑색 날개, 빨간 부리와 길게 분리된 꼬리 두 가닥을 직접 확인. 모든 신체와 꼬리 끝이 프레임 안에 있고 연한 불투명 배경 유지.",
+        "independentReview": "/root/map_geometry_review"
       },
-      "productionRecord": "docs/image-prompts/production.json#jm-symbol"
+      "productionRecord": "docs/image-prompts/production.json#jm-symbol",
+      "curationNote": "수컷 닥터버드의 실제 검은 머리·초록 몸·짙은 날개색을 자메이카 공식 자료로 대조하여 명시."
     },
     {
       "id": "jm-landmark",
