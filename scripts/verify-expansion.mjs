@@ -164,34 +164,193 @@ function loadInto(sandbox, files) {
   return sandbox;
 }
 
-/** sw.js 를 가짜 서비스워커 위에 올린다. tests/sw.test.mjs:8-27 을 본떴다. */
-function makeWorker(cacheKeys) {
-  const events = {}, deleted = [], cached = new Map(), opened = [];
-  const match = async (request) => cached.get(request.url || request)?.clone();
+/** 실제 CacheStorage처럼 버킷별 URL·응답·삭제를 보관한다. 외부 네트워크는 쓰지 않는다. */
+function makeWorker(src, cacheKeys = ['another-app-v1', 'flagquiz-v2', 'flagquiz-v3', 'flagquiz-v4']) {
+  const base = 'https://example.test/FlagQuiz/';
+  const keyOf = request => new URL(request.url || request, base).href;
+  const events = {}, deleted = [], deletedEntries = [], opened = [], matches = [], puts = [], fetched = [];
+  const buckets = new Map(cacheKeys.map(name => [name, new Map()]));
+  let network = async () => { throw new Error('offline'); };
+  function bucket(name) {
+    if (!buckets.has(name)) buckets.set(name, new Map());
+    return buckets.get(name);
+  }
+  function cache(name) {
+    const entries = bucket(name);
+    return {
+      async keys() { return [...entries.keys()].map(url => new Request(url)); },
+      async delete(request) {
+        const url = keyOf(request);
+        deletedEntries.push({ name, url });
+        return entries.delete(url);
+      },
+      async match(request) {
+        const url = keyOf(request);
+        matches.push({ name, url });
+        return entries.get(url)?.clone();
+      },
+      async put(request, response) {
+        if (response.status === 206) throw new TypeError('부분 음원 206은 Cache.put에 저장할 수 없다');
+        const url = keyOf(request);
+        puts.push({ name, url, status: response.status });
+        entries.set(url, response.clone());
+      },
+      async add(request) {
+        const response = await sandbox.fetch(new Request(keyOf(request)));
+        if (!response.ok) throw new TypeError('Cache.add 응답이 성공하지 않았다');
+        await this.put(request, response);
+      },
+      async addAll(requests) {
+        const responses = await Promise.all(requests.map(async request => {
+          const response = await sandbox.fetch(new Request(keyOf(request)));
+          if (!response.ok) throw new TypeError('Cache.addAll 응답이 성공하지 않았다');
+          return response;
+        }));
+        await Promise.all(requests.map((request, i) => this.put(request, responses[i])));
+      }
+    };
+  }
   const sandbox = {
     URL, Request, Response, Headers, Promise, console,
     self: {
-      location: { origin: 'https://example.test' },
+      location: { origin: new URL(base).origin, href: base + 'sw.js' },
       addEventListener: (name, fn) => { events[name] = fn; },
-      clients: { claim() {} },
-      skipWaiting() {}
+      clients: { claim() {} }, skipWaiting() {}
     },
     caches: {
-      keys: async () => cacheKeys.slice(),
-      delete: async (key) => { deleted.push(key); },
-      match,
-      open: async (name) => {
-        opened.push(name);
-        return {
-          async put(request, response) { cached.set(request.url || request, response.clone()); },
-          match, add: async () => {}, addAll: async () => {}
-        };
-      }
+      keys: async () => [...buckets.keys()],
+      delete: async name => { deleted.push(name); return buckets.delete(name); },
+      async match(request) {
+        for (const name of buckets.keys()) {
+          const hit = await cache(name).match(request);
+          if (hit) return hit;
+        }
+      },
+      open: async name => { opened.push(name); return cache(name); }
     },
-    fetch: async () => { throw new Error('offline'); }
+    fetch: async request => { fetched.push(keyOf(request)); return network(request); }
   };
-  vm.runInNewContext(read('sw.js'), sandbox, { filename: 'sw.js' });
-  return { events, deleted, cached, opened, sandbox };
+  vm.runInNewContext(src, sandbox, { filename: 'sw.js', timeout: 5000 });
+  return {
+    events, deleted, deletedEntries, opened, matches, puts, fetched, buckets, sandbox, keyOf,
+    seed(name, request, response) { bucket(name).set(keyOf(request), response.clone()); },
+    peek(name, request) { return buckets.get(name)?.get(keyOf(request))?.clone(); },
+    network(fn) { network = fn; },
+    async activate() {
+      if (typeof events.activate !== 'function') throw new Error('sw.js 가 activate 이벤트를 등록하지 않는다');
+      const pending = [];
+      events.activate({ waitUntil: promise => pending.push(promise) });
+      await Promise.all(pending);
+    },
+    async request(request) {
+      if (typeof events.fetch !== 'function') throw new Error('sw.js 가 fetch 이벤트를 등록하지 않는다');
+      let response;
+      const pending = [];
+      events.fetch({ request, respondWith: promise => { response = promise; }, waitUntil: promise => pending.push(promise) });
+      if (response === undefined) throw new Error('요청을 처리하는 fetch 분기가 없다: ' + request.url);
+      const result = await response;
+      await Promise.all(pending);
+      if (!result) throw new Error('fetch 응답이 비어 있다: ' + request.url);
+      return result;
+    }
+  };
+}
+
+/** 헬퍼 이름이나 caches.open의 위치 대신 기존 음원 조회와 신규 저장 경로를 실행한다. */
+export async function verifyAudioCache(t, src) {
+  const audio = 'flagquiz-v4';
+  const w = makeWorker(src);
+  const body = Uint8Array.from([0, 255, 1, 128, 3, 4, 5, 6, 7, 8]);
+  const response = () => new Response(body, { headers: { 'content-type': 'audio/mpeg' } });
+  for (const kind of ['sua', 'music']) {
+    const url = w.keyOf('./audio/' + kind + '/kept.mp3');
+    w.seed(audio, url, response());
+    const hit = await w.request(new Request(url, { headers: { range: 'bytes=0-1' } }));
+    t.ok(hit.status === 206, '기존 ' + kind + ' 음원의 오프라인 Range 응답이 206이 아니다');
+    t.ok(Buffer.from(await hit.arrayBuffer()).equals(Buffer.from(body.slice(0, 2))),
+      '기존 ' + kind + ' 음원을 flagquiz-v4 에서 그대로 읽지 못했다');
+  }
+  t.ok(w.fetched.length === 0, '이미 저장된 음원을 다시 다운로드한다', w.fetched.join(', '));
+  t.ok(w.puts.length === 0, '이미 저장된 음원을 다른 버킷으로 복사한다');
+  w.network(async req => {
+    t.ok(!req.headers.has('range') && !req.headers.has('if-range'), '신규 음원의 전체 200 요청에서 Range 헤더를 제거하지 않았다');
+    return response();
+  });
+  for (const kind of ['sua', 'music']) {
+    const url = w.keyOf('./audio/' + kind + '/new.mp3');
+    const result = await w.request(new Request(url, { headers: { range: 'bytes=2-4', 'if-range': 'old-etag' } }));
+    t.ok(result.status === 206, '신규 ' + kind + ' 음원의 Range 응답이 206이 아니다');
+    t.ok(Buffer.from(await result.arrayBuffer()).equals(Buffer.from(body.slice(2, 5))), '신규 음원 응답 바이트가 다르다');
+    const saved = w.peek(audio, url);
+    t.ok(saved?.status === 200, '신규 ' + kind + ' 음원 전체 200이 flagquiz-v4 에 저장되지 않았다');
+    if (saved) t.ok(Buffer.from(await saved.arrayBuffer()).equals(Buffer.from(body)), 'flagquiz-v4 에 저장된 신규 음원 바이트가 다르다');
+    t.ok(w.puts.some(put => put.name === audio && put.url === url), '음원 저장이 완료되기 전에 응답했다', url);
+    t.ok(w.puts.filter(put => put.url === url).every(put => put.name === audio), '신규 음원이 flagquiz-v4 이외 버킷에도 저장된다', url);
+  }
+  t.ok(countOf(src, /flagquiz-v4/g) >= 1, "sw.js 안에 'flagquiz-v4' 문자열이 사라졌다");
+  const higher = (src.match(/flagquiz-v(\d+)/g) || []).filter(name => Number(name.slice(10)) > 4);
+  t.ok(higher.length === 0, 'sw.js 에 flagquiz-v5 이상의 캐시 이름이 있다', higher.join(', '));
+  t.note('수아·음악의 기존 v4 오프라인 조회와 신규 전체 200 저장·206 응답을 실행 확인했다');
+}
+
+export async function verifyActivateKeepsAudio(t, src) {
+  const audio = 'flagquiz-v4';
+  const found = new Set(src.match(/flagquiz-[a-z0-9-]+/g) || []);
+  const keys = Array.from(new Set(['another-app-v1', 'flagquiz-v2', 'flagquiz-v3', audio, ...found]));
+  const w = makeWorker(src, keys);
+  const body = Uint8Array.from([255, 0, 128, 17, 6, 99]);
+  const audioUrls = ['sua', 'music'].map(kind => w.keyOf('./audio/' + kind + '/kept.mp3'));
+  for (const url of audioUrls) w.seed(audio, url, new Response(body, { headers: { 'content-type': 'audio/mpeg' } }));
+  w.seed(audio, './index.html', new Response('legacy shell'));
+  w.seed(audio, './js/util.js', new Response('legacy script'));
+  w.seed(audio, './flags/kr.svg', new Response('<svg>legacy flag</svg>'));
+  w.seed('another-app-v1', './index.html', new Response('other app shell'));
+  w.seed('another-app-v1', './js/missing.js', new Response('other app script'));
+  const shell = w.sandbox.SHELL_CACHE;
+  if (shell && shell !== audio) {
+    w.seed(shell, './index.html', new Response('current shell'));
+    w.seed(shell, './js/util.js', new Response('current script'));
+  }
+  await w.activate();
+  t.ok(!w.deleted.includes(audio) && w.buckets.has(audio), 'activate 가 음원 캐시 flagquiz-v4 를 지운다 — 114MB 재다운로드다', w.deleted.join(', '));
+  t.ok(!w.deleted.includes('another-app-v1'), 'activate 가 남의 앱 캐시까지 지운다', w.deleted.join(', '));
+  for (const url of audioUrls) {
+    const saved = w.peek(audio, url);
+    t.ok(!!saved, 'activate 가 기존 음원 항목을 삭제했다', url);
+    if (saved) t.ok(Buffer.from(await saved.arrayBuffer()).equals(Buffer.from(body)), 'activate 뒤 음원 바이트가 달라졌다', url);
+  }
+  const isAudio = entry => new URL(entry.url).pathname.includes('/audio/');
+  t.ok(!w.matches.some(isAudio), 'activate 가 기존 음원 본문을 읽는다 — 음원 이관은 금지다');
+  t.ok(!w.puts.some(isAudio), 'activate 가 기존 음원을 다른 버킷으로 복사한다');
+  t.ok(!w.deletedEntries.some(isAudio), 'activate 가 기존 음원 항목을 삭제한다');
+  t.ok(!w.fetched.some(url => new URL(url).pathname.includes('/audio/')), 'activate 가 음원을 재다운로드한다');
+  if (shell && shell !== audio) {
+    const navigate = await w.request({ method: 'GET', mode: 'navigate', url: w.keyOf('./unknown-page') });
+    t.ok(await navigate.text() === 'current shell', '오프라인 탐색이 현재 셸 대신 레거시 또는 타 앱 HTML을 제공한다');
+    const script = await w.request(new Request(w.keyOf('./js/util.js')));
+    t.ok(await script.text() === 'current script', '오프라인 스크립트가 다른 버킷의 옛 파일을 제공한다');
+    const missing = await w.request(new Request(w.keyOf('./js/missing.js')));
+    t.ok(missing.type === 'error', '누락 스크립트에 다른 버킷의 파일 또는 HTML을 제공한다');
+  }
+  t.note('v4 수아·음악 바이트 보존, 음원 읽기·복사·삭제·다운로드 없음, 타 앱 캐시 보존을 실행 확인했다');
+}
+
+export function verifyMapTolerance(t, src, headers = {}) {
+  const match = /\b(?:const|let|var)\s+SIMPLIFY_TOLERANCE_DEG\s*=\s*(\d+(?:\.\d+)?)\s*;/.exec(src);
+  t.ok(!!match, 'SIMPLIFY_TOLERANCE_DEG 상수가 없다');
+  if (!match) return;
+  const tol = Number(match[1]);
+  t.ok(tol === 0.7 || tol === 0.5, '단순화 허용 오차는 HANDOFF의 기본 0.7° 또는 육안 확인 후 허용 대안 0.5°여야 한다', '실제 ' + tol + '°');
+  if (tol === 0.5) {
+    const reason = src.slice(0, match.index).split('\n').slice(-4).join('\n');
+    t.ok(/\/\/|\/\*/.test(reason) && /HANDOFF/.test(reason) && /육안/.test(reason) && /0\.5/.test(reason),
+      '0.5° 선택은 상수 앞 주석에 HANDOFF의 육안 확인 대안이라는 근거를 남겨야 한다');
+  }
+  for (const [name, header] of Object.entries(headers)) {
+    const value = (/허용 오차:\s*([\d.]+)/.exec(header) || [])[1];
+    t.ok(value !== undefined && Number(value) === tol, name + ' 헤더의 단순화 오차가 build-map.mjs 상수와 다르다', '헤더 ' + value + '° vs 상수 ' + tol + '°');
+  }
+  t.note('단순화 허용 오차 ' + tol + '° — HANDOFF 허용값과 선택 근거·생성 헤더 일치 확인');
 }
 
 /** data/countries.js 만 올려 194개 code 집합을 얻는다. */
@@ -265,6 +424,7 @@ function newScriptFiles() {
    1부 — 금지 사항 (severity: guardrail) · 위반하면 종료 코드 1
    ══════════════════════════════════════════════════════════════════════ */
 
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
 await check({
   id: 'guard-storage-key',
   task: '금지1 (전 과제 공통)',
@@ -322,32 +482,7 @@ await check({
   label: '음원 캐시 이름이 flagquiz-v4 그대로인가',
   severity: 'guardrail',
   why: '아이패드에 이미 받아 둔 수아 음원 114MB가 그 이름 아래 있다. 이름을 바꾸는 순간 차 안에서 앱이 벙어리가 되고 114MB 재다운로드다.'
-}, (t) => {
-  const src = read('sw.js');
-  const consts = {};
-  const re = /var\s+([A-Za-z_$][\w$]*)\s*=\s*'([^']+)'\s*;/g;
-  let m;
-  while ((m = re.exec(src))) consts[m[1]] = m[2];
-
-  const body = funcBody(src, 'function cachedAudio');
-  t.ok(body, 'sw.js 에서 cachedAudio 함수 본문을 찾지 못했다 — 음원 경로가 어디로 갔는지 사람이 봐야 한다');
-  if (body) {
-    const opens = [];
-    const re2 = /caches\.open\(\s*(?:([A-Za-z_$][\w$]*)|'([^']+)')\s*\)/g;
-    let o;
-    while ((o = re2.exec(body))) opens.push(o[1] ? { name: o[1], value: consts[o[1]] } : { name: "'" + o[2] + "'", value: o[2] });
-    t.ok(opens.length > 0, 'cachedAudio 안에 caches.open 이 없다 — 음원을 어느 버킷에 담는지 알 수 없다');
-    for (const op of opens) {
-      t.ok(op.value === 'flagquiz-v4',
-        '음원이 flagquiz-v4 가 아닌 버킷에 담긴다: ' + op.name, '값 ' + JSON.stringify(op.value));
-    }
-  }
-  t.ok(countOf(src, /flagquiz-v4/g) >= 1, "sw.js 안에 'flagquiz-v4' 문자열이 사라졌다");
-  const higher = (src.match(/flagquiz-v(\d+)/g) || []).filter((s) => Number(s.slice(10)) > 4);
-  t.ok(higher.length === 0, 'sw.js 에 flagquiz-v5 이상의 캐시 이름이 있다', higher.join(', '));
-  t.ok(/url\.pathname\.indexOf\('\/audio\/'\)/.test(src),
-    "fetch 핸들러의 '/audio/' 분기가 사라졌다 — 음원이 다른 버킷으로 샌다");
-});
+}, (t) => verifyAudioCache(t, read('sw.js')));
 
 await check({
   id: 'guard-activate-keeps-audio',
@@ -355,22 +490,7 @@ await check({
   label: 'activate 정리가 flagquiz-v4 를 지우지 않는가 (실동작 시뮬레이션)',
   severity: 'guardrail',
   why: "현재 정리 코드는 'flagquiz- 로 시작하면 전부 삭제'다. 버킷을 넷으로 쪼개면서 화이트리스트로 바꾸지 않으면 새 버킷들이 서로를 지우고, 그중 하나가 음원 114MB다."
-}, async (t) => {
-  const src = read('sw.js');
-  const found = new Set(src.match(/flagquiz-[a-z0-9-]+/g) || []);
-  const keys = Array.from(new Set(['another-app-v1', 'flagquiz-v2', 'flagquiz-v3', 'flagquiz-v4', ...found]));
-  const w = makeWorker(keys);
-  t.ok(typeof w.events.activate === 'function', 'sw.js 가 activate 이벤트를 등록하지 않는다');
-  if (typeof w.events.activate !== 'function') return;
-  let done;
-  w.events.activate({ waitUntil: (promise) => { done = promise; } });
-  await done;
-  t.ok(!w.deleted.includes('flagquiz-v4'),
-    'activate 가 음원 캐시 flagquiz-v4 를 지운다 — 114MB 재다운로드다', '지운 것: ' + w.deleted.join(', '));
-  t.ok(!w.deleted.includes('another-app-v1'),
-    'activate 가 남의 앱 캐시까지 지운다', '지운 것: ' + w.deleted.join(', '));
-  t.note('가짜 캐시 ' + keys.join(', ') + ' → 삭제된 것: ' + (w.deleted.join(', ') || '없음'));
-});
+}, (t) => verifyActivateKeepsAudio(t, read('sw.js')));
 
 await check({
   id: 'guard-flags-folder-clean',
@@ -644,13 +764,14 @@ await check({
   if (src.includes('js/screens.js')) t.note('이 전용 테스트는 js/screens.js 까지 로드해 화면 배선도 함께 본다 (app.test.mjs 는 로드하지 않는다)');
   let out = '', code = 0;
   try {
-    out = execFileSync(process.execPath, ['--test', rel], { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+    out = execFileSync(process.execPath, ['--test', '--test-reporter=tap', rel], { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
   } catch (e) {
     code = e.status ?? 1;
     out = (e.stdout || '') + (e.stderr || '');
   }
   t.ok(code === 0, rel + ' 가 실패한다', '종료 코드 ' + code);
   const m = /# pass (\d+)/.exec(out);
+  t.ok(m && Number(m[1]) > 0, '전용 테스트의 통과 건수를 확인하지 못했다');
   t.note(rel + ' → ' + (m ? m[1] + '개 통과' : '통과 개수를 읽지 못함'));
 });
 
@@ -1190,12 +1311,9 @@ await check({
   why: '내부 링을 살려두면 레소토·산마리노·바티칸 자리에 흰 구멍이 뚫리고, 작은 나라 링 보존 예외가 없으면 싱가포르·바티칸이 지도에서 사라진다.'
 }, (t) => {
   const src = readOrSkip(t, 'scripts/build-map.mjs', '지도 T3/T4');
-  const tol = (/SIMPLIFY_TOLERANCE_DEG\s*=\s*([\d.]+)/.exec(src) || [])[1];
-  t.ok(tol !== undefined, 'SIMPLIFY_TOLERANCE_DEG 상수가 없다');
-  if (tol !== undefined) {
-    t.ok(tol === '0.7', '단순화 허용 오차가 인계 명세의 0.7 이 아니다 — 의도한 변경인지 사람이 판단해야 한다',
-      '실제 ' + tol + '° (작을수록 점이 많아져 파일이 커진다)');
-  }
+  const headers = Object.fromEntries(['data/map-coords.js', 'data/map-shapes.js']
+    .filter(exists).map(file => [file, headerComment(read(file))]));
+  verifyMapTolerance(t, src, headers);
   t.ok(/rings\[0\]|\[0\]/.test(src), '외곽 링만 쓰는 흔적이 없다 — 내부 링을 살리면 흰 구멍이 뚫린다');
   // 도형 분기는 scripts/lib/ 로 빠져 있을 수 있다 — 지도 파이프라인 전체에서 찾는다
   const pipeline = ['scripts/build-map.mjs', 'scripts/lib/simplify.mjs', 'scripts/lib/ne-join.mjs']
@@ -1468,10 +1586,13 @@ await check({
     (n ? n[1] : '?') + ' vs 기준 ' + BASE_RUN_CHECKS);
   let tout = '', tcode = 0;
   try {
-    tout = execFileSync('sh', ['-c', 'node --test tests/*.test.mjs'], { cwd: root, encoding: 'utf8' });
+    const files = fs.readdirSync(p('tests')).filter(name => name.endsWith('.test.mjs')).sort().map(name => p('tests', name));
+    tout = execFileSync(process.execPath, ['--test', '--test-reporter=tap', ...files], { cwd: root, encoding: 'utf8' });
   } catch (e) { tcode = e.status ?? 1; tout = (e.stdout || '') + (e.stderr || ''); }
   t.ok(tcode === 0, 'node --test 가 실패한다', '종료 코드 ' + tcode);
   const pm = /# pass (\d+)/.exec(tout);
+  t.ok(pm && Number(pm[1]) >= BASE_NODE_TESTS, 'node 테스트 통과 건수가 없거나 기준선보다 줄었다',
+    (pm ? pm[1] : '?') + ' vs 기준 ' + BASE_NODE_TESTS);
   t.note('node --test → ' + (pm ? pm[1] : '?') + '개 통과 (작업 전 기준 ' + BASE_NODE_TESTS + '개, Codex 보고 110개)');
 });
 
@@ -1643,3 +1764,4 @@ for (const line of [
 ]) console.log('  ' + line);
 
 process.exit(g[FAIL] > 0 ? 1 : 0);
+}
