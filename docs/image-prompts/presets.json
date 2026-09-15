@@ -169,16 +169,25 @@
         "국기 해·태양(ar만 상징물, 나머지 예비는 승격 시 충돌)"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 25172,
       "outputStem": "images/symbols/ag",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#ag-symbol"
     },
     {
       "id": "ag-landmark",
@@ -201,16 +210,25 @@
         "바닷가 바위구멍·돌다리·블루홀"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 34452,
       "outputStem": "images/places/ag",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#ag-landmark"
     },
     {
       "id": "al-symbol",
@@ -392,16 +410,25 @@
         "국기 해·태양(ar만 상징물, 나머지 예비는 승격 시 충돌)"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 22584,
       "outputStem": "images/symbols/ar",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#ar-symbol"
     },
     {
       "id": "ar-landmark",
@@ -424,16 +451,25 @@
         "눈·얼음·극지 하늘"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 33062,
       "outputStem": "images/places/ar",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#ar-landmark"
     },
     {
       "id": "at-symbol",
@@ -516,16 +552,25 @@
       "riskNote": "시드니 오페라하우스는 설계자(웃손) 사후 70년 미경과로 저작권 위험 — 규칙 4에 따라 제외하고 울루루로 대체. 울루루는 아난구 원주민 성지이므로 등반 장면이 아니라 멀리서 본 바위산 전체로만 그린다",
       "confusionGroups": [],
       "csvStatus": "draft",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 13922,
       "outputStem": "images/symbols/au",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#au-symbol"
     },
     {
       "id": "au-landmark",
@@ -548,16 +593,25 @@
         "통바위산·거대한 단일 바위"
       ],
       "csvStatus": "draft",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 14214,
       "outputStem": "images/places/au",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#au-landmark"
     },
     {
       "id": "az-symbol",
@@ -706,16 +760,25 @@
         "원숭이"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 21774,
       "outputStem": "images/symbols/bb",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#bb-symbol"
     },
     {
       "id": "bb-landmark",
@@ -738,16 +801,25 @@
         "지하 공간(동굴·갱도·굴집)"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 34168,
       "outputStem": "images/places/bb",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#bb-landmark"
     },
     {
       "id": "bd-symbol",
@@ -1208,16 +1280,25 @@
       "riskNote": "라마는 페루 연상도 강하지만, 국장에 라마가 그려진 쪽은 볼리비아이고 페루 국장의 동물은 비쿠냐다. 규칙 7에 따라 볼리비아가 가져가고 페루는 입는것(판초)으로 옮겼다.",
       "confusionGroups": [],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 15968,
       "outputStem": "images/symbols/bo",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#bo-symbol"
     },
     {
       "id": "bo-landmark",
@@ -1240,16 +1321,25 @@
         "소금 벌판·지하 소금(il·pk는 상징물 축 교차)"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 18882,
       "outputStem": "images/places/bo",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#bo-landmark"
     },
     {
       "id": "br-symbol",
@@ -1269,16 +1359,25 @@
       "riskNote": "구세주 그리스도상은 저작권 위험군이라 지침대로 팡지아수카르로 대체함. 투칸은 벨리즈 국조이기도 해 북아메리카 작업 때 중복 점검이 필요하다(브라질이 우선, 벨리즈는 예비로 밀 것).",
       "confusionGroups": [],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 15064,
       "outputStem": "images/symbols/br",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#br-symbol"
     },
     {
       "id": "br-landmark",
@@ -1301,16 +1400,25 @@
         "통바위산·거대한 단일 바위"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 25090,
       "outputStem": "images/places/br",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#br-landmark"
     },
     {
       "id": "bs-symbol",
@@ -1330,16 +1438,25 @@
       "riskNote": "명소 빈칸 유지 사유 1줄 기재(A3 문안)",
       "confusionGroups": [],
       "csvStatus": "fixed-r1",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 10974,
       "outputStem": "images/symbols/bs",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#bs-symbol"
     },
     {
       "id": "bt-symbol",
@@ -1515,16 +1632,25 @@
         "굵은 줄기 큰 나무"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 29728,
       "outputStem": "images/symbols/bz",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#bz-symbol"
     },
     {
       "id": "bz-landmark",
@@ -1547,16 +1673,25 @@
         "바닷가 바위구멍·돌다리·블루홀"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 28966,
       "outputStem": "images/places/bz",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#bz-landmark"
     },
     {
       "id": "ca-symbol",
@@ -1576,16 +1711,25 @@
       "riskNote": "혼동 쌍 — 이과수 폭포(아르헨티나·브라질), 빅토리아 폭포(잠비아·짐바브웨)와 4세에겐 사실상 같은 그림. 또 나이아가라는 미국과 국경을 나눠 쓰므로 미국 카드에는 절대 폭포를 넣지 말 것. CN타워는 현대 건축 저작권+4세 인지 불가로 제외",
       "confusionGroups": [],
       "csvStatus": "fixed-r1",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 14722,
       "outputStem": "images/symbols/ca",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#ca-symbol"
     },
     {
       "id": "ca-landmark",
@@ -1608,16 +1752,25 @@
         "눈·얼음·극지 하늘"
       ],
       "csvStatus": "fixed-r1",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 23358,
       "outputStem": "images/places/ca",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#ca-landmark"
     },
     {
       "id": "cd-symbol",
@@ -1920,16 +2073,25 @@
         "붉은·분홍 꽃 클로즈업"
       ],
       "csvStatus": "draft",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 2,
+      "bytes": 12076,
       "outputStem": "images/symbols/cl",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "잘린 줄기 끝을 복원한 2차 그림. 꽃과 잎 전체를 보존."
+      },
+      "productionRecord": "docs/image-prompts/production.json#cl-symbol"
     },
     {
       "id": "cl-landmark",
@@ -1950,16 +2112,25 @@
       "riskNote": "모아이는 조상상 성격이 있어 규칙 5의 '성상 근접'을 검토했으나, 종교 의식 장면이 아니라 야외 석상 자체라 안전하다고 판단했다. 그림에 의식·제단은 넣지 말 것.",
       "confusionGroups": [],
       "csvStatus": "draft",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 23410,
       "outputStem": "images/places/cl",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#cl-landmark"
     },
     {
       "id": "cm-symbol",
@@ -2104,16 +2275,25 @@
         "야자나무·야자 열매 송이(ly↔sl은 미해소)"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 26424,
       "outputStem": "images/symbols/co",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#co-symbol"
     },
     {
       "id": "co-landmark",
@@ -2136,16 +2316,25 @@
         "통바위산·거대한 단일 바위"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 33530,
       "outputStem": "images/places/co",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#co-landmark"
     },
     {
       "id": "cr-symbol",
@@ -2165,16 +2354,25 @@
       "riskNote": "아레날은 엘살바도르 산타아나·니카라과 오메테페와 '화산' 혼동군 — 결정 A에 따라 셋 다 그리되 아레날(불 없이 하얀 김만 나는 매끈한 원뿔)/산타아나(꼭대기 청록 분화구 호수)/오메테페(호수 위 원뿔 둘)로 갈라 못박고 quiz.js에서 같은 판 배제. 콩고 니라공고·바누아투 야수르의 '빨간 불'은 코스타리카에 쓰지 않음",
       "confusionGroups": [],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 20064,
       "outputStem": "images/symbols/cr",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#cr-symbol"
     },
     {
       "id": "cr-landmark",
@@ -2197,16 +2395,25 @@
         "화산·끓는 땅"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 23166,
       "outputStem": "images/places/cr",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#cr-landmark"
     },
     {
       "id": "cu-symbol",
@@ -2229,16 +2436,25 @@
         "알록달록 탈것"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 24970,
       "outputStem": "images/symbols/cu",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#cu-symbol"
     },
     {
       "id": "cv-symbol",
@@ -2601,16 +2817,25 @@
         "앵무(dm만 상징물, 나머지는 예비 — 값 유지)"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 14864,
       "outputStem": "images/symbols/dm",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#dm-symbol"
     },
     {
       "id": "dm-landmark",
@@ -2635,16 +2860,25 @@
         "색이 특이한 물·웅덩이"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 28364,
       "outputStem": "images/places/dm",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#dm-landmark"
     },
     {
       "id": "do-symbol",
@@ -2666,16 +2900,25 @@
         "광석·보석 원석 덩어리"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 27226,
       "outputStem": "images/symbols/do",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#do-symbol"
     },
     {
       "id": "dz-symbol",
@@ -2760,16 +3003,25 @@
         "거북"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 18814,
       "outputStem": "images/symbols/ec",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#ec-symbol"
     },
     {
       "id": "ee-symbol",
@@ -3129,16 +3381,25 @@
       "riskNote": "바나나는 '국기에 바나나가 그려진 유일한 나라'라는 근거로 피지가 가져간다(ec·ph·lc와 중복 금지). 상징물·예비 어디에서도 국기 방패·국장 전체를 부르지 말 것 — 피지 국장은 창·곤봉을 든 전사 둘이 방패를 받치고 있다(규칙3). 예비1·예비2도 같은 이유로 방패 참조를 끊었다. 명소는 야사와 해변·타베우니 폭포뿐인데 4세에게 '그냥 남쪽 바다 해변'이라 빈칸 처리했다",
       "confusionGroups": [],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 3,
+      "bytes": 21314,
       "outputStem": "images/symbols/fj",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "3차 그림에서 바나나 6개와 분리된 끝 6개 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#fj-symbol"
     },
     {
       "id": "fm-symbol",
@@ -3161,16 +3422,25 @@
         "판다누스(형태로 4갈래로 가름)"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 23964,
       "outputStem": "images/symbols/fm",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "사람보다 큰 돌돈의 크기 비교용 인물은 뒷모습만 표시."
+      },
+      "productionRecord": "docs/image-prompts/production.json#fm-symbol"
     },
     {
       "id": "fm-landmark",
@@ -3193,16 +3463,25 @@
         "물 위 말뚝집·바다 위 석조 마을"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 2,
+      "bytes": 33630,
       "outputStem": "images/places/fm",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "2차 그림에서 일반 벽돌 대신 수평 현무암 기둥이 교차하는 벽 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#fm-landmark"
     },
     {
       "id": "fr-symbol",
@@ -3414,16 +3693,25 @@
         "붉은 열매 클로즈업"
       ],
       "csvStatus": "fixed-r1",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 19008,
       "outputStem": "images/symbols/gd",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#gd-symbol"
     },
     {
       "id": "ge-symbol",
@@ -3757,16 +4045,25 @@
       "riskNote": "혼동 쌍 — 멕시코 치첸이트사와 4세에겐 같은 '계단 피라미드'. 티칼은 좁고 가파르며 정글 나무 위로 솟아 있고, 치첸이트사는 넓고 낮은 사각형이라는 점을 그림 프롬프트에서 반드시 분리할 것. 예비 1번(우이필)은 '입는것' 카테고리 보강용",
       "confusionGroups": [],
       "csvStatus": "fixed-r1",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 11220,
       "outputStem": "images/symbols/gt",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#gt-symbol"
     },
     {
       "id": "gt-landmark",
@@ -3789,16 +4086,25 @@
         "피라미드·계단 신전"
       ],
       "csvStatus": "fixed-r1",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 30438,
       "outputStem": "images/places/gt",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#gt-landmark"
     },
     {
       "id": "gw-symbol",
@@ -3883,16 +4189,25 @@
         "큰 고양잇과 동물"
       ],
       "csvStatus": "draft",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 28646,
       "outputStem": "images/symbols/gy",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#gy-symbol"
     },
     {
       "id": "hn-symbol",
@@ -3914,16 +4229,25 @@
         "앵무(dm만 상징물, 나머지는 예비 — 값 유지)"
       ],
       "csvStatus": "fixed-r1",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 13744,
       "outputStem": "images/symbols/hn",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#hn-symbol"
     },
     {
       "id": "hn-landmark",
@@ -3944,16 +4268,25 @@
       "riskNote": "앵무새 3중복 때문에 국조를 못 쓴 케이스 — 도미니카연방이 국기(1순위)로 가져감. 명소는 과테말라 티칼·멕시코 치첸이트사와 같은 마야 계열이지만 '피라미드'가 아니라 '얼굴 새긴 돌기둥'으로 그리면 구별됨",
       "confusionGroups": [],
       "csvStatus": "fixed-r1",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 18634,
       "outputStem": "images/places/hn",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원래 소재에 있는 고대 석비 부조는 유지. 살아 있는 인물 묘사와 구분."
+      },
+      "productionRecord": "docs/image-prompts/production.json#hn-landmark"
     },
     {
       "id": "hr-symbol",
@@ -4039,16 +4372,25 @@
         "알록달록 탈것"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 26882,
       "outputStem": "images/symbols/ht",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#ht-symbol"
     },
     {
       "id": "hu-symbol",
@@ -4635,16 +4977,25 @@
       "riskNote": "던스리버 폭포는 폭포 혼동군(zm·hr·cm·ve·la·gh·ao)이나 결정 A에 따라 그리되 '넓적한 계단 바위를 밟고 내려와 그대로 바다로 이어지는 낮고 넓은 폭포'로 못박고 quiz.js에서 같은 판 배제 — cm 로베(절벽에서 부채처럼 직행)와 가장 가깝다. fact가 실존 인물(육상 선수)이라 음원 재사용이 불가해 새 음원이 필요하다. 예비2 블루마운틴 커피는 et 상징물과 겹쳐 비웠다",
       "confusionGroups": [],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 15698,
       "outputStem": "images/symbols/jm",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#jm-symbol"
     },
     {
       "id": "jm-landmark",
@@ -4667,16 +5018,25 @@
         "폭포"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 45816,
       "outputStem": "images/places/jm",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#jm-landmark"
     },
     {
       "id": "jo-symbol",
@@ -4982,16 +5342,25 @@
         "판다누스(형태로 4갈래로 가름)"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 18136,
       "outputStem": "images/symbols/ki",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#ki-symbol"
     },
     {
       "id": "ki-landmark",
@@ -5014,16 +5383,25 @@
         "바다 위 하얀 모래섬·환초"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 22390,
       "outputStem": "images/places/ki",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#ki-landmark"
     },
     {
       "id": "km-symbol",
@@ -5108,16 +5486,25 @@
         "붉은·분홍 꽃 클로즈업"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 46600,
       "outputStem": "images/symbols/kn",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#kn-symbol"
     },
     {
       "id": "kp-symbol",
@@ -5484,16 +5871,25 @@
         "앵무(dm만 상징물, 나머지는 예비 — 값 유지)"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 24378,
       "outputStem": "images/symbols/lc",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#lc-symbol"
     },
     {
       "id": "li-symbol",
@@ -6229,16 +6625,25 @@
         "판다누스(형태로 4갈래로 가름)"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 31838,
       "outputStem": "images/symbols/mh",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#mh-symbol"
     },
     {
       "id": "mk-symbol",
@@ -6792,16 +7197,25 @@
       "riskNote": "혼동 쌍 — 과테말라 티칼과 같은 마야 피라미드. 넓고 낮은 사각뿔 + 뻥 뚫린 초원이라는 점으로 분리할 것. 솜브레로·타코는 고정관념 위험이라 후보에서 아예 뺐음",
       "confusionGroups": [],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 32044,
       "outputStem": "images/symbols/mx",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#mx-symbol"
     },
     {
       "id": "mx-landmark",
@@ -6824,16 +7238,25 @@
         "피라미드·계단 신전"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 25348,
       "outputStem": "images/places/mx",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#mx-landmark"
     },
     {
       "id": "my-symbol",
@@ -7105,16 +7528,25 @@
         "하얀 꽃잎 꽃"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 17556,
       "outputStem": "images/symbols/ni",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#ni-symbol"
     },
     {
       "id": "ni-landmark",
@@ -7137,16 +7569,25 @@
         "화산·끓는 땅"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 20766,
       "outputStem": "images/places/ni",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#ni-landmark"
     },
     {
       "id": "nl-symbol",
@@ -7356,16 +7797,25 @@
         "야자나무·야자 열매 송이(ly↔sl은 미해소)"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 28016,
       "outputStem": "images/symbols/nr",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#nr-symbol"
     },
     {
       "id": "nr-landmark",
@@ -7389,16 +7839,25 @@
         "바다 위 하얀 모래섬·환초"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 28032,
       "outputStem": "images/places/nr",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#nr-landmark"
     },
     {
       "id": "nz-symbol",
@@ -7418,16 +7877,25 @@
       "riskNote": "4세에게 키위 새와 키위 과일이 헷갈린다 — 긴 부리와 털 같은 갈색 깃털을 크게 그려 과일과 확실히 갈라야 한다. 호빗 마을 세트는 영화 저작권 위험이라 제외",
       "confusionGroups": [],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 18024,
       "outputStem": "images/symbols/nz",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#nz-symbol"
     },
     {
       "id": "nz-landmark",
@@ -7451,16 +7919,25 @@
         "바늘·칼날 바위 숲(st·dj는 상징물 축 교차)"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 24152,
       "outputStem": "images/places/nz",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#nz-landmark"
     },
     {
       "id": "om-symbol",
@@ -7546,16 +8023,25 @@
         "알록달록 무늬 천·양탄자"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 33214,
       "outputStem": "images/symbols/pa",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#pa-symbol"
     },
     {
       "id": "pa-landmark",
@@ -7576,16 +8062,25 @@
       "riskNote": "'파나마모자'는 실제로 에콰도르에서 만드는 것이라 절대 쓰지 말 것 — 아이에게 틀린 1:1을 심는 대표적 함정. 예비 1번 하피독수리는 미국·멕시코 독수리와 3중복이라 승격 비권장",
       "confusionGroups": [],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 22028,
       "outputStem": "images/places/pa",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#pa-landmark"
     },
     {
       "id": "pe-symbol",
@@ -7607,16 +8102,25 @@
         "감자·감자 요리"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 26254,
       "outputStem": "images/symbols/pe",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#pe-symbol"
     },
     {
       "id": "pe-landmark",
@@ -7639,16 +8143,25 @@
         "피라미드·계단 신전"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 39700,
       "outputStem": "images/places/pe",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#pe-landmark"
     },
     {
       "id": "pg-symbol",
@@ -7670,16 +8183,25 @@
         "야자나무·야자 열매 송이(ly↔sl은 미해소)"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 19686,
       "outputStem": "images/symbols/pg",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#pg-symbol"
     },
     {
       "id": "ph-symbol",
@@ -7948,16 +8470,25 @@
       "riskNote": "달은 터키·파키스탄 등 초승달 국기 나라와 겹칠 수 있다 — 팔라우는 초승달이 아니라 꽉 찬 보름달이라는 점을 그림에서 분명히 할 것",
       "confusionGroups": [],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 13196,
       "outputStem": "images/symbols/pw",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#pw-symbol"
     },
     {
       "id": "pw-landmark",
@@ -7981,16 +8512,25 @@
         "색이 특이한 물·웅덩이"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 30484,
       "outputStem": "images/places/pw",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "금빛 해파리 7개와 호수 배경 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#pw-landmark"
     },
     {
       "id": "py-symbol",
@@ -8013,16 +8553,25 @@
         "줄 악기·관악기"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 60726,
       "outputStem": "images/symbols/py",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#py-symbol"
     },
     {
       "id": "qa-symbol",
@@ -8415,16 +8964,25 @@
         "조개·바다껍데기·돌 원반"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 26580,
       "outputStem": "images/symbols/sb",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#sb-symbol"
     },
     {
       "id": "sb-landmark",
@@ -8447,16 +9005,25 @@
         "바다 위 하얀 모래섬·환초"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 30492,
       "outputStem": "images/places/sb",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#sb-landmark"
     },
     {
       "id": "sc-symbol",
@@ -8982,9 +9549,9 @@
         "붉은·분홍 꽃 클로즈업"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 3,
+      "bytes": 24448,
       "outputStem": "images/symbols/sr",
       "curationNote": "꽃잎 4장을 선명하게 보이도록 두 번 교정. 최종 그림의 꽃송이 6개를 세어 문장에 반영; 생성 요청 7송이와 결과 차이는 실제 프롬프트에 보존.",
       "textReview": {
@@ -8992,7 +9559,16 @@
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "꽃잎을 4장으로 바로잡은 3차 그림. 최종 꽃송이는 6개로 명세에 반영."
+      },
+      "productionRecord": "docs/image-prompts/production.json#sr-symbol"
     },
     {
       "id": "ss-symbol",
@@ -9105,16 +9681,25 @@
       "riskNote": "산타아나는 화산 혼동군(cr·ni·cd·vu)이나 결정 A에 따라 그리되 '꼭대기 사발 안에 형광 청록빛 물이 고인 분화구 호수'를 못박고 quiz.js에서 같은 판 배제. 푸푸사는 멕시코 토르티야·타코와 혼동될 수 있으니 '두툼하고 속이 보이는 동그란 전병'으로 차별화할 것",
       "confusionGroups": [],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 25630,
       "outputStem": "images/symbols/sv",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#sv-symbol"
     },
     {
       "id": "sv-landmark",
@@ -9138,16 +9723,25 @@
         "색이 특이한 물·웅덩이"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 28970,
       "outputStem": "images/places/sv",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#sv-landmark"
     },
     {
       "id": "sy-symbol",
@@ -9578,16 +10172,25 @@
       "riskNote": "왕관은 영국·스웨덴·에스와티니 등 다른 왕국과 겹칠 위험이 크다 — 통가는 태평양에서 유일하게 왕이 다스리는 나라라는 점이 근거지만, 유럽 담당자와 최종 조정이 필요하다. 국기의 빨간 십자는 종교 상징이라 상징물로 쓰지 않았다",
       "confusionGroups": [],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 21158,
       "outputStem": "images/symbols/to",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#to-symbol"
     },
     {
       "id": "to-landmark",
@@ -9610,16 +10213,25 @@
         "바닷가 바위구멍·돌다리·블루홀"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 33034,
       "outputStem": "images/places/to",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "대표 분출구 5곳 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#to-landmark"
     },
     {
       "id": "tr-symbol",
@@ -9698,16 +10310,25 @@
       "riskNote": "명소 빈칸 유지 사유 1줄 기재(A3 문안)",
       "confusionGroups": [],
       "csvStatus": "fixed-r1",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 18272,
       "outputStem": "images/symbols/tt",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#tt-symbol"
     },
     {
       "id": "tv-symbol",
@@ -9731,16 +10352,25 @@
         "판다누스(형태로 4갈래로 가름)"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 18968,
       "outputStem": "images/symbols/tv",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#tv-symbol"
     },
     {
       "id": "tv-landmark",
@@ -9763,16 +10393,25 @@
         "바다 위 하얀 모래섬·환초"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 26826,
       "outputStem": "images/places/tv",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#tv-landmark"
     },
     {
       "id": "tz-symbol",
@@ -9978,16 +10617,25 @@
         "맹금·검은 큰 새(ae·ec·ph는 예비)"
       ],
       "csvStatus": "draft",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 14002,
       "outputStem": "images/symbols/us",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#us-symbol"
     },
     {
       "id": "us-landmark",
@@ -10008,16 +10656,25 @@
       "riskNote": "자유의 여신상은 조각가 바르톨디가 1904년 사망해 저작권 만료 — 규칙 4 통과. 수도(워싱턴 D.C.)가 아니지만 이번 설계는 수도 제약 없음. 상징물 독수리는 멕시코 국기 독수리와 충돌했고 멕시코를 제왕나비로 돌려 해소함. 캐나다와 나이아가라를 공유하므로 미국 카드에 폭포는 넣지 말 것",
       "confusionGroups": [],
       "csvStatus": "draft",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 15566,
       "outputStem": "images/places/us",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#us-landmark"
     },
     {
       "id": "uy-symbol",
@@ -10039,16 +10696,25 @@
         "광석·보석 원석 덩어리"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 13892,
       "outputStem": "images/symbols/uy",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#uy-symbol"
     },
     {
       "id": "uz-symbol",
@@ -10197,16 +10863,25 @@
         "빵·구운 밀가루 음식"
       ],
       "csvStatus": "fixed-r1",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 26900,
       "outputStem": "images/symbols/vc",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#vc-symbol"
     },
     {
       "id": "ve-symbol",
@@ -10228,16 +10903,25 @@
         "줄 악기·관악기"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 15094,
       "outputStem": "images/symbols/ve",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#ve-symbol"
     },
     {
       "id": "ve-landmark",
@@ -10261,16 +10945,25 @@
         "위가 평평한 탁자 바위산"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 38826,
       "outputStem": "images/places/ve",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#ve-landmark"
     },
     {
       "id": "vn-symbol",
@@ -10355,16 +11048,25 @@
         "야자나무·야자 열매 송이(ly↔sl은 미해소)"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 24244,
       "outputStem": "images/symbols/vu",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "엄니 안 고사리 잎 2개 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#vu-symbol"
     },
     {
       "id": "vu-landmark",
@@ -10387,16 +11089,25 @@
         "화산·끓는 땅"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 18948,
       "outputStem": "images/places/vu",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#vu-landmark"
     },
     {
       "id": "ws-symbol",
@@ -10419,16 +11130,25 @@
         "둥근 전통 가옥·흙집"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 27458,
       "outputStem": "images/symbols/ws",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "지붕 밑 기둥 8개 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#ws-symbol"
     },
     {
       "id": "ws-landmark",
@@ -10451,16 +11171,25 @@
         "바닷가 바위구멍·돌다리·블루홀"
       ],
       "csvStatus": "final",
-      "status": "agent-curated",
-      "tries": 0,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 1,
+      "bytes": 43878,
       "outputStem": "images/places/ws",
       "textReview": {
         "reviewer": "Codex",
         "method": "나라별 문장 작성 및 병렬 교차 검토",
         "humanApproval": false,
         "date": "2026-09-15"
-      }
+      },
+      "generatedAt": "2026-09-15",
+      "imageReview": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      },
+      "productionRecord": "docs/image-prompts/production.json#ws-landmark"
     },
     {
       "id": "ye-symbol",

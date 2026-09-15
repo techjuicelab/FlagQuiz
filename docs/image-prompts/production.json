@@ -1,0 +1,2388 @@
+{
+  "styleChoice": "b",
+  "tool": "builtin image_gen",
+  "modelVersion": null,
+  "humanApproval": false,
+  "reviewBoundary": "에이전트의 원본 및 최종 WebP 시각 검수. 실제 아이패드 확인은 별도.",
+  "items": [
+    {
+      "id": "ag-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/ag-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-0adb028f-b2fb-47d6-99cb-5a0deca2a2c2.png",
+      "sourceSha256": "25d7228a85ff74d112e2b326356b9915ffb1680d6b568d6941fc8f720c96968b",
+      "output": "images/symbols/ag.webp",
+      "outputSha256": "8b7dda4d7dc9975922781f63403612fc4fdcd1a7a90620a1afa342e906a0b501",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/ag-symbol-01.txt",
+          "sha256": "db3135c71524afa41c2ff1699438258ee15a488da7ca33fa7d548a64c8363154"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "ag-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/ag-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-dcf74e6d-8b34-4534-8b27-898ca709dbf6.png",
+      "sourceSha256": "d517ed3c3e7ef6f467cb4b614c85a7be5052e8f40c47dd10cb4f0083f1c88bbe",
+      "output": "images/places/ag.webp",
+      "outputSha256": "c7ce2e304fbad6a4f124c2211ca221dc015f16a6c46140fa6a6a284fe2c7b60e",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/ag-landmark-01.txt",
+          "sha256": "894e0574a5d22ad10b1e0fbe4a61f908c9e3ef9b1668f80fac9918b20957facc"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "ar-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/ar-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-8906f8a5-9074-47cd-b546-d4017a854fc0.png",
+      "sourceSha256": "5f441152c629b372e74b3ca9f2b4b92562897edbf0a744b198b3950e922dc361",
+      "output": "images/symbols/ar.webp",
+      "outputSha256": "6b39fe50acc3b90ba226f72d4249dc2ebe933ad53e44bd6c50174153b95ca6a1",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/ar-symbol-01.txt",
+          "sha256": "ca58f131c2d390678e78722920956e2a7bf35995415b5b1d34e89206c4a741c1"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "ar-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/ar-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-ee9e8009-5112-4835-bd9c-1d4c7c73ab5f.png",
+      "sourceSha256": "ae815e76f538e1c8dd18740e6349579b530fb3c2d414968c2e29dcb93665e3ed",
+      "output": "images/places/ar.webp",
+      "outputSha256": "95bf2b1cec33b68f8e2cad9b2e563fe582e58c9d2c22beab12df538cf4a0b551",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/ar-landmark-01.txt",
+          "sha256": "809fb2c1a81e6eccf5ac57c7fc770512f7e97f18bf9ce6459f53cfb9917cedd2"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "au-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/au-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-8221580c-ea8a-40f4-97b7-e3da26903e31.png",
+      "sourceSha256": "a5ae767b8f4a6840458b76eeb871ad9d43c98b17e18671dd8710edc6de347f07",
+      "output": "images/symbols/au.webp",
+      "outputSha256": "678906810fb7f3528292387542a1200d2e591bc525a3f374a3d59c10754d132f",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/au-symbol-01.txt",
+          "sha256": "44e5d081ad161a404c936e21394cb2f2ecff28280079dbf834a9d4c3dd4edc95"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "au-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/au-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-93548b98-af9b-4511-bbf5-8fc35bcbecc7.png",
+      "sourceSha256": "04e645cd52fd26c4584482d45683eec36bae69ff6cc5951a0491d6502fb7a4ff",
+      "output": "images/places/au.webp",
+      "outputSha256": "c6e7c1d73869686442ffc22ed8eadc2bd633479d9326b5c6e009e4f5219137a9",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/au-landmark-01.txt",
+          "sha256": "6bc6c83cf4bc824ec97b98409ac7f5023459541c1c8b4065421dcca497581a61"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "bb-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/bb-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-1b150b6a-af4d-4596-8d06-3230d2d8b2e1.png",
+      "sourceSha256": "54b43f3e142c181cde6d5d356eea6a40ad59be6137ac5bee738d0e8ad7932329",
+      "output": "images/symbols/bb.webp",
+      "outputSha256": "f227e705fbc8f8a9aebb7889c904f0cf6e004dd488c33386abf98ca11e6102fb",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/bb-symbol-01.txt",
+          "sha256": "f23fbe6c7c2549160da4a1f7c57e1f76457ac4e91876a2a48da0cd09489c51c1"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "bb-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/bb-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-65fd811f-9fe3-4ae2-80af-24ed119fa637.png",
+      "sourceSha256": "cfdff0c3c0ae128bd19eb40ecf85f03fd03d63fd34d956ae014d513bed68b5dc",
+      "output": "images/places/bb.webp",
+      "outputSha256": "8bcdf8ebe0eecfe550cbbb733326faaa3115eb778307d19cebc0ec1cacf886dd",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/bb-landmark-01.txt",
+          "sha256": "6b78e2c574430d922732caf0622f409784ee55582efe776b108f52caa2e94671"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "bo-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/bo-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-d9ffcbb1-e99b-414a-a27d-ee52bbae69df.png",
+      "sourceSha256": "ea2a2a0b5391fd5e54517b644dca387278560ad249534f2b7957cff2d3097e1e",
+      "output": "images/symbols/bo.webp",
+      "outputSha256": "5673f6e4ff4e42928df1e3e0fae6b943a0cb3e34fc2f89cffda41491f689e75e",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/bo-symbol-01.txt",
+          "sha256": "59cde11a9d32c62d312aa9fa768f1a7084163f47387d46c3f8b71f54eedb8f29"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "bo-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/bo-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-cb29e2ca-485d-4079-ada0-be187885adf5.png",
+      "sourceSha256": "20d5a262a5983c5e55440fd366b36e936ee1cf44aa5ec074acebf3661d74f596",
+      "output": "images/places/bo.webp",
+      "outputSha256": "8684d5f8c36cd7fb2d7f4b57763921ccfce87f9cbda220b839529f4c13976546",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/bo-landmark-01.txt",
+          "sha256": "9bd81d14aa68b0f26342d358400f6a5f6cc227539fa8c39d63914ee8054bcf44"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "br-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/br-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-b03e0b71-615b-4caa-b51f-4ce9049bf888.png",
+      "sourceSha256": "3f09471dde92fc61c8804a1c95b21566966c240f64873a2b15d52ccd6fd01d0d",
+      "output": "images/symbols/br.webp",
+      "outputSha256": "b967faa56769aeea190db5181f5cb5635c703d9d840fa1d92abbb7e4005a7dd6",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/br-symbol-01.txt",
+          "sha256": "ac6c6c3043c6178e7723b9662f30e08fc61693adb7f17f19dedd835be644c789"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "br-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/br-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-e3d8458e-be7c-4064-99ff-347b244296ee.png",
+      "sourceSha256": "824e81e3b356db2df3226d42e89141e60b02a1b9932417b274e90d696e890101",
+      "output": "images/places/br.webp",
+      "outputSha256": "5b2ad42786f73b56b4c52f2267882d8e2f0fad60edf16a07d08a7b976cd72492",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/br-landmark-01.txt",
+          "sha256": "2faf0b48d38c06291efc30675bf7d3839f4e57963a7e3e928ee3cf80659f40c2"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "bs-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/bs-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-4010223e-9478-4ed4-85ee-157933804976.png",
+      "sourceSha256": "69d691772befae1aa2b8e3b3acf1a8f983fe410c49bfbeaf56612f9d50737139",
+      "output": "images/symbols/bs.webp",
+      "outputSha256": "afebf2d7ba4020f066872dcdac35f84343894558273e2885cc357a538c34062b",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/bs-symbol-01.txt",
+          "sha256": "c42139f1240be73c66dbb3d957470971867fca29ebfebf4a06fbdc0db21fe3af"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "bz-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/bz-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-d094db1e-f196-40d2-b1a3-5a22c77ade34.png",
+      "sourceSha256": "1f9e98b188a099349fa69a817c500f16056491916801ce06ec082a51e1b829d3",
+      "output": "images/symbols/bz.webp",
+      "outputSha256": "2e072cdecb7ecc7f76fa23666fa196ea1d8140821fae16adb9103a37dc576a48",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/bz-symbol-01.txt",
+          "sha256": "8f7c4f49df79468462b399c96000305915812706dbe32d908a98d6d30a3e3afc"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "bz-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/bz-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-ec927f15-e385-4737-8ac7-d76314a3d86f.png",
+      "sourceSha256": "9bbd322771b99778597ba4b906f2085380c440100d7a6a71284b268d671fa452",
+      "output": "images/places/bz.webp",
+      "outputSha256": "00b2d6db34266acba9722ec60bfd0c4c5d36cf52158a340ac21a74420c3e71a5",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/bz-landmark-01.txt",
+          "sha256": "ebf5a0728a262496db207e9aea38595bb8affdc8a9c3aec4a321047b62451a16"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "ca-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/ca-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-3ef68394-de1e-46b6-aa33-52cbf0f3038c.png",
+      "sourceSha256": "06bfa6529527fcb885b74a03b635c2711057bbda1ddd736f0c654ebc18b9aaeb",
+      "output": "images/symbols/ca.webp",
+      "outputSha256": "1d4773f9d21be813995afca4bec4e091ba55846d36f0dfa11d1a6ce6c8c2471d",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/ca-symbol-01.txt",
+          "sha256": "bb3f7e7a6fd051b6080e0ccf4db893c9a42d96496530af66c1734dcff496fa12"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "ca-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/ca-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-a849daaf-ed4a-4509-b07b-ecfc043cde96.png",
+      "sourceSha256": "e803ce1c9c7f3d0ac8ead6f947c7fb34e971ebef6364f6fc1aceac9abfe8d596",
+      "output": "images/places/ca.webp",
+      "outputSha256": "8e261a91cfea407e0eb2650c56fbb24137086772a87072f1b98fa7fc72a1176f",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/ca-landmark-01.txt",
+          "sha256": "97b5aabd90d55e9ed98645d605e178ba6c46c89a9aae033673ffccb35068dcda"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "cl-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/cl-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-33a87acb-a079-4395-a2f0-0567b0761089.png",
+      "sourceSha256": "899f85ed8f46afa2ba25a17c815f3405719f8924b414dd7afe89f43df3d1e0cd",
+      "output": "images/symbols/cl.webp",
+      "outputSha256": "3f4f4ab9a9f36a5b4baebbd473be4e779632263df9d4483ca7f2495cb14924dd",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/cl-symbol-01.txt",
+          "sha256": "afb6d5d8ea47adde6ada05ab95484e30900e4803f0814262cae220bde71baba8"
+        },
+        {
+          "attempt": 2,
+          "path": "docs/image-prompts/generation-prompts/cl-symbol-02.txt",
+          "sha256": "6b8b015c4ffa1965ac54522203ea77806354fb59fcadeeb60b75ab8e76f0964c"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "잘린 줄기 끝을 복원한 2차 그림. 꽃과 잎 전체를 보존."
+      }
+    },
+    {
+      "id": "cl-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/cl-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-2612838d-42df-4d8a-827e-abb939566ddd.png",
+      "sourceSha256": "8e215fb69e7d51f1bbb62d6631b4ea0c58a4cc2134b83fba0dad1189ad59a2d3",
+      "output": "images/places/cl.webp",
+      "outputSha256": "5ccecdaa78c5facf47ba0abdc69c15e0fd8ac957119009da65d06741b03dbef2",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/cl-landmark-01.txt",
+          "sha256": "8231688d7bce4c066253c6ed97c3b73a7f1ef2f7f284de69e048ef0b705fcbba"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "co-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/co-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-49f7717a-85fc-4d58-bfb4-c41460210a7e.png",
+      "sourceSha256": "278b73e4b89da7648cd158e819557333a8f22f477e946656663a51d29838bd88",
+      "output": "images/symbols/co.webp",
+      "outputSha256": "42133164a745290176099f8f9d5b454d4f6f91a0b64a3b55f6f93e7b66021d63",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/co-symbol-01.txt",
+          "sha256": "10f43b715ed641dfad369d04e8a9b666bbaf104422503f70a56c0865f9fbb350"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "co-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/co-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-aa964e91-e4d2-4771-94b1-80d0e7982008.png",
+      "sourceSha256": "a0bef66a2c49bd159eb0c50042db6041b1ba2965ad8253b903602013bcbc9617",
+      "output": "images/places/co.webp",
+      "outputSha256": "af20bdb01617548d1b619ae340256558a3c3128b9d881eec9cce9d162d6356b2",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/co-landmark-01.txt",
+          "sha256": "18a1f5ca9198c0f3616fc89bbff07d8e07f9b0a96d51d32f15599422b1878b62"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "cr-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/cr-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-ab96273b-cc06-40c2-95ec-ec3179a92969.png",
+      "sourceSha256": "020be20a70b0b9625b1e9058845057fbb3b2655c356858832a875b112b0b5cda",
+      "output": "images/symbols/cr.webp",
+      "outputSha256": "02eb7ff7495e24b6c2ae70483310f24e3d9565c7457f4d138ab728da843e3745",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/cr-symbol-01.txt",
+          "sha256": "f29756b05ea38c53ed4ea78cf626e42614f20535228635dd3626e7073a18ed2f"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "cr-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/cr-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-97fe484a-26e2-4a76-9035-9915874210a3.png",
+      "sourceSha256": "1aad0dee263f6f2d9659e1f1a996ed58d1891b99aa893e02e749331e850ef26b",
+      "output": "images/places/cr.webp",
+      "outputSha256": "6cbb11203bb8c998cbcf2e51c04b1afcd2d2f37c2b8d4614ea650ef6413a883e",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/cr-landmark-01.txt",
+          "sha256": "c5af60fe39f306aa00847c49105a16c7586d10346c5eba44b2d02c33034c4f01"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "cu-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/cu-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-762d164b-3639-410c-b1e5-a5037b57e076.png",
+      "sourceSha256": "51cf1daf388742e270b7fdfba3e9c8b703db807e8d8eba0fa85a4727504c7065",
+      "output": "images/symbols/cu.webp",
+      "outputSha256": "91af74676cfe77a5a2139c6f341b4e42578001ba4cd7d32c6d9ab9a478227c16",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/cu-symbol-01.txt",
+          "sha256": "01ea16f9ffc4706b1416df9354faadb7bf752259e6536ac4f8998c0429730110"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "dm-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/dm-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-0b05ddfc-95fb-4826-ba5a-f31522b059ac.png",
+      "sourceSha256": "3573527cfa91bbf164151e7a6b3b7df5becc8eb0def993254fff5caf262beade",
+      "output": "images/symbols/dm.webp",
+      "outputSha256": "8ba882ee7b6123fa8a4fa5ad46db60b5e8ee7e9b10c00c5b5ddd95a478735b0b",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/dm-symbol-01.txt",
+          "sha256": "69ac9f0a1b6403470ebce52faf5f99e6f5b195e6b9089072fdb6cd00993769b3"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "dm-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/dm-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-4effa4ab-bbbe-4934-8073-0e93e661a64a.png",
+      "sourceSha256": "67995c891afeba6f911608416c976fc85600019a189df2472d6d4ce0aa0c372b",
+      "output": "images/places/dm.webp",
+      "outputSha256": "4e79e1ef19267f12189b7d52b0a9ab425bf1cfbb6f6a3451bbc163c927478fc4",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/dm-landmark-01.txt",
+          "sha256": "d4bba7e306c281b0e81d4e9bd04d56aff64288f92af2d8b22977e8673aff57d5"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "do-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/do-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-0438bdea-20ca-4579-bd44-dacf86785ff7.png",
+      "sourceSha256": "c7b8c2da575806fd2c8c14fb5b04d26fafaa5df3f025004a6052728683965965",
+      "output": "images/symbols/do.webp",
+      "outputSha256": "d8b34c77718490ba2494a552ef1061ba870b231d0469250d7b0b16d467865f64",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/do-symbol-01.txt",
+          "sha256": "3d5ecaec0c92a8ed799a5550c09f774b65ce6ba94dd422f92d34655a1b8dd580"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "ec-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/ec-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-a7c19f01-f547-451b-8689-9f3c582a988d.png",
+      "sourceSha256": "25f781a4c0e4c989dc772322737f27c2eb372c4eb76ceae0aeff527ef2f70611",
+      "output": "images/symbols/ec.webp",
+      "outputSha256": "b008a27c122a6545071062f382d08a3ada4be71f939265deed449b06ea1f9d1b",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/ec-symbol-01.txt",
+          "sha256": "61edec40b49047197f13da9ed923aba525d303dc2dd8fdea929d62660c641624"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "fj-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/fj-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-97eddcb6-ac3a-46c3-86a6-5e3f02b5dc43.png",
+      "sourceSha256": "0190e3adb55ef195a6e1e875bddaf7c6e94cdcb25d77d9d93fa5be1315e343b8",
+      "output": "images/symbols/fj.webp",
+      "outputSha256": "b3ab89c2027aa6639603104a702b57437c90da18c3e393a62308861560704f4f",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/fj-symbol-01.txt",
+          "sha256": "780be4ecc300676e80c462f56af4ca709dc9b5701b92c3705099d32cc1341519"
+        },
+        {
+          "attempt": 2,
+          "path": "docs/image-prompts/generation-prompts/fj-symbol-02.txt",
+          "sha256": "598052c76a63e260e35ec9324cfbbf35d184d9bf07f3b2b6fed7fd400b43c0af"
+        },
+        {
+          "attempt": 3,
+          "path": "docs/image-prompts/generation-prompts/fj-symbol-03.txt",
+          "sha256": "d266603a972a5402071eacf49b8489ed01213d8215541c0242109fe22ebd9c63"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "3차 그림에서 바나나 6개와 분리된 끝 6개 확인."
+      }
+    },
+    {
+      "id": "fm-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/fm-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-76ae19c0-08ae-48f3-924c-d9c055bf081f.png",
+      "sourceSha256": "ee037685a5f3d1cabe81e537ec026823ef092238c3bc4d4d473a23ddc35bbfae",
+      "output": "images/symbols/fm.webp",
+      "outputSha256": "7d56f917b99d177a52691bedb4f0b2c5e0438157980a4f3399bd4b88f52e7756",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/fm-symbol-01.txt",
+          "sha256": "14a277ab5415eaeedaa9bdc5df216cc5bab43ce1c921e8be7f68ccb0ce2444aa"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "사람보다 큰 돌돈의 크기 비교용 인물은 뒷모습만 표시."
+      }
+    },
+    {
+      "id": "fm-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/fm-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-a0a06981-a3c4-4a8b-9eb1-8c989b35b122.png",
+      "sourceSha256": "f3598235bfa16b4d49c9a9aa83cb72b8d7d57cf6ef8c7c1ab65f515bf526b2b5",
+      "output": "images/places/fm.webp",
+      "outputSha256": "c50799bfe5b75cdd9e702878fa422a4fce39fdfcb15285f35e6708aa5ad4890e",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/fm-landmark-01.txt",
+          "sha256": "bc778fe126d4e9b05df9fd092c810e58181cd52ac8617caea86c4bbc1a2689ff"
+        },
+        {
+          "attempt": 2,
+          "path": "docs/image-prompts/generation-prompts/fm-landmark-02.txt",
+          "sha256": "c85f9e68d34637858e3188b2dd7a4f633212bb6450478ab2c4ae7bf3ecab81b3"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "2차 그림에서 일반 벽돌 대신 수평 현무암 기둥이 교차하는 벽 확인."
+      }
+    },
+    {
+      "id": "gd-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/gd-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-30f5e05a-2d78-4ca2-9f50-2b68a01976f3.png",
+      "sourceSha256": "dd2140d3e1f8db0824129b853e59bb5c807aa214d23ab338bdfa7da6c4b69f8f",
+      "output": "images/symbols/gd.webp",
+      "outputSha256": "7a7ebef89f694b4b6f57ef87e9565039901a7d4cb5e7140a48cfc18ced62d3be",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/gd-symbol-01.txt",
+          "sha256": "6f6501db587f841eac11722476851172b29664006adb926203a147d80ccd8860"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "gt-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/gt-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-27065d12-4abc-48ce-88f8-821ee25eb432.png",
+      "sourceSha256": "c64e6943c1ab745154f04b70d89926a6b3949eced9558ac9e800270b9efa5ebd",
+      "output": "images/symbols/gt.webp",
+      "outputSha256": "38fc654c8e92379f64968a58b84b639dd9c309e7a57e83edb079005b16ce39e7",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/gt-symbol-01.txt",
+          "sha256": "ccf74f236c4f592ae95cd08d3053383b273e95d10651dfdb40d5c793669f2d1e"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "gt-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/gt-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-79569eb7-9871-47ab-86c5-f763f1c7b6d1.png",
+      "sourceSha256": "1897daab74ebd0fe15a4b66028b55a32a31a7917c57b6fa95a126169770f74c7",
+      "output": "images/places/gt.webp",
+      "outputSha256": "cca7bf1383eb6a9ab52d39dd31452b8dc58ac832ae8ad3382c41c2d532107e11",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/gt-landmark-01.txt",
+          "sha256": "9d9b6ec0ea8df917bd85ae1306c628c7f5cadaf811d9a15d662bd78953c21469"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "gy-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/gy-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-d243a013-bc23-4aa0-b7de-7395f0f1d884.png",
+      "sourceSha256": "26cd65e32b534d5ecc4b874e53d260f11f0b2c4fced7b8fbaa998f5060525732",
+      "output": "images/symbols/gy.webp",
+      "outputSha256": "a3d080684316452047d0be3a0a2338b1988d3bea0706a30eb84de8f16d74651b",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/gy-symbol-01.txt",
+          "sha256": "0aa0ed23395d0fa5187044a3db618c2dc4948817d72143d17f7276bd185c1974"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "hn-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/hn-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-a41bc27d-66f3-4473-bb9f-a43b1c37279e.png",
+      "sourceSha256": "b845b084514d21a779dce882fcdf0c36052b9f75bc9358ecebb3b7becd707bc2",
+      "output": "images/symbols/hn.webp",
+      "outputSha256": "1314b956c38016184d9d842da71ae21df1ea5fd16f5ed351e3bbb4b027382504",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/hn-symbol-01.txt",
+          "sha256": "ecbeec9ed3af9d19edf3b589469b91263a04695980a2ec694b6ebda456ea13b0"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "hn-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/hn-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-126654e3-c078-4fdc-95cd-63f0e489ee10.png",
+      "sourceSha256": "915a06d28f3081b99595d33d8c6c53c561e56812d3f5ae02a81ddf7186808434",
+      "output": "images/places/hn.webp",
+      "outputSha256": "d686b0f7b6e58fe08cf5b96d6f395d545fd94dcbbaab7ee9019dd71a63740ddc",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/hn-landmark-01.txt",
+          "sha256": "21bd03ff265bfd15506b8b1619b7bec28366bf37bffa58955150c4b75bfd58e3"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원래 소재에 있는 고대 석비 부조는 유지. 살아 있는 인물 묘사와 구분."
+      }
+    },
+    {
+      "id": "ht-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/ht-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-2d064918-e98b-4c40-aeba-e821581e7e1d.png",
+      "sourceSha256": "bc7d08a3e86290c08ac3c2191556768aadd4603ba23111754959fdd4c7f6bfe8",
+      "output": "images/symbols/ht.webp",
+      "outputSha256": "8d84eca455bac5cba8bef63540cbd33d6f5f7d6bed3aaace705becbd491a0b3b",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/ht-symbol-01.txt",
+          "sha256": "dcfe03cc71c96ed3c8ce9c6d56092a2f21d642062088e44c4b817a0cc8fb34c3"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "jm-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/jm-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-676a8deb-5179-4e74-b9ba-8307d8a3926c.png",
+      "sourceSha256": "9dbc882110cd25b24edf6d77d5799a83d5155bb8f65234d7e64e41bf42675d9a",
+      "output": "images/symbols/jm.webp",
+      "outputSha256": "bc8669a4b476f73a01664b756cf6edbcce7c991b2b9114fab5f8f3a029da0140",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/jm-symbol-01.txt",
+          "sha256": "c2956e81b3bb46625f665df88d98076d69f26eec2386589981888fc80b6dcaae"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "jm-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/jm-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-274fe7bc-40bb-4296-8f76-9ad51e32209b.png",
+      "sourceSha256": "5b545b0628c79e4b8a54838bd01bf96484f895552c7ca8188de247a58a6213aa",
+      "output": "images/places/jm.webp",
+      "outputSha256": "a2ebcc7cfd0d492f9b65f9c4b655756f0ae14e763ac687dfa42ac1ef11126e60",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/jm-landmark-01.txt",
+          "sha256": "1cd4c80395b7f17f5066f23d58869826081c5f1d8026837ad7ab2f969952f4ec"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "ki-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/ki-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-cd4651a0-e25a-4053-89ce-1c9197025539.png",
+      "sourceSha256": "46183a7cbb1c7478413dc4c465f62faa8135103871fff29d57a9b9ce33469332",
+      "output": "images/symbols/ki.webp",
+      "outputSha256": "fe06618596d110508f89c21d36b44de3d46b6b0424dbd49ed92bae76dc7a9863",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/ki-symbol-01.txt",
+          "sha256": "af4a0515ebe09549b9d34a92e6a52d699536b52fc7514a3797dd153f9737a887"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "ki-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/ki-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-873ae4ce-22f8-4d0a-b214-3224c128c601.png",
+      "sourceSha256": "f65e929c63b6d13160df7d3d1a5313e0378e3fd7a6dbfd4f7cf0c189ede34372",
+      "output": "images/places/ki.webp",
+      "outputSha256": "d98971248ba8ee01b94b81b810f1b788e24af1444edf3c0bf9bb41e7939068c8",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/ki-landmark-01.txt",
+          "sha256": "574a9c6b86ed69ef3841b1080f5e94da4e9c9af2fe9ce56ee8835a9bf6a65a13"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "kn-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/kn-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-f65cfafb-b8e7-4d7a-92d9-c043913ce79e.png",
+      "sourceSha256": "8c64ae0239e89d5e9c7a3f6fd287480ac956547b9c5f3e152a6da2bf19131d3b",
+      "output": "images/symbols/kn.webp",
+      "outputSha256": "d625d064e9b91666c0ce7c9c193400ed3aab4892f429aee194332ce790a256d1",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/kn-symbol-01.txt",
+          "sha256": "b081f823f3e011eb6def13b12eeccfa6b0a582b7ffd865bd69edf52b36e1acf8"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "lc-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/lc-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-4720219c-d1fe-414c-a5bc-d17ce2d87e4c.png",
+      "sourceSha256": "8d8c6e94af04bde1da43020962e0ca5f24ae864083cc98e9b92fad194f08219d",
+      "output": "images/symbols/lc.webp",
+      "outputSha256": "3b48966c33af5922c8d156fbc2c14e4b0582ade93b9aeb0d60efe1b1e46524c1",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/lc-symbol-01.txt",
+          "sha256": "606f3206679a48728d872db83b989b337820f544a92d3ae87b3aa3e7af7fe2ed"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "mh-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/mh-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-b3a10338-45aa-4b0f-a484-3ecfd9673459.png",
+      "sourceSha256": "f266654a49120dfc1596bc52a0f411bb1871560fe1a4cef61c3a24aeb7ad92a7",
+      "output": "images/symbols/mh.webp",
+      "outputSha256": "7b906a87fcd7aa7766b390fa24c62d074932fb6114cdbd0584c3e7de97532532",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/mh-symbol-01.txt",
+          "sha256": "d1906c48b372d6f4047fde7a79532dd1163a96aef9b634427f4972e557294124"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "mx-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/mx-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-ff6a2b9a-52d1-4d30-ad52-ee4350575dc9.png",
+      "sourceSha256": "ce5e8c24d32c2b5cdd51f8f464c801e73188795bb4ed7dc379776d3e9cc97cb4",
+      "output": "images/symbols/mx.webp",
+      "outputSha256": "7fd882bd9c52ce4f16c0905a33a6bb67a5adfbe122e8bc2cde8bb0e440d0959e",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/mx-symbol-01.txt",
+          "sha256": "df3c8570b35bb9e54369c006511d14309f5d2f686a59761a562fd8fc21ec6625"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "mx-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/mx-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-c10f9c49-7155-43e0-a600-91d073bfa67d.png",
+      "sourceSha256": "e1fb99a3cac1b2d50138c24838bbebb234fd252631de3447048adb37f71117cd",
+      "output": "images/places/mx.webp",
+      "outputSha256": "716e546731012a73d6ab8ef73a297664c6b513377da5b430435aaa70ccf028d2",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/mx-landmark-01.txt",
+          "sha256": "79f39c388892f1ee6d8dc315ab4e2b0b138fd3a6471224771774ec1b8870df3a"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "ni-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/ni-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-5c3d5010-428a-4498-afa0-857b1e1e0321.png",
+      "sourceSha256": "24f72bd59c9ae8b2af1c0fc943f8eee8a1a6c13f4fbd5c363e82b41c7b4cdabc",
+      "output": "images/symbols/ni.webp",
+      "outputSha256": "a46c225f4853f4ce23a90abb3d0bd2f2e744feb518380e18ed3066780f18e4b2",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/ni-symbol-01.txt",
+          "sha256": "eaa36444979f5803c488b2778fea5ad8571bc85c308e57a9de7fd630aeed5e09"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "ni-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/ni-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-92b63461-e9b0-45a8-aca5-7c25da5f9e7e.png",
+      "sourceSha256": "012a2414298b83da625a1a1a48348c5040f03b67bce9c114ca34d638baa17631",
+      "output": "images/places/ni.webp",
+      "outputSha256": "e6a16129a0f1de44ffe53e25202fa546b288a8d0e2ba16f44d0a51406a0baf6e",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/ni-landmark-01.txt",
+          "sha256": "5e4598e94a29c9d7d13686e31ee416be43a2da470d0d09ab72b1132cb2b1c271"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "nr-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/nr-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-532a3383-8e92-49f8-87b2-7cc51a86aaa3.png",
+      "sourceSha256": "d990c0b585e088136df75b14cfea4b68be19565bb3784a1ce5c6e9ba67642893",
+      "output": "images/symbols/nr.webp",
+      "outputSha256": "06a9b7931f15f94b3ec3f64b81142d5374699de9a6c50abb5490f90ba5db5e1a",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/nr-symbol-01.txt",
+          "sha256": "79a338aa2eb7e8a16fb6b09728084499aa0132aa8b968d12bbd9af496d500a10"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "nr-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/nr-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-a6eeb0c8-a66c-4a70-be69-a371dc39d7cd.png",
+      "sourceSha256": "00ff4f7bf3b4a25b834d921eadaa453d1008767ad5d4481ed91cbb8920caea80",
+      "output": "images/places/nr.webp",
+      "outputSha256": "ce4e2c134616a171a614ba9e8d5f1de412c3d9ad083ad65aec461ac8536cc897",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/nr-landmark-01.txt",
+          "sha256": "9ba3bd5433568496900ea7c189bbf380c348cd737e8da5b39c368065b7e6b5d3"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "nz-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/nz-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-d2056f93-6568-41b1-a9eb-e13253c881ce.png",
+      "sourceSha256": "57e605d7f25bc03bb56b183fd5396cb760e6c2642781da0d7405d7a3b305b931",
+      "output": "images/symbols/nz.webp",
+      "outputSha256": "e0c50e7c0f81b336c5b11d3561f9ecbb78a7baab3947f140bb82deaf714ae348",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/nz-symbol-01.txt",
+          "sha256": "db5d839e33bbc160b9c74d973e9227b1245109411a74e28313d962326fcac0e1"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "nz-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/nz-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-b72e99eb-d47f-4840-bd35-dfdb91a3b502.png",
+      "sourceSha256": "7e1b649adeaa023629033ac4e33940eb3aae66e3b1111bf2145f0f50d3f3b99f",
+      "output": "images/places/nz.webp",
+      "outputSha256": "fe3af2a518189c2074601d567dcc1aed30cf01430977737539598bdea25ecca7",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/nz-landmark-01.txt",
+          "sha256": "f7e66a9bccf458ac2d5b7fc68f68345fbaf0e5ab4b2334421309b240f61536fb"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "pa-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/pa-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-5cdce6ca-6a9c-4fa8-b6f5-614638e7920f.png",
+      "sourceSha256": "27b28a90562dbf532061e3a946a6083aa8ff598a8c7aa9950b85e43c43501bea",
+      "output": "images/symbols/pa.webp",
+      "outputSha256": "8091e1183e365a95fc562fdab7ba222190acfc6f033a293df4856c155d026ed1",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/pa-symbol-01.txt",
+          "sha256": "04b4fa838e9ea16bf5ce99f8dd7e98605e8e69419e932d354ecf9d481bbb8ece"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "pa-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/pa-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-60e1a34b-0893-4819-bb1c-f1775241c6f8.png",
+      "sourceSha256": "030b755a35300d364b58cd1ec5ef098ef845fa35b6d5f877f18a4364fa40eb4a",
+      "output": "images/places/pa.webp",
+      "outputSha256": "e87b389d0a8a38c5782c569f2338ec8779789953f85905d3430883d882d86f31",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/pa-landmark-01.txt",
+          "sha256": "9d1ec441142535d33964d9836c6536d8a5b53d2d77482bf88ebbdbeba3468e18"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "pe-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/pe-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-c94a9be0-1f4d-4d72-82bf-6adcf143fbda.png",
+      "sourceSha256": "35d8c4907b997a610e4df32c47f760b6c725ab0be5c0fd559eb6f95f735763fe",
+      "output": "images/symbols/pe.webp",
+      "outputSha256": "45f61665420864ef11bc538def4ba59fd6ff6d66ca753ad314cda8b0c707ade0",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/pe-symbol-01.txt",
+          "sha256": "d454f1ade6a623f325d215e969dd4804864c128169ae9c4ebdcaf753a6e86a7d"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "pe-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/pe-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-151c63dc-4680-4b12-b026-c88687e019d4.png",
+      "sourceSha256": "cdcc26065cdac8af8b830b12349b4a979bbf5f0cd6b89bf75d1e61a0cd9c0a2d",
+      "output": "images/places/pe.webp",
+      "outputSha256": "604730782e261a832cad14bf48c079fa27b36b9761795b8258a7823eadb11e2a",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/pe-landmark-01.txt",
+          "sha256": "2f190c1459164c9f6400df6f9f9c54e3e87c40e2fadd87c9f0175b4239b30ff1"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "pg-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/pg-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-8e239823-8042-454a-a8d2-8357441a91e9.png",
+      "sourceSha256": "8bc7194f094136e3a0de2ee5f3f96a848a17e7cfd000d9c44fea6cf94a0a555c",
+      "output": "images/symbols/pg.webp",
+      "outputSha256": "75a837ed4016bce718492fa6f7555d8b1ebd6ab6da73b13d747b94408daa2da3",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/pg-symbol-01.txt",
+          "sha256": "9289fcb88e7949ecfbd5a146d181e66288747edd1778c32409bc33a0ea6b76e1"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "pw-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/pw-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-98a11e7d-dea1-4b8a-803c-e38159ef57a1.png",
+      "sourceSha256": "5d1007e5b7c2001edcad752ef78030affeb254a9f1d5b8f155cd461f75c533eb",
+      "output": "images/symbols/pw.webp",
+      "outputSha256": "11f439aa753188bf4c923cedc4701392205c99320a9350c1f170797ad2ef4c82",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/pw-symbol-01.txt",
+          "sha256": "7c256584439c76d3b99957c7b1b9be08a3bc3998d2d56b940403cc9cd1513296"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "pw-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/pw-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-b41111cc-b7e7-4d77-965f-09afc3a80eb9.png",
+      "sourceSha256": "0520fa28e06081d7889f3905abab1086bc6e62dc5a166e690e95b1c1781d28e3",
+      "output": "images/places/pw.webp",
+      "outputSha256": "0855bbdc9c3ad183fa904d3b1a2f6e5548badb963dd2ac545b3c119d3400cfc2",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/pw-landmark-01.txt",
+          "sha256": "159ef4b32ed42b39b66cdb584531e63844bfb7c1985a53f0fbb8d3127ac8d633"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "금빛 해파리 7개와 호수 배경 확인."
+      }
+    },
+    {
+      "id": "py-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/py-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-f83b8ff3-9494-455b-9460-5246cc23b3cb.png",
+      "sourceSha256": "94fa9b03e4a90d984e8aed46fdd181123eaee7604336549bc7095b1d4cebd678",
+      "output": "images/symbols/py.webp",
+      "outputSha256": "21575cf25f33ccd57d765fa973a461166cdbbf527ec4aba4abdf3c9531811450",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/py-symbol-01.txt",
+          "sha256": "a8cb9b1ff0b6a52ea337c7d0ae923ec1b448ad7ecc81bced2e9c61aed2a42f64"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "sb-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/sb-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-b5ad9a86-d724-41c8-8133-57ebede93776.png",
+      "sourceSha256": "bea985be33a5b1c9571f6001635de169deb91eeaed7db305a964610212ce0fb8",
+      "output": "images/symbols/sb.webp",
+      "outputSha256": "ed0491db6aedd5af1715c02c6ffafa0e7efce1595e1ecbd37ffea2bd18d9cb25",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/sb-symbol-01.txt",
+          "sha256": "43a3130cfb5b678acd102ac7bd207529a187720ef4ccb59230d1c82beed1b7e6"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "sb-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/sb-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-f983859e-ee66-4ca6-a34b-3d52687d589b.png",
+      "sourceSha256": "91ccbb31320e67a1dd02cb3f8be44fb5e968f881d48ecb2647753037b59c80fd",
+      "output": "images/places/sb.webp",
+      "outputSha256": "cc1171ab3be68250860b9ae44a70489ddcceb7760f82f1d24d076c0bb0fa6052",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/sb-landmark-01.txt",
+          "sha256": "fbd079739de7a3c7fe05b8b4ec946578a38a6ebf6230e3b8c9a2f22647f20708"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "sr-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/sr-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-706bfe6b-443e-4326-ad57-ad960efd8ca1.png",
+      "sourceSha256": "b459db91268b181b068516907ed36c30d620023859c3621788439dabac15a516",
+      "output": "images/symbols/sr.webp",
+      "outputSha256": "051ad82ebe19bfb9d73b9c8e036fc698ac6d9443814eac292502345a0eeb8cd9",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/sr-symbol-01.txt",
+          "sha256": "ad6a8ff754ae24fa29e6101ee357a906e1cb2075e2891e34da40f28c185fcb22"
+        },
+        {
+          "attempt": 2,
+          "path": "docs/image-prompts/generation-prompts/sr-symbol-02.txt",
+          "sha256": "ad591f69bcb6dfc8d3b5adc98351e7ba4bb8b04830a4946295e1fa250ae4727c"
+        },
+        {
+          "attempt": 3,
+          "path": "docs/image-prompts/generation-prompts/sr-symbol-03.txt",
+          "sha256": "05a93f7ba90352a5f5bf96e682f6cdc9e53c6ed33196265c3a5e76605e0cf747"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "꽃잎을 4장으로 바로잡은 3차 그림. 최종 꽃송이는 6개로 명세에 반영."
+      }
+    },
+    {
+      "id": "sv-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/sv-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-a9c62c4b-64f0-424c-acbf-6574e8498c00.png",
+      "sourceSha256": "e6e18c7fdfacec822ca671ed5e49f02b33ec0d7592d03143d54915ddcb84b16c",
+      "output": "images/symbols/sv.webp",
+      "outputSha256": "584bad0e4ed4d8d0a1960bef413119ab9812ccbc29cea905c2a6157e03a0ab79",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/sv-symbol-01.txt",
+          "sha256": "9bbf67033b15bfa6e5a022c8d28ef2e27d674e9b45255b5c30230ab6d91b963a"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "sv-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/sv-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-53b9eee4-a680-4d0e-9b67-7a58f3d8c64a.png",
+      "sourceSha256": "4a27c12d0e866228ae800b4b8fa735e3d08f463f91fa1996f8ec5b4354fd0709",
+      "output": "images/places/sv.webp",
+      "outputSha256": "72e2871144cce8920a8c47270fe7bd0ba3d10d2d44acf5d6fd6300ef47dedff0",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/sv-landmark-01.txt",
+          "sha256": "56159146621170a5a52948ac11762b40eca00bd80fc5884d4c9a1ef759dafd90"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "to-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/to-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-b17bff6c-cad7-4315-9c58-d04a5a5473fc.png",
+      "sourceSha256": "0d1f79805ca81c9690fe4cbac0794d4948c96f49bfe43565e12eca9c5cd7730a",
+      "output": "images/symbols/to.webp",
+      "outputSha256": "36351c8fc1892d3fc7a996405b08219b02c2aa4154882732f89f80dd31146661",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/to-symbol-01.txt",
+          "sha256": "295bcc661c4ec5cd1610fcf7219e0898b6622ef2c485689a7c145468cf460f34"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "to-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/to-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-917e18b5-cf8a-4144-9558-c99c529acfb0.png",
+      "sourceSha256": "fbefd299ec0fa49ea0aa860142402593ef81bb2c90538f17ad16ac93d5bdcaea",
+      "output": "images/places/to.webp",
+      "outputSha256": "4ab169b0ca3a39bc6ac61c8e6399ac8ae92fdbb7448d858dc03378a57f17c1cd",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/to-landmark-01.txt",
+          "sha256": "8149aa2d96e0b16e1571cfcdbba322588d6748dd395e8e4509a29a254683add9"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "대표 분출구 5곳 확인."
+      }
+    },
+    {
+      "id": "tt-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/tt-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-a05da601-fa60-4b15-904a-8722e8f13d52.png",
+      "sourceSha256": "ddc7508e01a1324b56de1de9a90078a6f87cc6214a1dd67ad2bcfb2783ccb4e8",
+      "output": "images/symbols/tt.webp",
+      "outputSha256": "1246c9916a643f4a67eb1ab2a650382d375e7c42a36dd396d8723c31ecdd882d",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/tt-symbol-01.txt",
+          "sha256": "625f08bf2d32b2a6614925b3d6defe4c4ae331f207eb7b29c14323873f2b5e54"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "tv-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/tv-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-3d369605-7f7d-4a57-bd73-b4b4f965b12d.png",
+      "sourceSha256": "75947267d2cf08751d08d3a7c230583e12a7ee5d1719234571e2f707231dea38",
+      "output": "images/symbols/tv.webp",
+      "outputSha256": "d2c98a3bc0ac17a0714c080d720e647fe28b7dfaaf51b7dbcfde86358995a669",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/tv-symbol-01.txt",
+          "sha256": "4c303f018e13f318c8031264f625e2317ec8cbc967f82324be43e7ce82b99337"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "tv-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/tv-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-464b2911-ad53-428d-b16d-374a18f097a7.png",
+      "sourceSha256": "419c8fc5a234ac07445680643dd47123941c565307b7f3f0f5c0e6c88d6abe69",
+      "output": "images/places/tv.webp",
+      "outputSha256": "57eeac18ad7dbbb677d0a3076920fcf0b9fe79a1d5342fbd52c15367917d842d",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/tv-landmark-01.txt",
+          "sha256": "51efe31939c75b6799d6a04ab8c051b64de3c79df2912fae91837ff0eeb1200e"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "us-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/us-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-ff57ea77-acc8-4026-af16-dec57f1b137b.png",
+      "sourceSha256": "27e9559fcd6f8d69d411288defb277f9e44c9fbd60b3191acee4d97153151e68",
+      "output": "images/symbols/us.webp",
+      "outputSha256": "c4a2d336d24b1a4e1db9bc2120e193abd8335f5ee1b8c7dba618f43345016ba2",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/us-symbol-01.txt",
+          "sha256": "05c2d4d8197c9799ea0c6e01648584be2495604346a983eca63da4b178482196"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "us-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/us-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-3c2c46fa-257b-4e53-885d-aa869499aa44.png",
+      "sourceSha256": "045177ac1bd8b04676fda6c3cc47da34401790b1fca93f6db01a0fde84c233b8",
+      "output": "images/places/us.webp",
+      "outputSha256": "9d35f4d086c836c24b97d1b316836d89b56947286bf1c5acaa190f757b1fb976",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/us-landmark-01.txt",
+          "sha256": "2256e9fb27d75aca09aa01c5fe2158a1d062f386731ff2c2cc3f9feb4bd9b064"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "uy-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/uy-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-d2dcb71f-1482-4661-a605-979a26d3878e.png",
+      "sourceSha256": "94836a2cc31d60dad0ee9fd6b2d96065938b45969a131eee733232e7ee544d26",
+      "output": "images/symbols/uy.webp",
+      "outputSha256": "e0281e691007d2b6d53bea59616e81ca416d4e64ccecc07b28d3dab9ebcc7627",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/uy-symbol-01.txt",
+          "sha256": "9a3f8922b4fb79c98f4a826dfe6e9de95f66d100aec2fcd488b366411eb81137"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "vc-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/vc-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-1dce88b7-f8be-43ed-a08b-bf77422640b3.png",
+      "sourceSha256": "ef6afabd03ec6eead76a4d85ea53b930d01faa864e2b4e15d94ba68eddf06285",
+      "output": "images/symbols/vc.webp",
+      "outputSha256": "fe9276213ffb6c3385cd065521b337a53dc890f166345a1689686ba343ce93b9",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/vc-symbol-01.txt",
+          "sha256": "ec78e355630153d86b5d415f072709654e1d1422f77275099cf2d03094b0280e"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "ve-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/ve-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-73be8d81-31c5-4dea-b5a4-a8155c4674fb.png",
+      "sourceSha256": "86335cc77dc35e6fa48d5766ff2e019648720596450f716ea505fce5c4d5d9dd",
+      "output": "images/symbols/ve.webp",
+      "outputSha256": "d6980a9b977ccff5962821141d83af3b329c4ec8a3148369f34f4016aef34800",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/ve-symbol-01.txt",
+          "sha256": "88016bb30c1fab9a59a6127f9b87a3c6d3ac659e0cf91918c7cd232a16a3f6af"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "ve-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/ve-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-518b2c82-31d2-4f39-b744-cfe56e36f4c1.png",
+      "sourceSha256": "09dee79e6eeb6b31c37287a25752960e6de9c0ec9359fb02460ee8c5bd9b8282",
+      "output": "images/places/ve.webp",
+      "outputSha256": "ee72630646a315d253e2c62f064151226ab72707c367d52eb883ec5f3993cfff",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/ve-landmark-01.txt",
+          "sha256": "cb8589311fe72a6ec52e4bc524f972c2964504484481e522276e6d9f3b91ee74"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "vu-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/vu-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-4704382f-804f-4eaf-93db-c72944328003.png",
+      "sourceSha256": "ab6ca41dee0609ca5a1e8436ccb8bf7cf32bd0559cf89e5c7c32657631291f9b",
+      "output": "images/symbols/vu.webp",
+      "outputSha256": "4c6e749119926b55ef198787173f73a939c6373313573201fcd3707caf2e8d48",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/vu-symbol-01.txt",
+          "sha256": "c46984100b7e9b684e836588d41d920fb93ba4434bea288602a2b644b5d2a70d"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "엄니 안 고사리 잎 2개 확인."
+      }
+    },
+    {
+      "id": "vu-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/vu-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-db613683-db5d-45d5-86de-2b81945258ca.png",
+      "sourceSha256": "a46dd5b3ca2467527b268e908caa5dbc8bd76077a0847bb6994ef2addc0f270b",
+      "output": "images/places/vu.webp",
+      "outputSha256": "8a56cdb25d3a5fc5ab5bb441987047d858d1e36fe7217e737de18573a1d5a28c",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/vu-landmark-01.txt",
+          "sha256": "b4e000bc2eba07aa3bb04b1edf78e7a8880a98e37b06666cbd2811b0acb4d8ff"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    },
+    {
+      "id": "ws-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/ws-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-1f1f7002-68e9-4b0a-8e33-3184b8a81056.png",
+      "sourceSha256": "0ce1f36318c2a7ae9fded8753291cda7dd800a8395007e59f3bfe99be8502bc2",
+      "output": "images/symbols/ws.webp",
+      "outputSha256": "4f2b4dd7c8ff2ac6b22bc536c9a318ae3c4549dccfaa2a76398d569a42572db6",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/ws-symbol-01.txt",
+          "sha256": "20fcbc7f11e689d9cd90181a1ecd2fbaaba2a678194ece17c6932d08e4492213"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "지붕 밑 기둥 8개 확인."
+      }
+    },
+    {
+      "id": "ws-landmark",
+      "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/ws-landmark.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a3cb-6ee3-75c1-ae43-159f34d89724/exec-5f97827b-11c1-4b81-a6fd-f5504c45e122.png",
+      "sourceSha256": "9f41bc5e9f44a9a5a4fc0738ca4fcfaabec0d70cfddd54d0cbcd9a0a71cecc42",
+      "output": "images/places/ws.webp",
+      "outputSha256": "79c03ad493978490f685c9687df4a1a7e66fc7650b45da4b8e4565bd1fd6e18a",
+      "actualPrompts": [
+        {
+          "attempt": 1,
+          "path": "docs/image-prompts/generation-prompts/ws-landmark-01.txt",
+          "sha256": "bfc244f1f5d70428785b5e9aed5b545b471f32732d4445970101f7b8956649a9"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.12
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "원본과 축소 WebP의 소재 형태·잘림·금지 요소·여백 확인."
+      }
+    }
+  ]
+}
