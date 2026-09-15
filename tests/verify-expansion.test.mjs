@@ -63,6 +63,19 @@ test('금지6 검사는 이름·설명 버튼의 미등록 문구와 발화 제�
   assert.ok((await problems(verifyUiVoicePhrases, silent, ...assets)).some(message => /재생 문구가 없다/.test(message)));
 });
 
+test('금지6 검사는 모달을 여는 중의 미등록 자동 발화도 검사하고 무음 열기는 허용한다', async () => {
+  const assets = voiceAssets();
+  assert.deepEqual(await problems(verifyUiVoicePhrases, ui, ...assets), [], '모달 열기에 발화를 강제하지 않는다');
+  const known = replaceOnce(ui, 'function countryModal(country) {',
+    'function countryModal(country) { FQ.audio.say([country.ko]);');
+  assert.deepEqual(await problems(verifyUiVoicePhrases, known, ...assets), [], '기존 음원의 자동 발화는 금지하지 않는다');
+  for (const insertion of ['function countryModal(country) {', 'doc.body.appendChild(back);']) {
+    const unknown = replaceOnce(ui, insertion, insertion + " FQ.audio.say(['새 모달 안내 문구']);");
+    const failed = await problems(verifyUiVoicePhrases, unknown, ...assets);
+    assert.ok(failed.some(message => message.includes('기존 수아 음원에 없는 UI 문구') && message.includes('모달 열기')), failed.join('\n'));
+  }
+});
+
 test('확장 검사기는 헬퍼를 통한 실제 v4 음원 조회·저장과 활성화를 통과시킨다', async () => {
   assert.deepEqual(await problems(verifyAudioCache, sw), []);
   assert.deepEqual(await problems(verifyActivateKeepsAudio, sw), []);

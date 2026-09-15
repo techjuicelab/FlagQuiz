@@ -335,7 +335,7 @@ export async function verifyActivateKeepsAudio(t, src) {
   t.note('v4 수아·음악 바이트 보존, 음원 읽기·복사·삭제·다운로드 없음, 타 앱 캐시 보존을 실행 확인했다');
 }
 
-/** 실제 나라 모달의 두 버튼을 눌러 음원 목록에 없는 문구가 추가되지 않았는지 검사한다. */
+/** 실제 나라 모달을 열고 두 버튼을 눌러 음원 목록에 없는 문구가 추가되지 않았는지 검사한다. */
 export function verifyUiVoicePhrases(t, src, countries, manifest) {
   const sandbox = makeSandbox();
   let modal = null;
@@ -362,9 +362,20 @@ export function verifyUiVoicePhrases(t, src, countries, manifest) {
   t.ok(countries.length === 194, '음성 버튼 검사 대상이 194개국이 아니다', countries.length);
   t.ok(typeof sandbox.FQ.ui?.countryModal === 'function', '나라 모달을 실행할 수 없다');
   if (typeof sandbox.FQ.ui?.countryModal !== 'function') return;
+  function checkSpoken(start, label) {
+    const lines = spoken.slice(start).flat();
+    for (const line of lines) {
+      t.ok(typeof line === 'string' && Object.hasOwn(manifest.clips, line),
+        '기존 수아 음원에 없는 UI 문구', label + ': ' + JSON.stringify(line));
+    }
+    return lines;
+  }
   let buttons = 0;
   for (const country of countries) {
+    const opened = spoken.length;
     sandbox.FQ.ui.countryModal(country);
+    // 열기 자체는 무음이어도 정상이다. 자동 발화가 생기면 그 문구도 빠짐없이 대조한다.
+    checkSpoken(opened, country.code + ' 모달 열기');
     for (const attribute of ['data-speak', 'data-explain']) {
       const label = country.code + ' ' + attribute;
       t.ok(modal && new RegExp('\\b' + attribute + '\\b').test(modal.innerHTML), '나라 모달에 음성 버튼이 없다', label);
@@ -374,16 +385,12 @@ export function verifyUiVoicePhrases(t, src, countries, manifest) {
       const start = spoken.length;
       const target = { closest(selector) { return selector === '[' + attribute + ']' ? target : null; } };
       click({ target });
-      const lines = spoken.slice(start).flat();
+      const lines = checkSpoken(start, label);
       t.ok(lines.length > 0, '음성 버튼을 눌러도 재생 문구가 없다', label);
-      for (const line of lines) {
-        t.ok(typeof line === 'string' && Object.hasOwn(manifest.clips, line),
-          '기존 수아 음원에 없는 UI 문구', label + ': ' + JSON.stringify(line));
-      }
       buttons++;
     }
   }
-  t.note('194개국 이름·설명 버튼 ' + buttons + '회 실행: 실제 발화 문구를 기존 manifest와 대조했다');
+  t.note('194개국 모달 열기와 이름·설명 버튼 ' + buttons + '회 실행: 실제 발화 문구를 기존 manifest와 대조했다');
 }
 
 export function verifyMapTolerance(t, src, headers = {}) {
