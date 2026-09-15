@@ -98,6 +98,15 @@ test('최종 실루엣 게이트는 바다 핀과 면적 없는 M0 0Z를 거부�
   assert.throws(() => assertPinsOnLand({ zz: [0, 0] }, { viewBox: '0 0 2000 1000', d: 'M0 0Z' }), /실루엣 밖의 지도 핀: zz/);
 });
 
+test('buildLand는 원자료 내부 핀이 단순화 뒤 육지 밖으로 나가면 생성 자체를 거부한다', () => {
+  // 0.4도 높이의 좁은 돌출부는 0.5도 단순화에서 사라지지만 나머지 큰 링 면적은 남는다.
+  const feature = polygon('돌출부에 핀이 있는 나라', [
+    [0, 0], [4, 0], [4, 4], [2.2, 4], [2, 4.4], [1.8, 4], [0, 4], [0, 0]
+  ], [2, 4.3]);
+  assert.deepEqual(buildCoordinates(matched(feature)), { zz: [2, 4.3] }, '원자료 검증은 정상 통과해야 한다');
+  assert.throws(() => buildLand([feature], matched(feature), 0.5), /생성된 실루엣 밖의 지도 핀: zz/);
+});
+
 test('원자료가 없으면 ENOENT 대신 준비 명령을 알려준다', () => {
   const temporary = fs.mkdtempSync(path.join(os.tmpdir(), 'flagquiz-missing-map-'));
   try {
