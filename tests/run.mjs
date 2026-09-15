@@ -60,6 +60,8 @@ for (const file of ['js/util.js', 'js/storage.js', 'data/countries.js', 'data/ma
 
 /** 유엔 회원국 193 + 바티칸. 목록이 바뀌면 여기도 함께 고쳐야 한다. */
 const EXPECTED_COUNT = 194;
+// 국가로 볼지 견해가 갈리는 지역은 넣지 않기로 했다
+const DISPUTED = { tw: '대만', ps: '팔레스타인', xk: '코소보', eh: '서사하라', ck: '쿡제도', nu: '니우에' };
 
 const FQ = sandbox.FQ;
 const { util, quiz, storage } = FQ;
@@ -86,8 +88,6 @@ group('데이터 기본', () => {
   ok(Array.isArray(countries), '데이터가 배열이어야 함');
   ok(countries.length === EXPECTED_COUNT, EXPECTED_COUNT + '개국이어야 함', '실제 ' + countries.length);
 
-  // 국가로 볼지 견해가 갈리는 지역은 넣지 않기로 했다
-  const DISPUTED = { tw: '대만', ps: '팔레스타인', xk: '코소보', eh: '서사하라', ck: '쿡제도', nu: '니우에' };
   for (const [code, name] of Object.entries(DISPUTED)) {
     ok(!countries.some((c) => c.code === code), name + '(' + code + ') 은 넣지 않는다');
   }
@@ -121,6 +121,58 @@ group('국기 이미지 파일', () => {
   for (const f of files) {
     ok(codes.has(f.replace('.svg', '')), '쓰이지 않는 국기 파일이 없어야 함', f);
   }
+});
+
+group('지도 자료', () => {
+  const coords = FQ.mapCoords || {};
+  const codes = new Set(countries.map((c) => c.code));
+  ok(Object.keys(coords).length === EXPECTED_COUNT, '지도 좌표 수가 나라 수와 같아야 함', String(Object.keys(coords).length));
+  for (const c of countries) {
+    const point = coords[c.code];
+    ok(Object.hasOwn(coords, c.code), '지도 좌표 존재', c.code);
+    ok(Array.isArray(point) && point.length === 2, '지도 좌표는 [lng, lat] 배열이어야 함', c.code);
+    if (!Array.isArray(point) || point.length !== 2) continue;
+    const [lng, lat] = point;
+    ok(Number.isFinite(lng) && lng >= -180 && lng <= 180, '지도 경도 범위', c.code);
+    ok(Number.isFinite(lat) && lat >= -90 && lat <= 90, '지도 위도 범위', c.code);
+    ok(point.every((v) => Number.isFinite(v) && Number(v.toFixed(2)) === v), '지도 좌표는 소수 둘째 자리까지', c.code);
+  }
+  for (const code of Object.keys(coords)) {
+    ok(codes.has(code), '쓰이지 않는 지도 좌표가 없어야 함', code);
+  }
+  for (const [code, name] of Object.entries(DISPUTED)) {
+    ok(!Object.hasOwn(coords, code), name + '(' + code + ') 지도 좌표는 넣지 않는다');
+  }
+  const inside = (code, west, south, east, north) => {
+    const p = coords[code];
+    return Array.isArray(p) && p.length === 2 && p.every(Number.isFinite) &&
+      p[0] >= west && p[0] <= east && p[1] >= south && p[1] <= north;
+  };
+  ok(inside('kr', 124, 33, 132, 39), '한국 지도 좌표는 한반도 안에 있어야 함', 'kr');
+  ok(inside('au', 112, -44, 154, -10), '호주 지도 좌표는 남반구 본토에 있어야 함', 'au');
+  ok(inside('br', -74, -34, -34, 6), '브라질 지도 좌표는 남미 안에 있어야 함', 'br');
+  ok(inside('va', 12.4, 41.85, 12.5, 41.95), '바티칸 지도 좌표는 로마 안쪽이어야 함', 'va');
+  ok(inside('ru', 30, 50, 100, 72), '러시아 지도 좌표는 서쪽 본토에 있어야 함', 'ru');
+
+  const land = FQ.mapLand || {};
+  ok(land.viewBox === '0 0 2000 1000', '지도 viewBox는 2:1이어야 함');
+  ok(typeof land.d === 'string', '지도 육지는 SVG 경로 문자열이어야 함');
+  ok(typeof land.d === 'string' && land.d.length < 400000, '지도 육지 경로는 400000자 미만이어야 함');
+  ok(typeof land.d === 'string' && land.d.includes('M'), '지도 육지에는 닫힌 링의 시작점이 있어야 함');
+  ok(Object.keys(land).sort().join(',') === 'd,viewBox', '지도 육지에는 나라별 키가 없어야 함');
+
+  const build = fs.readFileSync(path.join(root, 'scripts/build-site.mjs'), 'utf8');
+  const sw = fs.readFileSync(path.join(root, 'sw.js'), 'utf8');
+  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  for (const file of ['data/map-coords.js', 'data/map-shapes.js']) {
+    ok(build.includes("'" + file + "'"), 'scripts/build-site.mjs: files 목록에 ' + file + '를 등록해야 함');
+    ok(sw.includes("'./" + file + "'"), 'sw.js: SHELL 목록에 ./' + file + '를 등록해야 함');
+    const tag = '<script src="' + file + '"></script>';
+    ok(html.includes(tag), 'index.html: ' + tag + '를 추가해야 함');
+    ok(html.indexOf(tag) > html.indexOf('<script src="data/countries.js"></script>') &&
+      html.indexOf(tag) < html.indexOf('<script src="js/progress.js"></script>'), 'index.html: ' + file + '는 countries 뒤, progress 앞에서 읽어야 함');
+  }
+  ok(sw.includes('flagquiz-v4'), '서비스워커 버전을 올리면 아이패드에 받아 둔 음원 캐시가 전부 삭제된다');
 });
 
 group('이름 충돌 (다른 나라와 헷갈리지 않기)', () => {
