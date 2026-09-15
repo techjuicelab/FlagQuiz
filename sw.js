@@ -138,6 +138,17 @@ function cacheFirst(req, name) {
   });
 }
 
+function cachedFlag(req) {
+  return cacheFirst(req, FLAG_CACHE)['catch'](function (error) {
+    // 이관 저장 실패로 v4에 남은 동일 국기를 오프라인 폴백으로 읽는다.
+    // 새 버킷·온라인 응답을 우선하며 음원·셸의 조회 규칙은 바꾸지 않는다.
+    return matchCache(AUDIO_CACHE, req).then(function (hit) {
+      if (hit && hit.ok) return hit;
+      throw error;
+    });
+  });
+}
+
 /** 전체 음원에서 브라우저가 요청한 구간을 잘라 준다(사파리의 첫 2바이트 탐색 포함). */
 function audioRange(req, res) {
   var range = req.headers.get('range');
@@ -201,7 +212,7 @@ self.addEventListener('fetch', function (event) {
 
   // 국기 이미지는 한 번 받으면 그대로 쓴다
   if (url.pathname.indexOf('/flags/') !== -1) {
-    event.respondWith(cacheFirst(req, FLAG_CACHE));
+    event.respondWith(cachedFlag(req));
     return;
   }
 

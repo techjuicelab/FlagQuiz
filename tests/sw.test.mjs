@@ -367,6 +367,26 @@ test('국기는 지정한 버킷에만 저장하고 다음 오프라인 요청�
   assert.equal(fetched, 1);
 });
 
+test('오프라인 국기 폴백은 v4의 동일한 정상 국기만 읽고 다른 버킷은 사용하지 않는다', async () => {
+  for (const status of [200, 404, null]) {
+    const w = worker();
+    const flag = './flags/kr.svg';
+    for (const name of [SHELL, ART, 'another-app-v1']) w.seed(name, flag, new Response('wrong bucket'));
+    w.seed(AUDIO, './flags/jp.svg', new Response('different flag'));
+    if (status) w.seed(AUDIO, flag, new Response('legacy flag', { status }));
+    if (status === 200) {
+      const res = await request(w, flag);
+      assert.equal(res.status, 200);
+      assert.equal(await res.text(), 'legacy flag');
+    } else {
+      await assert.rejects(() => request(w, flag), /offline/);
+    }
+    assert.ok(w.matches.every(hit => hit.url === urlOf(flag) && [FLAGS, AUDIO].includes(hit.name)));
+    assert.deepEqual(w.puts, [], '오프라인 폴백은 기존 국기를 이동하거나 덮어쓰지 않는다.');
+    assert.deepEqual(w.deletedEntries, []);
+  }
+});
+
 test('국기 예열은 국기 버킷만 채우고 개별 다운로드 실패를 허용한다', async () => {
   const w = worker();
   const fetched = [];
@@ -583,6 +603,11 @@ test('국기 이관 저장 실패는 원본을 보존하고 이미 있는 새 �
     assert.equal(w.read(AUDIO, './index.html'), undefined);
     assert.equal(await w.read(AUDIO, voice).text(), 'voice bytes');
     assert.equal(await w.read(AUDIO, music).text(), 'music bytes');
+    const offline = await request(w, flag);
+    assert.equal(offline.status, 200, '이관 저장 실패 뒤에도 보존한 국기를 읽을 수 있다.');
+    assert.equal(await offline.text(), hasCurrentFlag ? 'current flag' : 'legacy flag');
+    assert.equal(fetched.filter(url => url.includes('/flags/')).length, hasCurrentFlag ? 0 : 1,
+      '새 국기 캐시가 비었을 때만 네트워크를 시도하고 실패하면 레거시 국기를 읽는다.');
     assert.ok(w.matches.every(match => !new URL(match.url).pathname.includes('/audio/')),
       '국기를 이관할 때 기존 음원 본문을 읽지 않는다.');
     assert.ok(w.puts.every(put => !new URL(urlOf(put.request)).pathname.includes('/audio/')));
