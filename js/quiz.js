@@ -13,8 +13,16 @@
     capital: { label: '수도 맞히기', kind: 'choice', hasOptions: true, axis: 'flag' },
     typing:  { label: '이름 써서 맞히기', kind: 'text', hasOptions: false, axis: 'flag' },
     voice:   { label: '말로 답하기', kind: 'text', hasOptions: false, axis: 'flag' },
-    map:     { label: '지도에서 나라 찾기', kind: 'choice', hasOptions: true, axis: 'map' }
+    map:     { label: '지도에서 나라 찾기', kind: 'choice', hasOptions: true, axis: 'map' },
+    symbol:  { label: '그림 보고 나라 고르기', kind: 'choice', hasOptions: true, axis: 'symbol' },
+    place:   { label: '명소 보고 나라 고르기', kind: 'choice', hasOptions: true, axis: 'place' }
   };
+
+  function availableMode(mode) {
+    if (!MODES[mode]) return 'choice4';
+    if ((mode === 'symbol' || mode === 'place') && (!FQ.features || !FQ.features.on('art'))) return 'choice4';
+    return mode;
+  }
 
   var LEVEL_LABEL = { 1: '쉬움', 2: '보통', 3: '어려움' };
 
@@ -377,7 +385,8 @@
       only: null
     }, config || {});
 
-    var axis = (MODES[cfg.mode] && MODES[cfg.mode].axis) || 'flag';
+    cfg.mode = availableMode(cfg.mode);
+    var axis = MODES[cfg.mode].axis;
     var source = pool({ level: cfg.level, continent: cfg.continent, only: cfg.only, axis: axis });
     if (source.length === 0) source = pool({ axis: axis });
 
@@ -508,6 +517,7 @@
 
   FQ.quiz = {
     MODES: MODES,
+    availableMode: availableMode,
     LEVEL_LABEL: LEVEL_LABEL,
     all: all,
     byCode: byCode,

@@ -1193,3 +1193,8 @@ button.cont-item:focus-visible { outline: 3px solid var(--accent); outline-offse
 .country-art { margin: 16px 0; overflow: hidden; border: 1px solid var(--line); border-radius: 18px; touch-action: manipulation; user-select: none; }
 .country-art img { display: block; width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: contain; background: #f1f5fb; }
 .country-art figcaption { padding: 10px 14px; text-align: center; font-weight: 700; background: var(--card-2); }
+.art-question { min-height: 0; padding: 16px; }
+.art-question > img { display: block; width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: contain; border-radius: 16px; background: #f1f5fb; }
+.art-question > img[hidden] { display: none; }
+.art-choice { display: flex; align-items: center; gap: 12px; }
+.art-choice img { width: 48px; height: 32px; object-fit: contain; flex-shrink: 0; }

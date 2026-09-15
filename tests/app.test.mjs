@@ -51,6 +51,9 @@ function fixture() {
         abort(){c.listening=false;},stopAnd(cb){c.listening=false;releases.push(cb);},isListening:()=>!!c.listening}
     }};
   c.window=c;vm.createContext(c);
+  const uiMock=c.FQ.ui;
+  vm.runInContext(fs.readFileSync(path.join(root,'js/ui.js'),'utf8'),c,{filename:'js/ui.js'});
+  Object.assign(c.FQ.ui,uiMock);
   for(const file of ['js/util.js','js/storage.js','js/features.js','data/countries.js', 'data/subjects.js', 'data/confusion-groups.js','data/map-coords.js','data/map-shapes.js','js/map.js','js/progress.js','js/quiz.js']) vm.runInContext(fs.readFileSync(path.join(root,file),'utf8'),c,{filename:file});
   // 제품 코드에는 테스트 전용 진입점을 추가하지 않고 VM 안에서만 내부 상태를 노출한다.
   const source=fs.readFileSync(path.join(root,'js/app.js'),'utf8').replace('FQ.app = { home:',
@@ -460,6 +463,43 @@ test('지도 핀 제출은 지도 기록만 쌓고 기존 국기 스티커와 �
     f.releases.at(-1)();f.finishMusic();
     assert.deepEqual(f.spoken.at(-1),[q.country.ko,q.country.fact]);
   }
+});
+
+test('그림 모드는 스위치가 꺼지면 저장된 선택도 국기 모드로 돌아간다',()=>{
+  for(const mode of ['symbol','place','unknown']) {
+    const f=fixture();f.c.FQ.storage.updateSettings({mode});f.c.FQ.app.home();
+    assert.equal(f.c.FQ.storage.settings().mode,'choice4');
+    assert.doesNotMatch(f.node('main').innerHTML,/data-mode="(?:symbol|place)"/);
+    f.c.FQ.storage.updateSettings({mode});f.c.FQ.app.startGame(['kr']);
+    assert.equal(f.c.FQ.test.state.game.current().mode,'choice4');
+  }
+});
+
+test('두 그림 퀴즈는 실제 그림 경로·4개 보기·별도 기록·기존 fact 음원을 사용한다',()=>{
+  for(const mode of ['symbol','place']) {
+    const f=fixture();f.c.FQ.storage.updateSettings({mode,dev:{art:true}});f.c.FQ.app.home();
+    assert.match(f.node('main').innerHTML,new RegExp('data-mode="'+mode+'"'));
+    f.c.FQ.app.startGame(['kr']);const a=f.c.FQ.test,q=a.state.game.current();
+    assert.match(f.node('main').innerHTML,new RegExp('images/'+(mode==='place'?'places':'symbols')+'/kr.webp'));
+    assert.equal((f.node('main').innerHTML.match(/class="answer-btn art-choice"/g)||[]).length,4);
+    const before=JSON.stringify(f.c.FQ.storage.daily());
+    a.submit({code:'kr'});f.releases.at(-1)();f.finishMusic();
+    assert.equal(f.c.FQ.storage.axisStat(mode,'kr').correct,1);
+    assert.equal(f.c.FQ.storage.countryStat('kr').correct,0);
+    assert.equal(JSON.stringify(f.c.FQ.storage.daily()),before);
+    assert.equal(a.state.newStickers.length,0);
+    assert.deepEqual(f.spoken.at(-1),[q.country.ko,q.country.fact]);
+  }
+});
+
+test('그림 다운로드 실패를 오답으로 기록하지 않고 다시 받은 뒤에만 제출한다',()=>{
+  const f=fixture();f.c.FQ.storage.updateSettings({mode:'symbol',dev:{art:true}});f.c.FQ.app.startGame(['kr']);
+  const a=f.c.FQ.test,img=f.node('#question-art');
+  img.handlers.error();a.submit({code:'kr'});a.submit({text:''},true);
+  assert.equal(f.c.FQ.storage.stats().asked,0);assert.equal(a.state.answered,false);
+  f.node('#art-retry').click();assert.equal(img.src,'images/symbols/kr.webp');
+  img.handlers.load();a.submit({code:'kr'});
+  assert.equal(f.c.FQ.storage.axisStat('symbol','kr').seen,1);
 });
 
 console.log('앱 흐름 회귀 검사 '+passed+'건 통과');

@@ -33,6 +33,23 @@ test('342개 그림 문제의 후보·폴백 모두 자료가 있고 혼동군�
   }
 });
 
+test('342개 실제 그림 게임이 해당 축으로 채점하며 빈 명소를 출제하지 않는다',()=>{
+  const f=load(),records=[];
+  f.features={on:()=>true};f.storage={recordAnswer:(...args)=>records.push(args)};
+  for(const axis of ['symbol','place']) for(const answer of f.quiz.pool({axis})) {
+    const g=f.quiz.createGame({mode:axis,only:[answer.code],count:1});
+    assert.equal(g.current().mode,axis);
+    assert.equal(g.current().country.code,answer.code);
+    assert.equal(g.current().options.length,4);
+    assert.ok(g.current().options.every(c=>f.subjects[c.code][axis]));
+    assert.equal(g.submit({code:answer.code}).correct,true);
+    assert.deepEqual(records.at(-1),[answer.code,true,axis]);
+  }
+  assert.equal(records.length,342);
+  const g=f.quiz.createGame({mode:'place',only:['ae'],count:3});
+  assert.ok(g.questions.every(q=>f.subjects[q.country.code].place));
+});
+
 test('혼동군은 교차축·다중군 합집합이며 첫 호출 뒤 캐시를 재사용한다', () => {
   const f = load();
   const set = f.quiz.confusionSet('dz');

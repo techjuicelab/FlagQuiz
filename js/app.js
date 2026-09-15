@@ -21,7 +21,9 @@
     { id: 'voice',   emo: '🎤', title: '말로 답하기', desc: '누르지 않고 바로 말하면 돼요' },
     { id: 'typing',  emo: '⌨️', title: '이름 써서 맞히기', desc: '글자로 입력해요' },
     { id: 'capital', emo: '🏙️', title: '수도 맞히기', desc: '나라의 수도를 골라요' },
-    { id: 'map', emo: '🗺️', title: '지도에서 나라 찾기', desc: '나라가 있는 위치 핀을 골라요' }
+    { id: 'map', emo: '🗺️', title: '지도에서 나라 찾기', desc: '나라가 있는 위치 핀을 골라요' },
+    { id: 'symbol', emo: '🎨', title: '그림 보고 나라 고르기', desc: '이 그림은 어느 나라의 친구일까요?' },
+    { id: 'place', emo: '🏞️', title: '명소 보고 나라 고르기', desc: '이 멋진 곳이 있는 나라를 골라요' }
   ];
 
   function totalCountries() { return quiz.all().length; }
@@ -112,6 +114,7 @@
     audio.stopSpeaking();
     state.game = null;
     var s = store.settings();
+    if (s.mode !== quiz.availableMode(s.mode)) s = store.updateSettings({ mode: quiz.availableMode(s.mode) });
     musicScreen('home');
     var wrongCount = store.wrongList().length;
     var duel = s.players.length > 1;
@@ -145,7 +148,7 @@
         '<div class="section">' +
           '<h3>어떻게 맞힐까요?</h3>' +
           '<div class="mode-grid">' +
-            MODE_CARDS.map(function (m) {
+            MODE_CARDS.filter(function (m) { return quiz.availableMode(m.id) === m.id; }).map(function (m) {
               return '<button class="mode-card" type="button" data-mode="' + m.id + '" aria-pressed="' + (s.mode === m.id ? 'true' : 'false') + '">' +
                 '<span class="emo" aria-hidden="true">' + m.emo + '</span>' +
                 '<span class="txt"><span class="t">' + esc(m.title) + '</span><span class="d">' + esc(m.desc) + '</span></span>' +
@@ -290,7 +293,7 @@
         var d = FQ.progress.daily();
         if (d.complete) { FQ.screens.dex(); return; }
         savePlayers(m);
-        store.updateSettings({ continent: d.continent });
+        store.updateSettings({ continent: d.continent, mode: 'choice4' });
         renderHome();
       });
     }
@@ -409,7 +412,8 @@
     stopListening();
     audio.stopSpeaking();
     var s = store.settings();
-    var reviewing = !!(onlyCodes && onlyCodes.length);
+    if (s.mode !== quiz.availableMode(s.mode)) s = store.updateSettings({ mode: quiz.availableMode(s.mode) });
+    var reviewing = !!(onlyCodes && onlyCodes.length && quiz.MODES[s.mode].axis === 'flag');
     state.review = reviewing
       ? { asked: Math.min(onlyCodes.length, 20), before: store.wrongList().length }
       : null;
@@ -441,6 +445,7 @@
     var g = state.game;
     if (!g || g.isOver()) return finishGame();
     state.answered = false;
+    state.artUnavailable = false;
     state.usedHint = false;
     state.removed = [];
     state.timedOut = false;
@@ -452,7 +457,13 @@
     var duel = g.players.length > 1;
 
     var stage;
-    if (q.mode === 'map') {
+    if (q.mode === 'symbol' || q.mode === 'place') {
+      var art = ui.artFor(q.country.code, q.mode);
+      stage = '<div class="flag-stage art-question"><div class="q-label">' +
+        (q.mode === 'place' ? '이 명소가 있는 나라는 어디일까요?' : '이 그림은 어느 나라를 떠올리게 하나요?') + '</div>' +
+        '<img id="question-art" src="' + esc(art.src) + '" alt="' + esc(art.alt) + '" width="1024" height="768">' +
+        '<div id="art-error" hidden><p>그림을 불러오지 못했어요.</p><button class="btn" id="art-retry" type="button">다시 불러오기</button></div></div>';
+    } else if (q.mode === 'map') {
       stage = '<div class="flag-stage map-question">' +
         '<div class="q-label">이 나라는 어디에 있을까요?</div>' +
         '<img class="map-question-flag" src="' + ui.flagSrc(q.country.code) + '" alt="' + esc(q.country.ko) + ' 국기">' +
@@ -580,6 +591,25 @@
     ui.$('#skip', m).addEventListener('click', function () { submit({ text: '' }, true); });
 
     bindAnswerArea(m, q);
+    var questionArt = ui.$('#question-art', m);
+    if ((q.mode === 'symbol' || q.mode === 'place') && questionArt) {
+      function artState(failed) {
+        if (state.game !== g || g.current() !== q || state.answered) return;
+        state.artUnavailable = failed;
+        ui.$('#art-error', m).hidden = !failed;
+        questionArt.hidden = failed;
+        ui.$$('.answer-btn', m).forEach(function (button) {
+          button.disabled = failed || state.removed.indexOf(button.getAttribute('data-code')) !== -1;
+        });
+        ui.$('#skip', m).disabled = failed;
+        ui.$('#hint', m).disabled = failed || state.usedHint;
+        if (failed) stopTimer();
+        else if (s.timer && !state.timerId) startTimer();
+      }
+      questionArt.addEventListener('error', function () { artState(true); });
+      questionArt.addEventListener('load', function () { artState(false); });
+      ui.$('#art-retry', m).addEventListener('click', function () { questionArt.src = art.src; });
+    }
     preloadNext();
     startTimer();
 
@@ -594,6 +624,12 @@
 
   function answerArea(q) {
     if (q.mode === 'map') return FQ.map.render(q.options);
+    if (q.mode === 'symbol' || q.mode === 'place') {
+      return '<div class="answer-grid">' + q.options.map(function (c) {
+        return '<button class="answer-btn art-choice" type="button" data-code="' + c.code + '">' +
+          '<img src="' + ui.flagSrc(c.code) + '" alt="" width="48" height="32"><span>' + esc(c.ko) + '</span></button>';
+      }).join('') + '</div>';
+    }
     if (q.mode === 'choice4') {
       return '<div class="answer-grid">' + q.options.map(function (c, i) {
         return '<button class="answer-btn" type="button" data-code="' + c.code + '">' +
@@ -853,12 +889,15 @@
 
   /* --------- 힌트 --------- */
   function showHint() {
-    if (state.answered) return;
+    if (state.answered || state.artUnavailable) return;
     var q = state.game.current();
     state.usedHint = true;
     var box = ui.$('#hint-area');
     var lines = [];
-    if (q.mode === 'map') {
+    if (q.mode === 'symbol' || q.mode === 'place') {
+      lines.push(esc(ui.artFor(q.country.code, q.mode).alt));
+      lines.push(esc(q.country.continent) + '에 있는 나라예요');
+    } else if (q.mode === 'map') {
       lines.push('🗺️ ' + esc(q.country.continent) + ' · ' + esc(q.country.region) + '에서 찾아보세요');
     } else if (q.mode === 'capital') {
       lines.push('첫 글자는 <b>' + esc(util.initialOf(q.country.capital)) + '</b> 로 시작해요');
@@ -887,7 +926,7 @@
 
   /* --------- 제출 --------- */
   function submit(payload, gaveUp) {
-    if (state.answered) return;
+    if (state.answered || state.artUnavailable) return;
     state.answered = true;
     stopTimer();
     // 마이크는 showFeedback 에서 놓는다. 놓인 것을 확인한 뒤에 읽어 줘야
@@ -977,8 +1016,9 @@
     // 정오답 모두 이름 한 번과 쉬운 설명 한 문장만 읽는다.
     var isCapitalQ = q.mode === 'capital';
     var isMapQ = q.mode === 'map';
+    var isArtQ = q.mode === 'symbol' || q.mode === 'place';
     state.lastSpeech = {
-      lines: isCapitalQ ? [c.capital, c.ko + '의 수도예요'] : isMapQ ? [c.ko, c.fact] : [c.ko, c.flagHint],
+      lines: isCapitalQ ? [c.capital, c.ko + '의 수도예요'] : (isMapQ || isArtQ) ? [c.ko, c.fact] : [c.ko, c.flagHint],
       opts: { rate: 0.93, pitch: 1.1 }
     };
     var feedbackSpeech = state.lastSpeech;
@@ -1029,7 +1069,7 @@
           '<div><div class="kname">' + esc(isCapitalQ ? c.capital : c.ko) + '</div></div>' +
         '</div>' +
         '<div class="remember-box"><div class="remember-hint">' +
-          (isCapitalQ ? '🏙️ ' + esc(c.ko) + '의 수도예요' : isMapQ ? '🗺️ ' + esc(c.continent) + ' · ' + esc(c.region) + '<br>' + esc(c.fact) : '🚩 ' + esc(c.flagHint)) +
+          (isCapitalQ ? '🏙️ ' + esc(c.ko) + '의 수도예요' : isMapQ ? '🗺️ ' + esc(c.continent) + ' · ' + esc(c.region) + '<br>' + esc(c.fact) : isArtQ ? esc(ui.artFor(c.code, q.mode).alt) + '<br>' + esc(c.fact) : '🚩 ' + esc(c.flagHint)) +
         '</div></div>' +
         (store.settings().speak
           ? '<button class="btn btn-sm" id="replay" type="button" style="margin-top:8px">🔊 설명 다시 듣기</button>'
@@ -1157,6 +1197,10 @@
     var g = state.game;
     var nq = g.questions[g.index + 1];
     if (!nq) return;
+    if ((nq.mode === 'symbol' || nq.mode === 'place') && global.Image) {
+      var art = ui.artFor(nq.country.code, nq.mode);
+      if (art) { var nextArt = new Image(); nextArt.src = art.src; }
+    }
     var codes = [nq.country.code].concat((nq.options || []).map(function (c) { return c.code; }));
     codes.forEach(function (code) {
       var img = new Image();
@@ -1285,7 +1329,8 @@
                 return '<button class="wrong-item" type="button" data-code="' + c.code + '">' +
                   '<img src="' + ui.flagSrc(c.code) + '" alt="' + esc(c.ko) + ' 국기">' +
                   '<div class="n">' + esc(c.ko) + '</div>' +
-                  (c.flagHint ? '<div class="wh">' + esc(c.flagHint) + '</div>' : '') +
+                  '<div class="wh">' + esc(summary.mode === 'map' ? c.continent + ' · ' + c.region :
+                    summary.mode === 'symbol' || summary.mode === 'place' ? ui.artFor(c.code, summary.mode).alt : c.flagHint) + '</div>' +
                 '</button>';
               }).join('') + '</div>' +
               '<p class="small muted" style="margin-bottom:0">국기를 누르면 자세히 볼 수 있어요.</p>' +
