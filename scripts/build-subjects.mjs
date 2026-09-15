@@ -2,12 +2,13 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { readSubjects } from './lib/subjects.mjs';
+import { readSubjects, crossCheck } from './lib/subjects.mjs';
 import { readCountryCodes } from './lib/ne-join.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 export function buildSubjects(projectRoot = root) {
   const rows = readSubjects(projectRoot);
+  crossCheck(rows, projectRoot);
   const codes = new Set(readCountryCodes(projectRoot));
   const seen = new Set();
   const subjects = {};
