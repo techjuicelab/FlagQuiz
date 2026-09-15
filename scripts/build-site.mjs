@@ -13,7 +13,7 @@ const manifest = context.window.FQ.voiceManifest;
 if (!manifest?.ready || Object.keys(manifest.clips).length !== manifest.expectedClips) {
   throw new Error('전체 음원이 준비되어야 배포할 수 있습니다.');
 }
-const files = ['index.html', 'sw.js', 'manifest.webmanifest', 'data/countries.js', 'data/map-coords.js', 'data/map-shapes.js'];
+const files = ['index.html', 'sw.js', 'manifest.webmanifest', 'data/countries.js', 'data/subjects.js', 'data/confusion-groups.js', 'data/map-coords.js', 'data/map-shapes.js'];
 for (const clip of Object.values(manifest.clips)) {
   if (!/^audio\/[a-z0-9-]+\/[a-f0-9]+\.mp3$/.test(clip.src)) throw new Error('음원 경로를 확인하세요.');
   files.push(clip.src);
@@ -53,7 +53,7 @@ for (const [event, count] of Object.entries(expectedEvents)) {
 }
 await fs.rm(output, { recursive: true, force: true });
 await fs.mkdir(output, { recursive: true });
-for (const folder of ['assets', 'css', 'flags', 'js']) {
+for (const folder of ['assets', 'css', 'flags', 'js', 'images']) {
   await fs.cp(path.join(root, folder), path.join(output, folder), { recursive: true });
 }
 for (const file of files) {

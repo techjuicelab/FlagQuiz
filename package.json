@@ -15,7 +15,8 @@
     "music:generate": "node scripts/generate-music.mjs",
     "music:prepare": "node scripts/prepare-music.mjs",
     "map:fetch": "node scripts/fetch-map-source.mjs",
-    "map:build": "node scripts/build-map.mjs"
+    "map:build": "node scripts/build-map.mjs",
+    "subjects:build": "node scripts/build-subjects.mjs"
   },
   "license": "MIT"
 }

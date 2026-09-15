@@ -49,7 +49,7 @@ sandbox.window = sandbox;
 sandbox.global = sandbox;
 vm.createContext(sandbox);
 
-for (const file of ['js/util.js', 'js/storage.js', 'js/features.js', 'data/countries.js', 'data/map-coords.js', 'data/map-shapes.js', 'js/progress.js', 'js/quiz.js']) {
+for (const file of ['js/util.js', 'js/storage.js', 'js/features.js', 'data/countries.js', 'data/subjects.js', 'data/confusion-groups.js', 'data/map-coords.js', 'data/map-shapes.js', 'js/progress.js', 'js/quiz.js']) {
   const full = path.join(root, file);
   if (!fs.existsSync(full)) {
     console.error('✗ 파일이 없어요: ' + file);
@@ -109,6 +109,23 @@ group('데이터 기본', () => {
     ok(typeof c.flagHint === 'string' && c.flagHint.length >= 8, 'flagHint 있음', c.code);
     ok(!c.flagHint.includes(c.ko), 'flagHint 에 나라 이름이 없어야 함', c.code + ' / ' + c.flagHint);
   }
+});
+
+group('주제 자료', () => {
+  const subjects = FQ.subjects || {};
+  const expected = new Set(countries.map((c) => c.code));
+  ok(Object.keys(subjects).length === EXPECTED_COUNT, '나라별 주제 194개');
+  ok(Object.keys(subjects).every((code) => expected.has(code)), '쓰이지 않는 주제 코드 없음');
+  for (const country of countries) {
+    const subject = subjects[country.code];
+    ok(!!(subject && subject.symbol && subject.symbol.ko && subject.symbol.prompt), '상징물 원문 있음', country.code);
+    if (subject && subject.place) ok(!!subject.place.ko && !!subject.place.prompt && ['S', 'A', 'B'].includes(subject.place.grade), '명소 원문·등급 있음', country.code);
+  }
+  ok(Object.values(subjects).filter((s) => s.place).length === 148, '명소 148개');
+  ok(Object.values(subjects).filter((s) => !Object.hasOwn(s, 'place')).length === 46, '명소 없는 46개국은 키 생략');
+  ok(!fs.readFileSync(path.join(root, 'data/subjects.js'), 'utf8').includes('"code"'), '주제 파일에 code 필드 없음');
+  ok(FQ.confusionGroups.length === 58, '혼동군 58개');
+  for (const item of FQ.confusionGroups) ok(['상징물', '명소'].includes(item.axis) && item.codes.every((code) => expected.has(code)), '혼동군 축·나라 코드', item.name);
 });
 
 group('국기 이미지 파일', () => {

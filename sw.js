@@ -14,6 +14,8 @@ var SHELL = [
   './manifest.webmanifest',
   './css/style.css',
   './data/countries.js',
+  './data/subjects.js',
+  './data/confusion-groups.js',
   './data/map-coords.js',
   './data/map-shapes.js',
   './js/util.js',
