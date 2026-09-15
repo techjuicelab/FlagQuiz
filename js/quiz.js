@@ -8,11 +8,11 @@
   var util = FQ.util;
 
   var MODES = {
-    choice4: { label: '국기 보고 나라 고르기', kind: 'choice', hasOptions: true },
-    reverse: { label: '나라 보고 국기 찾기', kind: 'choice', hasOptions: true },
-    capital: { label: '수도 맞히기', kind: 'choice', hasOptions: true },
-    typing:  { label: '이름 써서 맞히기', kind: 'text', hasOptions: false },
-    voice:   { label: '말로 답하기', kind: 'text', hasOptions: false }
+    choice4: { label: '국기 보고 나라 고르기', kind: 'choice', hasOptions: true, axis: 'flag' },
+    reverse: { label: '나라 보고 국기 찾기', kind: 'choice', hasOptions: true, axis: 'flag' },
+    capital: { label: '수도 맞히기', kind: 'choice', hasOptions: true, axis: 'flag' },
+    typing:  { label: '이름 써서 맞히기', kind: 'text', hasOptions: false, axis: 'flag' },
+    voice:   { label: '말로 답하기', kind: 'text', hasOptions: false, axis: 'flag' }
   };
 
   var LEVEL_LABEL = { 1: '쉬움', 2: '보통', 3: '어려움' };
@@ -426,7 +426,7 @@
         res.gained = 0;
       }
       if (usedHint) game.hintsUsed += 1;
-      if (FQ.storage) FQ.storage.recordAnswer(q.country.code, res.correct);
+      if (FQ.storage) FQ.storage.recordAnswer(q.country.code, res.correct, MODES[cfg.mode] && MODES[cfg.mode].axis);
       res.question = q;
       return res;
     };

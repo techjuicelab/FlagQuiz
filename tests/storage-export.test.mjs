@@ -7,7 +7,7 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 
 const KEY = 'flagquiz.v1';
-const KEYS = ['settings', 'stats', 'daily', 'countries', 'badges', 'history'];
+const KEYS = ['settings', 'stats', 'daily', 'countries', 'badges', 'axes', 'history'];
 
 function fixture({ saved, blocked = false, getterBlocked = false } = {}) {
   const local = new Map(saved === undefined ? [] : [[KEY, saved]]);
@@ -34,13 +34,15 @@ function recordProgress(storage) {
   storage.updateSettings({ players: ['민규', '아빠'], sound: false });
   storage.recordAnswer('kr', true);
   storage.recordAnswer('jp', false);
+  storage.recordAnswer('kr', false, 'symbol');
+  storage.recordAnswer('au', true, 'map');
   storage.addXp(35);
   storage.setDaily({ date: '2026-09-15', continent: '아시아', done: 1 });
   storage.awardBadge('first_game');
   storage.finishGame({ mode: 'choice4', total: 2, correct: 1, seconds: 20, bestStreak: 1, players: ['민규'] });
 }
 
-test('기록 백업은 여섯 버킷을 가진 JSON 문자열이며 저장된 내용과 일치한다', () => {
+test('기록 백업은 새 축을 포함한 일곱 버킷 JSON이며 저장된 내용과 일치한다', () => {
   const f = fixture();
   const initial = f.storage.exportJson();
   assert.equal(typeof initial, 'string');
@@ -49,6 +51,8 @@ test('기록 백업은 여섯 버킷을 가진 JSON 문자열이며 저장된 �
   recordProgress(f.storage);
   const backup = JSON.parse(f.storage.exportJson());
   assert.equal(backup.countries.kr.correct, 1);
+  assert.equal(backup.axes.symbol.kr.wrong, 1);
+  assert.equal(backup.axes.map.au.correct, 1);
   assert.deepEqual(backup, JSON.parse(f.local.get(KEY)));
   assert.deepEqual([...f.local.keys()], [KEY]);
 });
