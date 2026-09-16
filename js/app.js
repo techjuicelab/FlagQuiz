@@ -376,12 +376,20 @@
     }
     // 고른 대륙이 오늘의 대륙과 다르면 도전은 한 칸도 오르지 않는다.
     if (s.continent !== 'all' && s.continent !== d.continent) {
-      return '지금은 ' + s.continent + '만 나와서 오르지 않아요 · 눌러서 ' + d.continent + '로 바꾸기';
+      return '지금은 ' + s.continent + '만 나와서 오르지 않아요 · 눌러서 ' + d.continent + withParticle(d.continent) + ' 바꾸기';
     }
     return '';
   }
 
   /** 홈: 오늘의 도전 */
+  /** 받침이 있으면 '으로', 없으면 '로'. '유럽로' 같은 글자를 아이에게 보이지 않는다. */
+  function withParticle(word) {
+    var last = String(word || '').slice(-1);
+    var code = last.charCodeAt(0);
+    if (!(code >= 0xAC00 && code <= 0xD7A3)) return '로';
+    return (code - 0xAC00) % 28 === 0 ? '로' : '으로';
+  }
+
   function dailyCard() {
     var d = FQ.progress.daily();
     var s = store.settings();

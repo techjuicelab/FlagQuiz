@@ -112,6 +112,13 @@ function arrayLiterals(src, re) {
   return (m[1].match(/'[^']*'/g) || []).map((s) => s.slice(1, -1));
 }
 
+/** 주석을 지운 코드만 돌려준다.
+ * 정적 검사는 '코드가 이렇게 돼 있는가'를 묻는 것이다. 주석에 같은 글자를 적어 통과시키면
+ * 그 검사는 그 순간부터 아무것도 지키지 않는다. 그런 우회가 구조적으로 불가능해야 한다. */
+function codeOnly(src) {
+  return String(src).replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/(^|[^:])\/\/[^\n]*/g, '$1 ');
+}
+
 function countOf(src, re) {
   return (src.match(re) || []).length;
 }
@@ -712,14 +719,23 @@ await check({
   t.ok(allCalls <= 1, '본문에서 all() 을 ' + allCalls + '회 부른다 — 폴백이 필터 밖 목록을 다시 긁고 있다');
   const at = body.indexOf('if (out.length < count)');
   if (at !== -1) {
-    const tail = body.slice(at);
+    const tail = codeOnly(body.slice(at));
     t.ok(!/util\.shuffle\(all\(\)\)/.test(tail), '폴백 구간에 util.shuffle(all()) 이 남아 있다 — 한쪽만 고쳤다');
     t.note('굶주림 완화 구간 (자료 필터를 푸는 분기가 없는지 사람이 읽는다):\n' +
       tail.split('\n').slice(0, 14).map((l) => '      | ' + l).join('\n'));
   }
-  const head = at === -1 ? body : body.slice(0, at);
+  // 주석은 코드가 아니다. 같은 글자를 주석에 적어 이 검사를 통과시키는 우회를 막는다.
+  const head = codeOnly(at === -1 ? body : body.slice(0, at));
   t.ok(/opts\.axis/.test(head), '후보 생성 구간에 opts.axis 참조가 없다');
-  t.ok(/FQ\.subjects/.test(head), '후보 생성 구간에 FQ.subjects 참조가 없다');
+  // 자료 필터는 인라인이든 hasData() 한 곳으로 모았든 좋다. 없는 것만 막는다.
+  t.ok(/FQ\.subjects|hasData\s*\(/.test(head),
+    '후보 생성 구간에 자료 필터가 없다 (FQ.subjects 참조도 hasData() 호출도 없다)');
+  // 필터를 hasData() 로 모았다면, 그 함수가 실제로 자료를 보는지까지 확인한다.
+  if (!/FQ\.subjects/.test(head)) {
+    const filter = codeOnly(funcBody(src, 'function hasData') || '');
+    t.ok(/FQ\.subjects/.test(filter),
+      'hasData() 로 필터를 모았는데 그 함수가 FQ.subjects 를 보지 않는다', filter.slice(0, 200));
+  }
 });
 
 await check({

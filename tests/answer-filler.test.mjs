@@ -128,3 +128,16 @@ test('긴 이름을 끊어 말하면 말끝이 붙어도 짧은 나라가 가로
     assert.ok(quiz.checkText(country, text).correct, '인정해야 함 ' + said(country, text));
   }
 });
+
+test('안내 문구가 채점과 같은 나라를 말한다', () => {
+  // checkText 만 고치고 findCountry 를 두면, 채점은 정답인데 '우간다라고 했구나' 로 안내된다.
+  // 아이는 자기가 뭐라고 말했는지를 그 문구로 배운다.
+  const said = [['어 가나', '가나'], ['음 수단', '수단'], ['아 파키스탄', '파키스탄'], ['저기 기니', '기니']];
+  for (const [text, ko] of said) {
+    assert.equal(quiz.findCountry(text)?.ko, ko, text + ' 를 다른 나라로 안내한다');
+  }
+  // 긴 이름을 끊어 말한 것은 여전히 긴 나라다 — 한쪽으로 쏠리지 않았다.
+  for (const [text, ko] of [['인도 네시아요', '인도네시아'], ['남 수단이요', '남수단'], ['적도 기니요', '적도기니']]) {
+    assert.equal(quiz.findCountry(text)?.ko, ko, text + ' 가 짧은 나라로 넘어갔다');
+  }
+});

@@ -321,13 +321,18 @@
     if (!norm) return null;
     var keys = candidateKeys(text);
     var list = all();
-    var best = null, bestStrength = -1, bestDist = Infinity, tie = false;
+    var best = null, bestStrength = -1, bestDist = Infinity, bestExact = false, tie = false;
     for (var i = 0; i < list.length; i++) {
       var m = matchOne(list[i], keys, norm);
       if (!m.near) continue;
-      if (m.strength > bestStrength || (m.strength === bestStrength && m.dist < bestDist)) {
-        bestStrength = m.strength; bestDist = m.dist; best = list[i]; tie = false;
-      } else if (m.strength === bestStrength && m.dist === bestDist && best && list[i].code !== best.code) {
+      // checkText 와 같은 규칙을 쓴다. 낱말 그대로 맞은 쪽이 긴 이름보다 먼저다.
+      // 두 판정이 어긋나면 "어 가나" 를 정답으로 채점하면서 안내는 '우간다라고 했구나' 가 된다.
+      var exact = m.dist === 0;
+      var wins = exact !== bestExact ? exact
+        : (m.strength > bestStrength || (m.strength === bestStrength && m.dist < bestDist));
+      if (wins) {
+        bestStrength = m.strength; bestDist = m.dist; bestExact = exact; best = list[i]; tie = false;
+      } else if (exact === bestExact && m.strength === bestStrength && m.dist === bestDist && best && list[i].code !== best.code) {
         tie = true;
       }
     }
