@@ -133,6 +133,16 @@
     '<rect x="4" y="10" width="16" height="11" rx="2"></rect>' +
     '<path d="M8 10V7a4 4 0 0 1 8 0v3"></path></svg>';
 
+  /** 그 나라가 그 축으로 출제될 수 있는가 — js/quiz.js 의 hasData 와 같은 기준이다. */
+  function canEarn(code, axis) {
+    if (axis !== 'symbol' && axis !== 'place') return true;
+    // 자료를 못 읽었으면 숨기지 않는다. 자료가 없다는 이유로 도장을 지우면
+    // 아이가 이미 딴 도장이 화면에서 사라진다. 확실히 못 따는 경우에만 지운다.
+    if (!FQ.subjects) return true;
+    var subject = FQ.subjects[code] && FQ.subjects[code][axis];
+    return !!subject && !subject.noArt;
+  }
+
   function paintDex() {
     var util = FQ.util;
     var stats = FQ.storage.allCountryStats();
@@ -173,6 +183,9 @@
               (got ? '' : '<span class="lock">' + LOCK_SVG + '</span>') +
               '<div class="n">' + esc(c.ko) + '</div>' +
               '<div class="axis-stamps">' + stampAxes.map(function (axis) {
+                // 딸 수 없는 도장은 그리지 않는다. 그림이 없는 나라(보류)와 명소가 없는 나라는
+                // 그 축에 출제되지 않으므로, 자리를 남겨 두면 아이가 영원히 못 채우는 칸이 된다.
+                if (!canEarn(c.code, axis.id)) return '';
                 var earned = ((stampRecords[axis.id][c.code] || {}).correct || 0) > 0;
                 var label = axis.label + ' 도장 ' + (earned ? '획득' : '아직');
                 return '<span class="axis-stamp' + (earned ? ' earned' : '') + '" data-axis="' + axis.id +

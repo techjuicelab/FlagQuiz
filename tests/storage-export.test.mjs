@@ -130,7 +130,7 @@ function screenFixture(options) {
   };
   f.c.scrollTo = () => {};
   f.c.FQ.app = { home() {} };
-  f.load('data/countries.js', 'js/features.js', 'js/progress.js', 'js/quiz.js', 'js/badges.js', 'js/ui.js', 'js/screens.js');
+  f.load('data/countries.js', 'data/subjects.js', 'js/features.js', 'js/progress.js', 'js/quiz.js', 'js/badges.js', 'js/ui.js', 'js/screens.js');
   return { ...f, main, node: selector => main.querySelector(selector) };
 }
 
@@ -211,4 +211,31 @@ test('저장소가 차단된 내 기록 화면에서도 백업 버튼은 기본�
   assert.doesNotThrow(() => f.node('#export').click());
   assert.deepEqual(Object.keys(JSON.parse(f.node('#export-text').value)), KEYS);
   assert.equal(JSON.parse(f.node('#export-text').value).stats.asked, 0);
+});
+
+test('딸 수 없는 도장은 도감에 아예 그리지 않는다', () => {
+  // 그림이 보류된 나라와 명소가 없는 나라는 그 축으로 출제되지 않는다.
+  // 도장 자리를 남겨 두면 아이가 영원히 못 채우는 칸이 된다.
+  const f = screenFixture();
+  f.storage.updateSettings({ dev: { art: true } });
+  f.c.FQ.screens.dex('all');
+  const html = f.node('#dex-list').innerHTML;
+  const subjects = f.c.FQ.subjects;
+  const cellOf = (code) => html.match(new RegExp('<button class="sticker-cell [^>]*data-code="' + code + '"[\\s\\S]*?</button>'))[0];
+  const earnable = (code, axis) => !!subjects[code]?.[axis] && !subjects[code][axis].noArt;
+
+  let checkedHeld = 0, checkedNoPlace = 0;
+  for (const c of f.c.FQ.countries) {
+    const cell = cellOf(c.code);
+    for (const axis of ['symbol', 'place']) {
+      const has = cell.includes('data-axis="' + axis + '"');
+      assert.equal(has, earnable(c.code, axis), c.code + ' 의 ' + axis + ' 도장 표시가 출제 가능 여부와 어긋난다');
+      if (axis === 'symbol' && !earnable(c.code, axis)) checkedHeld += 1;
+      if (axis === 'place' && !earnable(c.code, axis)) checkedNoPlace += 1;
+    }
+    // 위치 도장은 194개국 모두 딸 수 있다.
+    assert.ok(cell.includes('data-axis="map"'), c.code + ' 에 위치 도장이 없다');
+  }
+  assert.ok(checkedHeld > 0, '이 검사는 보류가 최소 1건일 때를 고정한다');
+  assert.ok(checkedNoPlace > 0, '이 검사는 명소 없는 나라가 있을 때를 고정한다');
 });
