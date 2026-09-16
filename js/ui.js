@@ -20,6 +20,13 @@
     return { src: 'images/' + (axis === 'place' ? 'places/' : 'symbols/') + code + '.webp', alt: subject.ko };
   }
 
+  /** 그림 파일이 없어도 소재 이름은 남는다 — 해설·결과 줄이 빈칸이 되지 않게 한다. */
+  function artAlt(code, axis) {
+    axis = axis === 'place' ? 'place' : 'symbol';
+    var subject = FQ.subjects && FQ.subjects[code] && FQ.subjects[code][axis];
+    return subject ? subject.ko : '';
+  }
+
   function countryArt(code) {
     if (!FQ.features || !FQ.features.on('art')) return '';
     return ['symbol', 'place'].map(function (axis) {
@@ -29,7 +36,10 @@
       var art = artFor(code, axis);
       var label = axis === 'place' ? '나라 대표 명소 · ' : art ? '나라를 떠올리는 그림 · ' : '나라를 떠올리는 것 · ';
       return '<figure class="country-art">' +
-        (art ? '<img src="' + esc(art.src) + '" alt="' + esc(art.alt) + '" width="1024" height="768" loading="lazy">' : '') +
+        // 그림은 선캐시가 아니라 필요할 때 받는다. 오프라인에서 아직 안 받아 둔 나라를 열면
+        // 깨진 아이콘이 뜨므로, 그때는 그림만 감추고 아래 이름은 그대로 남긴다.
+        (art ? '<img src="' + esc(art.src) + '" alt="' + esc(art.alt) + '" width="1024" height="768" loading="lazy"' +
+          ' onerror="this.hidden = true">' : '') +
         '<figcaption>' + label + esc(subject.ko) + '</figcaption></figure>';
     }).join('');
   }
@@ -119,6 +129,7 @@
     esc: esc,
     flagSrc: flagSrc,
     artFor: artFor,
+    artAlt: artAlt,
     setMain: setMain,
     main: main,
     $: $,

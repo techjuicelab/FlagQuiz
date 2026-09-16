@@ -483,13 +483,17 @@
 
     var stage;
     if (q.mode === 'symbol' || q.mode === 'place') {
-      state.artUnavailable = true;
       var art = ui.artFor(q.country.code, q.mode);
+      // 그림 없는 나라는 출제 풀에서 걸러진다. 그래도 옛 자료와 새 화면이 섞여 캐시에 굳으면
+      // 여기에 닿을 수 있다 — 그때 죽으면 아이가 시작을 눌러도 화면이 멈춘 채 아무 일도 안 난다.
+      // 기다릴 그림이 아예 없으면 잠그지 않는다. 아이가 건너뛸 수 있어야 한다.
+      state.artUnavailable = !!art;
       stage = '<div class="flag-stage art-question"><div class="q-label">' +
         (q.mode === 'place' ? '이 명소가 있는 나라는 어디일까요?' : '이 그림은 어느 나라를 떠올리게 하나요?') + '</div>' +
-        '<img id="question-art" src="' + esc(art.src) + '" alt="' + esc(art.alt) + '" width="1024" height="768">' +
-        '<p id="art-loading" role="status">그림을 불러오고 있어요…</p>' +
-        '<div id="art-error" hidden><p>그림을 불러오지 못했어요.</p><button class="btn" id="art-retry" type="button">다시 불러오기</button></div></div>';
+        (art ? '<img id="question-art" src="' + esc(art.src) + '" alt="' + esc(art.alt) + '" width="1024" height="768">' +
+          '<p id="art-loading" role="status">그림을 불러오고 있어요…</p>' +
+          '<div id="art-error" hidden><p>그림을 불러오지 못했어요.</p><button class="btn" id="art-retry" type="button">다시 불러오기</button></div>'
+          : '<div id="art-error"><p>그림을 불러오지 못했어요.</p></div>') + '</div>';
     } else if (q.mode === 'map') {
       stage = '<div class="flag-stage map-question">' +
         '<div class="q-label">이 나라는 어디에 있을까요?</div>' +
@@ -925,7 +929,7 @@
     var box = ui.$('#hint-area');
     var lines = [];
     if (q.mode === 'symbol' || q.mode === 'place') {
-      lines.push(esc(ui.artFor(q.country.code, q.mode).alt));
+      lines.push(esc(ui.artAlt(q.country.code, q.mode)));
       lines.push(esc(q.country.continent) + '에 있는 나라예요');
     } else if (q.mode === 'map') {
       lines.push('🗺️ ' + esc(q.country.continent) + ' · ' + esc(q.country.region) + '에서 찾아보세요');
@@ -1099,7 +1103,7 @@
           '<div><div class="kname">' + esc(isCapitalQ ? c.capital : c.ko) + '</div></div>' +
         '</div>' +
         '<div class="remember-box"><div class="remember-hint">' +
-          (isCapitalQ ? '🏙️ ' + esc(c.ko) + '의 수도예요' : isMapQ ? '🗺️ ' + esc(c.continent) + ' · ' + esc(c.region) + '<br>' + esc(c.fact) : isArtQ ? esc(ui.artFor(c.code, q.mode).alt) + '<br>' + esc(c.fact) : '🚩 ' + esc(c.flagHint)) +
+          (isCapitalQ ? '🏙️ ' + esc(c.ko) + '의 수도예요' : isMapQ ? '🗺️ ' + esc(c.continent) + ' · ' + esc(c.region) + '<br>' + esc(c.fact) : isArtQ ? esc(ui.artAlt(c.code, q.mode)) + '<br>' + esc(c.fact) : '🚩 ' + esc(c.flagHint)) +
         '</div></div>' +
         (store.settings().speak
           ? '<button class="btn btn-sm" id="replay" type="button" style="margin-top:8px">🔊 설명 다시 듣기</button>'
@@ -1364,7 +1368,7 @@
                   '<img src="' + ui.flagSrc(c.code) + '" alt="' + esc(c.ko) + ' 국기">' +
                   '<div class="n">' + esc(c.ko) + '</div>' +
                   '<div class="wh">' + esc(summary.mode === 'map' ? c.continent + ' · ' + c.region :
-                    summary.mode === 'symbol' || summary.mode === 'place' ? ui.artFor(c.code, summary.mode).alt : c.flagHint) + '</div>' +
+                    summary.mode === 'symbol' || summary.mode === 'place' ? ui.artAlt(c.code, summary.mode) : c.flagHint) + '</div>' +
                 '</button>';
               }).join('') + '</div>' +
               '<p class="small muted" style="margin-bottom:0">국기를 누르면 자세히 볼 수 있어요.</p>' +

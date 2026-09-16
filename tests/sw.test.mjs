@@ -615,3 +615,32 @@ test('국기 이관 저장 실패는 원본을 보존하고 이미 있는 새 �
     assert.ok(fetched.every(url => !new URL(url).pathname.includes('/audio/')));
   }
 });
+
+test('배포 전환 중 404·503 이 와도 담아 둔 셸을 쓴다', async () => {
+  // fetch 는 404·503 을 '거부'가 아니라 '성공'으로 돌려준다. 그대로 넘기면 아이 화면이 희어진다.
+  for (const status of [404, 500, 503]) {
+    const w = worker(); let response;
+    w.seed(SHELL, './js/app.js', new Response('담아 둔 앱 코드'));
+    w.sandbox.fetch = async () => new Response('오류 본문', { status });
+    w.events.fetch({ request: { method: 'GET', url: 'https://example.test/FlagQuiz/js/app.js', mode: 'cors' }, respondWith: p => { response = p; } });
+    const got = await response;
+    assert.equal(got.status, 200, status + ' 일 때 담아 둔 사본을 쓰지 않는다');
+    assert.equal(await got.text(), '담아 둔 앱 코드');
+  }
+});
+
+test('담아 둔 사본이 없으면 404·503 을 그대로 전달한다', async () => {
+  // 폴백은 있는 것을 쓸 때만이다. 없는 것을 있는 척하지 않는다.
+  const w = worker(); let response;
+  w.sandbox.fetch = async () => new Response('없음', { status: 404 });
+  w.events.fetch({ request: { method: 'GET', url: 'https://example.test/FlagQuiz/js/app.js', mode: 'cors' }, respondWith: p => { response = p; } });
+  assert.equal((await response).status, 404);
+});
+
+test('오류 응답은 셸 캐시에 담기지 않는다', async () => {
+  const w = worker(); let response;
+  w.sandbox.fetch = async () => new Response('오류 본문', { status: 503 });
+  w.events.fetch({ request: { method: 'GET', url: 'https://example.test/FlagQuiz/js/app.js', mode: 'cors' }, respondWith: p => { response = p; } });
+  await response;
+  assert.deepEqual(w.puts, [], '오류 응답을 담아 두면 다음 오프라인에서 그 오류가 재생된다');
+});

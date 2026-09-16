@@ -229,7 +229,12 @@ self.addEventListener('fetch', function (event) {
           var copy = res.clone();
           return putCache(SHELL_CACHE, req, copy).then(function () { return res; });
         }
-        return res;
+        // 404·503 은 fetch 가 '성공'으로 돌려준다. 배포 전환이나 CDN 퍼지 구간이 바로
+        // 아이가 새 코드를 받는 구간이라, 여기서 오류 응답을 그대로 넘기면 흰 화면이 된다.
+        // 담아 둔 온전한 사본이 있으면 그것을 쓴다.
+        return matchCache(SHELL_CACHE, req).then(function (hit) {
+          return hit || res;
+        })['catch'](function () { return res; });
       })
       .catch(function () {
         return matchCache(SHELL_CACHE, req).then(function (hit) {

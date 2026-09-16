@@ -129,3 +129,29 @@ test('그림 게이트는 원장이 승인한 수만 통과시키고 누락과 �
     fs.unlinkSync(path.join(tmp, fileOf(item)));
   }
 });
+
+test('보류 소재도 이름은 남는다 — 해설·결과 줄이 빈칸이 되지 않는다', () => {
+  const { f } = loadCard();
+  for (const item of held) {
+    assert.equal(f.ui.artFor(item.code, item.axis), null, '보류인데 그림 경로를 만든다: ' + item.code);
+    assert.ok(f.ui.artAlt(item.code, item.axis), '보류 소재의 이름까지 사라졌다: ' + item.code);
+  }
+  // 그림이 있는 소재는 둘 다 이름이 나오고 서로 어긋나지 않는다.
+  const withArt = approved[0];
+  assert.equal(f.ui.artAlt(withArt.code, withArt.axis), f.ui.artFor(withArt.code, withArt.axis).alt);
+});
+
+test('그림 없는 나라가 그림 문제로 그려져도 화면이 죽지 않는다', () => {
+  // 옛 자료와 새 화면이 캐시에 섞여 굳으면 닿을 수 있는 자리다. 여기서 예외가 나면
+  // 아이가 시작을 눌러도 화면이 멈춘 채 아무 일도 일어나지 않는다.
+  const { f } = loadCard();
+  assert.ok(held.length, '이 검사는 보류가 최소 1건일 때를 고정한다');
+  const item = held[0];
+  const q = { mode: item.axis === 'place' ? 'place' : 'symbol', country: { code: item.code } };
+  assert.doesNotThrow(() => {
+    const art = f.ui.artFor(q.country.code, q.mode);
+    // app.js 가 하는 그대로: 그림이 없으면 img 를 만들지 않는다.
+    const html = art ? '<img src="' + art.src + '" alt="' + art.alt + '">' : '<div id="art-error"></div>';
+    assert.ok(html.indexOf('<img') === -1, '그림이 없는데 img 태그를 만든다');
+  });
+});
