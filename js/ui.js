@@ -15,16 +15,22 @@
   function artFor(code, axis) {
     axis = axis === 'place' ? 'place' : 'symbol';
     var subject = FQ.subjects && FQ.subjects[code] && FQ.subjects[code][axis];
-    if (!subject) return null;
+    // noArt 는 원장에 남긴 보류다. 문장은 있어도 그림 파일이 없으니 경로를 만들면 깨진 그림이 뜬다.
+    if (!subject || subject.noArt) return null;
     return { src: 'images/' + (axis === 'place' ? 'places/' : 'symbols/') + code + '.webp', alt: subject.ko };
   }
 
   function countryArt(code) {
     if (!FQ.features || !FQ.features.on('art')) return '';
     return ['symbol', 'place'].map(function (axis) {
+      var subject = FQ.subjects && FQ.subjects[code] && FQ.subjects[code][axis];
+      if (!subject) return '';
+      // 그림이 보류된 소재도 이름은 배운다. 그림 자리만 비우고 소재 이름은 그대로 둔다.
       var art = artFor(code, axis);
-      return art ? '<figure class="country-art"><img src="' + esc(art.src) + '" alt="' + esc(art.alt) + '" width="1024" height="768" loading="lazy">' +
-        '<figcaption>' + (axis === 'place' ? '나라 대표 명소 · ' : '나라를 떠올리는 그림 · ') + esc(art.alt) + '</figcaption></figure>' : '';
+      var label = axis === 'place' ? '나라 대표 명소 · ' : art ? '나라를 떠올리는 그림 · ' : '나라를 떠올리는 것 · ';
+      return '<figure class="country-art">' +
+        (art ? '<img src="' + esc(art.src) + '" alt="' + esc(art.alt) + '" width="1024" height="768" loading="lazy">' : '') +
+        '<figcaption>' + label + esc(subject.ko) + '</figcaption></figure>';
     }).join('');
   }
 

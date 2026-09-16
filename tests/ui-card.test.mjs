@@ -39,8 +39,9 @@ function fixture() {
   };
 }
 
-test('도감 그림을 켜기 전 HTML은 그대로이며 켜면 설명과 국기 힌트 사이에만 그림을 붙인다', () => {
+test('도감 그림을 끄면 HTML은 예전 그대로이며 켜면 설명과 국기 힌트 사이에만 그림을 붙인다', () => {
   const {f, render} = fixture();
+  f.storage.updateSettings({dev: {art: false}});
   const before = render();
   assert.ok(!before.includes('country-art'));
   f.storage.updateSettings({dev: {art: true}});
@@ -58,7 +59,6 @@ test('도감 그림을 켜기 전 HTML은 그대로이며 켜면 설명과 국�
 
 test('누락 자료는 그림을 만들지 않고 제목의 HTML을 이스케이프한다', () => {
   const {f, render} = fixture();
-  f.storage.updateSettings({dev: {art: true}});
   delete f.subjects.kr.symbol;
   assert.ok(!render().includes('images/symbols/kr.webp'));
   assert.ok(render().includes('images/places/kr.webp'));

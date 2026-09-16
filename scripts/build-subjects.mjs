@@ -39,6 +39,9 @@ export function buildSubjects(projectRoot = root) {
       if (['agent-curated', 'approved-text', 'generated', 'approved-image', 'rejected', 'held'].includes(item.status) && item.subjectEn && item.koApprove?.trim()) {
         subjects[item.code][axis].ko = item.koApprove.trim();
       }
+      // 보류는 조용한 빈칸이 아니라 원장에 적힌 기록이다. 소재 이름은 남기고 그림만 없다는 것을
+      // 여기서 못 박아야 출제·도감·배포 게이트가 원장 하나만 보고 같은 판단을 한다.
+      if (item.status === 'held') subjects[item.code][axis].noArt = true;
     }
   }
   const raw = JSON.parse(fs.readFileSync(path.join(projectRoot, 'docs/expansion/confusion-groups.json'), 'utf8'));

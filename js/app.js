@@ -293,7 +293,8 @@
         var d = FQ.progress.daily();
         if (d.complete) { FQ.screens.dex(); return; }
         savePlayers(m);
-        store.updateSettings({ continent: d.continent, mode: 'choice4' });
+        store.updateSettings({ continent: d.continent });
+        keepFlagAxisMode();
         renderHome();
       });
     }
@@ -311,7 +312,7 @@
     if (reviewBtn) {
       reviewBtn.addEventListener('click', function () {
         savePlayers(m);
-        store.updateSettings({ mode: 'choice4' });
+        keepFlagAxisMode();
         startGame(store.wrongList());
       });
     }
@@ -361,13 +362,30 @@
     '</div>';
   }
 
+  /**
+   * 오늘의 도전은 국기 기록만 센다.
+   * 지도·그림·명소 놀이는 축이 'flag' 가 아니라 아무리 맞혀도 칸이 오르지 않는다(의도된 설계).
+   * 아이가 이유를 알 길이 없으니, 대륙이 어긋났을 때처럼 왜 멈춰 있는지 화면에 알려 준다.
+   * 이 글자는 보여 주기만 하고 읽어 주지 않는다 — 수아 음원에 없는 문구다.
+   */
+  function dailyWhy(d, s) {
+    if (d.complete) return '';
+    // 국기 놀이가 아니면 대륙을 맞춰도 소용없다. 놀이부터 바꿔야 한다고 먼저 알려 준다.
+    if (quiz.MODES[s.mode] && quiz.MODES[s.mode].axis !== 'flag') {
+      return '지금 놀이로는 칸이 안 올라가요 · 눌러서 국기 놀이로 바꾸기';
+    }
+    // 고른 대륙이 오늘의 대륙과 다르면 도전은 한 칸도 오르지 않는다.
+    if (s.continent !== 'all' && s.continent !== d.continent) {
+      return '지금은 ' + s.continent + '만 나와서 오르지 않아요 · 눌러서 ' + d.continent + '로 바꾸기';
+    }
+    return '';
+  }
+
   /** 홈: 오늘의 도전 */
   function dailyCard() {
     var d = FQ.progress.daily();
     var s = store.settings();
-    // 고른 대륙이 오늘의 대륙과 다르면 도전은 한 칸도 오르지 않는다.
-    // 여태 아무 말도 없이 조용히 멈춰 있었다.
-    var mismatch = !d.complete && s.continent !== 'all' && s.continent !== d.continent;
+    var why = dailyWhy(d, s);
     return '<button class="daily-card" id="daily-go" type="button">' +
       '<span class="ic">' + (d.complete ? '🏆' : '🎯') + '</span>' +
       '<span class="body">' +
@@ -376,10 +394,7 @@
             ? '오늘의 도전을 끝냈어요!'
             : '오늘의 도전 · ' + esc(d.continent) + ' 나라 ' + d.target + '개 맞히기') +
         '</span>' +
-        (mismatch
-          ? '<span class="daily-why">지금은 ' + esc(s.continent) + '만 나와서 오르지 않아요 · 눌러서 ' +
-            esc(d.continent) + '로 바꾸기</span>'
-          : '') +
+        (why ? '<span class="daily-why">' + esc(why) + '</span>' : '') +
         '<span class="daily-bar"><i style="width:' + Math.round(d.ratio * 100) + '%"></i></span>' +
       '</span>' +
       '<span class="cnt">' + d.done + '/' + d.target + '</span>' +
@@ -391,6 +406,16 @@
     if (!reason) return '<div class="notice">🎤 “듣고 있어요”가 나오면 <b>나라 이름을 끝까지 말해 주세요.</b> 마이크 사용을 물어보면 “허용”을 눌러 주세요. 음성 인식에는 인터넷 연결이 필요할 수 있어요.</div>';
     return '<div class="notice">⚠️ ' + esc(reason) +
       (FQ.speech.blocked() ? '<br>말하기 대신 <b>이름 써서 맞히기</b>로도 즐길 수 있어요.' : '') + '</div>';
+  }
+
+  /**
+   * 오늘의 도전과 '한 번 더 만나기'는 국기 기록을 쓴다.
+   * 지도·그림·명소 놀이는 축이 달라 한 칸도 쌓이지 않으니 국기 놀이로 되돌린다.
+   * 말하기·쓰기·수도 맞히기는 이미 국기 축이므로 아이가 고른 그대로 둔다.
+   */
+  function keepFlagAxisMode() {
+    var cur = quiz.MODES[store.settings().mode];
+    if (!cur || cur.axis !== 'flag') store.updateSettings({ mode: 'choice4' });
   }
 
   function savePlayers(m) {

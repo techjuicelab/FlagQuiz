@@ -467,7 +467,7 @@ test('지도 핀 제출은 지도 기록만 쌓고 기존 국기 스티커와 �
 
 test('그림 모드는 스위치가 꺼지면 저장된 선택도 국기 모드로 돌아간다',()=>{
   for(const mode of ['symbol','place','unknown']) {
-    const f=fixture();f.c.FQ.storage.updateSettings({mode});f.c.FQ.app.home();
+    const f=fixture();f.c.FQ.storage.updateSettings({mode,dev:{art:false}});f.c.FQ.app.home();
     assert.equal(f.c.FQ.storage.settings().mode,'choice4');
     assert.doesNotMatch(f.node('main').innerHTML,/data-mode="(?:symbol|place)"/);
     f.c.FQ.storage.updateSettings({mode});f.c.FQ.app.startGame(['kr']);
@@ -547,6 +547,53 @@ test('숨긴 동안 그림 오류가 나면 복귀해도 제한 시간을 재개
   assert.equal(f.c.FQ.storage.axisStat('place','kr').seen,0);
   f.node('#art-retry').click();f.node('#question-art').handlers.load();
   assert.equal(a.state.timeLeft,10);assert.notEqual(a.state.timerId,null);
+});
+
+test('지도·그림·명소 놀이에서는 오늘의 도전이 왜 안 오르는지 화면으로 알려 준다',()=>{
+  for(const mode of ['map','symbol','place']){
+    const f=fixture();f.c.FQ.storage.updateSettings({mode,continent:'all',dev:{art:true}});
+    f.c.FQ.app.home();
+    assert.equal(f.c.FQ.storage.settings().mode,mode,mode);
+    assert.match(f.node('main').innerHTML,/지금 놀이로는 칸이 안 올라가요 · 눌러서 국기 놀이로 바꾸기/,mode);
+    // 새 안내는 화면 글자일 뿐이다. 읽어 주면 수아 음원에 없는 문구가 되어 배포가 막힌다.
+    assert.equal(f.spoken.length,0,mode);
+  }
+  // 국기 놀이에서는 안내가 뜨지 않고, 대륙만 어긋났을 때의 기존 안내도 그대로다.
+  const g=fixture();g.c.FQ.storage.updateSettings({mode:'voice',continent:'all'});g.c.FQ.app.home();
+  assert.doesNotMatch(g.node('main').innerHTML,/daily-why/);
+  const h=fixture(),other=h.c.FQ.progress.daily().continent==='아시아'?'유럽':'아시아';
+  h.c.FQ.storage.updateSettings({mode:'voice',continent:other});h.c.FQ.app.home();
+  assert.match(h.node('main').innerHTML,new RegExp('지금은 '+other+'만 나와서 오르지 않아요'));
+});
+
+test('오늘의 도전은 국기 축 놀이를 그대로 두고 축이 다른 놀이만 국기 놀이로 되돌린다',()=>{
+  for(const mode of ['voice','typing','capital','reverse']){
+    const f=fixture();f.c.FQ.storage.updateSettings({mode,continent:'아프리카'});f.c.FQ.app.home();
+    f.node('#daily-go').click();
+    assert.equal(f.c.FQ.storage.settings().mode,mode,mode);
+    assert.equal(f.c.FQ.storage.settings().continent,f.c.FQ.progress.daily().continent,mode);
+  }
+  for(const mode of ['map','symbol','place']){
+    const f=fixture();f.c.FQ.storage.updateSettings({mode,dev:{art:true}});f.c.FQ.app.home();
+    f.node('#daily-go').click();
+    assert.equal(f.c.FQ.storage.settings().mode,'choice4',mode);
+    // 안내대로 눌렀으면 다음 화면에서는 안내가 사라져 있어야 한다.
+    assert.doesNotMatch(f.node('main').innerHTML,/daily-why/,mode);
+  }
+});
+
+test('한 번 더 만나기도 골라 둔 국기 놀이를 유지하고 축이 다를 때만 되돌린다',()=>{
+  const f=fixture();f.c.FQ.storage.recordAnswer('jp',false);
+  f.c.FQ.storage.updateSettings({mode:'typing'});f.c.FQ.app.home();
+  f.node('#review').click();
+  assert.equal(f.c.FQ.storage.settings().mode,'typing');
+  assert.equal(f.c.FQ.test.state.game.current().mode,'typing');
+
+  const g=fixture();g.c.FQ.storage.recordAnswer('jp',false);
+  g.c.FQ.storage.updateSettings({mode:'map'});g.c.FQ.app.home();
+  g.node('#review').click();
+  assert.equal(g.c.FQ.storage.settings().mode,'choice4');
+  assert.equal(g.c.FQ.test.state.game.current().mode,'choice4');
 });
 
 console.log('앱 흐름 회귀 검사 '+passed+'건 통과');

@@ -15,7 +15,8 @@ async function fixture(t) {
   for (const file of ['scripts/lib/art-gate.mjs', 'scripts/check-images.mjs', 'scripts/prepare-images.mjs', 'js/features.js']) await fs.copyFile(new URL('../' + file, import.meta.url), path.join(root, file));
   for (const file of ['index.html', 'sw.js', 'manifest.webmanifest', 'data/countries.js', 'data/subjects.js', 'data/confusion-groups.js', 'data/map-coords.js', 'data/map-shapes.js']) await fs.writeFile(path.join(root, file), file);
   await fs.writeFile(path.join(root, 'data/countries.js'), 'window.FQ.countries=[{code:"kr"}];');
-  await fs.writeFile(path.join(root, 'data/subjects.js'), 'window.FQ.subjects={kr:{symbol:{ko:"김치"}}};');
+  // 그림 원장도 파일도 없는 최소 저장소다. 보류로 적어야 그림 게이트가 음악 검사를 가로막지 않는다.
+  await fs.writeFile(path.join(root, 'data/subjects.js'), 'window.FQ.subjects={kr:{symbol:{ko:"김치",noArt:true}}};');
   await fs.writeFile(path.join(root, 'js/voice-manifest.js'), 'window.FQ={voiceManifest:{ready:true,expectedClips:1,clips:{hello:{src:"audio/sua/abcdef.mp3"}}}};');
   await fs.writeFile(path.join(root, 'audio/sua/abcdef.mp3'), 'voice');
   await fs.writeFile(path.join(root, '_site/previous-release'), 'preserve on validation failure');
@@ -73,7 +74,8 @@ test('미완성·중복·경로탈출·해시불일치·빠진파일·잘못된e
 test('그림 전량 공개의 누락과 미승인 그림은 이전 배포본을 보존하고 거부한다', async t => {
   for (const variant of ['required-missing', 'unapproved-file']) {
     const env = await fixture(t);
-    if (variant === 'required-missing') await fs.writeFile(path.join(env.root, 'js/features.js'), 'window.FQ.features={on:()=>true};');
+    // 보류 표시를 지우면 그 소재는 그림을 요구한다 — 파일이 없으면 배포가 멈춰야 한다.
+    if (variant === 'required-missing') await fs.writeFile(path.join(env.root, 'data/subjects.js'), 'window.FQ.subjects={kr:{symbol:{ko:"김치"}}};');
     else {
       await fs.mkdir(path.join(env.root, 'images/symbols'));
       await fs.writeFile(path.join(env.root, 'images/symbols/kr.webp'), 'unreviewed');

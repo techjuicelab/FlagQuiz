@@ -1,8 +1,8 @@
-/* 미완성 그림은 기본으로 숨긴다. 개발 설정은 호출할 때 읽어 새로고침 없이 반영한다. */
+/* 검수를 마친 그림은 기본으로 보여 준다. 개발 설정은 호출할 때 읽어 새로고침 없이 반영한다. */
 (function (global) {
   'use strict';
   var FQ = (global.FQ = global.FQ || {});
-  var DEFAULTS = { art: false };
+  var DEFAULTS = { art: true };
 
   function flags() {
     var settings = {};

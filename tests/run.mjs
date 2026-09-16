@@ -94,8 +94,23 @@ group('그림 자료', () => {
   ok(inspected.ok, '그림 원장·WebP 치수·용량·프롬프트 검사', inspected.errors.join('; '));
   ok(Object.values(FQ.subjects).filter(s => s.symbol).length === 194, '상징물 자료 194개');
   ok(Object.values(FQ.subjects).filter(s => s.place).length === 148, '명소 자료 148개');
-  console.log('  · 상징물 그림 ' + result.counts.symbol + '/194, 명소 그림 ' + result.counts.place + '/148');
-  if (required) ok(result.counts.symbol === 194 && result.counts.place === 148, '전량 공개에는 그림 342개가 필요함');
+  // 그림을 가진 소재의 기준은 원장 하나다. 보류로 적힌 것만 면제하므로 그 목록을 원장에서 직접 읽는다.
+  const ledger = JSON.parse(fs.readFileSync(path.join(root, 'docs/image-prompts/presets.json'), 'utf8'));
+  const held = { symbol: [], place: [] };
+  for (const item of ledger.items) if (item.status === 'held') held[item.kind === 'landmark' ? 'place' : 'symbol'].push(item.code);
+  for (const [axis, codes] of Object.entries(held)) {
+    for (const code of codes) ok(FQ.subjects[code] && FQ.subjects[code][axis] && FQ.subjects[code][axis].noArt === true, '원장이 보류한 소재에 noArt 표시가 없음', code + ' ' + axis);
+  }
+  for (const [code, subject] of Object.entries(FQ.subjects)) {
+    for (const axis of ['symbol', 'place']) {
+      if (subject[axis] && subject[axis].noArt) ok(held[axis].includes(code), '원장에 보류 기록이 없는데 noArt 로 그림을 면제함', code + ' ' + axis);
+    }
+  }
+  const need = { symbol: 194 - held.symbol.length, place: 148 - held.place.length };
+  console.log('  · 상징물 그림 ' + result.counts.symbol + '/' + need.symbol + ', 명소 그림 ' + result.counts.place + '/' + need.place +
+    ' (원장 보류 ' + (held.symbol.length + held.place.length) + '건은 그림 없이 이름만)');
+  if (required) ok(result.counts.symbol === need.symbol && result.counts.place === need.place,
+    '전량 공개에는 보류를 뺀 그림 ' + (need.symbol + need.place) + '개가 필요함');
   for (const file of fs.readdirSync(path.join(root, 'flags'))) ok(file === 'README.md' || /^[a-z]{2}\.svg$/.test(file), '국기 폴더에는 SVG 국기와 출처 문서만', file);
 });
 

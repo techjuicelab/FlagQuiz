@@ -48,7 +48,9 @@
 
   function hasData(country, axis) {
     if (axis !== 'symbol' && axis !== 'place') return true;
-    return !!(FQ.subjects && FQ.subjects[country.code] && FQ.subjects[country.code][axis]);
+    var subject = FQ.subjects && FQ.subjects[country.code] && FQ.subjects[country.code][axis];
+    // noArt 는 원장에 적힌 보류다. 문장만 있고 그림 파일이 없어, 출제하면 아이가 빈 그림을 보고 못 푼다.
+    return !!subject && !subject.noArt;
   }
 
   function byCode(code) {
@@ -82,9 +84,9 @@
     var axis = opts.axis || (MODES[mode] && MODES[mode].axis);
     var art = axis === 'symbol' || axis === 'place';
     // 자료 필터는 후보·폴백·혼동군 완화 뒤에도 항상 유지한다.
-    var fallbackPool = all().filter(function (c) {
-      return !art || !!(FQ.subjects && FQ.subjects[c.code] && FQ.subjects[c.code][axis]);
-    });
+    // 판단은 hasData() 한 곳에만 둔다. FQ.subjects 의 축 문장과 noArt(보류) 조건을 여기에
+    // 인라인으로 복제하면 조건이 늘 때 한쪽만 고쳐 그림 없는 나라가 보기로 올라온다.
+    var fallbackPool = all().filter(function (c) { return hasData(c, axis); });
     var candidates = (source && source.length >= count + 1 ? source : fallbackPool).filter(function (c) {
       return c.code !== answer.code && hasData(c, axis);
     });
@@ -362,9 +364,17 @@
       }
     }
 
-    // 다른 나라가 더 많이(또는 같은 만큼이지만 더 정확히) 맞아떨어지면 정답이 아니다
-    var rivalWins = rivalStrength > mine.strength ||
-                    (rivalStrength === mine.strength && rivalDist <= mine.dist);
+    // 어느 쪽이 '낱말 그대로' 맞았는지를 이름 길이보다 먼저 본다.
+    // 후보 키는 이어지는 낱말을 붙여 만들기 때문에, 말머리가 붙으면 "어 가나" 에서
+    // '어가나' 라는 가짜 낱말이 생겨 우간다로 걸린다. 이름이 더 길다는 이유만으로
+    // 넘겨주면 딱 맞은 '가나' 가 오답이 된다. ("음 수단"→남수단, "아 파키스탄"→아프가니스탄도 같다)
+    // 아이 말에는 "어…", "아…", "음…" 이 늘 붙으니 딱 맞은 쪽을 살려야 한다.
+    var rivalWins;
+    if (rivalStrength === Infinity) rivalWins = true;              // 말 전체가 라이벌 이름이다
+    else if (mine.dist === 0 && rivalDist > 0) rivalWins = false;   // 정답만 낱말 그대로 맞았다
+    else if (rivalDist === 0 && mine.dist > 0) rivalWins = true;    // 라이벌만 낱말 그대로 맞았다
+    else rivalWins = rivalStrength > mine.strength ||               // 둘 다 같은 만큼 맞았으면 긴 이름이 이긴다
+                     (rivalStrength === mine.strength && rivalDist <= mine.dist);
     if (!mine.near || rivalWins) {
       if (rival) result.confusedWith = rival;
       return result;

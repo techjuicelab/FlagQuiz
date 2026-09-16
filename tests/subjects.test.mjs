@@ -3,6 +3,14 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 
+/* 그림이 보류된 소재는 출제하지 않는다. 보류가 풀리면 기대값도 따라 움직이도록 원장에서 직접 읽는다. */
+const held = JSON.parse(fs.readFileSync(new URL('../docs/image-prompts/presets.json', import.meta.url), 'utf8'))
+  .items.filter((item) => item.status === 'held');
+const EXPECT = {
+  symbol: 194 - held.filter((item) => item.kind === 'symbol').length,
+  place: 148 - held.filter((item) => item.kind === 'landmark').length
+};
+
 function load() {
   const c = {console, Math}; c.window = c; vm.createContext(c);
   for (const f of ['js/util.js', 'data/countries.js', 'data/subjects.js', 'data/confusion-groups.js', 'js/quiz.js']) {
@@ -11,11 +19,11 @@ function load() {
   return c.FQ;
 }
 
-test('342개 그림 문제의 후보·폴백 모두 자료가 있고 혼동군이 겹치지 않는다', () => {
+test('그림 ' + (EXPECT.symbol + EXPECT.place) + '개 문제의 후보·폴백 모두 자료가 있고 혼동군이 겹치지 않는다', () => {
   const f = load();
   for (const axis of ['symbol', 'place']) {
     const source = f.quiz.pool({axis});
-    assert.equal(source.length, axis === 'symbol' ? 194 : 148);
+    assert.equal(source.length, EXPECT[axis]);
     for (const answer of source) {
       // 단일국가 풀은 전역 폴백 경로를 반드시 거친다.
       for (const pool of [source, [answer]]) {
@@ -33,7 +41,7 @@ test('342개 그림 문제의 후보·폴백 모두 자료가 있고 혼동군�
   }
 });
 
-test('342개 실제 그림 게임이 해당 축으로 채점하며 빈 명소를 출제하지 않는다',()=>{
+test('그림 ' + (EXPECT.symbol + EXPECT.place) + '개 실제 게임이 해당 축으로 채점하며 빈 명소를 출제하지 않는다',()=>{
   const f=load(),records=[];
   f.features={on:()=>true};f.storage={recordAnswer:(...args)=>records.push(args)};
   for(const axis of ['symbol','place']) for(const answer of f.quiz.pool({axis})) {
@@ -45,7 +53,7 @@ test('342개 실제 그림 게임이 해당 축으로 채점하며 빈 명소를
     assert.equal(g.submit({code:answer.code}).correct,true);
     assert.deepEqual(records.at(-1),[answer.code,true,axis]);
   }
-  assert.equal(records.length,342);
+  assert.equal(records.length,EXPECT.symbol+EXPECT.place);
   const g=f.quiz.createGame({mode:'place',only:['ae'],count:3});
   assert.ok(g.questions.every(q=>f.subjects[q.country.code].place));
 });
