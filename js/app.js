@@ -491,7 +491,7 @@
 
     var stage;
     if (q.mode === 'symbol' || q.mode === 'place') {
-      var art = ui.artFor(q.country.code, q.mode);
+      var art = artFor(q.country.code, q.mode);
       // 그림 없는 나라는 출제 풀에서 걸러진다. 그래도 옛 자료와 새 화면이 섞여 캐시에 굳으면
       // 여기에 닿을 수 있다 — 그때 죽으면 아이가 시작을 눌러도 화면이 멈춘 채 아무 일도 안 난다.
       // 기다릴 그림이 아예 없으면 잠그지 않는다. 아이가 건너뛸 수 있어야 한다.
@@ -669,7 +669,22 @@
     }
   }
 
-  /** 그림 소재 이름. 옛 js/ui.js 가 캐시에 섞여도 죽지 않도록 여기서 한 번 더 막는다. */
+  /** 그림 소재를 읽는다. 옛 js/ui.js 가 캐시에 섞여도 죽지 않도록 여기서 한 번 더 막는다.
+   * 지금 공개된 판(704be52)의 ui.js 에는 artFor 도 artAlt 도 없다. 배포가 바뀌는 잠깐 사이에
+   * 새 app.js 와 옛 ui.js 가 함께 굳으면 그림 문제 렌더가 통째로 터져 화면이 멈춘다. */
+  function artSubject(code, axis) {
+    var key = axis === 'place' ? 'place' : 'symbol';
+    var subject = FQ.subjects && FQ.subjects[code] && FQ.subjects[code][key];
+    return subject && !subject.noArt ? subject : null;
+  }
+
+  function artFor(code, axis) {
+    if (ui.artFor) return ui.artFor(code, axis);
+    var subject = artSubject(code, axis);
+    if (!subject) return null;
+    return { src: 'images/' + (axis === 'place' ? 'places/' : 'symbols/') + code + '.webp', alt: subject.ko };
+  }
+
   function artAlt(code, axis) {
     if (ui.artAlt) return ui.artAlt(code, axis);
     var key = axis === 'place' ? 'place' : 'symbol';
@@ -1269,7 +1284,7 @@
     var nq = g.questions[g.index + 1];
     if (!nq) return;
     if ((nq.mode === 'symbol' || nq.mode === 'place') && global.Image) {
-      var art = ui.artFor(nq.country.code, nq.mode);
+      var art = artFor(nq.country.code, nq.mode);
       if (art) { var nextArt = new Image(); nextArt.src = art.src; }
     }
     var codes = [nq.country.code].concat((nq.options || []).map(function (c) { return c.code; }));

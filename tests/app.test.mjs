@@ -619,3 +619,23 @@ test('그림을 끝내 못 받아도 아이는 그 문제에서 빠져나갈 수
   assert.deepEqual(f.c.FQ.storage.wrongList(),[]);
   assert.equal(a.state.game.wrong.length,0);
 });
+
+test('옛 js/ui.js 가 캐시에 섞여도 그림 문제가 죽지 않는다',()=>{
+  // 지금 공개된 판(704be52)의 ui.js 에는 artFor 도 artAlt 도 없다. 배포가 바뀌는 잠깐 사이에
+  // 새 app.js 와 옛 ui.js 가 함께 굳으면, 폴백이 없을 때 renderQuiz 가 통째로 터져
+  // 아이가 시작을 눌러도 아무 일이 안 나는 '멈춘 화면'이 된다. 비행기 모드에서는 낫지도 않는다.
+  for (const missing of [['artFor'],['artAlt'],['artFor','artAlt']]) {
+    const f=fixture();
+    for (const name of missing) delete f.c.FQ.ui[name];
+    f.c.FQ.storage.updateSettings({mode:'symbol',dev:{art:true}});
+    assert.doesNotThrow(()=>f.c.FQ.app.startGame(['kr']), 'ui.' + missing.join('+') + ' 없이 죽는다');
+    const a=f.c.FQ.test;
+    assert.ok(a.state.game, '문제가 만들어지지 않았다');
+    assert.match(f.node('main').innerHTML,/images\/symbols\/kr\.webp/,'그림 경로를 못 만든다');
+    // 힌트·채점·피드백까지 끝까지 간다.
+    f.node('#question-art').handlers.load();
+    assert.doesNotThrow(()=>f.node('#hint').click());
+    assert.doesNotThrow(()=>a.submit({code:'kr'}));
+    assert.equal(f.c.FQ.storage.axisStat('symbol','kr').correct,1);
+  }
+});

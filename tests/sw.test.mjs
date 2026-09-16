@@ -666,6 +666,7 @@ test('그림 예열은 그림 버킷만 채우고 보류 소재는 아예 받지
     return new Response('<svg>flag</svg>');
   };
   await lifecycle(w, 'activate');
+  await w.sandbox.self.warmArtDone;  // 그림 예열은 활성화를 붙잡지 않는다 — 끝을 따로 기다린다.
   assert.equal(await w.read(ART, './images/symbols/kr.webp').text(), 'webp bytes');
   assert.equal(await w.read(ART, './images/places/kr.webp').text(), 'webp bytes');
   // 보류 소재는 파일 자체가 없다 — 받으려 시도조차 하지 않는다.
@@ -683,6 +684,7 @@ test('그림 예열이 실패해도 활성화는 끝까지 간다', async () => 
     throw new Error('network failure');
   };
   await lifecycle(w, 'activate');
+  await w.sandbox.self.warmArtDone;
   assert.equal(await w.read(FLAGS, './flags/kr.svg').text(), '<svg>flag</svg>');
   assert.equal(w.read(ART, './images/symbols/kr.webp'), undefined);
 });

@@ -170,7 +170,11 @@ self.addEventListener('activate', function (event) {
       })
       .then(function () { return self.clients.claim(); })
       .then(function () { return warmFlags(); })
-      .then(function () { return warmArt(); })
+      // 그림 8.2MB 는 활성화를 붙잡지 않는다. waitUntil 이 끝나야 상태가 activated 가 되고
+      // 그때까지 fetch 가 대기하는데, 국기 1.3MB 와 달리 그림까지 기다리면 갱신 직후 아이
+      // 화면이 눈에 띄게 밀린다. 끊겨도 온라인에서는 필요한 그림을 그때그때 담고 다음
+      // 활성화가 부족분을 이어받는다 — warmArtDone 은 검사에서 그 끝을 기다리기 위한 것이다.
+      .then(function () { self.warmArtDone = warmArt()['catch'](function () { return null; }); })
   );
 });
 
