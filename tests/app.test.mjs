@@ -506,7 +506,9 @@ test('그림 다운로드 실패를 오답으로 기록하지 않고 다시 받�
 test('느린 그림 다운로드 중에는 제한 시간·제출이 시작되지 않고 load 뒤에 시작한다',()=>{
   const f=fixture();f.c.FQ.storage.updateSettings({mode:'symbol',timer:10,dev:{art:true}});f.c.FQ.app.startGame(['kr']);
   const a=f.c.FQ.test;
-  assert.equal(a.state.artUnavailable,true);assert.equal(f.node('#skip').disabled,true);
+  // 그림을 기다리는 동안 채점·제한 시간은 시작되지 않는다. 다만 빠져나갈 길은 잠그지 않는다 —
+  // 아이는 비행기 모드로 놀고, 그림이 끝내 안 오면 그 문제에 갇히기 때문이다.
+  assert.equal(a.state.artUnavailable,true);assert.equal(f.node('#skip').disabled,false);
   for(let i=0;i<15;i++)f.runDelay(1000);
   a.submit({code:'kr'});a.submit({text:''},true);
   assert.equal(f.c.FQ.storage.stats().asked,0);assert.equal(a.state.answered,false);
@@ -597,3 +599,23 @@ test('한 번 더 만나기도 골라 둔 국기 놀이를 유지하고 축이 �
 });
 
 console.log('앱 흐름 회귀 검사 '+passed+'건 통과');
+
+test('그림을 끝내 못 받아도 아이는 그 문제에서 빠져나갈 수 있다',()=>{
+  // 비행기 모드에서는 '다시 불러오기'가 영원히 실패한다. 빠져나갈 길까지 잠그면
+  // 아이가 그 문제에 갇혀 놀이를 끝낼 수 없다.
+  const f=fixture();
+  f.c.FQ.storage.updateSettings({mode:'symbol',dev:{art:true}});
+  f.c.FQ.app.startGame(['kr','jp','fr']);
+  const a=f.c.FQ.test;
+  f.node('#question-art').handlers.error();
+  assert.equal(a.state.artUnavailable,true);
+  assert.equal(f.node('#skip').disabled,false,'모르겠어요가 잠겼다 — 아이가 갇힌다');
+  assert.equal(f.node('#hint').disabled,false,'같이 보기가 잠겼다');
+  const first=a.state.game.current().country.code;
+  f.node('#skip').click();
+  assert.notEqual(a.state.game.current().country.code,first,'건너뛰기를 눌러도 다음 문제로 안 간다');
+  // 못 받은 그림을 오답으로 기록하지 않는다 — 아이가 안 틀린 것을 틀렸다고 배우면 안 된다.
+  assert.equal(f.c.FQ.storage.stats().asked,0,'그림 실패가 기록에 남았다');
+  assert.deepEqual(f.c.FQ.storage.wrongList(),[]);
+  assert.equal(a.state.game.wrong.length,0);
+});

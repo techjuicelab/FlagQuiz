@@ -644,3 +644,45 @@ test('오류 응답은 셸 캐시에 담기지 않는다', async () => {
   await response;
   assert.deepEqual(w.puts, [], '오류 응답을 담아 두면 다음 오프라인에서 그 오류가 재생된다');
 });
+
+test('그림 예열은 그림 버킷만 채우고 보류 소재는 아예 받지 않는다', async () => {
+  // 아이는 차 안에서 비행기 모드로 논다. 그림을 그때 받으려 하면 문제가 통째로 잠긴다.
+  const w = worker();
+  const fetched = [];
+  w.sandbox.fetch = async req => {
+    const url = urlOf(req);
+    fetched.push(url);
+    if (url.endsWith('/data/countries.js')) return new Response('[{"code":"kr"},{"code":"gn"}]');
+    if (url.endsWith('/data/subjects.js')) {
+      // 실제 data/subjects.js 와 같은 모양으로 준다 — 머리말 주석에도 'subjects' 라는 글자가 있고
+      // IIFE 로 감싸여 있다. 픽스처가 실제 파일과 다르면 파싱 버그가 그대로 지나간다.
+      return new Response('/* 생성물: npm run subjects:build. */\n(function () {\n' +
+        '  var FQ = window.FQ = window.FQ || {};\n  FQ.subjects = ' + JSON.stringify({
+          kr: { symbol: { ko: '김치' }, place: { ko: '광화문' } },
+          gn: { symbol: { ko: '코라 악기', noArt: true } }
+        }, null, 2) + ';\n})();\n');
+    }
+    if (url.includes('/images/')) return new Response('webp bytes');
+    return new Response('<svg>flag</svg>');
+  };
+  await lifecycle(w, 'activate');
+  assert.equal(await w.read(ART, './images/symbols/kr.webp').text(), 'webp bytes');
+  assert.equal(await w.read(ART, './images/places/kr.webp').text(), 'webp bytes');
+  // 보류 소재는 파일 자체가 없다 — 받으려 시도조차 하지 않는다.
+  assert.ok(!fetched.some(url => url.includes('symbols/gn.webp')), '보류 소재를 받으러 갔다');
+  assert.ok(w.puts.every(put => [ART, FLAGS].includes(put.name)), '예열이 다른 버킷을 건드렸다');
+  assert.ok(fetched.every(url => !new URL(url).pathname.includes('/audio/')), '예열이 음원을 건드렸다');
+});
+
+test('그림 예열이 실패해도 활성화는 끝까지 간다', async () => {
+  const w = worker();
+  w.sandbox.fetch = async req => {
+    const url = urlOf(req);
+    if (url.endsWith('/data/countries.js')) return new Response('[{"code":"kr"}]');
+    if (url.endsWith('/flags/kr.svg')) return new Response('<svg>flag</svg>');
+    throw new Error('network failure');
+  };
+  await lifecycle(w, 'activate');
+  assert.equal(await w.read(FLAGS, './flags/kr.svg').text(), '<svg>flag</svg>');
+  assert.equal(w.read(ART, './images/symbols/kr.webp'), undefined);
+});

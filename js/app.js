@@ -627,7 +627,10 @@
       renderHome();
     });
     ui.$('#hint', m).addEventListener('click', showHint);
-    ui.$('#skip', m).addEventListener('click', function () { submit({ text: '' }, true); });
+    ui.$('#skip', m).addEventListener('click', function () {
+      if (state.artUnavailable) return skipUnscored();
+      submit({ text: '' }, true);
+    });
 
     bindAnswerArea(m, q);
     var questionArt = ui.$('#question-art', m);
@@ -642,8 +645,10 @@
         ui.$$('.answer-btn', m).forEach(function (button) {
           button.disabled = unavailable || state.removed.indexOf(button.getAttribute('data-code')) !== -1;
         });
-        ui.$('#skip', m).disabled = unavailable;
-        ui.$('#hint', m).disabled = unavailable || state.usedHint;
+        // 보기는 잠가도 빠져나갈 길은 절대 잠그지 않는다. 아이는 차 안에서 비행기 모드로 논다 —
+        // 그림을 못 받는 동안 '모르겠어요' 까지 잠기면 그 문제에 갇혀 아무것도 못 한다.
+        ui.$('#skip', m).disabled = false;
+        ui.$('#hint', m).disabled = state.usedHint;
         if (unavailable) stopTimer();
         else if (s.timer && !state.timerId) startTimer();
       }
@@ -662,6 +667,14 @@
       // 늦게(setTimeout) 시작하면 사용자가 누른 동작과 끊겨 매번 허용을 물어본다.
       startListening();
     }
+  }
+
+  /** 그림 소재 이름. 옛 js/ui.js 가 캐시에 섞여도 죽지 않도록 여기서 한 번 더 막는다. */
+  function artAlt(code, axis) {
+    if (ui.artAlt) return ui.artAlt(code, axis);
+    var key = axis === 'place' ? 'place' : 'symbol';
+    var subject = FQ.subjects && FQ.subjects[code] && FQ.subjects[code][key];
+    return subject ? subject.ko : '';
   }
 
   function answerArea(q) {
@@ -931,13 +944,14 @@
 
   /* --------- 힌트 --------- */
   function showHint() {
-    if (state.answered || state.artUnavailable) return;
+    // 힌트는 소재 이름과 대륙이라 글자뿐이다. 그림을 못 받아도 아이에게 줄 수 있다.
+    if (state.answered) return;
     var q = state.game.current();
     state.usedHint = true;
     var box = ui.$('#hint-area');
     var lines = [];
     if (q.mode === 'symbol' || q.mode === 'place') {
-      lines.push(esc(ui.artAlt(q.country.code, q.mode)));
+      lines.push(esc(artAlt(q.country.code, q.mode)));
       lines.push(esc(q.country.continent) + '에 있는 나라예요');
     } else if (q.mode === 'map') {
       lines.push('🗺️ ' + esc(q.country.continent) + ' · ' + esc(q.country.region) + '에서 찾아보세요');
@@ -964,6 +978,21 @@
     }
     var hintBtn = ui.$('#hint');
     if (hintBtn) hintBtn.disabled = true;
+  }
+
+  /**
+   * 그림을 못 받아 답할 수 없는 문제를 점수 없이 넘긴다.
+   * 오답으로 기록하면 아이가 안 틀린 것을 틀렸다고 배우고, 그렇다고 막아 두면
+   * 그 문제에 갇혀 놀이를 끝낼 수 없다. 기록에 손대지 않고 다음 문제로만 간다.
+   */
+  function skipUnscored() {
+    if (state.answered || !state.game) return;
+    stopTimer();
+    state.listenOn = false;
+    if (state.listenTimer) { global.clearTimeout(state.listenTimer); state.listenTimer = null; }
+    audio.stopSpeaking();
+    state.game.next();
+    renderQuiz();
   }
 
   /* --------- 제출 --------- */
@@ -1111,7 +1140,7 @@
           '<div><div class="kname">' + esc(isCapitalQ ? c.capital : c.ko) + '</div></div>' +
         '</div>' +
         '<div class="remember-box"><div class="remember-hint">' +
-          (isCapitalQ ? '🏙️ ' + esc(c.ko) + '의 수도예요' : isMapQ ? '🗺️ ' + esc(c.continent) + ' · ' + esc(c.region) + '<br>' + esc(c.fact) : isArtQ ? esc(ui.artAlt(c.code, q.mode)) + '<br>' + esc(c.fact) : '🚩 ' + esc(c.flagHint)) +
+          (isCapitalQ ? '🏙️ ' + esc(c.ko) + '의 수도예요' : isMapQ ? '🗺️ ' + esc(c.continent) + ' · ' + esc(c.region) + '<br>' + esc(c.fact) : isArtQ ? esc(artAlt(c.code, q.mode)) + '<br>' + esc(c.fact) : '🚩 ' + esc(c.flagHint)) +
         '</div></div>' +
         (store.settings().speak
           ? '<button class="btn btn-sm" id="replay" type="button" style="margin-top:8px">🔊 설명 다시 듣기</button>'
@@ -1376,7 +1405,7 @@
                   '<img src="' + ui.flagSrc(c.code) + '" alt="' + esc(c.ko) + ' 국기">' +
                   '<div class="n">' + esc(c.ko) + '</div>' +
                   '<div class="wh">' + esc(summary.mode === 'map' ? c.continent + ' · ' + c.region :
-                    summary.mode === 'symbol' || summary.mode === 'place' ? ui.artAlt(c.code, summary.mode) : c.flagHint) + '</div>' +
+                    summary.mode === 'symbol' || summary.mode === 'place' ? artAlt(c.code, summary.mode) : c.flagHint) + '</div>' +
                 '</button>';
               }).join('') + '</div>' +
               '<p class="small muted" style="margin-bottom:0">국기를 누르면 자세히 볼 수 있어요.</p>' +

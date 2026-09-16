@@ -81,6 +81,55 @@ function warmFlags() {
     })['catch'](function () { return null; });
 }
 
+/**
+ * 상징물·명소 그림을 활성화 뒤에 조금씩 담아 둔다.
+ * 아이는 차 안에서 비행기 모드로 논다. 그림을 그때 받으려 하면 문제가 통째로 잠기고
+ * 답도 못 하고 넘기지도 못한다. 국기와 같은 방식으로 미리 받아 둔다.
+ * 341장 8.1MB 라 설치를 붙잡으면 안 되고, 실패해도 그냥 넘어간다.
+ */
+function warmArt() {
+  return fetch('./data/subjects.js')
+    .then(function (res) { return res.ok ? res.text() : ''; })
+    .then(function (src) {
+      // 파일은 IIFE 로 감싸여 있고 머리말 주석에도 'subjects' 라는 글자가 있다.
+      // 대입 자리를 정확히 집어 거기서부터 괄호를 세어 잘라낸다.
+      var assign = /FQ\.subjects\s*=\s*\{/.exec(src);
+      if (!assign) return;
+      var start = assign.index + assign[0].length - 1;
+      var depth = 0, end = -1;
+      for (var i = start; i < src.length; i++) {
+        var ch = src.charAt(i);
+        if (ch === '{') depth += 1;
+        else if (ch === '}') { depth -= 1; if (!depth) { end = i; break; } }
+      }
+      if (end === -1) return;
+      var subjects;
+      try { subjects = JSON.parse(src.slice(start, end + 1)); }
+      catch (e) { return; }
+      var urls = [];
+      Object.keys(subjects).forEach(function (code) {
+        // noArt 는 원장이 보류한 소재다. 받을 파일이 아예 없으므로 요청하지 않는다.
+        if (subjects[code].symbol && !subjects[code].symbol.noArt) urls.push('./images/symbols/' + code + '.webp');
+        if (subjects[code].place && !subjects[code].place.noArt) urls.push('./images/places/' + code + '.webp');
+      });
+      if (!urls.length) return;
+      return caches.open(ART_CACHE).then(function (cache) {
+        var i = 0;
+        function nextChunk() {
+          if (i >= urls.length) return;
+          var chunk = urls.slice(i, i + 10);
+          i += 10;
+          return Promise.all(chunk.map(function (u) {
+            return cache.match(u).then(function (hit) {
+              return hit ? null : cache.add(u)['catch'](function () { return null; });
+            });
+          })).then(nextChunk);
+        }
+        return nextChunk();
+      });
+    })['catch'](function () { return null; });
+}
+
 function preserveLegacyFlag(legacy, req) {
   // 설치 직후 연결이 끊겨도 이미 받아 둔 국기를 잃지 않는다.
   return caches.open(FLAG_CACHE).then(function (flags) {
@@ -121,6 +170,7 @@ self.addEventListener('activate', function (event) {
       })
       .then(function () { return self.clients.claim(); })
       .then(function () { return warmFlags(); })
+      .then(function () { return warmArt(); })
   );
 });
 
