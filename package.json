@@ -7,12 +7,22 @@
     "start": "node scripts/serve.mjs",
     "build": "npm run voice:check && node scripts/build-site.mjs",
     "test": "node tests/run.mjs && node --test tests/*.test.mjs",
+    "verify": "node scripts/verify-expansion.mjs",
     "voice:plan": "node scripts/generate-voice.mjs --plan",
     "voice:check": "node scripts/generate-voice.mjs --check",
     "voice:generate": "op run --env-file=env/typecast.op.env -- node scripts/generate-voice.mjs",
     "voice:sample": "op run --env-file=env/typecast.op.env -- node scripts/generate-voice.mjs --sample",
     "music:generate": "node scripts/generate-music.mjs",
-    "music:prepare": "node scripts/prepare-music.mjs"
+    "music:prepare": "node scripts/prepare-music.mjs",
+    "map:fetch": "node scripts/fetch-map-source.mjs",
+    "map:build": "node scripts/build-map.mjs",
+    "subjects:build": "node scripts/build-subjects.mjs",
+    "images:lint": "node scripts/image-ledger.mjs lint",
+    "images:prompts": "node scripts/build-image-prompts.mjs --board",
+    "images:prepare": "node scripts/prepare-images.mjs",
+    "images:check": "node scripts/check-images.mjs",
+    "images:contact": "node scripts/image-ledger.mjs contact",
+    "images:report": "node scripts/image-ledger.mjs report --status --budget"
   },
   "license": "MIT"
 }

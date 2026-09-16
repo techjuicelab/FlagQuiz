@@ -20,7 +20,10 @@
     { id: 'reverse', emo: '🔎', title: '나라 보고 국기 찾기', desc: '이름을 보고 국기를 골라요' },
     { id: 'voice',   emo: '🎤', title: '말로 답하기', desc: '누르지 않고 바로 말하면 돼요' },
     { id: 'typing',  emo: '⌨️', title: '이름 써서 맞히기', desc: '글자로 입력해요' },
-    { id: 'capital', emo: '🏙️', title: '수도 맞히기', desc: '나라의 수도를 골라요' }
+    { id: 'capital', emo: '🏙️', title: '수도 맞히기', desc: '나라의 수도를 골라요' },
+    { id: 'map', emo: '🗺️', title: '지도에서 나라 찾기', desc: '나라가 있는 위치 핀을 골라요' },
+    { id: 'symbol', emo: '🎨', title: '그림 보고 나라 고르기', desc: '이 그림은 어느 나라의 친구일까요?' },
+    { id: 'place', emo: '🏞️', title: '명소 보고 나라 고르기', desc: '이 멋진 곳이 있는 나라를 골라요' }
   ];
 
   function totalCountries() { return quiz.all().length; }
@@ -111,10 +114,11 @@
     audio.stopSpeaking();
     state.game = null;
     var s = store.settings();
+    if (s.mode !== quiz.availableMode(s.mode)) s = store.updateSettings({ mode: quiz.availableMode(s.mode) });
     musicScreen('home');
     var wrongCount = store.wrongList().length;
     var duel = s.players.length > 1;
-    var poolSize = quiz.pool({ level: s.level, continent: s.continent }).length;
+    var poolSize = quiz.pool({ level: s.level, continent: s.continent, axis: quiz.MODES[s.mode] && quiz.MODES[s.mode].axis }).length;
 
     var html =
       '<section class="screen">' +
@@ -144,7 +148,7 @@
         '<div class="section">' +
           '<h3>어떻게 맞힐까요?</h3>' +
           '<div class="mode-grid">' +
-            MODE_CARDS.map(function (m) {
+            MODE_CARDS.filter(function (m) { return quiz.availableMode(m.id) === m.id; }).map(function (m) {
               return '<button class="mode-card" type="button" data-mode="' + m.id + '" aria-pressed="' + (s.mode === m.id ? 'true' : 'false') + '">' +
                 '<span class="emo" aria-hidden="true">' + m.emo + '</span>' +
                 '<span class="txt"><span class="t">' + esc(m.title) + '</span><span class="d">' + esc(m.desc) + '</span></span>' +
@@ -290,6 +294,7 @@
         if (d.complete) { FQ.screens.dex(); return; }
         savePlayers(m);
         store.updateSettings({ continent: d.continent });
+        keepFlagAxisMode();
         renderHome();
       });
     }
@@ -307,6 +312,7 @@
     if (reviewBtn) {
       reviewBtn.addEventListener('click', function () {
         savePlayers(m);
+        keepFlagAxisMode();
         startGame(store.wrongList());
       });
     }
@@ -356,13 +362,38 @@
     '</div>';
   }
 
+  /**
+   * 오늘의 도전은 국기 기록만 센다.
+   * 지도·그림·명소 놀이는 축이 'flag' 가 아니라 아무리 맞혀도 칸이 오르지 않는다(의도된 설계).
+   * 아이가 이유를 알 길이 없으니, 대륙이 어긋났을 때처럼 왜 멈춰 있는지 화면에 알려 준다.
+   * 이 글자는 보여 주기만 하고 읽어 주지 않는다 — 수아 음원에 없는 문구다.
+   */
+  function dailyWhy(d, s) {
+    if (d.complete) return '';
+    // 국기 놀이가 아니면 대륙을 맞춰도 소용없다. 놀이부터 바꿔야 한다고 먼저 알려 준다.
+    if (quiz.MODES[s.mode] && quiz.MODES[s.mode].axis !== 'flag') {
+      return '지금 놀이로는 칸이 안 올라가요 · 눌러서 국기 놀이로 바꾸기';
+    }
+    // 고른 대륙이 오늘의 대륙과 다르면 도전은 한 칸도 오르지 않는다.
+    if (s.continent !== 'all' && s.continent !== d.continent) {
+      return '지금은 ' + s.continent + '만 나와서 오르지 않아요 · 눌러서 ' + d.continent + withParticle(d.continent) + ' 바꾸기';
+    }
+    return '';
+  }
+
   /** 홈: 오늘의 도전 */
+  /** 받침이 있으면 '으로', 없으면 '로'. '유럽로' 같은 글자를 아이에게 보이지 않는다. */
+  function withParticle(word) {
+    var last = String(word || '').slice(-1);
+    var code = last.charCodeAt(0);
+    if (!(code >= 0xAC00 && code <= 0xD7A3)) return '로';
+    return (code - 0xAC00) % 28 === 0 ? '로' : '으로';
+  }
+
   function dailyCard() {
     var d = FQ.progress.daily();
     var s = store.settings();
-    // 고른 대륙이 오늘의 대륙과 다르면 도전은 한 칸도 오르지 않는다.
-    // 여태 아무 말도 없이 조용히 멈춰 있었다.
-    var mismatch = !d.complete && s.continent !== 'all' && s.continent !== d.continent;
+    var why = dailyWhy(d, s);
     return '<button class="daily-card" id="daily-go" type="button">' +
       '<span class="ic">' + (d.complete ? '🏆' : '🎯') + '</span>' +
       '<span class="body">' +
@@ -371,10 +402,7 @@
             ? '오늘의 도전을 끝냈어요!'
             : '오늘의 도전 · ' + esc(d.continent) + ' 나라 ' + d.target + '개 맞히기') +
         '</span>' +
-        (mismatch
-          ? '<span class="daily-why">지금은 ' + esc(s.continent) + '만 나와서 오르지 않아요 · 눌러서 ' +
-            esc(d.continent) + '로 바꾸기</span>'
-          : '') +
+        (why ? '<span class="daily-why">' + esc(why) + '</span>' : '') +
         '<span class="daily-bar"><i style="width:' + Math.round(d.ratio * 100) + '%"></i></span>' +
       '</span>' +
       '<span class="cnt">' + d.done + '/' + d.target + '</span>' +
@@ -386,6 +414,16 @@
     if (!reason) return '<div class="notice">🎤 “듣고 있어요”가 나오면 <b>나라 이름을 끝까지 말해 주세요.</b> 마이크 사용을 물어보면 “허용”을 눌러 주세요. 음성 인식에는 인터넷 연결이 필요할 수 있어요.</div>';
     return '<div class="notice">⚠️ ' + esc(reason) +
       (FQ.speech.blocked() ? '<br>말하기 대신 <b>이름 써서 맞히기</b>로도 즐길 수 있어요.' : '') + '</div>';
+  }
+
+  /**
+   * 오늘의 도전과 '한 번 더 만나기'는 국기 기록을 쓴다.
+   * 지도·그림·명소 놀이는 축이 달라 한 칸도 쌓이지 않으니 국기 놀이로 되돌린다.
+   * 말하기·쓰기·수도 맞히기는 이미 국기 축이므로 아이가 고른 그대로 둔다.
+   */
+  function keepFlagAxisMode() {
+    var cur = quiz.MODES[store.settings().mode];
+    if (!cur || cur.axis !== 'flag') store.updateSettings({ mode: 'choice4' });
   }
 
   function savePlayers(m) {
@@ -407,7 +445,8 @@
     stopListening();
     audio.stopSpeaking();
     var s = store.settings();
-    var reviewing = !!(onlyCodes && onlyCodes.length);
+    if (s.mode !== quiz.availableMode(s.mode)) s = store.updateSettings({ mode: quiz.availableMode(s.mode) });
+    var reviewing = !!(onlyCodes && onlyCodes.length && quiz.MODES[s.mode].axis === 'flag');
     state.review = reviewing
       ? { asked: Math.min(onlyCodes.length, 20), before: store.wrongList().length }
       : null;
@@ -439,6 +478,7 @@
     var g = state.game;
     if (!g || g.isOver()) return finishGame();
     state.answered = false;
+    state.artUnavailable = false;
     state.usedHint = false;
     state.removed = [];
     state.timedOut = false;
@@ -450,7 +490,25 @@
     var duel = g.players.length > 1;
 
     var stage;
-    if (q.mode === 'reverse') {
+    if (q.mode === 'symbol' || q.mode === 'place') {
+      var art = ui.artFor(q.country.code, q.mode);
+      // 그림 없는 나라는 출제 풀에서 걸러진다. 그래도 옛 자료와 새 화면이 섞여 캐시에 굳으면
+      // 여기에 닿을 수 있다 — 그때 죽으면 아이가 시작을 눌러도 화면이 멈춘 채 아무 일도 안 난다.
+      // 기다릴 그림이 아예 없으면 잠그지 않는다. 아이가 건너뛸 수 있어야 한다.
+      state.artUnavailable = !!art;
+      stage = '<div class="flag-stage art-question"><div class="q-label">' +
+        (q.mode === 'place' ? '이 명소가 있는 나라는 어디일까요?' : '이 그림은 어느 나라를 떠올리게 하나요?') + '</div>' +
+        (art ? '<img id="question-art" src="' + esc(art.src) + '" alt="' + esc(art.alt) + '" width="1024" height="768">' +
+          '<p id="art-loading" role="status">그림을 불러오고 있어요…</p>' +
+          '<div id="art-error" hidden><p>그림을 불러오지 못했어요.</p><button class="btn" id="art-retry" type="button">다시 불러오기</button></div>'
+          : '<div id="art-error"><p>그림을 불러오지 못했어요.</p></div>') + '</div>';
+    } else if (q.mode === 'map') {
+      stage = '<div class="flag-stage map-question">' +
+        '<div class="q-label">이 나라는 어디에 있을까요?</div>' +
+        '<img class="map-question-flag" src="' + ui.flagSrc(q.country.code) + '" alt="' + esc(q.country.ko) + ' 국기">' +
+        '<div class="big-name">' + esc(q.country.ko) + '</div>' +
+        '<button class="btn btn-sm" data-speak="' + esc(q.country.ko) + '" type="button">🔊 들어보기</button></div>';
+    } else if (q.mode === 'reverse') {
       stage =
         '<div class="flag-stage">' +
           '<div class="q-label">이 나라의 국기를 찾아보세요</div>' +
@@ -511,7 +569,7 @@
         '</div>' +
 
         '<div class="qdots">' + dots + '</div>' +
-        '<div class="quiz-body">' +
+        '<div class="quiz-body' + (q.mode === 'map' ? ' map-quiz' : '') + '">' +
           '<div>' + stage + '</div>' +
           '<div>' +
             '<div id="answer-area">' + answerArea(q) + '</div>' +
@@ -569,11 +627,38 @@
       renderHome();
     });
     ui.$('#hint', m).addEventListener('click', showHint);
-    ui.$('#skip', m).addEventListener('click', function () { submit({ text: '' }, true); });
+    ui.$('#skip', m).addEventListener('click', function () {
+      if (state.artUnavailable) return skipUnscored();
+      submit({ text: '' }, true);
+    });
 
     bindAnswerArea(m, q);
+    var questionArt = ui.$('#question-art', m);
+    if ((q.mode === 'symbol' || q.mode === 'place') && questionArt) {
+      function artState(status) {
+        if (state.game !== g || g.current() !== q || state.answered) return;
+        var unavailable = status !== 'ready';
+        state.artUnavailable = unavailable;
+        ui.$('#art-error', m).hidden = status !== 'error';
+        ui.$('#art-loading', m).hidden = status !== 'loading';
+        questionArt.hidden = status === 'error';
+        ui.$$('.answer-btn', m).forEach(function (button) {
+          button.disabled = unavailable || state.removed.indexOf(button.getAttribute('data-code')) !== -1;
+        });
+        // 보기는 잠가도 빠져나갈 길은 절대 잠그지 않는다. 아이는 차 안에서 비행기 모드로 논다 —
+        // 그림을 못 받는 동안 '모르겠어요' 까지 잠기면 그 문제에 갇혀 아무것도 못 한다.
+        ui.$('#skip', m).disabled = false;
+        ui.$('#hint', m).disabled = state.usedHint;
+        if (unavailable) stopTimer();
+        else if (s.timer && !state.timerId) startTimer();
+      }
+      questionArt.addEventListener('error', function () { artState('error'); });
+      questionArt.addEventListener('load', function () { artState('ready'); });
+      ui.$('#art-retry', m).addEventListener('click', function () { artState('loading'); questionArt.src = art.src; });
+      artState(questionArt.complete ? (questionArt.naturalWidth > 0 ? 'ready' : 'error') : 'loading');
+    }
     preloadNext();
-    startTimer();
+    if (!state.artUnavailable && !state.timerId) startTimer();
 
     if (q.mode === 'voice') {
       state.listenOn = true;
@@ -584,7 +669,22 @@
     }
   }
 
+  /** 그림 소재 이름. 옛 js/ui.js 가 캐시에 섞여도 죽지 않도록 여기서 한 번 더 막는다. */
+  function artAlt(code, axis) {
+    if (ui.artAlt) return ui.artAlt(code, axis);
+    var key = axis === 'place' ? 'place' : 'symbol';
+    var subject = FQ.subjects && FQ.subjects[code] && FQ.subjects[code][key];
+    return subject ? subject.ko : '';
+  }
+
   function answerArea(q) {
+    if (q.mode === 'map') return FQ.map.render(q.options);
+    if (q.mode === 'symbol' || q.mode === 'place') {
+      return '<div class="answer-grid">' + q.options.map(function (c) {
+        return '<button class="answer-btn art-choice" type="button" data-code="' + c.code + '">' +
+          '<img src="' + ui.flagSrc(c.code) + '" alt="" width="48" height="32"><span>' + esc(c.ko) + '</span></button>';
+      }).join('') + '</div>';
+    }
     if (q.mode === 'choice4') {
       return '<div class="answer-grid">' + q.options.map(function (c, i) {
         return '<button class="answer-btn" type="button" data-code="' + c.code + '">' +
@@ -844,12 +944,18 @@
 
   /* --------- 힌트 --------- */
   function showHint() {
+    // 힌트는 소재 이름과 대륙이라 글자뿐이다. 그림을 못 받아도 아이에게 줄 수 있다.
     if (state.answered) return;
     var q = state.game.current();
     state.usedHint = true;
     var box = ui.$('#hint-area');
     var lines = [];
-    if (q.mode === 'capital') {
+    if (q.mode === 'symbol' || q.mode === 'place') {
+      lines.push(esc(artAlt(q.country.code, q.mode)));
+      lines.push(esc(q.country.continent) + '에 있는 나라예요');
+    } else if (q.mode === 'map') {
+      lines.push('🗺️ ' + esc(q.country.continent) + ' · ' + esc(q.country.region) + '에서 찾아보세요');
+    } else if (q.mode === 'capital') {
       lines.push('첫 글자는 <b>' + esc(util.initialOf(q.country.capital)) + '</b> 로 시작해요');
       lines.push(esc(q.country.continent) + ' · ' + esc(q.country.region) + ' 에 있어요');
     } else if (q.mode === 'reverse') {
@@ -874,9 +980,24 @@
     if (hintBtn) hintBtn.disabled = true;
   }
 
+  /**
+   * 그림을 못 받아 답할 수 없는 문제를 점수 없이 넘긴다.
+   * 오답으로 기록하면 아이가 안 틀린 것을 틀렸다고 배우고, 그렇다고 막아 두면
+   * 그 문제에 갇혀 놀이를 끝낼 수 없다. 기록에 손대지 않고 다음 문제로만 간다.
+   */
+  function skipUnscored() {
+    if (state.answered || !state.game) return;
+    stopTimer();
+    state.listenOn = false;
+    if (state.listenTimer) { global.clearTimeout(state.listenTimer); state.listenTimer = null; }
+    audio.stopSpeaking();
+    state.game.next();
+    renderQuiz();
+  }
+
   /* --------- 제출 --------- */
   function submit(payload, gaveUp) {
-    if (state.answered) return;
+    if (state.answered || state.artUnavailable) return;
     state.answered = true;
     stopTimer();
     // 마이크는 showFeedback 에서 놓는다. 놓인 것을 확인한 뒤에 읽어 줘야
@@ -887,7 +1008,8 @@
     var g = state.game;
     var q = g.current();
     // 스티커는 "이 나라를 처음 맞혔는가" 로 정해지므로 기록하기 전에 확인해야 한다
-    var isNewSticker = q && !FQ.progress.hasSticker(q.country.code);
+    var flagAxis = q && quiz.MODES[q.mode].axis === 'flag';
+    var isNewSticker = flagAxis && !FQ.progress.hasSticker(q.country.code);
 
     var res = g.submit(payload, state.usedHint);
     if (!res) return;
@@ -902,7 +1024,7 @@
         state.newStickers.push(q.country);
         res.newSticker = true;
       }
-      res.dailyDone = FQ.progress.noteDaily(q.country, true);
+      if (flagAxis) res.dailyDone = FQ.progress.noteDaily(q.country, true);
     }
     // recordAnswer는 제출 때 딱 한 번 증가한다. 오답·건너뛰기도 쌓이고 다음 판에 이어진다.
     res.chest = FQ.progress.chestOpensAt(store.stats().asked);
@@ -964,8 +1086,10 @@
 
     // 정오답 모두 이름 한 번과 쉬운 설명 한 문장만 읽는다.
     var isCapitalQ = q.mode === 'capital';
+    var isMapQ = q.mode === 'map';
+    var isArtQ = q.mode === 'symbol' || q.mode === 'place';
     state.lastSpeech = {
-      lines: isCapitalQ ? [c.capital, c.ko + '의 수도예요'] : [c.ko, c.flagHint],
+      lines: isCapitalQ ? [c.capital, c.ko + '의 수도예요'] : (isMapQ || isArtQ) ? [c.ko, c.fact] : [c.ko, c.flagHint],
       opts: { rate: 0.93, pitch: 1.1 }
     };
     var feedbackSpeech = state.lastSpeech;
@@ -1016,7 +1140,7 @@
           '<div><div class="kname">' + esc(isCapitalQ ? c.capital : c.ko) + '</div></div>' +
         '</div>' +
         '<div class="remember-box"><div class="remember-hint">' +
-          (isCapitalQ ? '🏙️ ' + esc(c.ko) + '의 수도예요' : '🚩 ' + esc(c.flagHint)) +
+          (isCapitalQ ? '🏙️ ' + esc(c.ko) + '의 수도예요' : isMapQ ? '🗺️ ' + esc(c.continent) + ' · ' + esc(c.region) + '<br>' + esc(c.fact) : isArtQ ? esc(artAlt(c.code, q.mode)) + '<br>' + esc(c.fact) : '🚩 ' + esc(c.flagHint)) +
         '</div></div>' +
         (store.settings().speak
           ? '<button class="btn btn-sm" id="replay" type="button" style="margin-top:8px">🔊 설명 다시 듣기</button>'
@@ -1144,6 +1268,10 @@
     var g = state.game;
     var nq = g.questions[g.index + 1];
     if (!nq) return;
+    if ((nq.mode === 'symbol' || nq.mode === 'place') && global.Image) {
+      var art = ui.artFor(nq.country.code, nq.mode);
+      if (art) { var nextArt = new Image(); nextArt.src = art.src; }
+    }
     var codes = [nq.country.code].concat((nq.options || []).map(function (c) { return c.code; }));
     codes.forEach(function (code) {
       var img = new Image();
@@ -1154,9 +1282,13 @@
   /* --------- 제한 시간 --------- */
   function startTimer(remaining) {
     stopTimer();
+    state.timerPaused = false;
+    if (!state.game || state.answered || state.artUnavailable) return;
     var limit = remaining === undefined ? Number(store.settings().timer) || 0 : remaining;
     if (!limit) return;
     state.timeLeft = limit;
+    // 숨겨진 동안 그림이 준비되면 화면 복귀 후부터 온전한 제한 시간을 준다.
+    if (doc.hidden) { state.timerPaused = true; return; }
     var chip = ui.$('#timer-chip');
     if (chip) chip.textContent = '⏱ ' + state.timeLeft;
     state.timerId = global.setInterval(function () {
@@ -1272,7 +1404,8 @@
                 return '<button class="wrong-item" type="button" data-code="' + c.code + '">' +
                   '<img src="' + ui.flagSrc(c.code) + '" alt="' + esc(c.ko) + ' 국기">' +
                   '<div class="n">' + esc(c.ko) + '</div>' +
-                  (c.flagHint ? '<div class="wh">' + esc(c.flagHint) + '</div>' : '') +
+                  '<div class="wh">' + esc(summary.mode === 'map' ? c.continent + ' · ' + c.region :
+                    summary.mode === 'symbol' || summary.mode === 'place' ? artAlt(c.code, summary.mode) : c.flagHint) + '</div>' +
                 '</button>';
               }).join('') + '</div>' +
               '<p class="small muted" style="margin-bottom:0">국기를 누르면 자세히 볼 수 있어요.</p>' +

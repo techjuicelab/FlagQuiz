@@ -156,6 +156,7 @@ npm test
 
 194개국 자료가 온전한지, 국기 파일이 다 있는지, 그리고 **말로 답할 때 채점이 새지 않는지**를 확인합니다.
 
+- 지도 좌표 194개가 나라 목록과 정확히 짝지는지 — 빠진 나라도, 목록에서 뺀 나라의 좌표가 남은 것도 없는지
 - 아이가 말한 그대로 인정하는지 — 두 번 말하기, 앞뒤에 붙는 말, 조사, 틀린 발음, 끊어 말한 이름
 - 다른 나라 이름을 정답으로 잘못 인정하지 않는지 —
   니제르 ↔ 나이지리아, 오스트리아 ↔ 오스트레일리아, 슬로바키아 ↔ 슬로베니아,
@@ -174,10 +175,13 @@ npm test
   국가로 볼지 견해가 갈리는 지역(대만, 팔레스타인, 코소보, 서사하라 등)과
   다른 나라에 속한 자치지역·속령(홍콩, 푸에르토리코, 그린란드 등)은 넣지 않았습니다.
   아이가 배우는 자료라 어른들 사이에서도 답이 갈리는 것은 빼는 편이 낫다고 보았습니다.
+  지도에서는 **땅만 그리고 국경선을 나라를 가르는 선으로 쓰지 않습니다.** 어느 선을 어디에 긋느냐가 어른들 사이에서도 갈리는 문제라, 바다와 땅만 구분되는 한 장의 실루엣으로 그리고 나라는 어디서나 같은 크기의 핀으로 표시합니다.
 
 ## 만든 것들
 
 - 국기 이미지: [lipis/flag-icons](https://github.com/lipis/flag-icons) (MIT License)
+- 세계지도: [Natural Earth](https://www.naturalearthdata.com/) 50m admin_0_countries (퍼블릭 도메인). 원자료는 저장소에 넣지 않고 `npm run map:fetch`로 받아 `npm run map:build`로 변환합니다. 결과는 `data/map-coords.js` · `data/map-shapes.js` 두 파일입니다.
+- 상징물·명소 그림: TechJuiceLab · OpenAI 내장 image_gen으로 생성한 AI 삽화. [제작 출처·검수 및 원본 보존](docs/image-prompts/PROVENANCE.md), [현재 작업 상태](docs/expansion/STATUS.md)를 확인하세요.
 - 음성: AI 가상 연기자 서비스 [Typecast](https://typecast.ai), Sua(수아).
   생성 음원에는 이 저장소의 MIT 라이선스를 적용하지 않습니다.
   API Free로 생성한 음원은 [Typecast API 이용약관](https://help.typecast.ai/en/articles/11872662-typecast-api-terms-of-use)의 비상업적 사용·출처 표시 조건을 따릅니다.

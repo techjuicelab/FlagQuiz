@@ -1,0 +1,233 @@
+npm notice run flagquiz@1.0.0 verify
+npm notice run node scripts/verify-expansion.mjs
+국기 퀴즈 확장 검사 — node scripts/verify-expansion.mjs
+저장소: /Users/techjuice/Documents/Dev/AI/FlagQuiz   HEAD: 8a49058
+상태는 셋이다 — ✅ 통과 / ❌ 실패 / ⬜ 미구현 (미구현은 실패가 아니다)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. 금지 사항 — 위반하면 되돌릴 수 없다 (이것만 종료 코드 1)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ 통과  [guard-storage-key]  금지1 (전 과제 공통)
+   localStorage 키가 flagquiz.v1 그대로인가
+   근거: 마이그레이션 코드가 저장소 전체에 없다. v2로 올리는 순간 아이의 배지·194칸 스티커·기록·오답노트가 조용히 전부 사라지고 되돌릴 수 없다.
+
+✅ 통과  [guard-defaults-all-objects]  금지2 (T3-feature-flags · T5-record-axis)
+   DEFAULTS 최상위 값이 전부 객체인가 (새 상태의 최상위 스칼라 금지)
+   근거: storage.js 의 복원 루프가 typeof saved[k]==='object' 인 키만 살린다. 최상위 스칼라는 저장은 되고 절대 읽히지 않아 매번 기본값으로 돌아간다. 증상이 '가끔 설정이 풀린다'라 아무도 못 잡는다.
+   · DEFAULTS 최상위 키: settings, stats, daily, countries, badges, history
+
+✅ 통과  [guard-audio-cache-name]  금지3 (T2-sw-cache-buckets)
+   음원 캐시 이름이 flagquiz-v4 그대로인가
+   근거: 아이패드에 이미 받아 둔 수아 음원 114MB가 그 이름 아래 있다. 이름을 바꾸는 순간 차 안에서 앱이 벙어리가 되고 114MB 재다운로드다.
+   · 수아·음악의 기존 v4 오프라인 조회와 신규 전체 200 저장·206 응답을 실행 확인했다
+
+✅ 통과  [guard-activate-keeps-audio]  금지3 (T2-sw-cache-buckets)
+   activate 정리가 flagquiz-v4 를 지우지 않는가 (실동작 시뮬레이션)
+   근거: 현재 정리 코드는 'flagquiz- 로 시작하면 전부 삭제'다. 버킷을 넷으로 쪼개면서 화이트리스트로 바꾸지 않으면 새 버킷들이 서로를 지우고, 그중 하나가 음원 114MB다.
+   · v4 수아·음악 바이트 보존, 음원 읽기·복사·삭제·다운로드 없음, 타 앱 캐시 보존을 실행 확인했다
+
+✅ 통과  [guard-flags-folder-clean]  금지5 (T4-subjects-data · T13-wiring · 지도 T5-register)
+   flags/ 에 194개 국기 SVG 외의 파일이 없는가
+   근거: flags/ 에 새 그림을 넣으면 tests/run.mjs 고아 검사가 즉시 실패하고, sw.js 국기 예열과 build-site.mjs 의 flags/ 통째 복사에도 섞여 배포본에 실려 나간다. 그림은 images/symbols·images/places 로 간다.
+   · flags/ 총 195개 (svg 194, 허용 파일 README.md)
+
+✅ 통과  [guard-voice-clip-count]  금지6 (T4-subjects-data · T6-dex-art-slot)
+   수아 음원 문구가 977개 그대로인가
+   근거: scripts/build-site.mjs 의 배포 게이트가 clips 개수와 expectedClips 가 같아야만 배포를 허락한다. 문구가 하나 늘면 음원 파일이 없어 main 배포 전체가 멈춘다. 1차는 새 음원 0개로 간다.
+   · 참고 크기: data/voice-config.json 131B / js/ui.js 4388B (ui.js 의 lines 배열이 늘지 않았는지 사람이 한 번 본다)
+
+✅ 통과  [guard-build-gate-intact]  금지6 (scripts/build-site.mjs)
+   배포 게이트(전체 음원 준비 검사)가 무력화되지 않았는가
+   근거: 금지6의 집행 장치 자체다. 문구를 늘리고 싶어진 사람이 게이트를 지우면 음원 없는 배포가 나가 아이 화면에서 소리가 안 난다.
+
+⬜ 미구현  [guard-quiz-filter-static]  금지4 (T7-confusion-exclude)
+   distractors 폴백이 필터 안 거친 all() 을 다시 긁지 않는가 (정적 확인)
+   근거: 폴백이 all() 을 직접 부르면 그 자리에서 자료 필터가 통째로 무의미해진다. 그림 없는 나라가 보기로 올라와 빈 칸이 렌더링된다.
+   → data/subjects.js 가 없고 js/quiz.js 에 FQ.subjects·confusionSet 이 없다 — T7 미구현
+
+⬜ 미구현  [guard-quiz-filter-runtime]  금지4 (T7-confusion-exclude)
+   후보 생성과 전체 폴백 양쪽에 자료 필터가 걸리는가 (실행 검사)
+   근거: 후보 생성과 전체 폴백 중 한쪽만 고치는 것이 이 작업에서 가장 흔한 실수다. 정적 검사는 우회되기 쉬우니 실제로 폴백 경로를 강제로 태운다.
+   → data/subjects.js 가 없고 js/quiz.js 에 FQ.subjects·confusionSet 이 없다 — T7 미구현
+
+✅ 통과  [guard-raw-not-tracked]  금지 파생 (지도 T1-fetch-raw)
+   Natural Earth 원본이 git 에 추적되지 않는가
+   근거: 이 저장소의 .git 은 이미 100MB 대다. 20MB GeoJSON 원본이 한 번 커밋되면 히스토리에서 되돌릴 수 없다.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2. 완료 판정 — 과제별 수용 검사 (실패해도 종료 코드 0)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ 통과  [export-json-roundtrip]  T1-export-button
+   기록 내보내기가 실제 저장분과 같은 문자열을 돌려주는가
+   근거: 뒤의 모든 과제(스키마·캐시 변경)의 유일한 되돌릴 수단이다. 화면에 보여 준 것이 실제 저장된 것과 다르면 백업이 아니라 위안일 뿐이다.
+
+✅ 통과  [export-roundtrip-restore]  T1-export-button
+   내보낸 JSON 으로 다른 브라우저에서 복원되는가
+   근거: '복사해 두면 되살릴 수 있다'가 실제로 성립하는지 고정한다.
+
+✅ 통과  [export-screen-wiring]  T1-export-button
+   🏅 내 기록 화면 배선과 금지 API 미사용
+   근거: JSON 을 innerHTML 로 보간하면 문자열 안의 </textarea> 가 화면을 깨고, <a download>·Blob·clipboard 는 홈화면 사파리와 file:// 에서 조용히 실패한다.
+
+✅ 통과  [export-test-file]  T1-export-button
+   tests/storage-export.test.mjs 신설과 통과
+   근거: 이 회귀 검사가 없으면 뒤의 스키마 변경이 exportJson 을 조용히 깨뜨려도 아무도 모른다.
+   · 이 전용 테스트는 js/screens.js 까지 로드해 화면 배선도 함께 본다 (app.test.mjs 는 로드하지 않는다)
+   · tests/storage-export.test.mjs → 7개 통과
+
+⬜ 미구현  [defaults-dev-object]  T3-feature-flags
+   기능 플래그가 settings.dev 객체 안에 있는가
+   근거: settings 만 storage.js 의 Object.assign 특례로 기존 저장분에 백필된다. 최상위에 두면 저장은 되고 읽히지 않는다.
+   → js/features.js 이 아직 없다 — T3-feature-flags 미구현
+
+⬜ 미구현  [reset-covers-new-buckets]  T5-record-axis
+   새 최상위 버킷이 resetProgress 에도 들어갔는가
+   근거: 새 버킷을 DEFAULTS 에만 넣고 resetProgress 에 빠뜨리면 '정리하기'를 눌러도 그 기록만 남아 다음 판 출제 가중치를 계속 오염시킨다.
+   → DEFAULTS 최상위 키가 기존 6개 그대로다 — 새 버킷 미구현
+
+✅ 통과  [map-coords-keyset]  지도 T4-emit-data · T6-tests
+   지도 좌표가 194개국과 양방향으로 정확히 일치하는가
+   근거: 한쪽 방향만 보면 대만·코소보 좌표가 조용히 남거나 몇 나라가 빠진 채 초록불이 된다.
+
+✅ 통과  [map-coords-values]  지도 T4-emit-data · T6-tests
+   좌표가 [lng, lat] 순서·범위·소수 2자리를 지키는가
+   근거: [lat,lng] 로 뒤집히면 지도가 조용히 90도 돌아간 모양이 되고 테스트는 초록불이다. toFixed 를 Number() 로 감싸지 않으면 문자열이 들어가 렌더링 시점에 터진다.
+
+✅ 통과  [map-shapes-no-borders]  지도 T3-simplify-silhouette · T4-emit-data
+   육지 실루엣이 나라별로 쪼개지지 않았는가 (국경선 데이터 금지)
+   근거: 나라별 키로 쪼개는 순간 그것이 국경 데이터가 되고, '땅만 그리고 국경선은 그리지 않는다' 방침이 문서만 남고 무너진다.
+   · 서브패스 365개 · 가장자리 이음새 1곳(남극 바닥 등, 정상으로 셈)
+   · 육안 확인용 미리보기를 만들었다: /var/folders/54/pt7hl9y55rz6bc4c2k78dr4c0000gn/T/flagquiz-map-preview.html
+
+✅ 통과  [new-file-registration]  지도 T5-register · T3-feature-flags · T4-subjects-data
+   ⚠ 새 데이터/스크립트가 index.html·sw.js SHELL·build-site.mjs·tests 로더에 빠짐없이 등록됐는가
+   근거: 한 곳만 빠지면 증상이 전부 다르고 전부 늦게 발견된다 — 화면에 안 뜸 / 아이패드 비행기 모드에서만 깨짐 / 배포본에만 없음(테스트는 초록불) / 검사가 그 파일을 못 읽음.
+   · data/map-coords.js — tests/app.test.mjs 로더에도 없다 (참고)
+   · data/map-shapes.js — tests/app.test.mjs 로더에도 없다 (참고)
+   · 새로 발견한 스크립트: data/map-coords.js, data/map-shapes.js
+
+✅ 통과  [sw-shell-files-exist]  지도 T5-register · T4-subjects-data
+   SHELL 에 적힌 파일이 전부 실제로 존재하는가
+   근거: install 의 cache.addAll(SHELL) 은 목록 중 하나만 실패해도 전체 설치가 실패한다 — 서비스워커가 아예 설치되지 않아 오프라인이 통째로 죽는다.
+   · SHELL 항목 26개 / index.html script 18개
+
+✅ 통과  [index-script-order]  지도 T5-register · T4-subjects-data · T3-feature-flags
+   새 data/*.js 가 이를 읽는 스크립트보다 먼저 로드되는가
+   근거: 전역 window.FQ 에 얹히는 정적 자료라 순서가 어긋나면 js/quiz.js·js/progress.js 가 undefined 를 읽는다. 브라우저에서만 나는 버그라 노드 테스트로는 안 잡힌다.
+   · 현재 로드 순서: js/util.js → js/storage.js → js/voice-manifest.js → js/audio.js → js/recorded-audio.js → js/music-manifest.js → js/music.js → js/speech.js → js/effects.js → js/ui.js → data/countries.js → data/map-coords.js → data/map-shapes.js → js/progress.js → js/quiz.js → js/badges.js → js/screens.js → js/app.js
+
+✅ 통과  [sw-buckets-split]  T2-sw-cache-buckets
+   캐시 버킷 4개 분리가 끝났는가
+   근거: Codex 가 스스로 미완이라고 보고한 과제다. 다만 절반만 들어간 상태(VERSION 은 지웠는데 화이트리스트를 안 넣은 경우)는 새 버킷들이 서로를 지우는 가장 위험한 상태라 구분해서 본다.
+
+⬜ 미구현  [images-folder-shape]  T4-subjects-data · T8-test-gates
+   그림이 images/symbols·images/places 밖으로 새지 않았는가
+   근거: 폴더 이름이 한 곳만 어긋나면 build-site.mjs 폴더 목록·serve.mjs MIME·ui.js 경로 함수가 서로 다른 곳을 가리킨다.
+   → images/ 폴더가 없다 — T4/T13 미구현
+
+✅ 통과  [ci-scripts-unchanged]  지도 T1-fetch-raw
+   build·test 스크립트 불변 (CI 가 네트워크를 타지 않는가)
+   근거: map:fetch·map:build 를 build 나 test 에 엮는 순간 CI 가 매번 외부 네트워크를 타고, 실패하면 main 배포가 통째로 멈춘다.
+
+✅ 통과  [fetch-script-and-ignore]  지도 T1-fetch-raw
+   fetch-map-source.mjs · .gitignore · map:fetch 등록
+   근거: 태그를 안 박으면 몇 달 뒤 같은 명령이 다른 좌표를 만들고, .gitignore 가 없으면 다음 과제에서 20MB 원본이 실수로 커밋된다.
+   · 네트워크는 타지 않았다 — 실제 다운로드는 이 검사가 하지 않는다
+
+✅ 통과  [join-module-shape]  지도 T2-code-join
+   ne-join.mjs 모듈 형태 · 폴백 순서 · 두 상수
+   근거: 폴백 순서를 뒤집으면 엉뚱한 나라에 붙고, 194개를 하드코딩하면 countries.js 와 조용히 어긋난다.
+   · EXCLUDED_ADMINS 48개 (194 + 48 = 242 도형). 인계 명세는 46을 예상했다 — 산술 검증은 `npm run map:fetch` 뒤 --deep 에서 한다
+
+✅ 통과  [join-synthetic-unit]  지도 T2-code-join
+   조인 함수 단위 검사 (원본 없이 실행)
+   근거: 폴백이 실제로 작동하는지와 세 종류 실패가 각각 다른 메시지로 터지는지는 20MB 원본 없이도 확인할 수 있어야 한다. 조인은 여기서 터지게 만드는 것이 목적이다.
+
+✅ 통과  [join-real-source]  지도 T2-code-join
+   v5.1.2 원본 전수 조인 194개 일치
+   근거: 조인이 190개만 맞춰도 조용히 성공하면 그 사실이 T6 테스트까지 가서야 드러난다. matched + excluded = 전체 도형 산술이 여기서 닫힌다.
+   · no 의 원본 ISO_A2 = "-99" (ISO_A2_EH 폴백이 작동했다)
+   · fr 의 원본 ISO_A2 = "-99" (ISO_A2_EH 폴백이 작동했다)
+   · 원본 도형 242개 = 매칭 194 + 배제 48
+
+✅ 통과  [simplify-iterative]  지도 T3-simplify-silhouette
+   Douglas-Peucker 비재귀 구현 · 의존성 0
+   근거: 재귀로 쓰면 러시아 최대 링(수만 점)에서 콜스택이 넘쳐 파이프라인이 통째로 멈춘다. tol=0 항등성은 구현이 점을 몰래 버리지 않는다는 증거다.
+
+✅ 통과  [buildmap-silhouette-rules]  지도 T3-simplify-silhouette · T4-emit-data
+   build-map.mjs 의 실루엣 생성 규칙과 라벨 검증
+   근거: 내부 링을 살려두면 레소토·산마리노·바티칸 자리에 흰 구멍이 뚫리고, 작은 나라 링 보존 예외가 없으면 싱가포르·바티칸이 지도에서 사라진다.
+   · 단순화 허용 오차 0.5° — HANDOFF 허용값과 선택 근거·생성 헤더 일치 확인
+
+✅ 통과  [no-new-js-files]  지도 T5-register
+   js/ 아래 새 파일 0개 (지도 화면 코드 없음)
+   근거: 이 트랙의 범위는 자산 등록까지다. 지도 화면·핀 렌더링은 T7 의 제약을 받아 별도 과제이고, 지금 들어오면 제약 없이 굳는다.
+
+✅ 통과  [map-test-group]  지도 T6-tests
+   tests/run.mjs 의 '지도 자료' group 구성
+   근거: 양방향 단언·상수 재사용·부동소수 안전 비교가 이 group 의 핵심이고, 등록 누락 검사와 캐시 이름 경고는 이 저장소에 없던 새 종류의 검사다.
+
+✅ 통과  [pin-doc-content]  지도 T7-pin-constraints
+   MAP-RENDER-CONSTRAINTS.md 존재와 11개 제약·확인표
+   근거: 'CSS transition 이니까 안전'이 아니라 '기본 상태가 무엇인가'가 핵심이고, 방향을 거꾸로 적으면 움직임 줄이기에서 정답 핀이 영원히 안 보인다.
+
+✅ 통과  [pin-doc-citations]  지도 T7-pin-constraints
+   문서가 인용한 파일:라인이 실제로 그 내용인가
+   근거: 틀린 줄 번호를 인용한 제약 문서는 몇 주 뒤 읽는 사람을 엉뚱한 곳으로 보낸다.
+
+✅ 통과  [attr-footer]  지도 T8-attribution
+   index.html 푸터의 Natural Earth 출처 한 줄
+   근거: 이 저장소는 flag-icons·Typecast 를 푸터와 README 양쪽에 적는 관례가 있고, D3 항목 5 가 '땅만 그리고 국경선은 그리지 않는다' 의 화면 명문화를 요구한다.
+
+✅ 통과  [attr-readme-license]  지도 T8-attribution
+   README 두 항목과 LICENSE 불변
+   근거: 적어 둔 재생성 명령이 package.json 에 실제로 없으면 문서가 거짓말이 되고, 기존 문단을 통째로 다시 쓰면 tests/run.mjs 의 DISPUTED 검사가 근거로 삼는 문장이 흔들린다.
+
+✅ 통과  [attr-data-headers]  지도 T8-attribution · T4-emit-data
+   데이터 두 파일의 헤더 주석 5줄
+   근거: 생성물임을 적어 두지 않으면 몇 달 뒤 누군가 좌표를 손으로 고치고, 다음 map:build 가 그 수정을 말없이 덮어쓴다.
+
+⬜ 미구현  [test-counts-grew]  지도 T6-tests
+   npm test 통과와 검사 건수 증가
+   근거: Codex 는 110개 통과(작업 전 87개)를 보고했다. 기존 검사가 한 건도 사라지지 않으면서 늘었는지를 숫자로 확인한다.
+   → 기본 실행에서 제외한다 — 실패 원인이 뒤섞이지 않게 npm test 는 따로 돌린다 (--deep 으로 포함)
+
+⬜ 미구현  [build-output]  지도 T5-register
+   npm run build 산출물에 두 파일이 들어가고 원본은 빠지는가
+   근거: data/ 는 폴더 통째 복사 대상이 아니라 files 배열에 안 적으면 아이패드에서만 흰 화면이 되고, 반대로 data 폴더를 통째로 복사하면 원본 20MB 가 배포에 섞인다.
+   → 빌드 실행은 느리다 — --deep 으로 포함
+
+⬜ 미구현  [mapbuild-reproducible]  지도 T4-emit-data
+   map:build 재현성 (두 번 돌려 바이트 동일)
+   근거: 순회 순서나 반올림이 흔들리면 좌표 한 줄을 손보정할 때 194줄 diff 가 나와 리뷰가 불가능해진다.
+   → 빌드 재실행은 느리다 — --deep 으로 포함
+
+⬜ 미구현  [mutation-bite]  지도 T6-tests
+   변이 주입 — 테스트가 실제로 무는가
+   근거: 통과하는 테스트는 많지만 정작 틀린 값을 넣어도 안 잡히면 게이트가 아니다.
+   → 저장소 사본을 만들어 돌리는 느린 검사다 — --deep 으로 포함
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3. 요약
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  금지 사항   통과 8 · 실패 0 · 미구현 2   (전 10건)
+  완료 판정   통과 25 · 실패 0 · 미구현 7   (전 32건)
+  합계        통과 33 · 실패 0 · 미구현 9   (전 42건)
+
+  ✅ 금지 사항 위반 없음 — 되돌릴 수 없는 종류의 사고는 없다.
+  ⬜ 미구현 9건 — 아직 안 한 일이다. 실패가 아니다.
+
+  (느린 검사는 빠져 있다: node scripts/verify-expansion.mjs --deep)
+
+────────────────────────────────────────────────────────────────────────
+기계가 확인하지 못한 것 — 사람이 봐야 한다
+────────────────────────────────────────────────────────────────────────
+  ① 아이패드 비행기 모드: 앱이 뜨고 · 국기가 보이고 · 수아 음원이 재생되는가.
+     셸·국기 약 2MB 재다운로드는 정상이고, 음원 114MB 재다운로드는 실패다.
+  ② 내보낸 JSON 을 다른 브라우저에 붙여 실제로 복원되는가 (기계는 샌드박스까지만 본다).
+  ③ 육지 실루엣 육안 확인: 이탈리아 장화 · 한반도 · 플로리다 반도 · 스칸디나비아 · 일본 열도가
+     알아보이는가 / 나라를 가르는 선이 한 개도 없는가 / 서사하라·팔레스타인·레소토 자리에 흰 구멍이 없는가.
+  ④ 푸터가 브라우저에서 네 줄로 보이고 Natural Earth 링크가 새 탭으로 열리는가.
+  ⑤ 새 버킷의 모든 읽기가 (r.x || 0) 으로 방어됐는가 · export 핸들러가 stats() 를 다시 부르지 않는가.

@@ -1,0 +1,12 @@
+[
+  {
+    "currentTime": 1.368413,
+    "duration": 1.368413,
+    "events": [
+      "playing",
+      "ended"
+    ],
+    "readyState": 4,
+    "src": "http://127.0.0.1:8144/audio/sua/af80d1e5a2f30a27f2c71e0c.mp3"
+  }
+]

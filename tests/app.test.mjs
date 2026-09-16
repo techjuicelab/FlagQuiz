@@ -51,7 +51,10 @@ function fixture() {
         abort(){c.listening=false;},stopAnd(cb){c.listening=false;releases.push(cb);},isListening:()=>!!c.listening}
     }};
   c.window=c;vm.createContext(c);
-  for(const file of ['js/util.js','js/storage.js','data/countries.js','js/progress.js','js/quiz.js']) vm.runInContext(fs.readFileSync(path.join(root,file),'utf8'),c,{filename:file});
+  const uiMock=c.FQ.ui;
+  vm.runInContext(fs.readFileSync(path.join(root,'js/ui.js'),'utf8'),c,{filename:'js/ui.js'});
+  Object.assign(c.FQ.ui,uiMock);
+  for(const file of ['js/util.js','js/storage.js','js/features.js','data/countries.js', 'data/subjects.js', 'data/confusion-groups.js','data/map-coords.js','data/map-shapes.js','js/map.js','js/progress.js','js/quiz.js']) vm.runInContext(fs.readFileSync(path.join(root,file),'utf8'),c,{filename:file});
   // 제품 코드에는 테스트 전용 진입점을 추가하지 않고 VM 안에서만 내부 상태를 노출한다.
   const source=fs.readFileSync(path.join(root,'js/app.js'),'utf8').replace('FQ.app = { home:',
     'FQ.test = {state:state,startListening:startListening,submit:submit,goNext:goNext,toggleMic:toggleMic};\n  FQ.app = { home:');
@@ -443,4 +446,176 @@ test('같은 홈에서 배경음 설정을 바꿔도 최신 해제 요청만 재
   first();assert.equal(f.music.length,0);latest();assert.equal(f.music.length,1);
 });
 
+test('지도 핀 제출은 지도 기록만 쌓고 기존 국기 스티커와 오늘의 도전을 바꾸지 않는다',()=>{
+  for(const correct of [true,false]) {
+    const f=fixture();f.c.FQ.storage.updateSettings({mode:'map'});
+    const before=JSON.stringify(f.c.FQ.storage.daily());
+    f.c.FQ.app.startGame(['kr']);const a=f.c.FQ.test,q=a.state.game.current();
+    assert.match(f.node('main').innerHTML,/이 나라는 어디에 있을까요/);
+    assert.equal((f.node('main').innerHTML.match(/class="map-pin answer-btn"/g)||[]).length,4);
+    const code=correct?'kr':q.options.find(c=>c.code!=='kr').code;
+    a.submit({code});a.submit({code});
+    assert.equal(f.c.FQ.storage.axisStat('map','kr').seen,1);
+    assert.equal(f.c.FQ.storage.axisStat('map','kr').correct,correct?1:0);
+    assert.equal(f.c.FQ.storage.countryStat('kr').seen,0);
+    assert.equal(a.state.newStickers.length,0);
+    assert.equal(JSON.stringify(f.c.FQ.storage.daily()),before);
+    f.releases.at(-1)();f.finishMusic();
+    assert.deepEqual(f.spoken.at(-1),[q.country.ko,q.country.fact]);
+  }
+});
+
+test('그림 모드는 스위치가 꺼지면 저장된 선택도 국기 모드로 돌아간다',()=>{
+  for(const mode of ['symbol','place','unknown']) {
+    const f=fixture();f.c.FQ.storage.updateSettings({mode,dev:{art:false}});f.c.FQ.app.home();
+    assert.equal(f.c.FQ.storage.settings().mode,'choice4');
+    assert.doesNotMatch(f.node('main').innerHTML,/data-mode="(?:symbol|place)"/);
+    f.c.FQ.storage.updateSettings({mode});f.c.FQ.app.startGame(['kr']);
+    assert.equal(f.c.FQ.test.state.game.current().mode,'choice4');
+  }
+});
+
+test('두 그림 퀴즈는 실제 그림 경로·4개 보기·별도 기록·기존 fact 음원을 사용한다',()=>{
+  for(const mode of ['symbol','place']) {
+    const f=fixture();f.c.FQ.storage.updateSettings({mode,dev:{art:true}});f.c.FQ.app.home();
+    assert.match(f.node('main').innerHTML,new RegExp('data-mode="'+mode+'"'));
+    f.c.FQ.app.startGame(['kr']);const a=f.c.FQ.test,q=a.state.game.current();
+    assert.match(f.node('main').innerHTML,new RegExp('images/'+(mode==='place'?'places':'symbols')+'/kr.webp'));
+    assert.equal((f.node('main').innerHTML.match(/class="answer-btn art-choice"/g)||[]).length,4);
+    f.node('#question-art').handlers.load();
+    const before=JSON.stringify(f.c.FQ.storage.daily());
+    a.submit({code:'kr'});f.releases.at(-1)();f.finishMusic();
+    assert.equal(f.c.FQ.storage.axisStat(mode,'kr').correct,1);
+    assert.equal(f.c.FQ.storage.countryStat('kr').correct,0);
+    assert.equal(JSON.stringify(f.c.FQ.storage.daily()),before);
+    assert.equal(a.state.newStickers.length,0);
+    assert.deepEqual(f.spoken.at(-1),[q.country.ko,q.country.fact]);
+  }
+});
+
+test('그림 다운로드 실패를 오답으로 기록하지 않고 다시 받은 뒤에만 제출한다',()=>{
+  const f=fixture();f.c.FQ.storage.updateSettings({mode:'symbol',dev:{art:true}});f.c.FQ.app.startGame(['kr']);
+  const a=f.c.FQ.test,img=f.node('#question-art');
+  img.handlers.error();a.submit({code:'kr'});a.submit({text:''},true);
+  assert.equal(f.c.FQ.storage.stats().asked,0);assert.equal(a.state.answered,false);
+  f.node('#art-retry').click();assert.equal(img.src,'images/symbols/kr.webp');
+  img.handlers.load();a.submit({code:'kr'});
+  assert.equal(f.c.FQ.storage.axisStat('symbol','kr').seen,1);
+});
+
+test('느린 그림 다운로드 중에는 제한 시간·제출이 시작되지 않고 load 뒤에 시작한다',()=>{
+  const f=fixture();f.c.FQ.storage.updateSettings({mode:'symbol',timer:10,dev:{art:true}});f.c.FQ.app.startGame(['kr']);
+  const a=f.c.FQ.test;
+  // 그림을 기다리는 동안 채점·제한 시간은 시작되지 않는다. 다만 빠져나갈 길은 잠그지 않는다 —
+  // 아이는 비행기 모드로 놀고, 그림이 끝내 안 오면 그 문제에 갇히기 때문이다.
+  assert.equal(a.state.artUnavailable,true);assert.equal(f.node('#skip').disabled,false);
+  for(let i=0;i<15;i++)f.runDelay(1000);
+  a.submit({code:'kr'});a.submit({text:''},true);
+  assert.equal(f.c.FQ.storage.stats().asked,0);assert.equal(a.state.answered,false);
+  f.node('#question-art').handlers.load();
+  assert.equal(a.state.artUnavailable,false);assert.equal(f.node('#skip').disabled,false);
+  for(let i=0;i<10;i++)f.runDelay(1000);
+  assert.equal(a.state.timedOut,true);assert.equal(f.c.FQ.storage.axisStat('symbol','kr').seen,1);
+});
+
+test('숨긴 화면에서 그림이 도착하면 복귀 전까지 기다리고 전체 제한 시간을 준다',()=>{
+  const f=fixture();f.c.FQ.app.boot();
+  f.c.FQ.storage.updateSettings({mode:'symbol',timer:10,dev:{art:true}});f.c.FQ.app.startGame(['kr']);
+  const a=f.c.FQ.test;
+  f.c.document.hidden=true;f.events.visibilitychange[0]();
+  f.node('#question-art').handlers.load();
+  for(let i=0;i<12;i++)f.runDelay(1000);
+  assert.equal(a.state.timerId,null);assert.equal(a.state.answered,false);assert.equal(a.state.timedOut,false);
+  assert.equal(f.c.FQ.storage.axisStat('symbol','kr').seen,0);
+  f.c.document.hidden=false;f.events.visibilitychange[0]();
+  assert.equal(a.state.timeLeft,10);
+  for(let i=0;i<9;i++)f.runDelay(1000);
+  assert.equal(a.state.answered,false);assert.equal(a.state.timeLeft,1);
+  f.runDelay(1000);
+  assert.equal(a.state.timedOut,true);assert.equal(f.c.FQ.storage.axisStat('symbol','kr').seen,1);
+});
+
+test('숨긴 동안 그림 오류가 나면 복귀해도 제한 시간을 재개하지 않고 재수신을 기다린다',()=>{
+  const f=fixture();f.c.FQ.app.boot();
+  f.c.FQ.storage.updateSettings({mode:'place',timer:10,dev:{art:true}});f.c.FQ.app.startGame(['kr']);
+  const a=f.c.FQ.test;
+  f.node('#question-art').handlers.load();f.runDelay(1000);
+  f.c.document.hidden=true;f.events.visibilitychange[0]();
+  f.node('#question-art').handlers.error();
+  f.c.document.hidden=false;f.events.visibilitychange[0]();
+  for(let i=0;i<12;i++)f.runDelay(1000);
+  assert.equal(a.state.artUnavailable,true);assert.equal(a.state.timerId,null);
+  assert.equal(a.state.answered,false);assert.equal(a.state.timedOut,false);
+  assert.equal(f.c.FQ.storage.axisStat('place','kr').seen,0);
+  f.node('#art-retry').click();f.node('#question-art').handlers.load();
+  assert.equal(a.state.timeLeft,10);assert.notEqual(a.state.timerId,null);
+});
+
+test('지도·그림·명소 놀이에서는 오늘의 도전이 왜 안 오르는지 화면으로 알려 준다',()=>{
+  for(const mode of ['map','symbol','place']){
+    const f=fixture();f.c.FQ.storage.updateSettings({mode,continent:'all',dev:{art:true}});
+    f.c.FQ.app.home();
+    assert.equal(f.c.FQ.storage.settings().mode,mode,mode);
+    assert.match(f.node('main').innerHTML,/지금 놀이로는 칸이 안 올라가요 · 눌러서 국기 놀이로 바꾸기/,mode);
+    // 새 안내는 화면 글자일 뿐이다. 읽어 주면 수아 음원에 없는 문구가 되어 배포가 막힌다.
+    assert.equal(f.spoken.length,0,mode);
+  }
+  // 국기 놀이에서는 안내가 뜨지 않고, 대륙만 어긋났을 때의 기존 안내도 그대로다.
+  const g=fixture();g.c.FQ.storage.updateSettings({mode:'voice',continent:'all'});g.c.FQ.app.home();
+  assert.doesNotMatch(g.node('main').innerHTML,/daily-why/);
+  const h=fixture(),other=h.c.FQ.progress.daily().continent==='아시아'?'유럽':'아시아';
+  h.c.FQ.storage.updateSettings({mode:'voice',continent:other});h.c.FQ.app.home();
+  assert.match(h.node('main').innerHTML,new RegExp('지금은 '+other+'만 나와서 오르지 않아요'));
+});
+
+test('오늘의 도전은 국기 축 놀이를 그대로 두고 축이 다른 놀이만 국기 놀이로 되돌린다',()=>{
+  for(const mode of ['voice','typing','capital','reverse']){
+    const f=fixture();f.c.FQ.storage.updateSettings({mode,continent:'아프리카'});f.c.FQ.app.home();
+    f.node('#daily-go').click();
+    assert.equal(f.c.FQ.storage.settings().mode,mode,mode);
+    assert.equal(f.c.FQ.storage.settings().continent,f.c.FQ.progress.daily().continent,mode);
+  }
+  for(const mode of ['map','symbol','place']){
+    const f=fixture();f.c.FQ.storage.updateSettings({mode,dev:{art:true}});f.c.FQ.app.home();
+    f.node('#daily-go').click();
+    assert.equal(f.c.FQ.storage.settings().mode,'choice4',mode);
+    // 안내대로 눌렀으면 다음 화면에서는 안내가 사라져 있어야 한다.
+    assert.doesNotMatch(f.node('main').innerHTML,/daily-why/,mode);
+  }
+});
+
+test('한 번 더 만나기도 골라 둔 국기 놀이를 유지하고 축이 다를 때만 되돌린다',()=>{
+  const f=fixture();f.c.FQ.storage.recordAnswer('jp',false);
+  f.c.FQ.storage.updateSettings({mode:'typing'});f.c.FQ.app.home();
+  f.node('#review').click();
+  assert.equal(f.c.FQ.storage.settings().mode,'typing');
+  assert.equal(f.c.FQ.test.state.game.current().mode,'typing');
+
+  const g=fixture();g.c.FQ.storage.recordAnswer('jp',false);
+  g.c.FQ.storage.updateSettings({mode:'map'});g.c.FQ.app.home();
+  g.node('#review').click();
+  assert.equal(g.c.FQ.storage.settings().mode,'choice4');
+  assert.equal(g.c.FQ.test.state.game.current().mode,'choice4');
+});
+
 console.log('앱 흐름 회귀 검사 '+passed+'건 통과');
+
+test('그림을 끝내 못 받아도 아이는 그 문제에서 빠져나갈 수 있다',()=>{
+  // 비행기 모드에서는 '다시 불러오기'가 영원히 실패한다. 빠져나갈 길까지 잠그면
+  // 아이가 그 문제에 갇혀 놀이를 끝낼 수 없다.
+  const f=fixture();
+  f.c.FQ.storage.updateSettings({mode:'symbol',dev:{art:true}});
+  f.c.FQ.app.startGame(['kr','jp','fr']);
+  const a=f.c.FQ.test;
+  f.node('#question-art').handlers.error();
+  assert.equal(a.state.artUnavailable,true);
+  assert.equal(f.node('#skip').disabled,false,'모르겠어요가 잠겼다 — 아이가 갇힌다');
+  assert.equal(f.node('#hint').disabled,false,'같이 보기가 잠겼다');
+  const first=a.state.game.current().country.code;
+  f.node('#skip').click();
+  assert.notEqual(a.state.game.current().country.code,first,'건너뛰기를 눌러도 다음 문제로 안 간다');
+  // 못 받은 그림을 오답으로 기록하지 않는다 — 아이가 안 틀린 것을 틀렸다고 배우면 안 된다.
+  assert.equal(f.c.FQ.storage.stats().asked,0,'그림 실패가 기록에 남았다');
+  assert.deepEqual(f.c.FQ.storage.wrongList(),[]);
+  assert.equal(a.state.game.wrong.length,0);
+});

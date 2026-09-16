@@ -8,16 +8,50 @@
   var util = FQ.util;
 
   var MODES = {
-    choice4: { label: '국기 보고 나라 고르기', kind: 'choice', hasOptions: true },
-    reverse: { label: '나라 보고 국기 고르기', kind: 'choice', hasOptions: true },
-    capital: { label: '나라 보고 수도 고르기', kind: 'choice', hasOptions: true },
-    typing:  { label: '국기 보고 이름 쓰기', kind: 'text', hasOptions: false },
-    voice:   { label: '국기 보고 말하기', kind: 'text', hasOptions: false }
+    choice4: { label: '국기 보고 나라 고르기', kind: 'choice', hasOptions: true, axis: 'flag' },
+    reverse: { label: '나라 보고 국기 찾기', kind: 'choice', hasOptions: true, axis: 'flag' },
+    capital: { label: '수도 맞히기', kind: 'choice', hasOptions: true, axis: 'flag' },
+    typing:  { label: '이름 써서 맞히기', kind: 'text', hasOptions: false, axis: 'flag' },
+    voice:   { label: '말로 답하기', kind: 'text', hasOptions: false, axis: 'flag' },
+    map:     { label: '지도에서 나라 찾기', kind: 'choice', hasOptions: true, axis: 'map' },
+    symbol:  { label: '그림 보고 나라 고르기', kind: 'choice', hasOptions: true, axis: 'symbol' },
+    place:   { label: '명소 보고 나라 고르기', kind: 'choice', hasOptions: true, axis: 'place' }
   };
+
+  function availableMode(mode) {
+    if (!MODES[mode]) return 'choice4';
+    if ((mode === 'symbol' || mode === 'place') && (!FQ.features || !FQ.features.on('art'))) return 'choice4';
+    return mode;
+  }
 
   var LEVEL_LABEL = { 1: '쉬움', 2: '보통', 3: '어려움' };
 
   function all() { return FQ.countries || []; }
+
+  // 혼동군은 축을 넘겨 연결된다. 나중에 자료를 주입하는 환경도 지원한다.
+  var indexedGroups = null;
+  var confusionIndex = {};
+  function confusionSet(code) {
+    var groups = FQ.confusionGroups || [];
+    if (groups !== indexedGroups) {
+      indexedGroups = groups;
+      confusionIndex = {};
+      groups.forEach(function (group) {
+        group.codes.forEach(function (a) {
+          var set = confusionIndex[a] || (confusionIndex[a] = {});
+          group.codes.forEach(function (b) { if (a !== b) set[b] = true; });
+        });
+      });
+    }
+    return confusionIndex[code] || {};
+  }
+
+  function hasData(country, axis) {
+    if (axis !== 'symbol' && axis !== 'place') return true;
+    var subject = FQ.subjects && FQ.subjects[country.code] && FQ.subjects[country.code][axis];
+    // noArt 는 원장에 적힌 보류다. 문장만 있고 그림 파일이 없어, 출제하면 아이가 빈 그림을 보고 못 푼다.
+    return !!subject && !subject.noArt;
+  }
 
   function byCode(code) {
     var list = all();
@@ -41,13 +75,20 @@
       opts.only.forEach(function (c) { set[c] = true; });
       list = all().filter(function (c) { return set[c.code]; });
     }
-    return list;
+    return list.filter(function (c) { return hasData(c, opts.axis); });
   }
 
   /** 정답과 헷갈릴 만한 오답 보기를 고른다. */
-  function distractors(answer, count, source, mode) {
-    var candidates = (source && source.length >= count + 1 ? source : all()).filter(function (c) {
-      return c.code !== answer.code;
+  function distractors(answer, count, source, mode, opts) {
+    opts = opts || {};
+    var axis = opts.axis || (MODES[mode] && MODES[mode].axis);
+    var art = axis === 'symbol' || axis === 'place';
+    // 자료 필터는 후보·폴백·혼동군 완화 뒤에도 항상 유지한다.
+    // 판단은 hasData() 한 곳에만 둔다. FQ.subjects 의 축 문장과 noArt(보류) 조건을 여기에
+    // 인라인으로 복제하면 조건이 늘 때 한쪽만 고쳐 그림 없는 나라가 보기로 올라온다.
+    var fallbackPool = all().filter(function (c) { return hasData(c, axis); });
+    var candidates = (source && source.length >= count + 1 ? source : fallbackPool).filter(function (c) {
+      return c.code !== answer.code && hasData(c, axis);
     });
     if (mode === 'capital') {
       // 수도 이름이 겹치면 정답이 둘이 되어 버린다
@@ -70,9 +111,12 @@
     usedCode[answer.code] = true;
     usedCapital[answer.capital] = true;
 
-    function take(c) {
+    function take(c, relaxConfusion) {
       if (usedCode[c.code]) return false;
       if (mode === 'capital' && usedCapital[c.capital]) return false;
+      if (art && !relaxConfusion && Object.keys(usedCode).some(function (code) {
+        return confusionSet(code)[c.code];
+      })) return false;
       usedCode[c.code] = true;
       usedCapital[c.capital] = true;
       out.push(c);
@@ -85,18 +129,24 @@
     }
     // 그래도 모자라면 전체에서 채운다
     if (out.length < count) {
-      var rest = util.shuffle(all());
+      var rest = util.shuffle(fallbackPool);
       for (var j = 0; j < rest.length && out.length < count; j++) take(rest[j]);
+    }
+    if (art && out.length < count) {
+      var relaxed = util.shuffle(fallbackPool);
+      for (var k = 0; k < relaxed.length && out.length < count; k++) take(relaxed[k], true);
     }
     return out.slice(0, count);
   }
 
   /** 한 문제를 만든다. */
-  function makeQuestion(answer, mode, source) {
+  function makeQuestion(answer, mode, source, opts) {
     var q = { mode: mode, country: answer, options: null };
-    if (MODES[mode] && MODES[mode].hasOptions) {
-      var opts = distractors(answer, 3, source, mode).concat([answer]);
-      q.options = util.shuffle(opts);
+    if (mode === 'map') {
+      q.options = FQ.map.chooseOptions(answer, source, FQ.map.MIN_WIDTH);
+    } else if (MODES[mode] && MODES[mode].hasOptions) {
+      var choices = distractors(answer, 3, source, mode, opts).concat([answer]);
+      q.options = util.shuffle(choices);
     }
     return q;
   }
@@ -271,13 +321,18 @@
     if (!norm) return null;
     var keys = candidateKeys(text);
     var list = all();
-    var best = null, bestStrength = -1, bestDist = Infinity, tie = false;
+    var best = null, bestStrength = -1, bestDist = Infinity, bestExact = false, tie = false;
     for (var i = 0; i < list.length; i++) {
       var m = matchOne(list[i], keys, norm);
       if (!m.near) continue;
-      if (m.strength > bestStrength || (m.strength === bestStrength && m.dist < bestDist)) {
-        bestStrength = m.strength; bestDist = m.dist; best = list[i]; tie = false;
-      } else if (m.strength === bestStrength && m.dist === bestDist && best && list[i].code !== best.code) {
+      // checkText 와 같은 규칙을 쓴다. 낱말 그대로 맞은 쪽이 긴 이름보다 먼저다.
+      // 두 판정이 어긋나면 "어 가나" 를 정답으로 채점하면서 안내는 '우간다라고 했구나' 가 된다.
+      var exact = m.dist === 0;
+      var wins = exact !== bestExact ? exact
+        : (m.strength > bestStrength || (m.strength === bestStrength && m.dist < bestDist));
+      if (wins) {
+        bestStrength = m.strength; bestDist = m.dist; bestExact = exact; best = list[i]; tie = false;
+      } else if (exact === bestExact && m.strength === bestStrength && m.dist === bestDist && best && list[i].code !== best.code) {
         tie = true;
       }
     }
@@ -314,9 +369,17 @@
       }
     }
 
-    // 다른 나라가 더 많이(또는 같은 만큼이지만 더 정확히) 맞아떨어지면 정답이 아니다
-    var rivalWins = rivalStrength > mine.strength ||
-                    (rivalStrength === mine.strength && rivalDist <= mine.dist);
+    // 어느 쪽이 '낱말 그대로' 맞았는지를 이름 길이보다 먼저 본다.
+    // 후보 키는 이어지는 낱말을 붙여 만들기 때문에, 말머리가 붙으면 "어 가나" 에서
+    // '어가나' 라는 가짜 낱말이 생겨 우간다로 걸린다. 이름이 더 길다는 이유만으로
+    // 넘겨주면 딱 맞은 '가나' 가 오답이 된다. ("음 수단"→남수단, "아 파키스탄"→아프가니스탄도 같다)
+    // 아이 말에는 "어…", "아…", "음…" 이 늘 붙으니 딱 맞은 쪽을 살려야 한다.
+    var rivalWins;
+    if (rivalStrength === Infinity) rivalWins = true;              // 말 전체가 라이벌 이름이다
+    else if (mine.dist === 0 && rivalDist > 0) rivalWins = false;   // 정답만 낱말 그대로 맞았다
+    else if (rivalDist === 0 && mine.dist > 0) rivalWins = true;    // 라이벌만 낱말 그대로 맞았다
+    else rivalWins = rivalStrength > mine.strength ||               // 둘 다 같은 만큼 맞았으면 긴 이름이 이긴다
+                     (rivalStrength === mine.strength && rivalDist <= mine.dist);
     if (!mine.near || rivalWins) {
       if (rival) result.confusedWith = rival;
       return result;
@@ -337,15 +400,17 @@
       only: null
     }, config || {});
 
-    var source = pool({ level: cfg.level, continent: cfg.continent, only: cfg.only });
-    if (source.length === 0) source = all();
+    cfg.mode = availableMode(cfg.mode);
+    var axis = MODES[cfg.mode].axis;
+    var source = pool({ level: cfg.level, continent: cfg.continent, only: cfg.only, axis: axis });
+    if (source.length === 0) source = pool({ axis: axis });
 
     var total = cfg.count === 'all' ? source.length : Math.min(cfg.count, source.length);
     if (total < 1) total = Math.min(1, source.length);
 
     // 출제 순서 정하기: 오답 우선이면 가중치로, 아니면 골고루 섞어서
     var order;
-    if (cfg.reviewFirst && FQ.storage && source.length > total) {
+    if (axis === 'flag' && cfg.reviewFirst && FQ.storage && source.length > total) {
       var remaining = source.slice();
       order = [];
       while (order.length < total && remaining.length) {
@@ -358,7 +423,7 @@
       order = util.sample(source, total);
     }
 
-    var questions = order.map(function (c) { return makeQuestion(c, cfg.mode, source); });
+    var questions = order.map(function (c) { return makeQuestion(c, cfg.mode, source, { axis: axis }); });
 
     var game = {
       config: cfg,
@@ -426,7 +491,7 @@
         res.gained = 0;
       }
       if (usedHint) game.hintsUsed += 1;
-      if (FQ.storage) FQ.storage.recordAnswer(q.country.code, res.correct);
+      if (FQ.storage) FQ.storage.recordAnswer(q.country.code, res.correct, MODES[cfg.mode] && MODES[cfg.mode].axis);
       res.question = q;
       return res;
     };
@@ -467,11 +532,13 @@
 
   FQ.quiz = {
     MODES: MODES,
+    availableMode: availableMode,
     LEVEL_LABEL: LEVEL_LABEL,
     all: all,
     byCode: byCode,
     pool: pool,
     distractors: distractors,
+    confusionSet: confusionSet,
     makeQuestion: makeQuestion,
     checkText: checkText,
     findCountry: findCountry,

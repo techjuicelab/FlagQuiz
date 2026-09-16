@@ -13,9 +13,15 @@ var SHELL = [
   './index.html',
   './manifest.webmanifest',
   './css/style.css',
+  './css/map.css',
   './data/countries.js',
+  './data/subjects.js',
+  './data/confusion-groups.js',
+  './data/map-coords.js',
+  './data/map-shapes.js',
   './js/util.js',
   './js/storage.js',
+  './js/features.js',
   './js/audio.js',
   './js/recorded-audio.js',
   './js/voice-manifest.js',
@@ -24,6 +30,7 @@ var SHELL = [
   './js/speech.js',
   './js/effects.js',
   './js/ui.js',
+  './js/map.js',
   './js/progress.js',
   './js/quiz.js',
   './js/badges.js',
@@ -63,6 +70,55 @@ function warmFlags() {
           if (i >= codes.length) return;
           var chunk = codes.slice(i, i + 20).map(function (c) { return './flags/' + c + '.svg'; });
           i += 20;
+          return Promise.all(chunk.map(function (u) {
+            return cache.match(u).then(function (hit) {
+              return hit ? null : cache.add(u)['catch'](function () { return null; });
+            });
+          })).then(nextChunk);
+        }
+        return nextChunk();
+      });
+    })['catch'](function () { return null; });
+}
+
+/**
+ * 상징물·명소 그림을 활성화 뒤에 조금씩 담아 둔다.
+ * 아이는 차 안에서 비행기 모드로 논다. 그림을 그때 받으려 하면 문제가 통째로 잠기고
+ * 답도 못 하고 넘기지도 못한다. 국기와 같은 방식으로 미리 받아 둔다.
+ * 341장 8.1MB 라 설치를 붙잡으면 안 되고, 실패해도 그냥 넘어간다.
+ */
+function warmArt() {
+  return fetch('./data/subjects.js')
+    .then(function (res) { return res.ok ? res.text() : ''; })
+    .then(function (src) {
+      // 파일은 IIFE 로 감싸여 있고 머리말 주석에도 'subjects' 라는 글자가 있다.
+      // 대입 자리를 정확히 집어 거기서부터 괄호를 세어 잘라낸다.
+      var assign = /FQ\.subjects\s*=\s*\{/.exec(src);
+      if (!assign) return;
+      var start = assign.index + assign[0].length - 1;
+      var depth = 0, end = -1;
+      for (var i = start; i < src.length; i++) {
+        var ch = src.charAt(i);
+        if (ch === '{') depth += 1;
+        else if (ch === '}') { depth -= 1; if (!depth) { end = i; break; } }
+      }
+      if (end === -1) return;
+      var subjects;
+      try { subjects = JSON.parse(src.slice(start, end + 1)); }
+      catch (e) { return; }
+      var urls = [];
+      Object.keys(subjects).forEach(function (code) {
+        // noArt 는 원장이 보류한 소재다. 받을 파일이 아예 없으므로 요청하지 않는다.
+        if (subjects[code].symbol && !subjects[code].symbol.noArt) urls.push('./images/symbols/' + code + '.webp');
+        if (subjects[code].place && !subjects[code].place.noArt) urls.push('./images/places/' + code + '.webp');
+      });
+      if (!urls.length) return;
+      return caches.open(ART_CACHE).then(function (cache) {
+        var i = 0;
+        function nextChunk() {
+          if (i >= urls.length) return;
+          var chunk = urls.slice(i, i + 10);
+          i += 10;
           return Promise.all(chunk.map(function (u) {
             return cache.match(u).then(function (hit) {
               return hit ? null : cache.add(u)['catch'](function () { return null; });
@@ -114,6 +170,7 @@ self.addEventListener('activate', function (event) {
       })
       .then(function () { return self.clients.claim(); })
       .then(function () { return warmFlags(); })
+      .then(function () { return warmArt(); })
   );
 });
 
@@ -132,6 +189,17 @@ function cacheFirst(req, name) {
     return fetch(req).then(function (res) {
       if (!res || !res.ok) return res;
       return putCache(name, req, res.clone()).then(function () { return res; });
+    });
+  });
+}
+
+function cachedFlag(req) {
+  return cacheFirst(req, FLAG_CACHE)['catch'](function (error) {
+    // 이관 저장 실패로 v4에 남은 동일 국기를 오프라인 폴백으로 읽는다.
+    // 새 버킷·온라인 응답을 우선하며 음원·셸의 조회 규칙은 바꾸지 않는다.
+    return matchCache(AUDIO_CACHE, req).then(function (hit) {
+      if (hit && hit.ok) return hit;
+      throw error;
     });
   });
 }
@@ -199,7 +267,7 @@ self.addEventListener('fetch', function (event) {
 
   // 국기 이미지는 한 번 받으면 그대로 쓴다
   if (url.pathname.indexOf('/flags/') !== -1) {
-    event.respondWith(cacheFirst(req, FLAG_CACHE));
+    event.respondWith(cachedFlag(req));
     return;
   }
 
@@ -211,7 +279,12 @@ self.addEventListener('fetch', function (event) {
           var copy = res.clone();
           return putCache(SHELL_CACHE, req, copy).then(function () { return res; });
         }
-        return res;
+        // 404·503 은 fetch 가 '성공'으로 돌려준다. 배포 전환이나 CDN 퍼지 구간이 바로
+        // 아이가 새 코드를 받는 구간이라, 여기서 오류 응답을 그대로 넘기면 흰 화면이 된다.
+        // 담아 둔 온전한 사본이 있으면 그것을 쓴다.
+        return matchCache(SHELL_CACHE, req).then(function (hit) {
+          return hit || res;
+        })['catch'](function () { return res; });
       })
       .catch(function () {
         return matchCache(SHELL_CACHE, req).then(function (hit) {

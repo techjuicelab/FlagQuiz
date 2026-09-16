@@ -6,6 +6,33 @@
 
   var CONTINENTS = ['all', '아시아', '유럽', '아프리카', '북아메리카', '남아메리카', '오세아니아'];
   var dexFilter = { continent: 'all', query: '', onlyWrong: false, onlyLocked: false };
+  var AXES = [
+    { id: 'flag', label: '국기', icon: '🚩' },
+    { id: 'symbol', label: '그림', icon: '🎨' },
+    { id: 'place', label: '명소', icon: '🏞️' },
+    { id: 'map', label: '위치', icon: '📍' }
+  ];
+
+  /** 화면을 보는 것만으로 저장 기록이나 스티커 수를 바꾸지 않는다. */
+  function axisRecords(axis) {
+    return axis === 'flag' ? FQ.storage.allCountryStats() : FQ.storage.allAxisStats(axis);
+  }
+
+  function axisSummary() {
+    return '<div class="card section"><h3>놀이별 기록</h3><div class="axis-stat-list">' +
+      AXES.map(function (axis) {
+        var records = axisRecords(axis.id), seen = 0, correct = 0, countries = 0;
+        (FQ.countries || []).forEach(function (c) {
+          var r = records[c.code] || {};
+          seen += r.seen || 0;
+          correct += r.correct || 0;
+          if ((r.seen || 0) > 0) countries++;
+        });
+        return '<div class="axis-stat" data-axis="' + axis.id + '"><b>' + axis.icon + ' ' + axis.label + '</b>' +
+          '<div>' + countries + '개국 · ' + seen + '문제</div>' +
+          '<div class="small muted">정답 ' + correct + '개 · ' + (seen ? Math.round(correct / seen * 100) : 0) + '%</div></div>';
+      }).join('') + '</div></div>';
+  }
 
   /** 스티커 판 위쪽: 모은 개수 */
   function stickerHeader() {
@@ -106,9 +133,24 @@
     '<rect x="4" y="10" width="16" height="11" rx="2"></rect>' +
     '<path d="M8 10V7a4 4 0 0 1 8 0v3"></path></svg>';
 
+  /** 그 나라가 그 축으로 출제될 수 있는가 — js/quiz.js 의 hasData 와 같은 기준이다. */
+  function canEarn(code, axis) {
+    if (axis !== 'symbol' && axis !== 'place') return true;
+    // 자료를 못 읽었으면 숨기지 않는다. 자료가 없다는 이유로 도장을 지우면
+    // 아이가 이미 딴 도장이 화면에서 사라진다. 확실히 못 따는 경우에만 지운다.
+    if (!FQ.subjects) return true;
+    var subject = FQ.subjects[code] && FQ.subjects[code][axis];
+    return !!subject && !subject.noArt;
+  }
+
   function paintDex() {
     var util = FQ.util;
     var stats = FQ.storage.allCountryStats();
+    var stampAxes = AXES.slice(1).filter(function (axis) {
+      return axis.id === 'map' || (FQ.features && FQ.features.on('art'));
+    });
+    var stampRecords = {};
+    stampAxes.forEach(function (axis) { stampRecords[axis.id] = axisRecords(axis.id); });
     var wrongSet = {};
     FQ.storage.wrongList().forEach(function (c) { wrongSet[c] = true; });
     var norm = util.normalize(dexFilter.query);
@@ -140,6 +182,15 @@
               '<img src="' + ui.flagSrc(c.code) + '" alt="' + esc(c.ko) + ' 스티커" loading="lazy">' +
               (got ? '' : '<span class="lock">' + LOCK_SVG + '</span>') +
               '<div class="n">' + esc(c.ko) + '</div>' +
+              '<div class="axis-stamps">' + stampAxes.map(function (axis) {
+                // 딸 수 없는 도장은 그리지 않는다. 그림이 없는 나라(보류)와 명소가 없는 나라는
+                // 그 축에 출제되지 않으므로, 자리를 남겨 두면 아이가 영원히 못 채우는 칸이 된다.
+                if (!canEarn(c.code, axis.id)) return '';
+                var earned = ((stampRecords[axis.id][c.code] || {}).correct || 0) > 0;
+                var label = axis.label + ' 도장 ' + (earned ? '획득' : '아직');
+                return '<span class="axis-stamp' + (earned ? ' earned' : '') + '" data-axis="' + axis.id +
+                  '" title="' + label + '" aria-label="' + label + '">' + axis.icon + '</span>';
+              }).join('') + '</div>' +
             '</button>';
           }).join('') + '</div>'
         : '<div class="card">' + emptyDexMessage() + '</div>');
@@ -197,12 +248,14 @@
             '<div class="stat"><div class="v">' + st.asked + '</div><div class="k">푼 문제</div></div>' +
             '<div class="stat"><div class="v">' + rate + '%</div><div class="k">정답률</div></div>' +
             '<div class="stat"><div class="v">' + st.bestStreak + '</div><div class="k">최고 연속</div></div>' +
-            '<div class="stat"><div class="v">' + seenCount + '</div><div class="k">만난 나라</div></div>' +
-            '<div class="stat"><div class="v">' + learnedCount + '</div><div class="k">확실히 아는 나라</div></div>' +
+            '<div class="stat"><div class="v">' + seenCount + '</div><div class="k">국기로 만난 나라</div></div>' +
+            '<div class="stat"><div class="v">' + learnedCount + '</div><div class="k">익숙한 국기</div></div>' +
           '</div>' +
-          '<p class="small muted" style="margin:12px 0 0">전체 ' + total + '개국 중 ' + seenCount + '개국을 만났어요. ' +
+          '<p class="small muted" style="margin:12px 0 0">국기 놀이에서 전체 ' + total + '개국 중 ' + seenCount + '개국을 만났어요. ' +
             (seenCount >= total ? '온 세계를 한 바퀴 돌았네요! 🌐' : '아직 ' + (total - seenCount) + '개국이 남았어요.') + '</p>' +
         '</div>' +
+
+        axisSummary() +
 
         (tough.length
           ? '<div class="card section">' +

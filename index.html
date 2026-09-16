@@ -16,6 +16,7 @@
 <meta name="format-detection" content="telephone=no">
 <meta name="apple-mobile-web-app-title" content="국기 퀴즈">
 <link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/map.css">
 </head>
 <body>
 <div class="app">
@@ -34,7 +35,8 @@
   </main>
 
   <footer class="small muted" style="text-align:center;margin-top:28px;line-height:1.7">
-    국기 이미지는 <a href="https://github.com/lipis/flag-icons" target="_blank" rel="noopener">flag-icons</a> (MIT) 를 사용합니다.<br>
+    국기 이미지는 <a href="https://github.com/lipis/flag-icons" target="_blank" rel="noopener">flag-icons</a> (MIT) 를 사용합니다. 상징물·명소 그림: TechJuiceLab · OpenAI AI 생성.<br>
+    세계지도는 <a href="https://www.naturalearthdata.com/" target="_blank" rel="noopener">Natural Earth</a> (퍼블릭 도메인) 자료로 만들었습니다. 땅만 그리고 국경선은 그리지 않아요.<br>
     음성은 AI 가상 연기자 서비스 <a href="https://typecast.ai" target="_blank" rel="noopener">Typecast</a>로 제작했습니다. 사용한 목소리: Sua(수아).<br>
     기록은 이 브라우저 안에만 저장돼요.
   </footer>
@@ -42,6 +44,7 @@
 
 <script src="js/util.js"></script>
 <script src="js/storage.js"></script>
+<script src="js/features.js"></script>
 <script src="js/voice-manifest.js"></script>
 <script src="js/audio.js"></script>
 <script src="js/recorded-audio.js"></script>
@@ -51,6 +54,11 @@
 <script src="js/effects.js"></script>
 <script src="js/ui.js"></script>
 <script src="data/countries.js"></script>
+<script src="data/subjects.js"></script>
+<script src="data/confusion-groups.js"></script>
+<script src="data/map-coords.js"></script>
+<script src="data/map-shapes.js"></script>
+<script src="js/map.js"></script>
 <script src="js/progress.js"></script>
 <script src="js/quiz.js"></script>
 <script src="js/badges.js"></script>

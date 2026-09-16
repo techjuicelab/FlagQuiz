@@ -1,0 +1,80 @@
+{
+  "artDevOnly": {
+    "art": true
+  },
+  "axes": {
+    "map": {
+      "kr": {
+        "correct": 1,
+        "seen": 1,
+        "streak": 1,
+        "wrong": 0
+      }
+    },
+    "place": {
+      "kr": {
+        "correct": 1,
+        "seen": 1,
+        "streak": 1,
+        "wrong": 0
+      }
+    },
+    "symbol": {
+      "kr": {
+        "correct": 1,
+        "seen": 1,
+        "streak": 1,
+        "wrong": 0
+      }
+    }
+  },
+  "countries": {
+    "kr": {
+      "correct": 1,
+      "seen": 1,
+      "streak": 1,
+      "wrong": 0
+    }
+  },
+  "history": [
+    {
+      "correct": 1,
+      "date": "2026-09-15",
+      "mode": "map",
+      "players": [
+        "민규"
+      ],
+      "total": 1
+    },
+    {
+      "correct": 1,
+      "date": "2026-09-15",
+      "mode": "place",
+      "players": [
+        "민규"
+      ],
+      "total": 1
+    },
+    {
+      "correct": 1,
+      "date": "2026-09-15",
+      "mode": "symbol",
+      "players": [
+        "민규"
+      ],
+      "total": 1
+    }
+  ],
+  "stats": {
+    "asked": 4,
+    "bestStreak": 1,
+    "correct": 4,
+    "games": 3,
+    "playSeconds": 71,
+    "xp": 40
+  },
+  "viewport": [
+    390,
+    844
+  ]
+}

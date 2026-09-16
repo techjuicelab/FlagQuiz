@@ -7,7 +7,7 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 
 const KEY = 'flagquiz.v1';
-const KEYS = ['settings', 'stats', 'daily', 'countries', 'badges', 'history'];
+const KEYS = ['settings', 'stats', 'daily', 'countries', 'badges', 'axes', 'history'];
 
 function fixture({ saved, blocked = false, getterBlocked = false } = {}) {
   const local = new Map(saved === undefined ? [] : [[KEY, saved]]);
@@ -34,13 +34,15 @@ function recordProgress(storage) {
   storage.updateSettings({ players: ['민규', '아빠'], sound: false });
   storage.recordAnswer('kr', true);
   storage.recordAnswer('jp', false);
+  storage.recordAnswer('kr', false, 'symbol');
+  storage.recordAnswer('au', true, 'map');
   storage.addXp(35);
   storage.setDaily({ date: '2026-09-15', continent: '아시아', done: 1 });
   storage.awardBadge('first_game');
   storage.finishGame({ mode: 'choice4', total: 2, correct: 1, seconds: 20, bestStreak: 1, players: ['민규'] });
 }
 
-test('기록 백업은 여섯 버킷을 가진 JSON 문자열이며 저장된 내용과 일치한다', () => {
+test('기록 백업은 새 축을 포함한 일곱 버킷 JSON이며 저장된 내용과 일치한다', () => {
   const f = fixture();
   const initial = f.storage.exportJson();
   assert.equal(typeof initial, 'string');
@@ -49,6 +51,8 @@ test('기록 백업은 여섯 버킷을 가진 JSON 문자열이며 저장된 �
   recordProgress(f.storage);
   const backup = JSON.parse(f.storage.exportJson());
   assert.equal(backup.countries.kr.correct, 1);
+  assert.equal(backup.axes.symbol.kr.wrong, 1);
+  assert.equal(backup.axes.map.au.correct, 1);
   assert.deepEqual(backup, JSON.parse(f.local.get(KEY)));
   assert.deepEqual([...f.local.keys()], [KEY]);
 });
@@ -126,9 +130,48 @@ function screenFixture(options) {
   };
   f.c.scrollTo = () => {};
   f.c.FQ.app = { home() {} };
-  f.load('data/countries.js', 'js/quiz.js', 'js/badges.js', 'js/ui.js', 'js/screens.js');
+  f.load('data/countries.js', 'data/subjects.js', 'js/features.js', 'js/progress.js', 'js/quiz.js', 'js/badges.js', 'js/ui.js', 'js/screens.js');
   return { ...f, main, node: selector => main.querySelector(selector) };
 }
+
+test('194개 국기 스티커 안의 새 도장은 학습 축별 정답만 읽고 기존 기록을 변경하지 않는다', () => {
+  const f = screenFixture();
+  f.storage.updateSettings({ dev: { art: true } });
+  f.storage.recordAnswer('kr', true, 'symbol');
+  f.storage.recordAnswer('kr', false, 'place');
+  f.storage.recordAnswer('kr', true, 'map');
+  const before = f.storage.exportJson();
+  f.c.FQ.screens.dex('all');
+  const html = f.node('#dex-list').innerHTML;
+  assert.equal((html.match(/class="sticker-cell /g) || []).length, 194);
+  const kr = html.match(/<button class="sticker-cell [^>]*data-code="kr"[\s\S]*?<\/button>/)[0];
+  assert.match(kr, /sticker-cell locked/);
+  assert.match(kr, /axis-stamp earned" data-axis="symbol"/);
+  assert.match(kr, /axis-stamp" data-axis="place"/);
+  assert.match(kr, /axis-stamp earned" data-axis="map"/);
+  assert.equal(f.c.FQ.progress.stickers().owned, 0);
+  assert.equal(f.storage.exportJson(), before);
+  f.storage.updateSettings({ dev: { art: false } });
+  f.c.FQ.screens.dex('all');
+  assert.doesNotMatch(f.node('#dex-list').innerHTML, /data-axis="(?:symbol|place)"/);
+  assert.match(f.node('#dex-list').innerHTML, /data-axis="map"/);
+});
+
+test('놀이별 기록은 국기·그림·명소·위치를 따로 집계하며 오래된 빈 레코드도 0으로 읽는다', () => {
+  const seed = fixture();
+  const saved = JSON.parse(seed.storage.exportJson());
+  saved.axes = { symbol: { kr: { seen: 2, correct: 1 }, jp: {} }, map: { au: { seen: 1 } } };
+  const f = screenFixture({ saved: JSON.stringify(saved) });
+  f.storage.recordAnswer('fr', true);
+  const before = f.storage.exportJson();
+  f.c.FQ.screens.stats();
+  assert.match(f.main.innerHTML, /data-axis="symbol"[\s\S]*?1개국 · 2문제[\s\S]*?정답 1개 · 50%/);
+  assert.match(f.main.innerHTML, /data-axis="map"[\s\S]*?1개국 · 1문제[\s\S]*?정답 0개 · 0%/);
+  assert.match(f.main.innerHTML, /data-axis="place"[\s\S]*?0개국 · 0문제/);
+  assert.match(f.main.innerHTML, /data-axis="flag"[\s\S]*?1개국 · 1문제/);
+  assert.doesNotMatch(f.main.innerHTML, /NaN|undefined/);
+  assert.equal(f.storage.exportJson(), before);
+});
 
 test('내 기록에서 백업 버튼을 누르면 읽기 전용 textarea에 원문을 넣고 전체 선택한다', () => {
   const f = screenFixture();
@@ -168,4 +211,31 @@ test('저장소가 차단된 내 기록 화면에서도 백업 버튼은 기본�
   assert.doesNotThrow(() => f.node('#export').click());
   assert.deepEqual(Object.keys(JSON.parse(f.node('#export-text').value)), KEYS);
   assert.equal(JSON.parse(f.node('#export-text').value).stats.asked, 0);
+});
+
+test('딸 수 없는 도장은 도감에 아예 그리지 않는다', () => {
+  // 그림이 보류된 나라와 명소가 없는 나라는 그 축으로 출제되지 않는다.
+  // 도장 자리를 남겨 두면 아이가 영원히 못 채우는 칸이 된다.
+  const f = screenFixture();
+  f.storage.updateSettings({ dev: { art: true } });
+  f.c.FQ.screens.dex('all');
+  const html = f.node('#dex-list').innerHTML;
+  const subjects = f.c.FQ.subjects;
+  const cellOf = (code) => html.match(new RegExp('<button class="sticker-cell [^>]*data-code="' + code + '"[\\s\\S]*?</button>'))[0];
+  const earnable = (code, axis) => !!subjects[code]?.[axis] && !subjects[code][axis].noArt;
+
+  let checkedHeld = 0, checkedNoPlace = 0;
+  for (const c of f.c.FQ.countries) {
+    const cell = cellOf(c.code);
+    for (const axis of ['symbol', 'place']) {
+      const has = cell.includes('data-axis="' + axis + '"');
+      assert.equal(has, earnable(c.code, axis), c.code + ' 의 ' + axis + ' 도장 표시가 출제 가능 여부와 어긋난다');
+      if (axis === 'symbol' && !earnable(c.code, axis)) checkedHeld += 1;
+      if (axis === 'place' && !earnable(c.code, axis)) checkedNoPlace += 1;
+    }
+    // 위치 도장은 194개국 모두 딸 수 있다.
+    assert.ok(cell.includes('data-axis="map"'), c.code + ' 에 위치 도장이 없다');
+  }
+  assert.ok(checkedHeld > 0, '이 검사는 보류가 최소 1건일 때를 고정한다');
+  assert.ok(checkedNoPlace > 0, '이 검사는 명소 없는 나라가 있을 때를 고정한다');
 });

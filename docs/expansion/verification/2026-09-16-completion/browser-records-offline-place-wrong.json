@@ -1,0 +1,47 @@
+{
+  "axes": {
+    "map": {
+      "kr": {
+        "correct": 1,
+        "seen": 1,
+        "streak": 1,
+        "wrong": 0
+      }
+    },
+    "place": {
+      "kr": {
+        "correct": 1,
+        "seen": 2,
+        "streak": 0,
+        "wrong": 1
+      }
+    },
+    "symbol": {
+      "kr": {
+        "correct": 2,
+        "seen": 2,
+        "streak": 2,
+        "wrong": 0
+      }
+    }
+  },
+  "controller": true,
+  "countries": {
+    "kr": {
+      "correct": 1,
+      "seen": 1,
+      "streak": 1,
+      "wrong": 0
+    }
+  },
+  "flagWrongList": [],
+  "overflow": 0,
+  "stats": {
+    "asked": 6,
+    "bestStreak": 1,
+    "correct": 5,
+    "games": 5,
+    "playSeconds": 93,
+    "xp": 70
+  }
+}

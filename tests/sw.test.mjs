@@ -367,6 +367,26 @@ test('국기는 지정한 버킷에만 저장하고 다음 오프라인 요청�
   assert.equal(fetched, 1);
 });
 
+test('오프라인 국기 폴백은 v4의 동일한 정상 국기만 읽고 다른 버킷은 사용하지 않는다', async () => {
+  for (const status of [200, 404, null]) {
+    const w = worker();
+    const flag = './flags/kr.svg';
+    for (const name of [SHELL, ART, 'another-app-v1']) w.seed(name, flag, new Response('wrong bucket'));
+    w.seed(AUDIO, './flags/jp.svg', new Response('different flag'));
+    if (status) w.seed(AUDIO, flag, new Response('legacy flag', { status }));
+    if (status === 200) {
+      const res = await request(w, flag);
+      assert.equal(res.status, 200);
+      assert.equal(await res.text(), 'legacy flag');
+    } else {
+      await assert.rejects(() => request(w, flag), /offline/);
+    }
+    assert.ok(w.matches.every(hit => hit.url === urlOf(flag) && [FLAGS, AUDIO].includes(hit.name)));
+    assert.deepEqual(w.puts, [], '오프라인 폴백은 기존 국기를 이동하거나 덮어쓰지 않는다.');
+    assert.deepEqual(w.deletedEntries, []);
+  }
+});
+
 test('국기 예열은 국기 버킷만 채우고 개별 다운로드 실패를 허용한다', async () => {
   const w = worker();
   const fetched = [];
@@ -583,10 +603,86 @@ test('국기 이관 저장 실패는 원본을 보존하고 이미 있는 새 �
     assert.equal(w.read(AUDIO, './index.html'), undefined);
     assert.equal(await w.read(AUDIO, voice).text(), 'voice bytes');
     assert.equal(await w.read(AUDIO, music).text(), 'music bytes');
+    const offline = await request(w, flag);
+    assert.equal(offline.status, 200, '이관 저장 실패 뒤에도 보존한 국기를 읽을 수 있다.');
+    assert.equal(await offline.text(), hasCurrentFlag ? 'current flag' : 'legacy flag');
+    assert.equal(fetched.filter(url => url.includes('/flags/')).length, hasCurrentFlag ? 0 : 1,
+      '새 국기 캐시가 비었을 때만 네트워크를 시도하고 실패하면 레거시 국기를 읽는다.');
     assert.ok(w.matches.every(match => !new URL(match.url).pathname.includes('/audio/')),
       '국기를 이관할 때 기존 음원 본문을 읽지 않는다.');
     assert.ok(w.puts.every(put => !new URL(urlOf(put.request)).pathname.includes('/audio/')));
     assert.ok(w.deletedEntries.every(entry => !new URL(entry.url).pathname.includes('/audio/')));
     assert.ok(fetched.every(url => !new URL(url).pathname.includes('/audio/')));
   }
+});
+
+test('배포 전환 중 404·503 이 와도 담아 둔 셸을 쓴다', async () => {
+  // fetch 는 404·503 을 '거부'가 아니라 '성공'으로 돌려준다. 그대로 넘기면 아이 화면이 희어진다.
+  for (const status of [404, 500, 503]) {
+    const w = worker(); let response;
+    w.seed(SHELL, './js/app.js', new Response('담아 둔 앱 코드'));
+    w.sandbox.fetch = async () => new Response('오류 본문', { status });
+    w.events.fetch({ request: { method: 'GET', url: 'https://example.test/FlagQuiz/js/app.js', mode: 'cors' }, respondWith: p => { response = p; } });
+    const got = await response;
+    assert.equal(got.status, 200, status + ' 일 때 담아 둔 사본을 쓰지 않는다');
+    assert.equal(await got.text(), '담아 둔 앱 코드');
+  }
+});
+
+test('담아 둔 사본이 없으면 404·503 을 그대로 전달한다', async () => {
+  // 폴백은 있는 것을 쓸 때만이다. 없는 것을 있는 척하지 않는다.
+  const w = worker(); let response;
+  w.sandbox.fetch = async () => new Response('없음', { status: 404 });
+  w.events.fetch({ request: { method: 'GET', url: 'https://example.test/FlagQuiz/js/app.js', mode: 'cors' }, respondWith: p => { response = p; } });
+  assert.equal((await response).status, 404);
+});
+
+test('오류 응답은 셸 캐시에 담기지 않는다', async () => {
+  const w = worker(); let response;
+  w.sandbox.fetch = async () => new Response('오류 본문', { status: 503 });
+  w.events.fetch({ request: { method: 'GET', url: 'https://example.test/FlagQuiz/js/app.js', mode: 'cors' }, respondWith: p => { response = p; } });
+  await response;
+  assert.deepEqual(w.puts, [], '오류 응답을 담아 두면 다음 오프라인에서 그 오류가 재생된다');
+});
+
+test('그림 예열은 그림 버킷만 채우고 보류 소재는 아예 받지 않는다', async () => {
+  // 아이는 차 안에서 비행기 모드로 논다. 그림을 그때 받으려 하면 문제가 통째로 잠긴다.
+  const w = worker();
+  const fetched = [];
+  w.sandbox.fetch = async req => {
+    const url = urlOf(req);
+    fetched.push(url);
+    if (url.endsWith('/data/countries.js')) return new Response('[{"code":"kr"},{"code":"gn"}]');
+    if (url.endsWith('/data/subjects.js')) {
+      // 실제 data/subjects.js 와 같은 모양으로 준다 — 머리말 주석에도 'subjects' 라는 글자가 있고
+      // IIFE 로 감싸여 있다. 픽스처가 실제 파일과 다르면 파싱 버그가 그대로 지나간다.
+      return new Response('/* 생성물: npm run subjects:build. */\n(function () {\n' +
+        '  var FQ = window.FQ = window.FQ || {};\n  FQ.subjects = ' + JSON.stringify({
+          kr: { symbol: { ko: '김치' }, place: { ko: '광화문' } },
+          gn: { symbol: { ko: '코라 악기', noArt: true } }
+        }, null, 2) + ';\n})();\n');
+    }
+    if (url.includes('/images/')) return new Response('webp bytes');
+    return new Response('<svg>flag</svg>');
+  };
+  await lifecycle(w, 'activate');
+  assert.equal(await w.read(ART, './images/symbols/kr.webp').text(), 'webp bytes');
+  assert.equal(await w.read(ART, './images/places/kr.webp').text(), 'webp bytes');
+  // 보류 소재는 파일 자체가 없다 — 받으려 시도조차 하지 않는다.
+  assert.ok(!fetched.some(url => url.includes('symbols/gn.webp')), '보류 소재를 받으러 갔다');
+  assert.ok(w.puts.every(put => [ART, FLAGS].includes(put.name)), '예열이 다른 버킷을 건드렸다');
+  assert.ok(fetched.every(url => !new URL(url).pathname.includes('/audio/')), '예열이 음원을 건드렸다');
+});
+
+test('그림 예열이 실패해도 활성화는 끝까지 간다', async () => {
+  const w = worker();
+  w.sandbox.fetch = async req => {
+    const url = urlOf(req);
+    if (url.endsWith('/data/countries.js')) return new Response('[{"code":"kr"}]');
+    if (url.endsWith('/flags/kr.svg')) return new Response('<svg>flag</svg>');
+    throw new Error('network failure');
+  };
+  await lifecycle(w, 'activate');
+  assert.equal(await w.read(FLAGS, './flags/kr.svg').text(), '<svg>flag</svg>');
+  assert.equal(w.read(ART, './images/symbols/kr.webp'), undefined);
 });

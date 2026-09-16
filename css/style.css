@@ -987,6 +987,11 @@ a:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-
 @keyframes stickerPop { from { opacity: 0; transform: scale(.6); } to { opacity: 1; transform: none; } }
 .sticker-cell img { width: 100%; aspect-ratio: 4/3; object-fit: contain; border-radius: 5px; }
 .sticker-cell .n { font-size: .78rem; font-weight: 800; margin-top: 5px; word-break: keep-all; line-height: 1.2; }
+.axis-stamps { display: flex; justify-content: center; gap: 3px; margin-top: 6px; }
+.axis-stamp { display: inline-grid; place-items: center; width: 21px; height: 21px; font-size: .75rem; border: 1px dashed var(--line); border-radius: 50%; filter: grayscale(1); opacity: .4; }
+.axis-stamp.earned { filter: none; opacity: 1; border-style: solid; border-color: var(--success); background: var(--success-bg); }
+.axis-stat-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.axis-stat { padding: 12px; border: 1px solid var(--line); border-radius: 12px; line-height: 1.7; }
 .sticker-cell.got { border-color: var(--success); background: linear-gradient(180deg, var(--card), var(--success-bg)); }
 .sticker-cell.got::after {
   content: "✨";
@@ -1188,3 +1193,13 @@ button.cont-item:focus-visible { outline: 3px solid var(--accent); outline-offse
 .journey-finish { font-size: 3.5rem; margin-bottom: 12px; }
 .journey-record { margin-top: 18px; }
 .journey-record > summary { cursor: pointer; color: var(--text-soft); font-weight: 700; }
+
+/* 그림은 다크 화면에서도 원래 배경색과 색감을 유지한다. */
+.country-art { margin: 16px 0; overflow: hidden; border: 1px solid var(--line); border-radius: 18px; touch-action: manipulation; user-select: none; }
+.country-art img { display: block; width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: contain; background: #f1f5fb; }
+.country-art figcaption { padding: 10px 14px; text-align: center; font-weight: 700; background: var(--card-2); }
+.art-question { min-height: 0; padding: 16px; }
+.art-question > img { display: block; width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: contain; border-radius: 16px; background: #f1f5fb; }
+.art-question > img[hidden] { display: none; }
+.art-choice { display: flex; align-items: center; gap: 12px; }
+.art-choice img { width: 48px; height: 32px; object-fit: contain; flex-shrink: 0; }

@@ -6,6 +6,7 @@
   'use strict';
   var FQ = (global.FQ = global.FQ || {});
   var KEY = 'flagquiz.v1';
+  var FLAG_AXIS = 'flag';
 
   var DEFAULTS = {
     settings: {
@@ -19,7 +20,8 @@
       correctMusic: false,
       speak: true,
       reviewFirst: true,
-      timer: 0
+      timer: 0,
+      dev: {}
     },
     stats: {
       games: 0,
@@ -34,6 +36,7 @@
     /* code -> {seen, correct, wrong, streak} */
     countries: {},
     badges: {},
+    axes: {},   /* axis -> code -> {seen,correct,wrong,streak} */
     history: []
   };
 
@@ -52,7 +55,9 @@
               : Object.assign({}, DEFAULTS[k], saved[k]);
           }
         });
-        if (saved.settings) data.settings = Object.assign({}, DEFAULTS.settings, saved.settings);
+        // DEFAULTS 를 그대로 병합하면 저장분에 없던 객체 값(dev·players)이 DEFAULTS 의
+        // 실물 참조로 들어와, 제자리로 고치는 순간 기본값 자체가 오염되고 초기화로도 안 지워진다.
+        if (saved.settings) data.settings = Object.assign(deepClone(DEFAULTS.settings), saved.settings);
       }
     } catch (e) {
       /* 시크릿 모드나 저장소 차단 환경에서도 게임은 그대로 돌아간다 */
@@ -87,19 +92,36 @@
     return state.countries[code];
   }
 
-  /** 한 문제의 결과를 기록한다. */
-  function recordAnswer(code, isCorrect) {
-    var s = countryStat(code);
-    s.seen += 1;
+  /** 그림·명소·지도 기록은 국기 오답노트와 별도 버킷에 둔다. */
+  function axisStat(axis, code) {
+    state.axes[axis] = state.axes[axis] || {};
+    var records = state.axes[axis];
+    records[code] = records[code] || {};
+    var r = records[code];
+    r.seen = r.seen || 0;
+    r.correct = r.correct || 0;
+    r.wrong = r.wrong || 0;
+    r.streak = r.streak || 0;
+    return r;
+  }
+
+  /** 한 문제의 결과를 기록한다. 축을 생략한 옛 호출은 계속 국기 기록이다. */
+  function recordAnswer(code, isCorrect, axis) {
+    var ax = axis || FLAG_AXIS;
+    var s = ax === FLAG_AXIS ? countryStat(code) : axisStat(ax, code);
+    s.seen = (s.seen || 0) + 1;
+    s.correct = s.correct || 0;
+    s.wrong = s.wrong || 0;
+    s.streak = s.streak || 0;
     if (isCorrect) {
-      s.correct += 1;
-      s.streak += 1;
+      s.correct = (s.correct || 0) + 1;
+      s.streak = (s.streak || 0) + 1;
     } else {
-      s.wrong += 1;
+      s.wrong = (s.wrong || 0) + 1;
       s.streak = 0;
     }
-    state.stats.asked += 1;
-    if (isCorrect) state.stats.correct += 1;
+    state.stats.asked = (state.stats.asked || 0) + 1;
+    if (isCorrect) state.stats.correct = (state.stats.correct || 0) + 1;
     save();
   }
 
@@ -158,6 +180,7 @@
   }
   function history() { return state.history; }
   function allCountryStats() { return state.countries; }
+  function allAxisStats(axis) { return state.axes[axis] || {}; }
   function exportJson() {
     try { return JSON.stringify(state, null, 2); }
     catch (e) { return '{}'; }
@@ -180,6 +203,7 @@
     state.stats = deepClone(DEFAULTS.stats);
     state.countries = {};
     state.badges = {};
+    state.axes = {};
     state.history = [];
     state.daily = deepClone(DEFAULTS.daily);
     save();
@@ -189,6 +213,7 @@
     settings: settings,
     updateSettings: updateSettings,
     countryStat: countryStat,
+    axisStat: axisStat,
     recordAnswer: recordAnswer,
     wrongList: wrongList,
     weightOf: weightOf,
@@ -199,6 +224,7 @@
     setDaily: setDaily,
     history: history,
     allCountryStats: allCountryStats,
+    allAxisStats: allAxisStats,
     exportJson: exportJson,
     badges: badges,
     awardBadge: awardBadge,

@@ -6,6 +6,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
 import { fileURLToPath } from 'node:url';
+import { checkArtSet } from '../scripts/lib/art-gate.mjs';
+import { checkImages } from '../scripts/check-images.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -49,7 +51,7 @@ sandbox.window = sandbox;
 sandbox.global = sandbox;
 vm.createContext(sandbox);
 
-for (const file of ['js/util.js', 'js/storage.js', 'data/countries.js', 'js/progress.js', 'js/quiz.js']) {
+for (const file of ['js/util.js', 'js/storage.js', 'js/features.js', 'data/countries.js', 'data/subjects.js', 'data/confusion-groups.js', 'data/map-coords.js', 'data/map-shapes.js', 'js/map.js', 'js/progress.js', 'js/quiz.js']) {
   const full = path.join(root, file);
   if (!fs.existsSync(full)) {
     console.error('✗ 파일이 없어요: ' + file);
@@ -60,6 +62,8 @@ for (const file of ['js/util.js', 'js/storage.js', 'data/countries.js', 'js/prog
 
 /** 유엔 회원국 193 + 바티칸. 목록이 바뀌면 여기도 함께 고쳐야 한다. */
 const EXPECTED_COUNT = 194;
+// 국가로 볼지 견해가 갈리는 지역은 넣지 않기로 했다
+const DISPUTED = { tw: '대만', ps: '팔레스타인', xk: '코소보', eh: '서사하라', ck: '쿡제도', nu: '니우에' };
 
 const FQ = sandbox.FQ;
 const { util, quiz, storage } = FQ;
@@ -82,12 +86,38 @@ function group(name, fn) {
 
 const CONTINENTS = ['아시아', '유럽', '아프리카', '북아메리카', '남아메리카', '오세아니아'];
 
+group('그림 자료', () => {
+  const required = FQ.features.on('art') || process.env.FQ_REQUIRE_ART === '1';
+  const result = checkArtSet(root, FQ.subjects, countries.map(c => c.code), required);
+  for (const error of result.errors) ok(false, error);
+  const inspected = checkImages({root});
+  ok(inspected.ok, '그림 원장·WebP 치수·용량·프롬프트 검사', inspected.errors.join('; '));
+  ok(Object.values(FQ.subjects).filter(s => s.symbol).length === 194, '상징물 자료 194개');
+  ok(Object.values(FQ.subjects).filter(s => s.place).length === 148, '명소 자료 148개');
+  // 그림을 가진 소재의 기준은 원장 하나다. 보류로 적힌 것만 면제하므로 그 목록을 원장에서 직접 읽는다.
+  const ledger = JSON.parse(fs.readFileSync(path.join(root, 'docs/image-prompts/presets.json'), 'utf8'));
+  const held = { symbol: [], place: [] };
+  for (const item of ledger.items) if (item.status === 'held') held[item.kind === 'landmark' ? 'place' : 'symbol'].push(item.code);
+  for (const [axis, codes] of Object.entries(held)) {
+    for (const code of codes) ok(FQ.subjects[code] && FQ.subjects[code][axis] && FQ.subjects[code][axis].noArt === true, '원장이 보류한 소재에 noArt 표시가 없음', code + ' ' + axis);
+  }
+  for (const [code, subject] of Object.entries(FQ.subjects)) {
+    for (const axis of ['symbol', 'place']) {
+      if (subject[axis] && subject[axis].noArt) ok(held[axis].includes(code), '원장에 보류 기록이 없는데 noArt 로 그림을 면제함', code + ' ' + axis);
+    }
+  }
+  const need = { symbol: 194 - held.symbol.length, place: 148 - held.place.length };
+  console.log('  · 상징물 그림 ' + result.counts.symbol + '/' + need.symbol + ', 명소 그림 ' + result.counts.place + '/' + need.place +
+    ' (원장 보류 ' + (held.symbol.length + held.place.length) + '건은 그림 없이 이름만)');
+  if (required) ok(result.counts.symbol === need.symbol && result.counts.place === need.place,
+    '전량 공개에는 보류를 뺀 그림 ' + (need.symbol + need.place) + '개가 필요함');
+  for (const file of fs.readdirSync(path.join(root, 'flags'))) ok(file === 'README.md' || /^[a-z]{2}\.svg$/.test(file), '국기 폴더에는 SVG 국기와 출처 문서만', file);
+});
+
 group('데이터 기본', () => {
   ok(Array.isArray(countries), '데이터가 배열이어야 함');
   ok(countries.length === EXPECTED_COUNT, EXPECTED_COUNT + '개국이어야 함', '실제 ' + countries.length);
 
-  // 국가로 볼지 견해가 갈리는 지역은 넣지 않기로 했다
-  const DISPUTED = { tw: '대만', ps: '팔레스타인', xk: '코소보', eh: '서사하라', ck: '쿡제도', nu: '니우에' };
   for (const [code, name] of Object.entries(DISPUTED)) {
     ok(!countries.some((c) => c.code === code), name + '(' + code + ') 은 넣지 않는다');
   }
@@ -111,6 +141,23 @@ group('데이터 기본', () => {
   }
 });
 
+group('주제 자료', () => {
+  const subjects = FQ.subjects || {};
+  const expected = new Set(countries.map((c) => c.code));
+  ok(Object.keys(subjects).length === EXPECTED_COUNT, '나라별 주제 194개');
+  ok(Object.keys(subjects).every((code) => expected.has(code)), '쓰이지 않는 주제 코드 없음');
+  for (const country of countries) {
+    const subject = subjects[country.code];
+    ok(!!(subject && subject.symbol && subject.symbol.ko && subject.symbol.prompt), '상징물 원문 있음', country.code);
+    if (subject && subject.place) ok(!!subject.place.ko && !!subject.place.prompt && ['S', 'A', 'B'].includes(subject.place.grade), '명소 원문·등급 있음', country.code);
+  }
+  ok(Object.values(subjects).filter((s) => s.place).length === 148, '명소 148개');
+  ok(Object.values(subjects).filter((s) => !Object.hasOwn(s, 'place')).length === 46, '명소 없는 46개국은 키 생략');
+  ok(!fs.readFileSync(path.join(root, 'data/subjects.js'), 'utf8').includes('"code"'), '주제 파일에 code 필드 없음');
+  ok(FQ.confusionGroups.length === 58, '혼동군 58개');
+  for (const item of FQ.confusionGroups) ok(['상징물', '명소'].includes(item.axis) && item.codes.every((code) => expected.has(code)), '혼동군 축·나라 코드', item.name);
+});
+
 group('국기 이미지 파일', () => {
   for (const c of countries) {
     ok(fs.existsSync(path.join(root, 'flags', c.code + '.svg')), '국기 파일 존재', c.code);
@@ -121,6 +168,96 @@ group('국기 이미지 파일', () => {
   for (const f of files) {
     ok(codes.has(f.replace('.svg', '')), '쓰이지 않는 국기 파일이 없어야 함', f);
   }
+});
+
+group('지도 자료', () => {
+  const coords = FQ.mapCoords || {};
+  const codes = new Set(countries.map((c) => c.code));
+  ok(Object.keys(coords).length === EXPECTED_COUNT, '지도 좌표 수가 나라 수와 같아야 함', String(Object.keys(coords).length));
+  for (const c of countries) {
+    const point = coords[c.code];
+    ok(Object.hasOwn(coords, c.code), '지도 좌표 존재', c.code);
+    ok(Array.isArray(point) && point.length === 2, '지도 좌표는 [lng, lat] 배열이어야 함', c.code);
+    if (!Array.isArray(point) || point.length !== 2) continue;
+    const [lng, lat] = point;
+    ok(Number.isFinite(lng) && lng >= -180 && lng <= 180, '지도 경도 범위', c.code);
+    ok(Number.isFinite(lat) && lat >= -90 && lat <= 90, '지도 위도 범위', c.code);
+    ok(point.every((v) => Number.isFinite(v) && Number(v.toFixed(2)) === v), '지도 좌표는 소수 둘째 자리까지', c.code);
+  }
+  for (const code of Object.keys(coords)) {
+    ok(codes.has(code), '쓰이지 않는 지도 좌표가 없어야 함', code);
+  }
+  for (const [code, name] of Object.entries(DISPUTED)) {
+    ok(!Object.hasOwn(coords, code), name + '(' + code + ') 지도 좌표는 넣지 않는다');
+  }
+  const inside = (code, west, south, east, north) => {
+    const p = coords[code];
+    return Array.isArray(p) && p.length === 2 && p.every(Number.isFinite) &&
+      p[0] >= west && p[0] <= east && p[1] >= south && p[1] <= north;
+  };
+  ok(inside('kr', 124, 33, 132, 39), '한국 지도 좌표는 한반도 안에 있어야 함', 'kr');
+  ok(inside('au', 112, -44, 154, -10), '호주 지도 좌표는 남반구 본토에 있어야 함', 'au');
+  ok(inside('br', -74, -34, -34, 6), '브라질 지도 좌표는 남미 안에 있어야 함', 'br');
+  ok(inside('va', 12.428, 41.898, 12.439, 41.906), '바티칸 지도 좌표는 실제 바티칸 경계 상자 안이어야 함', 'va');
+  ok(inside('ru', 30, 50, 100, 72), '러시아 지도 좌표는 서쪽 본토에 있어야 함', 'ru');
+
+  const land = FQ.mapLand || {};
+  ok(land.viewBox === '0 0 2000 1000', '지도 viewBox는 2:1이어야 함');
+  ok(typeof land.d === 'string', '지도 육지는 SVG 경로 문자열이어야 함');
+  ok(typeof land.d === 'string' && land.d.length < 400000, '지도 육지 경로는 400000자 미만이어야 함');
+  ok(typeof land.d === 'string' && land.d.includes('M'), '지도 육지에는 닫힌 링의 시작점이 있어야 함');
+  ok(Object.keys(land).sort().join(',') === 'd,viewBox', '지도 육지에는 나라별 키가 없어야 함');
+
+  // 생성기와 독립적으로 최종 SVG를 검사한다. 원자료나 생성기의 도형 헬퍼는 읽지 않는다.
+  const subpaths = typeof land.d === 'string' ? land.d.split('Z').filter((s) => s.trim()) : [];
+  const number = '-?\\d+(?:\\.\\d+)?';
+  const ringPattern = new RegExp('^M' + number + ' ' + number + '(?:L' + number + ' ' + number + '){2,}$');
+  const rings = subpaths.map((s, i) => {
+    ok(ringPattern.test(s), '지도 subpath는 3개 이상 점을 가진 M/L 링이어야 함', String(i));
+    const values = s.match(/-?\d+(?:\.\d+)?/g) || [];
+    const points = [];
+    for (let j = 0; j + 1 < values.length; j += 2) points.push([Number(values[j]), Number(values[j + 1])]);
+    return points;
+  });
+  const area = (points) => points.reduce((sum, [x1, y1], i) => {
+    const [x2, y2] = points[(i + 1) % points.length];
+    return sum + x1 * y2 - x2 * y1;
+  }, 0) / 2;
+  function winding(px, py, points) {
+    let w = 0;
+    for (let i = 0; i < points.length; i++) {
+      const [x1, y1] = points[i], [x2, y2] = points[(i + 1) % points.length];
+      const cross = (x2 - x1) * (py - y1) - (px - x1) * (y2 - y1);
+      if (y1 <= py && y2 > py && cross > 0) w++;
+      else if (y1 > py && y2 <= py && cross < 0) w--;
+    }
+    return w;
+  }
+  ok(typeof land.d === 'string' && land.d.endsWith('Z'), '지도 마지막 subpath도 닫혀 있어야 함');
+  ok(rings.length >= 300, '지도 육지 subpath는 300개 이상이어야 함', String(rings.length));
+  const areas = rings.map(area);
+  areas.forEach((a, i) => ok(Math.abs(a) >= 1e-9, '지도 subpath 면적은 0이 아니어야 함', String(i)));
+  ok(areas.length > 0 && areas.every((a) => Math.sign(a) === Math.sign(areas[0])), '지도 subpath 방향이 모두 같아야 함');
+  for (const c of countries) {
+    const point = coords[c.code];
+    if (!Array.isArray(point) || point.length !== 2 || !point.every(Number.isFinite)) continue;
+    const x = (point[0] + 180) / 360 * 2000, y = (90 - point[1]) / 180 * 1000;
+    const w = rings.reduce((sum, ring) => sum + winding(x, y, ring), 0);
+    ok(w !== 0, '지도 핀은 생성된 육지 실루엣 안에 있어야 함', c.code);
+  }
+
+  const build = fs.readFileSync(path.join(root, 'scripts/build-site.mjs'), 'utf8');
+  const sw = fs.readFileSync(path.join(root, 'sw.js'), 'utf8');
+  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  for (const file of ['data/map-coords.js', 'data/map-shapes.js']) {
+    ok(build.includes("'" + file + "'"), 'scripts/build-site.mjs: files 목록에 ' + file + '를 등록해야 함');
+    ok(sw.includes("'./" + file + "'"), 'sw.js: SHELL 목록에 ./' + file + '를 등록해야 함');
+    const tag = '<script src="' + file + '"></script>';
+    ok(html.includes(tag), 'index.html: ' + tag + '를 추가해야 함');
+    ok(html.indexOf(tag) > html.indexOf('<script src="data/countries.js"></script>') &&
+      html.indexOf(tag) < html.indexOf('<script src="js/progress.js"></script>'), 'index.html: ' + file + '는 countries 뒤, progress 앞에서 읽어야 함');
+  }
+  ok(sw.includes('flagquiz-v4'), '서비스워커 버전을 올리면 아이패드에 받아 둔 음원 캐시가 전부 삭제된다');
 });
 
 group('이름 충돌 (다른 나라와 헷갈리지 않기)', () => {

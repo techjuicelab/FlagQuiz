@@ -4,6 +4,8 @@ import path from 'node:path';
 import vm from 'node:vm';
 import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
+import { checkArtSet } from './lib/art-gate.mjs';
+import { checkImages } from './check-images.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const output = path.join(root, '_site');
@@ -13,7 +15,7 @@ const manifest = context.window.FQ.voiceManifest;
 if (!manifest?.ready || Object.keys(manifest.clips).length !== manifest.expectedClips) {
   throw new Error('전체 음원이 준비되어야 배포할 수 있습니다.');
 }
-const files = ['index.html', 'sw.js', 'manifest.webmanifest', 'data/countries.js'];
+const files = ['index.html', 'sw.js', 'manifest.webmanifest', 'data/countries.js', 'data/subjects.js', 'data/confusion-groups.js', 'data/map-coords.js', 'data/map-shapes.js'];
 for (const clip of Object.values(manifest.clips)) {
   if (!/^audio\/[a-z0-9-]+\/[a-f0-9]+\.mp3$/.test(clip.src)) throw new Error('음원 경로를 확인하세요.');
   files.push(clip.src);
@@ -51,9 +53,18 @@ for (const clip of music.clips) {
 for (const [event, count] of Object.entries(expectedEvents)) {
   if (counts[event] !== count) throw new Error('음악 이벤트의 곡 수를 확인하세요: ' + event);
 }
+// 기존 배포 묶음을 지우기 전에, 공개 설정과 그림 원장·실제 파일을 함께 검사한다.
+for (const file of ['js/features.js', 'data/countries.js', 'data/subjects.js']) {
+  vm.runInNewContext(await fs.readFile(path.join(root, file), 'utf8'), context);
+}
+const fq = context.window.FQ;
+const artSet = checkArtSet(root, fq.subjects, fq.countries.map(c => c.code), fq.features.on('art') || process.env.FQ_REQUIRE_ART === '1');
+const artFiles = checkImages({root});
+const artErrors = [...artSet.errors, ...artFiles.errors];
+if (artErrors.length) throw new Error('그림 배포 검사 실패:\n' + artErrors.join('\n'));
 await fs.rm(output, { recursive: true, force: true });
 await fs.mkdir(output, { recursive: true });
-for (const folder of ['assets', 'css', 'flags', 'js']) {
+for (const folder of ['assets', 'css', 'flags', 'js', 'images']) {
   await fs.cp(path.join(root, folder), path.join(output, folder), { recursive: true });
 }
 for (const file of files) {

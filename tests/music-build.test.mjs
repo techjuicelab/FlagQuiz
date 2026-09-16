@@ -10,9 +10,13 @@ const build = new URL('../scripts/build-site.mjs', import.meta.url);
 async function fixture(t) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'flagquiz-music-build-'));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
-  for (const folder of ['scripts', 'js', 'assets', 'css', 'flags', 'data', 'audio/sua', 'audio/music', '_site']) await fs.mkdir(path.join(root, folder), { recursive: true });
+  for (const folder of ['scripts/lib', 'js', 'assets', 'css', 'flags', 'images', 'data', 'audio/sua', 'audio/music', '_site']) await fs.mkdir(path.join(root, folder), { recursive: true });
   await fs.copyFile(build, path.join(root, 'scripts/build-site.mjs'));
-  for (const file of ['index.html', 'sw.js', 'manifest.webmanifest', 'data/countries.js']) await fs.writeFile(path.join(root, file), file);
+  for (const file of ['scripts/lib/art-gate.mjs', 'scripts/check-images.mjs', 'scripts/prepare-images.mjs', 'js/features.js']) await fs.copyFile(new URL('../' + file, import.meta.url), path.join(root, file));
+  for (const file of ['index.html', 'sw.js', 'manifest.webmanifest', 'data/countries.js', 'data/subjects.js', 'data/confusion-groups.js', 'data/map-coords.js', 'data/map-shapes.js']) await fs.writeFile(path.join(root, file), file);
+  await fs.writeFile(path.join(root, 'data/countries.js'), 'window.FQ.countries=[{code:"kr"}];');
+  // 그림 원장도 파일도 없는 최소 저장소다. 보류로 적어야 그림 게이트가 음악 검사를 가로막지 않는다.
+  await fs.writeFile(path.join(root, 'data/subjects.js'), 'window.FQ.subjects={kr:{symbol:{ko:"김치",noArt:true}}};');
   await fs.writeFile(path.join(root, 'js/voice-manifest.js'), 'window.FQ={voiceManifest:{ready:true,expectedClips:1,clips:{hello:{src:"audio/sua/abcdef.mp3"}}}};');
   await fs.writeFile(path.join(root, 'audio/sua/abcdef.mp3'), 'voice');
   await fs.writeFile(path.join(root, '_site/previous-release'), 'preserve on validation failure');
@@ -64,5 +68,21 @@ test('미완성·중복·경로탈출·해시불일치·빠진파일·잘못된e
       assert.notEqual(result.status, 0, variant);
       assert.equal(await fs.readFile(path.join(env.root, '_site/previous-release'), 'utf8'), 'preserve on validation failure', variant);
     });
+  }
+});
+
+test('그림 전량 공개의 누락과 미승인 그림은 이전 배포본을 보존하고 거부한다', async t => {
+  for (const variant of ['required-missing', 'unapproved-file']) {
+    const env = await fixture(t);
+    // 보류 표시를 지우면 그 소재는 그림을 요구한다 — 파일이 없으면 배포가 멈춰야 한다.
+    if (variant === 'required-missing') await fs.writeFile(path.join(env.root, 'data/subjects.js'), 'window.FQ.subjects={kr:{symbol:{ko:"김치"}}};');
+    else {
+      await fs.mkdir(path.join(env.root, 'images/symbols'));
+      await fs.writeFile(path.join(env.root, 'images/symbols/kr.webp'), 'unreviewed');
+    }
+    const result = await env.run();
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /그림 배포 검사 실패/);
+    assert.equal(await fs.readFile(path.join(env.root, '_site/previous-release'), 'utf8'), 'preserve on validation failure');
   }
 });
