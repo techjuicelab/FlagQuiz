@@ -538,7 +538,7 @@ test('그림 다운로드 실패를 오답으로 기록하지 않고 다시 받�
   assert.equal(f.c.FQ.storage.axisStat('symbol','kr').seen,1);
 });
 
-test('느린 그림 다운로드 중에는 제한 시간·제출이 시작되지 않고 load 뒤에 시작한다',()=>{
+test('느린 그림 다운로드 중에는 제출이 시작되지 않고, 새 축에는 제한 시간이 없다',()=>{
   const f=fixture();f.c.FQ.storage.updateSettings({mode:'symbol',timer:10,dev:{art:true}});f.c.FQ.app.startGame(['kr']);meetNext(f);
   const a=f.c.FQ.test;
   // 그림을 기다리는 동안 채점·제한 시간은 시작되지 않는다. 다만 빠져나갈 길은 잠그지 않는다 —
@@ -550,13 +550,13 @@ test('느린 그림 다운로드 중에는 제한 시간·제출이 시작되지
   f.node('#question-art').handlers.load();
   assert.equal(a.state.artUnavailable,false);assert.equal(f.node('#skip').disabled,false);
   for(let i=0;i<10;i++)f.runDelay(1000);
-  // 새 축의 시간 초과는 오답이 아니라 '지나감'이다 — 기록 없이 다음으로 간다(한 문제 판이라 바로 결과).
-  assert.equal(a.state.timedOut,true);assert.equal(f.c.FQ.storage.axisStat('symbol','kr').seen,0);
-  assert.equal(f.c.FQ.storage.stats().asked,0);assert.equal(a.state.unscored,1);
-  assert.match(f.node('main').innerHTML,/오늘 만난 나라 0개/);
+  // 새 축에는 제한 시간이 없다(D23) — 그림이 와도 초시계가 돌지 않고, 10초가 지나도 문제는 그대로 남는다.
+  assert.equal(a.state.timerId,null);assert.equal(a.state.timedOut,false);assert.equal(a.state.answered,false);
+  assert.equal(f.c.FQ.storage.stats().asked,0);assert.equal(a.state.unscored,0);
+  assert.doesNotMatch(f.node('main').innerHTML,/id="timer-chip"/);
 });
 
-test('숨긴 화면에서 그림이 도착하면 복귀 전까지 기다리고 전체 제한 시간을 준다',()=>{
+test('숨긴 화면에서 그림이 도착해도 복귀 뒤 새 축의 초시계는 돌지 않는다',()=>{
   const f=fixture();f.c.FQ.app.boot();
   f.c.FQ.storage.updateSettings({mode:'symbol',timer:10,dev:{art:true}});f.c.FQ.app.startGame(['kr']);meetNext(f);
   const a=f.c.FQ.test;
@@ -566,13 +566,10 @@ test('숨긴 화면에서 그림이 도착하면 복귀 전까지 기다리고 �
   assert.equal(a.state.timerId,null);assert.equal(a.state.answered,false);assert.equal(a.state.timedOut,false);
   assert.equal(f.c.FQ.storage.axisStat('symbol','kr').seen,0);
   f.c.document.hidden=false;f.events.visibilitychange[0]();
-  assert.equal(a.state.timeLeft,10);
-  for(let i=0;i<9;i++)f.runDelay(1000);
-  assert.equal(a.state.answered,false);assert.equal(a.state.timeLeft,1);
-  f.runDelay(1000);
-  // 시간이 다 돼도 그림 축은 기록을 남기지 않고 지나간다.
-  assert.equal(a.state.timedOut,true);assert.equal(f.c.FQ.storage.axisStat('symbol','kr').seen,0);
-  assert.equal(a.state.unscored,1);
+  assert.equal(a.state.timerId,null,'복귀해도 새 축에는 초시계가 없다');assert.equal(a.state.artUnavailable,false);
+  for(let i=0;i<12;i++)f.runDelay(1000);
+  assert.equal(a.state.answered,false);assert.equal(a.state.timedOut,false);
+  assert.equal(f.c.FQ.storage.axisStat('symbol','kr').seen,0);assert.equal(a.state.unscored,0);
 });
 
 test('숨긴 동안 그림 오류가 나면 복귀해도 제한 시간을 재개하지 않고 재수신을 기다린다',()=>{
@@ -588,7 +585,7 @@ test('숨긴 동안 그림 오류가 나면 복귀해도 제한 시간을 재개
   assert.equal(a.state.answered,false);assert.equal(a.state.timedOut,false);
   assert.equal(f.c.FQ.storage.axisStat('place','kr').seen,0);
   f.node('#art-retry').click();f.node('#question-art').handlers.load();
-  assert.equal(a.state.timeLeft,10);assert.notEqual(a.state.timerId,null);
+  assert.equal(a.state.artUnavailable,false);assert.equal(a.state.timerId,null,'새 축에는 제한 시간이 없다');
 });
 
 test('지도·그림·명소·수도 놀이에서는 오늘의 도전이 왜 안 오르는지 화면으로 알려 준다',()=>{
@@ -834,14 +831,14 @@ test('그림을 못 받아 지나간 문제는 총 문항·정답률·기록·�
   assert.equal(f.c.FQ.storage.wrongList().length,0);
 });
 
-test('지도 놀이의 시간 초과도 오답이 아니라 지나감이고, 국기 놀이의 시간 초과는 그대로 채점한다',()=>{
+test('지도·그림·수도 놀이에는 제한 시간이 없고, 국기 놀이의 시간 초과는 그대로 채점한다',()=>{
   const f=fixture();f.c.FQ.storage.updateSettings({mode:'map',timer:10});f.c.FQ.app.startGame(['kr','jp']);
   const a=f.c.FQ.test,first=a.state.game.current().country.code;
+  assert.equal(a.state.timerId,null,'지도 놀이에는 초시계가 없다');assert.doesNotMatch(f.node('main').innerHTML,/id="timer-chip"/);
   for(let i=0;i<10;i++)f.runDelay(1000);
   assert.equal(f.c.FQ.storage.axisStat('map',first).seen,0);
-  assert.equal(a.state.game.index,1,'지나가면 다음 문제로 간다');
-  assert.equal(a.state.answered,false);assert.equal(a.state.unscored,1);
-  assert.ok(a.state.timerId,'다음 문제의 제한 시간이 새로 돈다');
+  assert.equal(a.state.game.index,0,'시간이 지나도 문제는 그대로 남는다');
+  assert.equal(a.state.answered,false);assert.equal(a.state.unscored,0);
   const g=fixture();g.c.FQ.storage.updateSettings({mode:'choice4',timer:10});g.c.FQ.app.startGame(['kr','jp']);
   const flagFirst=g.c.FQ.test.state.game.current().country.code;
   for(let i=0;i<10;i++)g.runDelay(1000);
@@ -1095,6 +1092,29 @@ test('깜짝 상자는 대륙 모양 셋 중 하나를 골라 열고, 흔들기�
   back2.handlers.click({target:{closest:(sel)=>sel==='.chest-pick'?g.node('pick2'):null}});
   assert.equal(g.node('#chest-open').hidden,false);assert.equal(b.state.game.bonusScore,10);assert.equal(b.state.xpGained,70);
 });
+
+test('아빠 설정의 제한 시간 줄은 국기 놀이에서만 보이고 다른 놀이에서는 감춘다(알약과 저장값은 남는다)',()=>{
+  for(const [mode,shown] of [['choice4',true],['voice',true],['capital',false],['map',false],['symbol',false]]){
+    const f=fixture();f.c.FQ.storage.updateSettings({mode,timer:10,dev:{art:true}});f.c.FQ.app.home();
+    const html=f.node('main').innerHTML;
+    const hidden=/<div class="field" style="margin-top:12px;display:none">\s*<label for="opt-timer">/.test(html);
+    assert.equal(!hidden,shown,mode);assert.match(html,/data-timer="10" aria-pressed="true"/,mode+' 알약과 저장값은 남는다');
+  }
+});
+
+test('명소 정답 카드에는 수도 한 줄과 듣기 단추가 있고 누르면 수도 이름과 설명 두 문구를 읽는다',()=>{
+  const f=fixture();f.c.FQ.storage.updateSettings({mode:'place',speak:false,dev:{art:true}});f.c.FQ.app.startGame(['kr']);meetNext(f);
+  const a=f.c.FQ.test;f.node('#question-art').handlers.load();a.submit({code:'kr'});
+  const html=f.node('#feedback-area').innerHTML;
+  assert.match(html,/<span class="remember-capital">🏙️ 서울 · 대한민국의 수도예요 <button class="btn btn-sm btn-ghost cap-listen" type="button" data-speak="서울" data-speak-extra="대한민국의 수도예요" data-label="🔊" aria-label="수도 들어보기">🔊<\/button><\/span>/);
+  const t=f.node('cap');t.setAttribute('data-speak','서울');t.setAttribute('data-speak-extra','대한민국의 수도예요');t.setAttribute('data-label','🔊');
+  f.clickDelegated('[data-speak]',t);f.releases.at(-1)();
+  assert.deepEqual(f.spoken.at(-1),['서울','대한민국의 수도예요']);
+  // 상징물 카드에는 수도 줄이 없다.
+  const g=fixture();g.c.FQ.storage.updateSettings({mode:'symbol',speak:false,dev:{art:true}});g.c.FQ.app.startGame(['kr']);meetNext(g);
+  g.node('#question-art').handlers.load();g.c.FQ.test.submit({code:'kr'});
+  assert.doesNotMatch(g.node('#feedback-area').innerHTML,/remember-capital/);
+});
 console.log('앱 흐름 회귀 검사 '+passed+'건 통과');
 
 /* ---- 2026-09-17 수도 놀이 뒤집기 (시안 PhoneCapital · D17 채택 B: capital 축 분리 + 🏙️ 도장) ---- */
@@ -1117,8 +1137,8 @@ test('수도 놀이는 처음 만나는 나라에 만나기 카드(국기·나�
   f.node('#meet-speak').setAttribute('data-speak','멕시코시티');f.node('#meet-speak').setAttribute('data-speak-extra','멕시코의 수도예요');f.node('#meet-speak').setAttribute('data-label','🔊 다시 듣기');
   f.clickDelegated('[data-speak]',f.node('#meet-speak'));f.releases.at(-1)();assert.deepEqual(f.spoken.at(-1),['멕시코시티','멕시코의 수도예요']);
   f.playbackFailures.at(-1)();assert.match(f.node('#meet-speak').textContent,/다시 눌러서/);
-  // 카드를 넘기면 같은 나라가 문제로 나오고 제한 시간이 그때 시작한다. 두 번째로 만나면 카드 없이 바로 문제다.
-  meetNext(f);assert.equal(a.state.meeting,false);assert.equal(a.state.game.current().country.code,'mx');assert.ok(a.state.timerId);
+  // 카드를 넘기면 같은 나라가 문제로 나온다. 수도 놀이에는 제한 시간이 없다(D23). 두 번째로 만나면 카드 없이 바로 문제다.
+  meetNext(f);assert.equal(a.state.meeting,false);assert.equal(a.state.game.current().country.code,'mx');assert.equal(a.state.timerId,null);
   assert.match(f.node('main').innerHTML,/capital-question/);
   a.submit({code:'mx'});a.goNext();
   const g=fixture();g.c.FQ.storage.recordAnswer('mx',true,'capital');g.c.FQ.storage.updateSettings({mode:'capital'});g.c.FQ.app.startGame(['mx']);
@@ -1177,8 +1197,9 @@ test('수도 놀이는 새 축 규칙을 받는다 — 시간 초과는 지나�
   const f=fixture();f.c.FQ.storage.updateSettings({mode:'capital',timer:10});f.c.FQ.app.startGame(['mx','kr']);meetNext(f);
   const a=f.c.FQ.test,first=a.state.game.current().country.code;
   for(let i=0;i<10;i++)f.runDelay(1000);
+  // 수도 놀이에는 제한 시간이 없어 10초가 지나도 그대로다(D23).
   assert.equal(f.c.FQ.storage.allAxisStats('capital')[first],undefined);
-  assert.equal(a.state.game.index,1);assert.equal(a.state.answered,false);assert.equal(a.state.unscored,1);
+  assert.equal(a.state.game.index,0);assert.equal(a.state.answered,false);assert.equal(a.state.unscored,0);assert.equal(a.state.timerId,null);
   // 한 판 안 다시 만나기: 처음 만난 나라는 3문제 뒤에 한 번 더 나온다(국기 축 함수는 쓰지 않는다).
   const g=fixture();g.c.FQ.storage.updateSettings({mode:'capital',count:6,level:'all',speak:false});g.c.FQ.app.startGame(null);
   const b=g.c.FQ.test;let seen=[];

@@ -35,7 +35,8 @@ function fixture() {
       modal.listeners.click({target: button});
       assert.equal(modal, null, '닫기 버튼이 실제 모달을 제거해야 한다');
     },
-    writes: () => writes
+    writes: () => writes,
+    modal: () => modal
   };
 }
 
@@ -114,4 +115,17 @@ test('도감 그림이 깨지면 onerror 가 인라인 style 로도 감춘다 �
     assert.equal(img.hidden, true);
     assert.equal(img.style.display, 'none', 'hidden 속성만으로는 .country-art img { display: block } 에 밀려 깨진 그림이 보인다');
   }
+});
+
+test('도감의 수도 줄에는 듣기 단추가 있고 누르면 수도 이름과 설명 두 문구를 읽는다', () => {
+  const {f, render, modal} = fixture();
+  const spoken = [];
+  f.audio.say = (lines) => spoken.push([...lines]);
+  f.audio.setSpeakEnabled = () => {};
+  const html = render('kr');
+  assert.match(html, /<li><b>수도<\/b><span>서울 <span class="muted small">Seoul<\/span> <button class="btn btn-sm btn-ghost" data-speak-art="서울" data-speak-extra="대한민국의 수도예요" type="button" aria-label="수도 들어보기">🔊<\/button><\/span><\/li>/);
+  const attrs = {'data-speak-art': '서울', 'data-speak-extra': '대한민국의 수도예요'};
+  const button = {getAttribute: (k) => attrs[k], closest: sel => sel === '[data-speak-art]' ? button : null};
+  modal().listeners.click({target: button});
+  assert.deepEqual(spoken, [['서울', '대한민국의 수도예요']]);
 });

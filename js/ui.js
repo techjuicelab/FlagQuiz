@@ -91,7 +91,8 @@
         '</div>' +
         '<div class="muted">' + esc(country.en) + '</div>' +
         '<ul class="info-list">' +
-          '<li><b>수도</b><span>' + esc(country.capital) + ' <span class="muted small">' + esc(country.capitalEn || '') + '</span></span></li>' +
+          '<li><b>수도</b><span>' + esc(country.capital) + ' <span class="muted small">' + esc(country.capitalEn || '') + '</span>' +
+            ' <button class="btn btn-sm btn-ghost" data-speak-art="' + esc(country.capital) + '" data-speak-extra="' + esc(country.ko) + '의 수도예요" type="button" aria-label="수도 들어보기">🔊</button></span></li>' +
           '<li><b>대륙</b><span>' + esc(country.continent) + ' · ' + esc(country.region) + '</span></li>' +
           '<li><b>난이도</b><span>' + esc(FQ.quiz.LEVEL_LABEL[country.level] || '-') + '</span></li>' +
           (rate === null ? '' : '<li><b>내 기록</b><span>' + st.seen + '번 중 ' + st.correct + '번 정답 (' + rate + '%)</span></li>') +
@@ -116,7 +117,12 @@
         if (status) status.textContent = '';
         var lines = explain ? [country.ko, country.flagHint, country.fact] : [country.ko];
         // 그림 이름 단추(data-speak-art, 2026-09-17)는 소재 이름만 읽는다. 위 두 배열은 검사기(verify-expansion)의 계약이라 그대로 둔다.
-        if (artButton && !sp && !explain) lines = [artButton.getAttribute('data-speak-art')];
+        if (artButton && !sp && !explain) {
+          lines = [artButton.getAttribute('data-speak-art')];
+          // 수도 단추는 '수도 이름' 뒤에 '나라의 수도예요'를 잇는다(둘 다 기존 음원).
+          var extra = artButton.getAttribute('data-speak-extra');
+          if (extra) lines.push(extra);
+        }
         FQ.audio.say(lines, {}, function () {
           if (status) status.textContent = '소리를 재생하지 못했어요. 연결과 음량을 확인하고 다시 눌러 주세요.';
         });

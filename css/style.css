@@ -1770,3 +1770,7 @@ button.cont-item:focus-visible { outline: 3px solid var(--accent); outline-offse
   .chest-card.gold { background: linear-gradient(180deg, #4a3a10, var(--card) 62%); }
   .chest-card.gold .chest-kind { color: #ffd97a; }
 }
+
+/* D1 후속: 명소 정답 카드의 수도 한 줄 + 듣기 단추 */
+.remember-capital { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-weight: 800; flex-wrap: wrap; }
+.remember-capital .cap-listen { min-width: 44px; padding: 8px 10px; }

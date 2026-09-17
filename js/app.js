@@ -267,7 +267,8 @@
             '<label class="switch"><input type="checkbox" id="opt-correct-music"' + (s.correctMusic ? ' checked' : '') + '> ✨ 정답에 다른 소리</label>' +
             '<label class="switch"><input type="checkbox" id="opt-review"' + (s.reviewFirst ? ' checked' : '') + '> 🔁 한 번 더 만날 나라를 자주</label>' +
           '</div>' +
-          '<div class="field" style="margin-top:12px">' +
+          // 제한 시간은 국기 놀이에만 있다(D23). 다른 놀이를 고른 채 열면 줄을 감춘다(알약은 남겨 두어 저장값은 유지).
+          '<div class="field" style="margin-top:12px' + (timedMode(s.mode) ? '' : ';display:none') + '">' +
             '<label for="opt-timer">제한 시간</label>' +
             '<div class="pill-grid">' +
               [0, 10, 20].map(function (t) {
@@ -708,7 +709,7 @@
       '<button class="btn btn-sm btn-ghost head-back" id="quit" type="button">' + ICONS.back + '<span>그만하기</span></button>' +
       '<span class="chip q-count">' + (g.index + 1) + ' / ' + g.total + '</span>' +
       (duel ? '<span class="chip turn">' + esc(g.currentPlayer()) + ' 차례</span>' : '') +
-      (s.timer ? '<span class="chip" id="timer-chip">⏱ ' + s.timer + '</span>' : '') +
+      (s.timer && timedMode(g.current().mode) ? '<span class="chip" id="timer-chip">⏱ ' + s.timer + '</span>' : '') +
       '<span class="spacer"></span>' +
       '<span class="chip travel-chip" role="group" aria-label="여행 카드 ' + chest.into + ' / ' + chest.need + '장">' +
         '<span class="travel-ic" aria-hidden="true">📖</span>' +
@@ -1504,6 +1505,12 @@
           '<div class="remember-hint">' +
             (rememberTitle ? '<b class="remember-title">' + rememberTitle + '</b>' : '') +
             '<span class="remember-body">' + rememberBody + '</span>' +
+            // D1 후속: 명소 카드에 수도 한 줄을 병기한다. 읽기는 단추를 눌렀을 때만(기존 음원 두 문구).
+            (q.mode === 'place'
+              ? '<span class="remember-capital">🏙️ ' + esc(c.capital) + ' · ' + esc(c.ko) + '의 수도예요' +
+                  ' <button class="btn btn-sm btn-ghost cap-listen" type="button" data-speak="' + esc(c.capital) + '" data-speak-extra="' + esc(c.ko) + '의 수도예요" data-label="🔊" aria-label="수도 들어보기">🔊</button>' +
+                '</span>'
+              : '') +
           '</div>' +
         '</div>' +
         (store.settings().speak
@@ -1706,10 +1713,17 @@
   }
 
   /* --------- 제한 시간 --------- */
+  /** 제한 시간은 국기 놀이에만 있다(D23). 그림·명소·지도·수도는 아이가 처음 보는 것이라 초시계를 붙이지 않는다. */
+  function timedMode(mode) {
+    return !!(quiz.MODES[mode] && quiz.MODES[mode].axis === 'flag');
+  }
+
   function startTimer(remaining) {
     stopTimer();
     state.timerPaused = false;
     if (!state.game || state.answered || state.artUnavailable) return;
+    var current = state.game.current();
+    if (current && !timedMode(current.mode)) return;
     var limit = remaining === undefined ? Number(store.settings().timer) || 0 : remaining;
     if (!limit) return;
     state.timeLeft = limit;
