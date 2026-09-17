@@ -73,6 +73,8 @@ function fixture() {
 
 let passed=0;
 function test(name,fn){fn();passed++;console.log('✓ '+name);}
+// 그림·명소 놀이에서 처음 만나는 나라는 만나기 카드가 먼저 뜬다. 문제 화면이 필요한 검사는 카드를 넘긴다.
+function meetNext(f){if(f.node('main').innerHTML.includes('id="meet-next"'))f.node('#meet-next').click();}
 
 test('중간 인도 이후 최종 인도네시아를 끝까지 듣고 정답으로 인정',()=>{
   const f=fixture(),a=f.startVoice(['id']);
@@ -270,7 +272,7 @@ test('나라 이름 듣기도 재생 실패를 버튼에 안내하고 설명 재
 });
 
 test('나라 이름 듣기를 예약한 뒤 답을 고르면 이전 이름 요청보다 새 정답 설명을 우선',()=>{
-  const f=fixture();f.c.FQ.storage.updateSettings({mode:'capital'});f.c.FQ.app.startGame(['kr']);
+  const f=fixture();f.c.FQ.storage.updateSettings({mode:'capital'});f.c.FQ.app.startGame(['kr']);meetNext(f);
   const target=f.node('name-audio');target.setAttribute('data-speak','대한민국');
   f.clickDelegated('[data-speak]',target);const name=f.releases.at(-1);
   f.c.FQ.test.submit({code:'kr'});name();assert.equal(f.spoken.length,0);
@@ -280,7 +282,7 @@ test('나라 이름 듣기를 예약한 뒤 답을 고르면 이전 이름 요�
 
 test('오답과 건너뛰기는 이름 한 번과 국기 특징 하나만 다정하게 알려 준다',()=>{
   for(const mode of ['choice4','reverse','voice','typing'])for(const gaveUp of [false,true]){
-    const f=fixture();f.c.FQ.storage.updateSettings({mode});f.c.FQ.app.startGame(['kr']);
+    const f=fixture();f.c.FQ.storage.updateSettings({mode});f.c.FQ.app.startGame(['kr']);meetNext(f);
     const a=f.c.FQ.test,c=f.c.FQ.quiz.byCode('kr'),sounds=[];f.c.FQ.audio.play=name=>sounds.push(name);
     a.submit({code:'jp',text:'일본'},gaveUp);
     assert.deepEqual([...a.state.lastSpeech.lines],[c.ko,c.flagHint]);
@@ -292,7 +294,7 @@ test('오답과 건너뛰기는 이름 한 번과 국기 특징 하나만 다정
 });
 
 test('수도 오답도 수도를 한 번만 말하고 어느 나라의 수도인지 짧게 설명한다',()=>{
-  const f=fixture();f.c.FQ.storage.updateSettings({mode:'capital'});f.c.FQ.app.startGame(['kr']);
+  const f=fixture();f.c.FQ.storage.updateSettings({mode:'capital'});f.c.FQ.app.startGame(['kr']);meetNext(f);
   const a=f.c.FQ.test;a.submit({code:'jp'});
   assert.deepEqual([...a.state.lastSpeech.lines],['서울','대한민국의 수도예요']);
   f.releases.at(-1)();f.runDelay(120);f.finishMusic();
@@ -394,10 +396,10 @@ test('정답 전용 음악과 홈 배경음은 기본 꺼짐이며 선택하면 
   const f=fixture();assert.equal(f.c.FQ.storage.settings().correctMusic,false);assert.equal(f.c.FQ.storage.settings().homeMusic,false);
   f.c.FQ.storage.recordAnswer('kr',true);const a=f.startVoice(['kr']);a.submit({code:'kr'});f.releases.at(-1)();
   assert.equal(f.music.at(-1).event,'discovery');
-  f.c.FQ.storage.updateSettings({correctMusic:true});f.c.FQ.app.startGame(['kr']);a.submit({code:'kr'});f.releases.at(-1)();
+  f.c.FQ.storage.updateSettings({correctMusic:true});f.c.FQ.app.startGame(['kr']);meetNext(f);a.submit({code:'kr'});f.releases.at(-1)();
   assert.equal(f.music.at(-1).event,'correct');
   f.c.FQ.storage.updateSettings({homeMusic:true});f.c.FQ.app.home();f.releases.at(-1)();assert.equal(f.music.at(-1).event,'homeBgm');
-  f.c.FQ.app.startGame(['kr']);assert.equal(f.music.at(-1).cancelled,true);
+  f.c.FQ.app.startGame(['kr']);meetNext(f);assert.equal(f.music.at(-1).cancelled,true);
 });
 
 test('결과는 정확도와 관계없이 응원을 마친 뒤 같은 완료 음악을 재생한다',()=>{
@@ -429,7 +431,7 @@ test('배경음 해제 대기는 화면·설정·숨김 변경으로 취소한�
   for(const action of ['quiz','stats','off','mute','hidden','modal']){
     const f=fixture();f.c.FQ.app.boot();f.c.FQ.storage.updateSettings({homeMusic:true});f.startVoice(['kr']);
     f.c.FQ.app.home();const pending=f.releases.at(-1);
-    if(action==='quiz')f.c.FQ.app.startGame(['kr']);
+    if(action==='quiz')f.c.FQ.app.startGame(['kr']);meetNext(f);
     if(action==='stats')f.c.FQ.app.musicScreen('stats');
     if(action==='off'){f.c.FQ.storage.updateSettings({homeMusic:false});f.c.FQ.app.musicScreen('home');}
     if(action==='mute')f.c.FQ.storage.updateSettings({sound:false});
@@ -450,7 +452,7 @@ test('지도 핀 제출은 지도 기록만 쌓고 기존 국기 스티커와 �
   for(const correct of [true,false]) {
     const f=fixture();f.c.FQ.storage.updateSettings({mode:'map'});
     const before=JSON.stringify(f.c.FQ.storage.daily());
-    f.c.FQ.app.startGame(['kr']);const a=f.c.FQ.test,q=a.state.game.current();
+    f.c.FQ.app.startGame(['kr']);meetNext(f);const a=f.c.FQ.test,q=a.state.game.current();
     assert.match(f.node('main').innerHTML,/이 나라는 어디에 있을까요/);
     assert.equal((f.node('main').innerHTML.match(/class="map-pin answer-btn"/g)||[]).length,4);
     const code=correct?'kr':q.options.find(c=>c.code!=='kr').code;
@@ -470,7 +472,7 @@ test('그림 모드는 스위치가 꺼지면 저장된 선택도 국기 모드�
     const f=fixture();f.c.FQ.storage.updateSettings({mode,dev:{art:false}});f.c.FQ.app.home();
     assert.equal(f.c.FQ.storage.settings().mode,'choice4');
     assert.doesNotMatch(f.node('main').innerHTML,/data-mode="(?:symbol|place)"/);
-    f.c.FQ.storage.updateSettings({mode});f.c.FQ.app.startGame(['kr']);
+    f.c.FQ.storage.updateSettings({mode});f.c.FQ.app.startGame(['kr']);meetNext(f);
     assert.equal(f.c.FQ.test.state.game.current().mode,'choice4');
   }
 });
@@ -479,9 +481,11 @@ test('두 그림 퀴즈는 실제 그림 경로·4개 보기·별도 기록·기
   for(const mode of ['symbol','place']) {
     const f=fixture();f.c.FQ.storage.updateSettings({mode,dev:{art:true}});f.c.FQ.app.home();
     assert.match(f.node('main').innerHTML,new RegExp('data-mode="'+mode+'"'));
-    f.c.FQ.app.startGame(['kr']);const a=f.c.FQ.test,q=a.state.game.current();
+    f.c.FQ.app.startGame(['kr']);meetNext(f);const a=f.c.FQ.test,q=a.state.game.current();
     assert.match(f.node('main').innerHTML,new RegExp('images/'+(mode==='place'?'places':'symbols')+'/kr.webp'));
     assert.equal((f.node('main').innerHTML.match(/class="answer-btn art-choice"/g)||[]).length,4);
+    const artName=f.c.FQ.subjects.kr[mode].ko;
+    assert.match(f.node('main').innerHTML,new RegExp('data-speak="'+artName+'"'),'그림 문제에 그림 이름 들어보기 단추가 있어야 한다');
     f.node('#question-art').handlers.load();
     const before=JSON.stringify(f.c.FQ.storage.daily());
     a.submit({code:'kr'});f.releases.at(-1)();f.finishMusic();
@@ -489,12 +493,36 @@ test('두 그림 퀴즈는 실제 그림 경로·4개 보기·별도 기록·기
     assert.equal(f.c.FQ.storage.countryStat('kr').correct,0);
     assert.equal(JSON.stringify(f.c.FQ.storage.daily()),before);
     assert.equal(a.state.newStickers.length,0);
-    assert.deepEqual(f.spoken.at(-1),[q.country.ko,q.country.fact]);
+    assert.deepEqual(f.spoken.at(-1),[q.country.ko,artName,q.country.fact]);
+  }
+});
+
+test('처음 만나는 그림은 채점 전에 만나기 카드로 나라 이름과 그림 이름을 먼저 들려준다',()=>{
+  for(const mode of ['symbol','place']) {
+    const f=fixture();f.c.FQ.storage.updateSettings({mode,timer:10,dev:{art:true}});f.c.FQ.app.startGame(['kr']);
+    const a=f.c.FQ.test,q=a.state.game.current(),artName=f.c.FQ.subjects.kr[mode].ko;
+    let html=f.node('main').innerHTML;
+    assert.match(html,/id="meet-next"/);assert.match(html,/id="answer-area" hidden/);
+    assert.ok(!a.state.timerId,'만나기 카드에서는 제한 시간이 돌지 않는다');
+    f.releases.at(-1)();
+    assert.deepEqual(f.spoken.at(-1),[q.country.ko,artName],'나라 이름과 그림 이름을 이어서 읽는다');
+    a.submit({code:'kr'});
+    assert.equal(a.state.answered,false,'카드가 떠 있는 동안은 채점하지 않는다');
+    assert.equal(Object.keys(f.c.FQ.storage.allAxisStats(mode)).length,0,'만나기 카드는 기록을 만들지 않는다');
+    f.node('#meet-next').click();
+    html=f.node('main').innerHTML;
+    assert.doesNotMatch(html,/id="meet-next"/);
+    assert.equal((html.match(/class="answer-btn art-choice"/g)||[]).length,4);
+    f.node('#question-art').handlers.load();a.submit({code:'kr'});f.releases.at(-1)();f.finishMusic();
+    assert.equal(f.c.FQ.storage.axisStat(mode,'kr').seen,1);
+    // 한 번 만난 나라는 다음 판부터 카드 없이 바로 문제로 나온다.
+    f.c.FQ.app.startGame(['kr']);
+    assert.doesNotMatch(f.node('main').innerHTML,/id="meet-next"/);
   }
 });
 
 test('그림 다운로드 실패를 오답으로 기록하지 않고 다시 받은 뒤에만 제출한다',()=>{
-  const f=fixture();f.c.FQ.storage.updateSettings({mode:'symbol',dev:{art:true}});f.c.FQ.app.startGame(['kr']);
+  const f=fixture();f.c.FQ.storage.updateSettings({mode:'symbol',dev:{art:true}});f.c.FQ.app.startGame(['kr']);meetNext(f);
   const a=f.c.FQ.test,img=f.node('#question-art');
   img.handlers.error();a.submit({code:'kr'});a.submit({text:''},true);
   assert.equal(f.c.FQ.storage.stats().asked,0);assert.equal(a.state.answered,false);
@@ -504,7 +532,7 @@ test('그림 다운로드 실패를 오답으로 기록하지 않고 다시 받�
 });
 
 test('느린 그림 다운로드 중에는 제한 시간·제출이 시작되지 않고 load 뒤에 시작한다',()=>{
-  const f=fixture();f.c.FQ.storage.updateSettings({mode:'symbol',timer:10,dev:{art:true}});f.c.FQ.app.startGame(['kr']);
+  const f=fixture();f.c.FQ.storage.updateSettings({mode:'symbol',timer:10,dev:{art:true}});f.c.FQ.app.startGame(['kr']);meetNext(f);
   const a=f.c.FQ.test;
   // 그림을 기다리는 동안 채점·제한 시간은 시작되지 않는다. 다만 빠져나갈 길은 잠그지 않는다 —
   // 아이는 비행기 모드로 놀고, 그림이 끝내 안 오면 그 문제에 갇히기 때문이다.
@@ -520,7 +548,7 @@ test('느린 그림 다운로드 중에는 제한 시간·제출이 시작되지
 
 test('숨긴 화면에서 그림이 도착하면 복귀 전까지 기다리고 전체 제한 시간을 준다',()=>{
   const f=fixture();f.c.FQ.app.boot();
-  f.c.FQ.storage.updateSettings({mode:'symbol',timer:10,dev:{art:true}});f.c.FQ.app.startGame(['kr']);
+  f.c.FQ.storage.updateSettings({mode:'symbol',timer:10,dev:{art:true}});f.c.FQ.app.startGame(['kr']);meetNext(f);
   const a=f.c.FQ.test;
   f.c.document.hidden=true;f.events.visibilitychange[0]();
   f.node('#question-art').handlers.load();
@@ -537,7 +565,7 @@ test('숨긴 화면에서 그림이 도착하면 복귀 전까지 기다리고 �
 
 test('숨긴 동안 그림 오류가 나면 복귀해도 제한 시간을 재개하지 않고 재수신을 기다린다',()=>{
   const f=fixture();f.c.FQ.app.boot();
-  f.c.FQ.storage.updateSettings({mode:'place',timer:10,dev:{art:true}});f.c.FQ.app.startGame(['kr']);
+  f.c.FQ.storage.updateSettings({mode:'place',timer:10,dev:{art:true}});f.c.FQ.app.startGame(['kr']);meetNext(f);
   const a=f.c.FQ.test;
   f.node('#question-art').handlers.load();f.runDelay(1000);
   f.c.document.hidden=true;f.events.visibilitychange[0]();
@@ -629,6 +657,7 @@ test('옛 js/ui.js 가 캐시에 섞여도 그림 문제가 죽지 않는다',()
     for (const name of missing) delete f.c.FQ.ui[name];
     f.c.FQ.storage.updateSettings({mode:'symbol',dev:{art:true}});
     assert.doesNotThrow(()=>f.c.FQ.app.startGame(['kr']), 'ui.' + missing.join('+') + ' 없이 죽는다');
+    meetNext(f);
     const a=f.c.FQ.test;
     assert.ok(a.state.game, '문제가 만들어지지 않았다');
     assert.match(f.node('main').innerHTML,/images\/symbols\/kr\.webp/,'그림 경로를 못 만든다');

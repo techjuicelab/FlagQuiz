@@ -23,7 +23,7 @@
 
 5. 새 그림을 flags/ 폴더에 넣지 마라. tests/run.mjs:114-124가 flags/ 안의 모든 파일이 194개 code 중 하나여야 한다고 단언해 즉시 실패하고, sw.js의 국기 예열과 build-site.mjs의 flags/ 통째 복사에도 섞여 들어간다. 그림 경로는 사용자가 images/symbols/·images/places/로 확정했다. build-site.mjs에는 images 하나를 추가하고 serve.mjs MIME·테스트·ui.js 경로 함수를 전부 이 경로에 맞춰라.
 
-6. 새 수아 음원 문구를 한 줄도 추가하지 마라. scripts/build-site.mjs:13-15의 배포 게이트가 전체 음원이 준비되어야 배포를 허락하므로, 문구가 하나 늘어나는 순간 main 배포 전체가 멈춘다. 1차는 새 음원 0개로 간다 — 그림 이름을 읽어 주고 싶어도 ui.js의 lines 배열을 건드리지 말고, js/voice-manifest.js와 data/voice-config.json은 손대지 마라. 기존 fact 118행 재사용이 그 근거다.
+6. 새 수아 음원 문구를 한 줄도 추가하지 마라. scripts/build-site.mjs:13-15의 배포 게이트가 전체 음원이 준비되어야 배포를 허락하므로, 문구가 하나 늘어나는 순간 main 배포 전체가 멈춘다. 1차는 새 음원 0개로 간다 — 그림 이름을 읽어 주고 싶어도 ui.js의 lines 배열을 건드리지 말고, js/voice-manifest.js와 data/voice-config.json은 손대지 마라. 기존 fact 118행 재사용이 그 근거다. **(2026-09-17 부분 해제: 사용자 결정으로 상징물·명소 이름 342개를 voice-corpus.mjs 에 추가했다. 이후 새 문구도 같은 방식으로 voice:plan → voice:generate 로 음원을 먼저 채운 뒤에만 병합한다.)**
 
 ---
 

@@ -40,7 +40,9 @@
         // 깨진 아이콘이 뜨므로, 그때는 그림만 감추고 아래 이름은 그대로 남긴다.
         (art ? '<img src="' + esc(art.src) + '" alt="' + esc(art.alt) + '" width="1024" height="768" loading="lazy"' +
           ' onerror="this.hidden = true">' : '') +
-        '<figcaption>' + label + esc(subject.ko) + '</figcaption></figure>';
+        '<figcaption>' + label + esc(subject.ko) +
+          ' <button class="btn btn-sm btn-ghost" data-speak-art="' + esc(subject.ko) + '" type="button" aria-label="' + esc(subject.ko) + ' 들어보기">🔊</button>' +
+        '</figcaption></figure>';
     }).join('');
   }
 
@@ -104,13 +106,16 @@
       if (ev.target === back || ev.target.closest('[data-close-modal]')) closeModal();
       var sp = ev.target.closest('[data-speak]');
       var explain = ev.target.closest('[data-explain]');
-      if (sp || explain) {
+      var artButton = ev.target.closest('[data-speak-art]');
+      if (sp || explain || artButton) {
         if (FQ.music) FQ.music.stop();
         FQ.storage.updateSettings({ speak: true });
         FQ.audio.setSpeakEnabled(true);
         var status = back.querySelector('[data-audio-status]');
         if (status) status.textContent = '';
         var lines = explain ? [country.ko, country.flagHint, country.fact] : [country.ko];
+        // 그림 이름 단추(data-speak-art, 2026-09-17)는 소재 이름만 읽는다. 위 두 배열은 검사기(verify-expansion)의 계약이라 그대로 둔다.
+        if (artButton && !sp && !explain) lines = [artButton.getAttribute('data-speak-art')];
         FQ.audio.say(lines, {}, function () {
           if (status) status.textContent = '소리를 재생하지 못했어요. 연결과 음량을 확인하고 다시 눌러 주세요.';
         });

@@ -18,6 +18,7 @@ import path from 'node:path';
 import vm from 'node:vm';
 import os from 'node:os';
 import { execFileSync } from 'node:child_process';
+import { voiceCorpus } from './voice-corpus.mjs';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -665,17 +666,18 @@ await check({
 await check({
   id: 'guard-voice-clip-count',
   task: '금지6 (T4-subjects-data · T6-dex-art-slot)',
-  label: '수아 음원 문구가 977개 그대로인가',
+  label: '수아 음원이 문구 목록 전체와 일치하는가 (2026-09-17 그림 이름 342개 추가 후 기준)',
   severity: 'guardrail',
-  why: 'scripts/build-site.mjs 의 배포 게이트가 clips 개수와 expectedClips 가 같아야만 배포를 허락한다. 문구가 하나 늘면 음원 파일이 없어 main 배포 전체가 멈춘다. 1차는 새 음원 0개로 간다.'
+  why: 'scripts/build-site.mjs 의 배포 게이트가 clips 개수와 expectedClips 가 같아야만 배포를 허락한다. 문구 목록(voice-corpus.mjs)이 늘면 voice:plan 과 voice:generate 로 음원을 먼저 채워야 main 배포가 멈추지 않는다. 금지 6(새 문구 0개)은 2026-09-17 사용자 결정으로 그림 이름 추가에 한해 해제했다.'
 }, (t) => {
   const ctx = { window: {} };
   vm.runInNewContext(read('js/voice-manifest.js'), ctx, { filename: 'js/voice-manifest.js' });
   const m = ctx.window.FQ.voiceManifest;
   const clips = Object.keys(m.clips).length;
+  const expected = voiceCorpus().length;
   t.ok(m.ready === true, 'voiceManifest.ready 가 true 가 아니다', String(m.ready));
-  t.ok(m.expectedClips === 977, 'expectedClips 가 977이 아니다 — 문구가 늘었다면 배포가 멈춘다', String(m.expectedClips));
-  t.ok(clips === 977, 'clips 개수가 977이 아니다', String(clips));
+  t.ok(m.expectedClips === expected, 'expectedClips 가 문구 목록(' + expected + ')과 다르다 — npm run voice:plan 을 다시 돌려라', String(m.expectedClips));
+  t.ok(clips === expected, 'clips 개수가 문구 목록(' + expected + ')과 다르다 — 음원이 빠져 있으면 배포가 멈춘다', String(clips));
   t.ok(clips === m.expectedClips, 'clips 개수와 expectedClips 가 어긋난다 — 이 상태로는 배포 게이트가 막는다',
     clips + ' vs ' + m.expectedClips);
   t.ok(exists('data/voice-config.json'), 'data/voice-config.json 이 사라졌다');

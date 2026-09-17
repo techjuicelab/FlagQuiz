@@ -7,7 +7,9 @@ import { fileURLToPath } from 'node:url';
 export const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const sandbox = { window: {} };
 vm.runInNewContext(fs.readFileSync(path.join(root, 'data/countries.js'), 'utf8'), sandbox);
+vm.runInNewContext(fs.readFileSync(path.join(root, 'data/subjects.js'), 'utf8'), sandbox);
 export const countries = sandbox.window.FQ.countries;
+export const subjects = sandbox.window.FQ.subjects || {};
 export const cheers = [
   '정답!', '정답', '잘했어!', '멋져!', '최고야!', '맞았어!', '대단해!',
   '보물상자를 열었어요!', '대단해요! 세계 국기 박사님!', '아주 잘했어요!',
@@ -24,6 +26,11 @@ export function voiceCorpus() {
     add(c.flagHint, 'explanation');
     add(c.fact, 'explanation');
     add(c.ko + '의 수도예요', 'explanation');
+  });
+  // 상징물·명소 이름(2026-09-17 추가). 그림이 보류된 소재도 도감에 이름이 남으므로 함께 읽는다.
+  countries.forEach(c => {
+    const subject = subjects[c.code] || {};
+    ['symbol', 'place'].forEach(axis => { if (subject[axis]) add(subject[axis].ko, 'name'); });
   });
   return [...entries.values()];
 }

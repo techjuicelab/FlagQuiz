@@ -7,7 +7,7 @@ window.FQ.voiceManifest = {
     "model": "ssfm-v30"
   },
   "ready": true,
-  "expectedClips": 977,
+  "expectedClips": 1319,
   "clips": {
     "정답!": {
       "src": "audio/sua/e06eefefecbe19a7eeb73171.mp3",
@@ -3916,6 +3916,1374 @@ window.FQ.voiceManifest = {
     "바누아투의 수도예요": {
       "src": "audio/sua/a83e2e782eaf9a4b53d0453c.mp3",
       "sha256": "cb7be9dc83b644274ef3ba1582c09cca72fcc31162a1b026906df1583b5d5668"
+    },
+    "석류": {
+      "src": "audio/sua/3bb04b9f9ee7eebe71abcb7e.mp3",
+      "sha256": "90ee869d661ddcd8dbb05b994fa2a29a565b6b137bca4c57d1005a150e847a6b"
+    },
+    "밴드아미르 호수": {
+      "src": "audio/sua/0782190f324109ef2399bb54.mp3",
+      "sha256": "275b25871c3f941219975bc1fc5da9bdf0af4c66df59644e390caa9ccf113d10"
+    },
+    "살구": {
+      "src": "audio/sua/63f14981f83c115496e815ab.mp3",
+      "sha256": "32614cc1cf712a9a2ea7b2323e166f8a09aa61793cda725fe16314e4be9d4b0f"
+    },
+    "천연가스 불꽃": {
+      "src": "audio/sua/d04a93311c720b392659a786.mp3",
+      "sha256": "f6f9d3d441fd92c12d55e30f459a8db92aad2e38653ffc6d68989e89dcb9b43e"
+    },
+    "메이든 타워": {
+      "src": "audio/sua/d53306bcf58206c3b4f83062.mp3",
+      "sha256": "eb6a07b81b93ed6f5ddf1855bd0ead6d4e24ae96e30b240f0992e774845490e7"
+    },
+    "진주": {
+      "src": "audio/sua/7852c77ad4203b88ec43bfba.mp3",
+      "sha256": "1be980241c211afc2281c0c7d2de6c03322ed5af01d9d4600c9476291da9d428"
+    },
+    "생명의 나무": {
+      "src": "audio/sua/c2b437d741dd28df3e80d4f4.mp3",
+      "sha256": "6ff76eb537015a1f1f164074d21654eebc1bf82f9763eb7cb437dca3485aed1e"
+    },
+    "벵골호랑이": {
+      "src": "audio/sua/616a14638b894d8abb58c259.mp3",
+      "sha256": "c57a303d4c44d7763409fe0034b5363a33bc5e6640db0e2ab1ac9a5c053e6d26"
+    },
+    "순다르반스": {
+      "src": "audio/sua/f7496ac7cc44cbbc8ea00135.mp3",
+      "sha256": "a562e3c70cce571f4d5c8bd18ea72f0440407843b31c808120eb494b04d05ba6"
+    },
+    "하얀 용 드룩": {
+      "src": "audio/sua/36a28417c83adb0f872cd45b.mp3",
+      "sha256": "84da42617bcbc43106bb8bd9fa8cc883b82d9753e1cfdf46422ff8a3315692c8"
+    },
+    "탁상 사원": {
+      "src": "audio/sua/9965358915ccae6b205291ff.mp3",
+      "sha256": "49aca781df96609b35efc01cf6f2a94b86dbc16eed36ec6c2b1e9ebb0a201520"
+    },
+    "노란 왕실 우산": {
+      "src": "audio/sua/fffd6d05115fc5b901f1f9c2.mp3",
+      "sha256": "3bdb25287ece82509de4aa322d4783d1c39e6b19430c0a3fd4a18ff4c5963603"
+    },
+    "캄퐁 아예르": {
+      "src": "audio/sua/5631cf473ed37aa49afda181.mp3",
+      "sha256": "db6bb6c7a5f16610b221134e715eaa7fd98123457e31ce451bad43b7618f4d76"
+    },
+    "앙코르와트": {
+      "src": "audio/sua/ced73551eba0254b67ea5d47.mp3",
+      "sha256": "3aeeaad64275ebcc6333e9e503248136496192422e5eb08f81ecfebd2263fcbc"
+    },
+    "판다": {
+      "src": "audio/sua/1496973f44e60818e87f34aa.mp3",
+      "sha256": "6abd126e2ef15326562a4308a0fa4becafea8cb7b43cad3a32d0f0de43553ba9"
+    },
+    "만리장성": {
+      "src": "audio/sua/6bc8e6cdb4b6c0ac0d1644d0.mp3",
+      "sha256": "4ef9252782e95a98f83c062cbadd98bbd114f2968a0a98ccf9b55916ef1dc482"
+    },
+    "추르츠헬라": {
+      "src": "audio/sua/29ea32013e21d9a4f08f50e9.mp3",
+      "sha256": "f5503f747cd01f2772747d8478385e62b770b3cdd4100533b0bec27d863dd4ea"
+    },
+    "게르게티 교회": {
+      "src": "audio/sua/2b42342ca21ef82ecc4a557c.mp3",
+      "sha256": "a38d417c94aca42d82dba7dadec2523113a2623743023978ab0cc37a02a7b6d7"
+    },
+    "공작": {
+      "src": "audio/sua/fa63d72b60ba3b5d2878982d.mp3",
+      "sha256": "4f29439cff3cd4fdac5c9c203951995ff3ab6d319f4db023c008ff6f1b888bee"
+    },
+    "타지마할": {
+      "src": "audio/sua/1bbed35b6fb9b1aae5acb03a.mp3",
+      "sha256": "b0ccc7b53c55a34b96e401bb14dc6373c0e9956e326847e4b785a9d902c4a088"
+    },
+    "코모도왕도마뱀": {
+      "src": "audio/sua/37e538752efaa6431d9ebd93.mp3",
+      "sha256": "15b2493e28504054ba7cf0d7d47a9d4b7881f4e006b9b5d1cabe5b14bd51db4b"
+    },
+    "보로부두르": {
+      "src": "audio/sua/014e77ff8d40c6c683a8b694.mp3",
+      "sha256": "2c9b61c45234f1187552872700bd13238c705ba135f599160c0bce7f17937829"
+    },
+    "페르시아 양탄자": {
+      "src": "audio/sua/42505472c5bc7fdf41720e22.mp3",
+      "sha256": "21565d345fe1171be7c4e2072eb36e3543b12b0668e5d8cd08bab27a084eea9b"
+    },
+    "페르세폴리스 기둥": {
+      "src": "audio/sua/f6047b2cf0ffae4d51dfea96.mp3",
+      "sha256": "4f16332f2e5638d04f1879a6743cb78f8e28d7177f73fd749b195bc3b8122327"
+    },
+    "점토판": {
+      "src": "audio/sua/7c58dd1db3c2dc8e7ba4be9f.mp3",
+      "sha256": "50f8ea1999abb923993e22d7b8529e1653da076b246a34a0f7b22f94306d4e9c"
+    },
+    "이슈타르 문": {
+      "src": "audio/sua/8d077507697c7968bde15b01.mp3",
+      "sha256": "e9e2ce23bf694087d87e6cbad0a8acc0dd3922dfad3d76f73096227b73eda745"
+    },
+    "사해 소금 결정": {
+      "src": "audio/sua/d03b4017fe9fc9742dac08e4.mp3",
+      "sha256": "fb5b29e879c0cfc7e31b15d6ce78510ce49b588bc421bac3cba763720c8af205"
+    },
+    "마사다": {
+      "src": "audio/sua/7d72d190ddac5cb28d9852e1.mp3",
+      "sha256": "72cb21c1ee28d4ee9f0cd7eb419c8a00c3e0854be065fc4a9af2c0a6e425f173"
+    },
+    "벚꽃": {
+      "src": "audio/sua/fe26e747ff3151beda924649.mp3",
+      "sha256": "951c8053eeeba1f019e024a73ffac367718ca6fad6115cc29173207bfa108631"
+    },
+    "후지산": {
+      "src": "audio/sua/561953100330e290d8c38608.mp3",
+      "sha256": "fd8aac21999ca8d6064487be7bd45f5724ba2678159adb743d3cf5056ba8f918"
+    },
+    "검은 붓꽃": {
+      "src": "audio/sua/8ebb08a0bc4f30c5403780f9.mp3",
+      "sha256": "872adf0ad96f95dbb9d6d6d40a01111a61ee37f38dc56aa5969f467e7e3a780e"
+    },
+    "페트라 알카즈네": {
+      "src": "audio/sua/c0df238422d015f16e41b789.mp3",
+      "sha256": "b805b2352c414f9e0813481b71b0373379227d53da725a21be6ef67d1fc01616"
+    },
+    "사과": {
+      "src": "audio/sua/40ab405dc71f5b49ace241d4.mp3",
+      "sha256": "473dee2882f28ac2449f51d10e334cc6970452c37a92c6157e70d389d92f8d2a"
+    },
+    "야사위 영묘": {
+      "src": "audio/sua/6829756d913feef1c0c9ae10.mp3",
+      "sha256": "b1aa92546ccd38d53cde7d1b759f6479056ed89cdc71789d7557eec88538d671"
+    },
+    "다우 범선": {
+      "src": "audio/sua/91ccd4c747625c0b0a7a2cb2.mp3",
+      "sha256": "8a0f2098967ffca931343e810d0aa1ec2d983adfff5d850158f9653b949340d5"
+    },
+    "눈표범": {
+      "src": "audio/sua/a0fc0febcf0401ec99de5e52.mp3",
+      "sha256": "3f5a047447e14290bdab4dc763625935938b9601197af65d33af16f5b384078f"
+    },
+    "이식쿨 호수": {
+      "src": "audio/sua/765aaadae85c52d0a6dd0e0c.mp3",
+      "sha256": "7bd990c4df3da5366d0d40d16fccfad9abb567277305797c369415e44139e430"
+    },
+    "코끼리": {
+      "src": "audio/sua/347576c71b828683bf4cd884.mp3",
+      "sha256": "4bb4805e8bfa358a91115502685c26a6c0e7b033577a9de11d0903f80b04016a"
+    },
+    "꽝시 폭포": {
+      "src": "audio/sua/1c9fc405e4dac8c29ab5d48a.mp3",
+      "sha256": "6c0a1f8070af60f56c45c035eb6f0ff67e6360dbc08d0201eacde6fc3289c3f0"
+    },
+    "레바논 삼나무": {
+      "src": "audio/sua/2f929d75ec87d717f5f4eb01.mp3",
+      "sha256": "1ff5dc64b93532e7d8d66a01e55e48538019de50b0153c78da3a5026e29e0ab4"
+    },
+    "라우셰 바위": {
+      "src": "audio/sua/06ec8679fc64780b6fcefebb.mp3",
+      "sha256": "b9593582ded8575b770c08eb74824b1960650782a98ec1be866df978d1500e79"
+    },
+    "히비스커스": {
+      "src": "audio/sua/c703626d191f08e5bb99e1a2.mp3",
+      "sha256": "9e1a6c2eafb053540c6a120fc140d279741da47b3b63e69c99a0097526b63f2f"
+    },
+    "만타가오리": {
+      "src": "audio/sua/2eb36565b9c4a800190756fd.mp3",
+      "sha256": "75e8ae03c3d851a930bb7bb687150d93dc2281abd6a6f10c90d3b2c668bdeeb5"
+    },
+    "산호 모래섬": {
+      "src": "audio/sua/d24f4ec52d0f63138d925fde.mp3",
+      "sha256": "b482bb79a33137fac550be3a9e1de2946e10dced0422918c4a859250a816917c"
+    },
+    "게르": {
+      "src": "audio/sua/e9eaa56e7c87a61beaab6bac.mp3",
+      "sha256": "f5b0572c363920d0f4b90fcd59587ea67baa9c5b5efb38e13be9a8efb7d746d8"
+    },
+    "고비 사막": {
+      "src": "audio/sua/37faf2712a57efd72f828a7f.mp3",
+      "sha256": "a478136fc68c6c04c873d35106d9f144b707bc6e9a4e38d4aa5d083323b32e2f"
+    },
+    "타나카": {
+      "src": "audio/sua/f8ed201e4588a98f55574f73.mp3",
+      "sha256": "6243eec8ba4802e1b3877a6aca4d1bbdee1d9f306b65be8f47b45e0c8a3a3219"
+    },
+    "쉐다곤 파고다": {
+      "src": "audio/sua/68365b7062ff59f5cb7d84b8.mp3",
+      "sha256": "f78b4dc2d6e91023a9c89101d065f70e58ddb22189576478619998793505a4ae"
+    },
+    "붉은 만병초": {
+      "src": "audio/sua/4994a9d67ecceadd67fa1794.mp3",
+      "sha256": "c0799b3da634aa48af6b3e0f1e33ba500e992bf7797ca64f6ae79a2f2cb99255"
+    },
+    "에베레스트": {
+      "src": "audio/sua/6ca4c75a74358be5d45264c3.mp3",
+      "sha256": "076df030b196990e63b8fd458a94c14027ba6141fe7616ba393600b19f04425d"
+    },
+    "목란": {
+      "src": "audio/sua/098f11460569aff3a3be0078.mp3",
+      "sha256": "b087d92bc18ce63a64b9e34fda1604af980fb36069772b181bb4cd4792126742"
+    },
+    "백두산 천지": {
+      "src": "audio/sua/8790b1cceb3aa8f13fd93604.mp3",
+      "sha256": "c004ac435fe560b11aea33a28e5c5938f3a55a623194e9814148302f20516b2e"
+    },
+    "유향": {
+      "src": "audio/sua/7c9b9c1332477966f97cf864.mp3",
+      "sha256": "c0d481de92db5bc3c19bdcb97b47c1c8779e4119a852f0a23853603ccb1ebf01"
+    },
+    "니즈와 요새": {
+      "src": "audio/sua/9a9b99388b4574d5533c6fa8.mp3",
+      "sha256": "89398f1d2e6fcc06a2aebaab6638e2d2d445f6aebe123bfd02b3be724ea4962f"
+    },
+    "분홍 소금": {
+      "src": "audio/sua/fea45118e35bff71c0f0a2a5.mp3",
+      "sha256": "371751975c10a4aedbd69e7a3acbc42a6f70c62c0ab960cc0d3d271c252c64cb"
+    },
+    "케이투": {
+      "src": "audio/sua/5d869b5fc203429a46bedf61.mp3",
+      "sha256": "61e6e025aa21d5cef5f2944c4a4bf811a9e562ef0cb01e9486dc1234b82f6964"
+    },
+    "지프니": {
+      "src": "audio/sua/fd3d4dcd5a66ae71610295f7.mp3",
+      "sha256": "8e1a287c0ee072bf273495ea48403b3156951dc5a59b09e3c403c7627de81993"
+    },
+    "초콜릿 힐즈": {
+      "src": "audio/sua/6baeac1dbb33965aba55ce79.mp3",
+      "sha256": "3d807df38fd23dc07da01c2b9035daf666049be17aa3a68a12fc77ea65d7c7d3"
+    },
+    "아라비아오릭스": {
+      "src": "audio/sua/989fea03a8f22be96b5fba59.mp3",
+      "sha256": "4ed179420e62ca1c2f0a395e0197c2eb4158103358b78d7da59754aeb30bfb88"
+    },
+    "알주바라 요새": {
+      "src": "audio/sua/d64ee5996a4529386fd7a9f4.mp3",
+      "sha256": "81a867ea95a9c5e588835e2d5725af3f040c7904da5d0c7d5f7d4de9498c4753"
+    },
+    "아라비아표범": {
+      "src": "audio/sua/296063eb63aa76e2bc28d2a0.mp3",
+      "sha256": "de032508dde466dafbb439251e661635ac46df0300197d1ba65f3edfe79e7109"
+    },
+    "룹알할리 사막": {
+      "src": "audio/sua/2ef9419ec6749871afed90bb.mp3",
+      "sha256": "777e447943b89f28936b07e288109b07e687ab9eb7471516a0d8d5e0de69eef1"
+    },
+    "반다 난초": {
+      "src": "audio/sua/ee85e208ce5eec799463a34e.mp3",
+      "sha256": "6744ce581e2424779f34c29025802f74bd59826049689a495c644cc5a3db7d45"
+    },
+    "김치": {
+      "src": "audio/sua/84e4140414bf0b1b8880fd14.mp3",
+      "sha256": "da1ac4f632b7bca3a4a2153e9c1e03020fe8c09789bf4b065079b88d4c37fc2e"
+    },
+    "광화문": {
+      "src": "audio/sua/be2055be7367ab1325d1d095.mp3",
+      "sha256": "20a0fdca0d5646ce6e98406119991c91729b60b53e0f31bb48ed60c72bf012af"
+    },
+    "실론 홍차": {
+      "src": "audio/sua/61c7a7b6b331672a5308f115.mp3",
+      "sha256": "56a9044e3ed2ac2b1444acd5bea81dfc3fddd2f201fecf44f92a503264cf0814"
+    },
+    "시기리야": {
+      "src": "audio/sua/58d9d94be0eae0fedf3d9de5.mp3",
+      "sha256": "29fa7327c771d280248cab24f372718c3c9630eb2c28070dc63735ff86ea4216"
+    },
+    "알레포 비누": {
+      "src": "audio/sua/6d6af64c9518d97861ea0c82.mp3",
+      "sha256": "fcf07e28940164da427424cdd710c1131a60a5133f2627d89b62de384512feb6"
+    },
+    "금색 왕관": {
+      "src": "audio/sua/84638c58eb256cc778499767.mp3",
+      "sha256": "fb080f12ab4aeb8c2b6901f6bd65b434ed30bc7556119ca62d2f551b92647c47"
+    },
+    "툭툭": {
+      "src": "audio/sua/5199fd1c53d3938a58550924.mp3",
+      "sha256": "e90d2cdd61d70024e8d1c5f6d4aad5ecfa46345a8b1bdd931362203266480ec8"
+    },
+    "왓 아룬": {
+      "src": "audio/sua/395f6da3b89540919c54759b.mp3",
+      "sha256": "f5bb45736ff061b79ab1970368346aad29775e95c0de5b95371912da099d8baf"
+    },
+    "타이스 천": {
+      "src": "audio/sua/54850a94a49a739cc4081988.mp3",
+      "sha256": "669c4a1b3d7e3a59c1e44631be2b3018fabeb81227bd5ec09f693511928752d3"
+    },
+    "아할테케 말": {
+      "src": "audio/sua/8d5d0b250e0c065ffc7bdaca.mp3",
+      "sha256": "5a47c3f804c01c34470d8bbe51e96c9e4a69d7786d31a371858da60d1a0a0653"
+    },
+    "나자르 본주우": {
+      "src": "audio/sua/1ef514ad9b8cb67940c9f097.mp3",
+      "sha256": "8e501bfa39261f8d140e5cb9c9c596ccc2a55f3388d406e714898f2a00f66103"
+    },
+    "카파도키아": {
+      "src": "audio/sua/5883e34852a41b1e368424ce.mp3",
+      "sha256": "12b8b4535610c4e8f44186b36af67aa17961b68da0844e12f32f23fcdaeb1ccf"
+    },
+    "달라 주전자": {
+      "src": "audio/sua/afb6381bf68de0ed5b8127ed.mp3",
+      "sha256": "33e2192411d1a64ce1227f991559719750587ffe49027df29042af5cd776b63a"
+    },
+    "목화": {
+      "src": "audio/sua/814221dd12b5de040cb2672b.mp3",
+      "sha256": "b6f31c13ac4d59d2cc895f63eb177552c489e9513935734766815803c69ea1f1"
+    },
+    "레기스탄 광장": {
+      "src": "audio/sua/ff3e8c7baf3b957441629672.mp3",
+      "sha256": "daee21b0ca43e9d707aa28f49cbb26b7d984ee8ae59f2797fbd60220890436d3"
+    },
+    "쌀국수 포": {
+      "src": "audio/sua/911b3977a580b1492890c4c4.mp3",
+      "sha256": "175dce6d8487bc9d13ee9df5d8e6828c0e64464999da4a0f23c3b72b3855134a"
+    },
+    "하롱베이": {
+      "src": "audio/sua/de2485c1c51cfbe5bec12506.mp3",
+      "sha256": "42ffcb01131ae28ce497385e76d2e0511501ec7ab0a9fa4a566430f5aa2845b9"
+    },
+    "용혈수": {
+      "src": "audio/sua/a62201aa2abe51c2a5c9aba1.mp3",
+      "sha256": "9a593e06baf87f796986198485d04e0840e3740d18403f641641b059465f3d21"
+    },
+    "시밤 마을": {
+      "src": "audio/sua/338b5d91496e2cc0545e870f.mp3",
+      "sha256": "b7962080c2763245e969cbab9f8f7d352cc4aa2f55619a816c491afe313e1e34"
+    },
+    "머리 둘 독수리": {
+      "src": "audio/sua/9522fc4f7dbbba45f492bd77.mp3",
+      "sha256": "642edbb100d6a6ef587d7eb33f2a10b711481c5c1e9b5c79fb5fd6be365b3670"
+    },
+    "베라트 옛 마을": {
+      "src": "audio/sua/c7df3227803c0599b403abf1.mp3",
+      "sha256": "d145364042a43b91bd0cc48e3cff8cfae58f128a8c5407ec8df0a508ac474021"
+    },
+    "빨간 소 두 마리": {
+      "src": "audio/sua/63bc72e595165e7620558898.mp3",
+      "sha256": "14ebdab5b90e692c45ce9998a5af483acc32be83f964cede4b3c1dca47738c48"
+    },
+    "에델바이스": {
+      "src": "audio/sua/bfed6d0c93abb4b23a119ebc.mp3",
+      "sha256": "1dd3b249f0fa5e0604bdc0a756721d3e85cf689ac42234773251c80ac2f90ecf"
+    },
+    "빈 대관람차": {
+      "src": "audio/sua/c7693b6fdb998e4c1c32c805.mp3",
+      "sha256": "66078079dc263c217946e351d797fe40fe76e73dfb73a6f0ab292df31439ded4"
+    },
+    "유럽들소": {
+      "src": "audio/sua/b6b4b357c693790d312ae263.mp3",
+      "sha256": "c6a90fc70193ee87e5fb5d742f713e524c241daffe2f5edb0a8d430197381c97"
+    },
+    "와플": {
+      "src": "audio/sua/eb7f1412af3076ff4699ab1d.mp3",
+      "sha256": "ff9de02a7f6bbb7c68587a6310d36aa9ae5b9b478a3e4bdb21bb28c276fede13"
+    },
+    "보스니아 백합": {
+      "src": "audio/sua/402be7b4310b8a237e448cae.mp3",
+      "sha256": "3d1fdcf173e588485fcb1a9f17ba5bcf1ec42c630b4589764b2523cc30fffe53"
+    },
+    "모스타르 돌다리": {
+      "src": "audio/sua/868850b759caa511763f1fca.mp3",
+      "sha256": "5c4119f6afd3fc29a120fc1e0a42050e60be143452144d06cffd24dd14133508"
+    },
+    "분홍 장미": {
+      "src": "audio/sua/99d208a9c367b639f6b7ec53.mp3",
+      "sha256": "3a969abf520c0b19a3df710f535e8ac2915516752ea03a27406933afe8c93e92"
+    },
+    "릴라 줄무늬 회랑": {
+      "src": "audio/sua/04bbcf257b1eb1cf66f16731.mp3",
+      "sha256": "deea7b585d49a283b7e30707b26c708c3b35967891e757255fb97035aaaf2a2f"
+    },
+    "달마시안": {
+      "src": "audio/sua/77010458f7adaa9f32915594.mp3",
+      "sha256": "3d86d98bfd9f677e8e52984f6632123735e280b1827194667a8edc27b0785b15"
+    },
+    "플리트비체 호수": {
+      "src": "audio/sua/038b0c3e3af362d57e98063f.mp3",
+      "sha256": "65057df13a978d656af390713661bcb504b48af34f6706ff0088ffb9997901c9"
+    },
+    "키프로스 고양이": {
+      "src": "audio/sua/399cee3670527d45ae6fcae5.mp3",
+      "sha256": "8404cae21c330260b7fb93b2d39bd89d15681c4d432a33a7e9acf64a55f504ea"
+    },
+    "줄 인형": {
+      "src": "audio/sua/efaccb9f8bec32cc4081d314.mp3",
+      "sha256": "b1cd49f6723655072914e887fe564f95ad15c4c38aa4b260bafab43b846ae7d4"
+    },
+    "프라하 천문시계": {
+      "src": "audio/sua/5f2c8533b963fa2b4c3c0451.mp3",
+      "sha256": "aa349cb9bb369a1c28c13229e98b94853a4ba0e878eee7b58da5fa79a7167d25"
+    },
+    "플라스틱 블록": {
+      "src": "audio/sua/80209f27cf4bf909ffbfa44a.mp3",
+      "sha256": "cf2b9e9b0fe7375f1b5f2e19d4df5440db07bdc0cf1c04e3ce381b4051f0f8e3"
+    },
+    "뉘하운 운하": {
+      "src": "audio/sua/39e33cbde132ec68601fc3f6.mp3",
+      "sha256": "c5c09f2f6f55b50862d10ccac5fe8dd3d10fbdf57f91666b192e60126f98cf53"
+    },
+    "수레국화": {
+      "src": "audio/sua/cce609b5cfb2ddf4436fa437.mp3",
+      "sha256": "eac87dab8e28a9d58b1bcdb94f79fef1c94a239003d8e5ab027f8d9dfe225a65"
+    },
+    "탈린 성벽 마을": {
+      "src": "audio/sua/8aaad5ca277c4ea01287d032.mp3",
+      "sha256": "57db334849a6ee0516b2f49331a6bf0d70a0d05fbac9f331fadcd9edf91746af"
+    },
+    "사우나와 물바가지": {
+      "src": "audio/sua/aeeb18346fe485372a416e56.mp3",
+      "sha256": "447ee7908edc21cef7aaf27601ee4463f577e23e7f12962ff1df276f276a7b67"
+    },
+    "라플란드 겨울 숲": {
+      "src": "audio/sua/e1b1c6232784df915cea8c14.mp3",
+      "sha256": "1e646d14e15c3f519c165012730a5b992db3b7242600796647642ce742b502e6"
+    },
+    "바게트": {
+      "src": "audio/sua/39fd47db4810badb4a6271ad.mp3",
+      "sha256": "3a9f8d76191e4bf48f051d857d022ce035cbcc30dc7ad4f6699a554c68feac44"
+    },
+    "에펠탑": {
+      "src": "audio/sua/fa78e1ab15a7bca3d6f35227.mp3",
+      "sha256": "3cdeed8d30ea04737f31bfb2ebc842d7e97a383ea110b8672966b64ad29ab089"
+    },
+    "소시지": {
+      "src": "audio/sua/18ec61cdc8fdb2a8dd46e979.mp3",
+      "sha256": "5ed854dc6ac12abb580c257747a8de50e330d9430c4951d2bd6ac66531539390"
+    },
+    "노이슈반슈타인 성": {
+      "src": "audio/sua/81acd3fe1d432ba61894c396.mp3",
+      "sha256": "19ddfe40e8aa70b401c055d449f76e32b8daa8e08e6b1ca2a27be9050a8f5731"
+    },
+    "돌고래": {
+      "src": "audio/sua/30b14b52e1ff0163b41e5ef3.mp3",
+      "sha256": "daf438228fb492867b79a171194985857e1f61b285df890a3d7208f848875333"
+    },
+    "산토리니 마을": {
+      "src": "audio/sua/d1b5b6de54f2b5d5ad60ed18.mp3",
+      "sha256": "498cdd8c7383d3e62fbacf26d16859cbc948ee6ca68c343d9e6c1fff0fa790bf"
+    },
+    "나선 계단": {
+      "src": "audio/sua/d44d2f6dd1b8c7853ff5c9e0.mp3",
+      "sha256": "72f1e4b958f27c9a652df4c6bf52c8a0cd5df6684cbbe91bde85373c6bca0909"
+    },
+    "성 베드로 외관": {
+      "src": "audio/sua/d3db3b5d643c46c858281ff0.mp3",
+      "sha256": "3242b148763f73c8f93a70ee7be673bff1160068bda6dd10c825d0ace4a2d2d9"
+    },
+    "색깔 큐브": {
+      "src": "audio/sua/b37e708108e933760cc3e87f.mp3",
+      "sha256": "6ce86351d4fa74abb334870de595f2e5ef2415fac0607b18f38a84668533bd63"
+    },
+    "세체니 온천": {
+      "src": "audio/sua/967df58d74702973611bf796.mp3",
+      "sha256": "9d60b61c0272e48c86b06b612768d4d05ecb85bdbfce525fb38be9e1d3cb655d"
+    },
+    "퍼핀": {
+      "src": "audio/sua/f4ddac950151becfa490a63f.mp3",
+      "sha256": "1251146ad871fec8897315798c71683c6c73505cf6c36b76b93a11bc64ebbf45"
+    },
+    "간헐천": {
+      "src": "audio/sua/e8d7a0e000ba98a1ed9659a7.mp3",
+      "sha256": "1cd0e62b8ca00c5d9ab63d1fbfd78558218b1142ff52634f79ae378b602a92dc"
+    },
+    "세잎클로버": {
+      "src": "audio/sua/f4b1f5b27963cc95aa463ad1.mp3",
+      "sha256": "1657da82639454001ecc1ff3ed3a2826285fa56718693a20f0f47b057949ce30"
+    },
+    "모허 절벽": {
+      "src": "audio/sua/d3a6246b5bafb7e6f777bb33.mp3",
+      "sha256": "6f61770b160e0aadbcbe2761d9c2fd48ba80e0e8c62fa89fd456ea3126fc530f"
+    },
+    "피자": {
+      "src": "audio/sua/1878c92c72e25d42f633c180.mp3",
+      "sha256": "b49930af6f67f8986a277d42eda6fc7b2fbccf8dcc26c2398fe43c2e4b9309c8"
+    },
+    "피사의 사탑": {
+      "src": "audio/sua/d68891b7fa4fba9e490b3bf7.mp3",
+      "sha256": "5e2402d24f2ba9a2c5d313b533b2e0086ff1973128106d9a4920faedd8113796"
+    },
+    "데이지": {
+      "src": "audio/sua/f082fc4ebbec9f12376ee328.mp3",
+      "sha256": "cb819f3ad2845e45a9a7b6703545a16fdc06a6b5740388b485ac5f4bf3dbfdfa"
+    },
+    "검은머리 전당": {
+      "src": "audio/sua/4b4b184a02d613e0bde27842.mp3",
+      "sha256": "929a8544333ec4efa8f5f9a57242830ed4bc1c6e729fcb2c946cfe9ff6ec2ad3"
+    },
+    "알프스 우표": {
+      "src": "audio/sua/bc7af70e5407385b14117f6f.mp3",
+      "sha256": "30c29ca91bcf5a0328f722c8738fe358ed0c4454712374390a3d0008df47606d"
+    },
+    "파두츠 성": {
+      "src": "audio/sua/724cebe50e46b5c926ee0f4d.mp3",
+      "sha256": "99b49d686c03246d62218cb973148f72eafe36e75820df6fba47ce34b402eaba"
+    },
+    "호박 돌": {
+      "src": "audio/sua/0e829df6c1ed8a885c5f0eb8.mp3",
+      "sha256": "3cfbeee2fa41dd226279cac8f13eace8684aab983249c4a144e85748b189c553"
+    },
+    "트라카이 성": {
+      "src": "audio/sua/09917279dc543bdc83a7f7a0.mp3",
+      "sha256": "e367b2fc92a3136610820c9b5036527806268db411e2919d02495fc2b2279b7a"
+    },
+    "꼬리 둘 빨간 사자": {
+      "src": "audio/sua/584f6adc72101964c80962a0.mp3",
+      "sha256": "9555d44ab71e943952b234503a2041c3a9f6760b6ea48c89f815bb0a5aebc449"
+    },
+    "골짜기 돌다리": {
+      "src": "audio/sua/60bfa3937279f20ddba10d52.mp3",
+      "sha256": "3fb2ff899aad7896047b59a966ac5c2369d3c51239700d477fd3aa29d1033cb7"
+    },
+    "루쭈 나무배": {
+      "src": "audio/sua/d8ef784da98c7b09e28c181f.mp3",
+      "sha256": "85a61422b5955ca7aafe8d46de43ef2db937a95a7045bea42e9eafdb093150ec"
+    },
+    "포도송이": {
+      "src": "audio/sua/e3c6ce89b0cd2df63eabd9c6.mp3",
+      "sha256": "74587608c02c5eaf0a8dc05ec60d19855f3c562b2c9fcb032a7d4d1baeeffe5e"
+    },
+    "빨간 경주차": {
+      "src": "audio/sua/277aeaec254d771204efdaf2.mp3",
+      "sha256": "8316d051c80a7dc5a0c346be1c19ee9b668370db80874271740fc45cc9ae5250"
+    },
+    "모나코 요트 항구": {
+      "src": "audio/sua/549e6dd9464ebf89e4ef68fa.mp3",
+      "sha256": "0d5ce98fb7efb5f67023f4ecb2e986990df398c72b30bbd5b56807e5c942d615"
+    },
+    "검은 바위산": {
+      "src": "audio/sua/b3e3075e92098e36661493a4.mp3",
+      "sha256": "a79db6561dfccc32dab2f6e7436a0df6608739711e0b856253ed3658fafac1ff"
+    },
+    "스베티스테판": {
+      "src": "audio/sua/a1a77e56cc9babae2d3cd0c8.mp3",
+      "sha256": "23b4fd664a6753b7d75d6155081c1fbe42eb0cdde4c5710bb9464ce8099fb9d3"
+    },
+    "노란 나막신": {
+      "src": "audio/sua/c0f0ddb4eb70f790a65a4ca1.mp3",
+      "sha256": "c01a7cb3cae08606bcb7f18c0f2b811cff3b34af6a1274427d2221620d0b747d"
+    },
+    "킨더다이크 풍차 한 채": {
+      "src": "audio/sua/3c64575045411c2b86988df0.mp3",
+      "sha256": "2c21ea2b3477606b7a16c9cf27623e2d0d346f57f3f1d5f370e8af7d6a95acb2"
+    },
+    "빨간 고추 다발": {
+      "src": "audio/sua/3f40eccd0c62a4af5da3faad.mp3",
+      "sha256": "7c96f84d34d3bda2e189e2817c8a341fed25f2ce328f2a4c779331624601ea50"
+    },
+    "오흐리드 호수": {
+      "src": "audio/sua/ec7b846fa2c777b76ba62455.mp3",
+      "sha256": "790b28f87447ffd4726074027366550d0a8334a2644e55a68fb342e60ec8d4ce"
+    },
+    "바이킹 나무배": {
+      "src": "audio/sua/55e6fffd84f89065fca854e1.mp3",
+      "sha256": "14d39b497d79e641fd27e510fe5378a33f60fe273164b25eb2ad4d175b75c358"
+    },
+    "게이랑에르 피오르": {
+      "src": "audio/sua/1f4d14f16a9f5815621b71da.mp3",
+      "sha256": "b79fb34f094bb98162a73f08b731a9df09065663019a6d6f5501493cdae0faea"
+    },
+    "피에로기 만두": {
+      "src": "audio/sua/96c29c1e7c972db344a293b0.mp3",
+      "sha256": "dad480f014ff2c1b052a22b75c27470565dbcea823c1a4003215e5c922ef87d9"
+    },
+    "소금 광산": {
+      "src": "audio/sua/828c33dfac39d7acd48ca5dd.mp3",
+      "sha256": "9ec8b1f8215732908368b418ac3c7260ac77435143ae302640ed924cb40235f4"
+    },
+    "에그타르트": {
+      "src": "audio/sua/bf6aa6eba9ff136a2ab02f8e.mp3",
+      "sha256": "4819af2959faae8a9f028148f1a01c098e9f03b83a1565877da45f06dddd4639"
+    },
+    "리스본 노란 전차": {
+      "src": "audio/sua/45644afa3ae86c4945502198.mp3",
+      "sha256": "31e59435ae9f399c71daa9d712de602f756ce59c0433645beca231d9ccb5f132"
+    },
+    "꽃자수 블라우스": {
+      "src": "audio/sua/4d6320e7ad29729b2e12e583.mp3",
+      "sha256": "272c1c774eb4aea0ac6f183886c3850a133c0c91edf4dc69cd46d267c0d74fe4"
+    },
+    "브란 성": {
+      "src": "audio/sua/8de9bf1f02dc0fcdcb195416.mp3",
+      "sha256": "4fbcaf19249f8720d53706c6b67f44471f14eefc61d6c23b0b0133760755ece5"
+    },
+    "마트료시카": {
+      "src": "audio/sua/1ab709c2c875001cf93c43db.mp3",
+      "sha256": "039b2b47f0acb06d0bf9df4474d69612289ee95abecfe4b624b90f48aeb9bc43"
+    },
+    "성 바실리 외관": {
+      "src": "audio/sua/1021b40a36309850591fda63.mp3",
+      "sha256": "20d58135a133d9bfcd43ef2cf46baa80e9b89c3c98bc5be5634464f84e8058dc"
+    },
+    "산꼭대기 탑 세 개": {
+      "src": "audio/sua/146e969c33e9d8efa9563b15.mp3",
+      "sha256": "09473f9b4536442c7d66c8f74e6cbb9341b8864a5bc77d7b734996e26507050c"
+    },
+    "라즈베리": {
+      "src": "audio/sua/a9db278d91be900fb1b14822.mp3",
+      "sha256": "3172cbfe1f1c4e6ceebd24aab53a8bc999c08daff0cd8ee40decfba7f8edd533"
+    },
+    "강 위 작은 집": {
+      "src": "audio/sua/0c4f1427dc4bc470948cb1b5.mp3",
+      "sha256": "9fb1933030bc714abfe678cdeed504be260e5d2f164ebbb9a938cfe6e959087d"
+    },
+    "푸야라 피리": {
+      "src": "audio/sua/e72708b0d06005e6e460647f.mp3",
+      "sha256": "8b3f7523b90b71e5c2c44b4a425b131f9868f8d60bdf906e62943e7136a306f0"
+    },
+    "타트라 초록 호수": {
+      "src": "audio/sua/29687c3b67203bfb86f972d0.mp3",
+      "sha256": "23964509d9e4dc47552bc64db0c78838003e0dfb0d20ffba209f5d69e76adcab"
+    },
+    "리피자너 말": {
+      "src": "audio/sua/eba7394493fe67bb34306a82.mp3",
+      "sha256": "f2c1120d08515a69272b9aaf599e484d19f4719e2d2c10cf2e5aa2422f781c02"
+    },
+    "블레드 호수 섬": {
+      "src": "audio/sua/a6c5877ae689394d4f654ae5.mp3",
+      "sha256": "972af901113060fb006f188c6cb416259ed9382c8e581904f8cf447fb7b5ecd9"
+    },
+    "플라멩코 치마": {
+      "src": "audio/sua/54595f850ac338b3fe861a7d.mp3",
+      "sha256": "d3cffd69d466cf83b5db78962d2888768611aed7bfa5bb161747486a299aaec5"
+    },
+    "가우디 성당 외관": {
+      "src": "audio/sua/7353ea3adc699e07cd735505.mp3",
+      "sha256": "5f9e79afa9b004168e27ff9eceacf527a5d1044c83554554424824835f246577"
+    },
+    "빨간 나무 말": {
+      "src": "audio/sua/038c1969718751e8349ddd22.mp3",
+      "sha256": "7f038ceecdbcf2ad65a9145902c36d6c95aba56e3c94b0677f9782ce022a9e7a"
+    },
+    "스토르토리에트 광장": {
+      "src": "audio/sua/f5883bc1ce7eff163abed4ce.mp3",
+      "sha256": "c5f1cc4e2cfb8394d7d9ab13b04c863c09c73b83a17d28a55f77a8a90752e22b"
+    },
+    "구멍 난 치즈": {
+      "src": "audio/sua/c44dd916cfe86aa154121a4c.mp3",
+      "sha256": "3d117fd00a79eda923ec29b61a581932dc0f335599cbb37cdc4e1777c8406027"
+    },
+    "마터호른": {
+      "src": "audio/sua/532adf6188f3a5d104b4b23b.mp3",
+      "sha256": "5010c1f8f009f559e8828c6d1146ad037fa542bd3d26d00cf677e8fa99f026b6"
+    },
+    "해바라기": {
+      "src": "audio/sua/9e786cb6b1f70f8de79a344a.mp3",
+      "sha256": "286696ae0bef9536503f82b7bf7d585b4c934fcf57da5dd0b7218e7e8bb28205"
+    },
+    "초록 나무 터널": {
+      "src": "audio/sua/07df9f3fd17b95967d5e2222.mp3",
+      "sha256": "e908c44952c73d71252ef89fee5f695deacfecfb12967c2e39b7e78559ce94e9"
+    },
+    "이층 버스": {
+      "src": "audio/sua/119abc80a6f9add51413acb6.mp3",
+      "sha256": "42e0a68eba525f4d3194a4b73d2148017b6479f7cdeb04ebefa99ce639308c79"
+    },
+    "빅벤 시계탑": {
+      "src": "audio/sua/206e3b9586cfd1288cdd0563.mp3",
+      "sha256": "f1f398a081ea4a3b3564a855e484ba8cae34356a9a99dd9e487eae391ed6f7ba"
+    },
+    "붉은 모래 언덕": {
+      "src": "audio/sua/8c53c66beebee52fa54b76c6.mp3",
+      "sha256": "cc8997c60b567de54e600411a1b3f2e3113a535969e8e6ec0e40b32e1c5230bc"
+    },
+    "타실리 바위 그림": {
+      "src": "audio/sua/bb62f10a3a0dd51b27b125d8.mp3",
+      "sha256": "f28cc2875e574ab00b4f516567bdf6e9cd40d2fe47aabef74a47e749fff030fe"
+    },
+    "세이블영양": {
+      "src": "audio/sua/d6c23a4d1d056ce0983a1775.mp3",
+      "sha256": "9d254c6130941199acff5c2d3d1d646f60d0ab0ac04649d446012758ab68279d"
+    },
+    "붉은 흙 절벽": {
+      "src": "audio/sua/af86623346113aede1cef38a.mp3",
+      "sha256": "8edb714e30b04f562dd054a1b4725ad0265910f8df49e885955ef11d9f329367"
+    },
+    "오토바이 택시": {
+      "src": "audio/sua/66a06662aab9882692ec31af.mp3",
+      "sha256": "db2b87aea7811ab1e74b68b077dc116c11d13201e155d6554cf3072aa6ac9b03"
+    },
+    "간비에 물 위 마을": {
+      "src": "audio/sua/5446d0cf3ca9757829b387d4.mp3",
+      "sha256": "f92dc033d874ffd9b877b9392a9cc15aa35b3b19763e90bc03a1743eee356e04"
+    },
+    "얼룩말": {
+      "src": "audio/sua/5082f1f9009dfebbad83bfa8.mp3",
+      "sha256": "ba9a02bb912d99d92624475e9bad0cf413db202a2c3b1a6602b4138e1193ce41"
+    },
+    "오카방고 습지": {
+      "src": "audio/sua/6a32ab344f637956affc4469.mp3",
+      "sha256": "fce7d8b4a1cfedee86ac73470a8393442315b70fabc8bea242d54ce5a5d0fb94"
+    },
+    "무늬 흙집 벽": {
+      "src": "audio/sua/081f069e3100eba5e5685d20.mp3",
+      "sha256": "f0b14c4daa7757e16fba5d5ad4a0aaee8110ec871eb90725ddf18d300826dd56"
+    },
+    "신도우 바위": {
+      "src": "audio/sua/22e53b4864758ee6e74e1f0f.mp3",
+      "sha256": "f06c980d0de9c6ab454d7f0c1a0a327a507b90cfbf61e3a207e5878c53328ed0"
+    },
+    "커다란 왕실 북": {
+      "src": "audio/sua/8f7388145f75af84fcd57d9e.mp3",
+      "sha256": "78f0b20e5cbb90e91f2d7b7f056f5d425df60d0f778d972f2ca875351e54137c"
+    },
+    "카추파": {
+      "src": "audio/sua/1b98e29c0822f215e67a1f69.mp3",
+      "sha256": "6afb1613ef8ba6acbd651a12e11a59e755f633de53ac7f250196b1afe7f23914"
+    },
+    "검은 용암 해안": {
+      "src": "audio/sua/e873236a2dded250938417c2.mp3",
+      "sha256": "b4da78501082eaf0cd9d33638c55b9f7639fdcd34d264b76f51e9556cb3f8d8d"
+    },
+    "카메룬산": {
+      "src": "audio/sua/2995624ca90cfcabb51585b4.mp3",
+      "sha256": "3563e5cd06a6cd51f15d1594d0f5ea48f4d2428e0ea273c78b75a752f78fce5e"
+    },
+    "바다로 흐르는 폭포": {
+      "src": "audio/sua/1a575b3832fe54d91783c63c.mp3",
+      "sha256": "a9c1ab9f5a47b654d88a3d930b5b2ba9bb9b1aef6f0a3bd7f897d385289f2f10"
+    },
+    "다이아몬드 원석": {
+      "src": "audio/sua/f6de0626dc8e78eb2b84d23f.mp3",
+      "sha256": "869e7bb895b835d2bfa6c0ba755a7940582a73d84eb51d5127dfba3129aac202"
+    },
+    "엔네디 돌 아치": {
+      "src": "audio/sua/b8f135f752c039e30035c775.mp3",
+      "sha256": "f9bb7a3e47dd7e74328ec6b0210ac8568d6dab278615e691c0352e128bddcbdc"
+    },
+    "사막의 여러 호수": {
+      "src": "audio/sua/0aacfac1292ec1ba92d5bebf.mp3",
+      "sha256": "18888bd8e238ab74022a142bcd0254cecb58641f08ed11494611c08d6686b028"
+    },
+    "일랑일랑 꽃": {
+      "src": "audio/sua/7efcbae5dee7d060919b3b8d.mp3",
+      "sha256": "55416b15985cde103a391a3a70638896f4af29eb571508208c5e5c3eda2b3f36"
+    },
+    "바닷가 초록 호수": {
+      "src": "audio/sua/889852c5418bb0677506d25b.mp3",
+      "sha256": "cfa83160e70bca1d5fed5d9b27b011ab09c00a4282455737407f67fa823eb0d6"
+    },
+    "카카오 열매": {
+      "src": "audio/sua/54c2e6dc15c383903c8cfae7.mp3",
+      "sha256": "918fb8f84e36fa8028b75111565d58f7f090396236026b448a6737ae601339ff"
+    },
+    "덩굴 다리": {
+      "src": "audio/sua/2078729e24bccec12a5777d1.mp3",
+      "sha256": "faa9493477ce01daa78e0e8cd423b13ec674d6fc877a4bd1cc5f49029e43540f"
+    },
+    "오카피": {
+      "src": "audio/sua/47468f12fa54f71e9b014c6c.mp3",
+      "sha256": "6b22dde749370fde1b4f5f2471ec5173fda066c3c7e2eae1e572b3c238197190"
+    },
+    "용암 호수": {
+      "src": "audio/sua/0388306ebade1d69a60368ae.mp3",
+      "sha256": "0675089dd91f8e990fbe4ada95eba61dd2b31b44efc16e6367506a15bcad3494"
+    },
+    "압베 바위 기둥": {
+      "src": "audio/sua/21c1a34daec61e2176920c70.mp3",
+      "sha256": "d1c17f7aba595c0b57326a38f893f93a4e5bafa8146bf068295f7f5fa421c52b"
+    },
+    "아살 소금 호수": {
+      "src": "audio/sua/5f96b87b9655429640788b2c.mp3",
+      "sha256": "de79d3ebbcdfc87a4f98d59f8acbfb479ae5125d14ed0cca2dc4e99a97686aba"
+    },
+    "파란 연꽃": {
+      "src": "audio/sua/f575bbce5239112cd1a841a6.mp3",
+      "sha256": "d83c1bca1e7ed614e4c2087df9f95827ca810cb2764f53871543f11ca4153d02"
+    },
+    "피라미드와 스핑크스": {
+      "src": "audio/sua/abae8ceea28cc92f64b426b2.mp3",
+      "sha256": "c91d33429e4609fa137fa5a05d6719c48a33620e3f8578fd1c742aab5f1ade4a"
+    },
+    "판야나무": {
+      "src": "audio/sua/70ad16f6dfee045201a52d7e.mp3",
+      "sha256": "a2b0c0fbb1546c1c380ba680d59504d26a3caf9fd3ce971b96ef81d743e80ca1"
+    },
+    "노란 올리브 가지": {
+      "src": "audio/sua/08d34045b5dd21355c9ab574.mp3",
+      "sha256": "4fd666dbecc292bed237cd591674f41c2b3eae10aa35d95e88d49dde9b937877"
+    },
+    "벌집 모양 집": {
+      "src": "audio/sua/8102ece7f2ea84421e8fe626.mp3",
+      "sha256": "3781d67918e4b84c7268c6a71e5f43e5cccaa940bfb728e39693b8b767487b74"
+    },
+    "시베베 둥근 바위": {
+      "src": "audio/sua/f03d6236fa1cf8937ce04c2c.mp3",
+      "sha256": "d4e277cc6765045ea387708364ec91cbe6720fdeb90fe3ed82229b6b324564c0"
+    },
+    "커피 열매와 원두": {
+      "src": "audio/sua/bf3cea5698ce357c44f36fa7.mp3",
+      "sha256": "8950e41776f2f50c9fce8f5b497208793cb6e50fbdcfaae2a588b706260e65c2"
+    },
+    "달롤 유황 웅덩이": {
+      "src": "audio/sua/748eb3af3c5ead2511ee46cd.mp3",
+      "sha256": "edf1c091d886a52c9555120d5c872b31bb0daff275b5c8155daf49cb78b61d37"
+    },
+    "만드릴": {
+      "src": "audio/sua/3bb133a118a7ecb5b7bc490c.mp3",
+      "sha256": "8c4ee1c3a4d62c2292e92a0ee1870c85baaa7a8da18e8986ed7647251ae36c64"
+    },
+    "콩구 폭포": {
+      "src": "audio/sua/b7907f579362a11c9c8eba92.mp3",
+      "sha256": "50bae66ed4910729d1275f241ba906ee2a7af21d9135337e53e751482c5f4315"
+    },
+    "껍질 깐 땅콩": {
+      "src": "audio/sua/9732bda853fc754cb8a61c7d.mp3",
+      "sha256": "ab6a0c49a9dc6210322787ad6736cfc397a43f4a5ed3085bcf8346367627bf50"
+    },
+    "와수 돌기둥": {
+      "src": "audio/sua/bb4e8d7e4ac8b1afa791d88a.mp3",
+      "sha256": "561e9864aa48bd2c9cda95c48393a2f0861529886956f1e533ad8801ab9bccb9"
+    },
+    "켄테 천": {
+      "src": "audio/sua/ffdca50860eb50233f369b67.mp3",
+      "sha256": "70144b01a13f904b0b06710163a98cc161793fc0723444bc3468ea6820077c2c"
+    },
+    "보티 쌍둥이 폭포": {
+      "src": "audio/sua/5aefb12f2f7d5ae8311455d9.mp3",
+      "sha256": "16a9f3a6a59e2e55269c6ade6681896c29fdca11d7d5d120bd90a1db2e620f61"
+    },
+    "젬베 북": {
+      "src": "audio/sua/ae3e831902f1b844c4e4db34.mp3",
+      "sha256": "4bf41ea6fcc907f30dd74255839cefbedf44b0ad80d8ab5e7771f51883bf3a79"
+    },
+    "캐슈넛": {
+      "src": "audio/sua/da0779ab6eea84124ba12af8.mp3",
+      "sha256": "2d2500aebfe466b5d71981b625c3e774a8a9d73aa842a52091c7bef7b1a2e6a3"
+    },
+    "바다의 하마": {
+      "src": "audio/sua/3225143496b8b663b45166b6.mp3",
+      "sha256": "d47c03860812c745b5e71550548d11b266e6096dd216381e851c0519e9ecba01"
+    },
+    "마사이 목걸이": {
+      "src": "audio/sua/ceabf8285bce1f2848bf00c9.mp3",
+      "sha256": "071ea91bca4ecaf324638061f9d68e314d97f519ab68cc1a0c8e86ac5a07b7bf"
+    },
+    "홍학으로 덮인 호수": {
+      "src": "audio/sua/f8e74906fcb1a68e77aa23ce.mp3",
+      "sha256": "22718945f917317233ff75b3e449ed33cba1820a0e0de4e4f390e985c84b929b"
+    },
+    "모코롤로 모자": {
+      "src": "audio/sua/718945c94ef33ef1aa9db1f2.mp3",
+      "sha256": "e0ba217a5cfc1ce2b6eabee9873272c49894ad95c89ee1164438281aeb5aab65"
+    },
+    "지그재그 산길": {
+      "src": "audio/sua/589ecbfd81a1968e21331af2.mp3",
+      "sha256": "ba0e4eaab08466216f4168b6a501b5e8128f751b3a123e6ba4f8e9822471f618"
+    },
+    "고무나무 수액": {
+      "src": "audio/sua/fabfa43d474b460aecbb159c.mp3",
+      "sha256": "53b3aab81272654afd30ee18e0928789f9f289413703a9cc379d0c0909629cff"
+    },
+    "대추야자 열매": {
+      "src": "audio/sua/71d3a92aeeb240fbd8242264.mp3",
+      "sha256": "b995675c3471c5a0a9e03a59267e3aead09d97803250783639baef2421bce82b"
+    },
+    "고리꼬리 여우원숭이": {
+      "src": "audio/sua/b24226a318db302fd0b61033.mp3",
+      "sha256": "08fd6d9407c4624b8217d4d8489f58a8aa42da06576dba013e868d3223520560"
+    },
+    "칭기 바위 숲": {
+      "src": "audio/sua/c6b3cfabdd3c5d57e73c771e.mp3",
+      "sha256": "c7c82bbd586181358525a8d747910772faa0e2fd56032cb41c5e3c8fe0d07ed5"
+    },
+    "맑은 말라위 호수": {
+      "src": "audio/sua/bd7a9a8d19c8299f95a34edb.mp3",
+      "sha256": "38b43f6d6c1a672439d2f5cbd3c1e9dd033f81e7b9bd60e78c92d04ababc48ad"
+    },
+    "물란제산": {
+      "src": "audio/sua/8cba4c7f21a946a6b138d3bd.mp3",
+      "sha256": "53eede6638a955fbe2917c556677bfe11c62e08345466dd8709f1d397aa813f2"
+    },
+    "보골란 천": {
+      "src": "audio/sua/2dd04fc355081f27b5ef10cc.mp3",
+      "sha256": "31f0061cc8e166e215f0a70a4814aaccae49c9be7c19f5ff770242112a7bf349"
+    },
+    "젠네 흙 건물": {
+      "src": "audio/sua/9b74d3021f10632a52dc1402.mp3",
+      "sha256": "f3cce2ceeea2c26f5afb3c9f701414cbf828da346fed7adf273fef8e3c6175f5"
+    },
+    "긴 철광석 기차": {
+      "src": "audio/sua/4abea606a71731536f0543ac.mp3",
+      "sha256": "0b9170c5c0e77b73f0a8f441e47b137d550bceef3576cebfaa18cf4d1d98778c"
+    },
+    "사하라의 눈": {
+      "src": "audio/sua/71255e45ac5c6866d135c53d.mp3",
+      "sha256": "618b5cf91443d04ee6372aeae6f1635a064f1faaba03e857978b39c1fd9aca65"
+    },
+    "도도 새": {
+      "src": "audio/sua/6ea4a25c9512a9ce6ff59c0d.mp3",
+      "sha256": "b3d82a3d51386208d15b30d7a2f485119fff2f1ac4938a3f503de7bddd7f72c1"
+    },
+    "일곱 빛깔 흙": {
+      "src": "audio/sua/2c38a09be753f3a0e23c71cf.mp3",
+      "sha256": "47fd19c689f3146e3ff5793652b23752d3341e4a553da3a42be4440d3ae7a6e0"
+    },
+    "타진 냄비": {
+      "src": "audio/sua/338cbf64e5c1e75fec4046ca.mp3",
+      "sha256": "59a5824f553d87ecf205c4878ceccdf533279ba017ce3a8bee5194a2a1f10d2c"
+    },
+    "파란 골목": {
+      "src": "audio/sua/9b2c98c3db4acce59f74ef41.mp3",
+      "sha256": "089bca8b196c3a46d44487125b776b5c8dff23827aab33566061a55cad5d0fd2"
+    },
+    "펼친 하얀 책": {
+      "src": "audio/sua/befc58872fd37c5b8e67d0fc.mp3",
+      "sha256": "020414349cb2a209da51e79bc5859d7609a420cdd3c2726d2fde245c1964299a"
+    },
+    "웰위치아": {
+      "src": "audio/sua/f08c404f79edf429ec28fea1.mp3",
+      "sha256": "229ecf6b588883249e6b8f840ced1a9cf5c201811f32964801b3e917419a98da"
+    },
+    "검은 고목과 흰 땅": {
+      "src": "audio/sua/f7aa84b0135d98ee16c285c6.mp3",
+      "sha256": "3862aa797831f3c8c8482bc1e7a6a71c1aa60266299cce30a1c4240896ad033c"
+    },
+    "공룡 뼈": {
+      "src": "audio/sua/cedf563e117ece0f20d54cce.mp3",
+      "sha256": "67dc47a94d53848f9b69a7f1117ec47e02e533fe2ed11817846e1a37eed434c0"
+    },
+    "쿠레의 기린": {
+      "src": "audio/sua/490c0f421f1898923d145816.mp3",
+      "sha256": "90e83938b4fb651bebfec38775ca659f49fc8350b0b2528b5377e7c691896b51"
+    },
+    "겔레 머릿수건": {
+      "src": "audio/sua/da948dc8c341d98135c324cd.mp3",
+      "sha256": "fa21ce16f86b9fdabebcdb289b2b022fdabc37b97e76c361f178de0676528aad"
+    },
+    "주마 바위": {
+      "src": "audio/sua/7abe9f865c76d05a67c8e8fa.mp3",
+      "sha256": "b72e4a5532ef2fc85f50b67488afc138820d5a56d9986a53c40f886d6e25c0d3"
+    },
+    "사카사카 나물": {
+      "src": "audio/sua/d2226e3f023e57167c7eb4cb.mp3",
+      "sha256": "b15613c83351e7509d57fdc0a59c6ed0c94a8c9753b0bc14d7e62e8a303d5a68"
+    },
+    "콩고강 급류": {
+      "src": "audio/sua/2e98c550557e06ba68a6a94e.mp3",
+      "sha256": "064a6ae1a3217a6618e218d67ad5d43a6acee60e67e46332739f22707fcad6af"
+    },
+    "마운틴고릴라": {
+      "src": "audio/sua/bb8fe91dd18fd1b4730f390e.mp3",
+      "sha256": "389f31c80404df6e1bca5cccc1531e6ff32bee07891cb266c0258a5b5519807e"
+    },
+    "언덕 계단밭": {
+      "src": "audio/sua/0a887945d16fadd023c2f520.mp3",
+      "sha256": "b7d6efecaaef9ec11d7fafcf78c2e3d2cd426733388fb2f123e3558506df313f"
+    },
+    "칸그란데 바위": {
+      "src": "audio/sua/d4f0fc7134020a8800c3341b.mp3",
+      "sha256": "7f516e798d843a6e8a598a627720afc19ffdb416cd030a3dc996c9bf78589d0f"
+    },
+    "바오바브나무": {
+      "src": "audio/sua/bad3147d2a83457ccda7bbfe.mp3",
+      "sha256": "9ddea0b26faf83176bdbd70e537cd6d011623b5d8ee019401e2c793fbedb10ff"
+    },
+    "분홍 레트바 호수": {
+      "src": "audio/sua/a2acb1100d8c53b31a08e3dd.mp3",
+      "sha256": "dd295bd155230dca0314992863d57bbcf5646c026352a63213aeadd0ece9383b"
+    },
+    "코코드메르 씨앗": {
+      "src": "audio/sua/b3eccad08bd45c72f404892c.mp3",
+      "sha256": "cb5ca2cf3474a93acadf7f949ca4fe4f68a188dd9c99bb06bb060d41a8d5e906"
+    },
+    "분홍 바위 해변": {
+      "src": "audio/sua/b15c5df5cb299c2af6cddd41.mp3",
+      "sha256": "435b924efb5765e3804039597543ec522455d9213415c89d4cf221224fd7942b"
+    },
+    "기름야자 열매": {
+      "src": "audio/sua/e21c3ef0748911fa41c4b908.mp3",
+      "sha256": "6e41c1243361517fc4751bc8039de7d2d879f577aefa47210b913ae0e336ebb8"
+    },
+    "혹 하나 낙타": {
+      "src": "audio/sua/dea8417ff4342c3d41a4def0.mp3",
+      "sha256": "e365ba7763a50f1084cdfc9f0811fbdab844660a9179d60b3df784b0d1aeea11"
+    },
+    "킹프로테아 꽃": {
+      "src": "audio/sua/b4bf8b48ee23425b213ca7c6.mp3",
+      "sha256": "908a312aed549a0ead45f2decc18fc391a2696b456ede1ea92d9577d61e663e9"
+    },
+    "평평한 테이블산": {
+      "src": "audio/sua/006081cd49ca2d17892d2341.mp3",
+      "sha256": "e83f740975b321c610a86e35b4d7e1c0a2847e89564e3a4189559f12e0c1fb63"
+    },
+    "파피루스 풀": {
+      "src": "audio/sua/c85ccfd6ff70e421107eb0a1.mp3",
+      "sha256": "7880c52da3bcc5fdf227a51c0227efc3fe63225b2eecb8b2b6ebf35cf033d8c3"
+    },
+    "코브 대이동": {
+      "src": "audio/sua/2bcb7598dc49949f23511cb2.mp3",
+      "sha256": "3fc2e23af288cf29a66f9192408551f8f5653fcabcf896b09bff70164574ded6"
+    },
+    "만나는 두 강": {
+      "src": "audio/sua/adf1266962c4814efc4bf4f9.mp3",
+      "sha256": "94b14efbad8c676ed6666e701cd11b3e340d19c0944df2a02bbf11ed83ac8294"
+    },
+    "작은 피라미드 무리": {
+      "src": "audio/sua/85d45086f98545bfda5000d6.mp3",
+      "sha256": "7e1c219e1bec23e6d7a1a1981820def8a008ea1506c78351e7b113db3d21a471"
+    },
+    "파란 탄자나이트": {
+      "src": "audio/sua/e2a901221ffb6beb10b503ca.mp3",
+      "sha256": "fb2e45d92d4541c1e2dabd5d5387d3a22cde3f3ce6f16ae60d158f4fc506bc02"
+    },
+    "킬리만자로산": {
+      "src": "audio/sua/5607b482bd628c0b039eae00.mp3",
+      "sha256": "b058446beab27c7ba49f00a2559ea5f33bfc0171035e2485e221a5c3ba5f64a1"
+    },
+    "작은 성 같은 흙집": {
+      "src": "audio/sua/4a550bb48175a81edfcaae5e.mp3",
+      "sha256": "b4a3b8b5bbbef20c657685f30466b9701a57a426312b3e47db65e0604ebae491"
+    },
+    "하얀 재스민": {
+      "src": "audio/sua/4041ab400e312518a7bea212.mp3",
+      "sha256": "db98a1cdd02d96eaee05319c30f36fa319b687d34686acd20c1202175f25d8b7"
+    },
+    "마트마타 굴집": {
+      "src": "audio/sua/19c16e616feaef4c810a6d36.mp3",
+      "sha256": "f813aff881b3b4af41353f23e00663f4832302edcddf739ba8dd68c7636aa7fd"
+    },
+    "왕관두루미": {
+      "src": "audio/sua/88cdcb3b16515f72e0539385.mp3",
+      "sha256": "e48e61113590be4d30d5db5b9ba1c537a71eb2a07f5413a6ee9594058efcca70"
+    },
+    "좁은 틈의 폭포": {
+      "src": "audio/sua/ca9cefc49f0c985e94171c6c.mp3",
+      "sha256": "09ad167f00791da57898be7c0eea73bd3595f164fce4e7235686bcb6db20425a"
+    },
+    "날개 편 물수리": {
+      "src": "audio/sua/e9313674b956909855997ac1.mp3",
+      "sha256": "1f5602e6ac49a25e2154abe8541f0539f5834a6a35a220060512d5c86f5f3d5a"
+    },
+    "넓은 빅토리아 폭포": {
+      "src": "audio/sua/5e218a113d8d77f5c4ae1628.mp3",
+      "sha256": "123cdd1afe783b2d6a566a8d6c25e92fcf7f08a91a404d6f2011876a43168d20"
+    },
+    "돌로 만든 새": {
+      "src": "audio/sua/cfe69cea494c839b7731e20a.mp3",
+      "sha256": "177cd50b46b07301ddeef9b2680ad5f79d82739a74dee7b4113d4ff38433c4db"
+    },
+    "균형 바위": {
+      "src": "audio/sua/399ecee32e57d319b35d22d8.mp3",
+      "sha256": "2acae1fcd28f3e2fbe30d9d21d70246b5263cd7308c0b88eafdbc62b9252fb0e"
+    },
+    "블랙 파인애플": {
+      "src": "audio/sua/a7da9fc06b53fee68a47b74c.mp3",
+      "sha256": "60605f2684bfe05f4782ffc5ecff2c680e9da92115bf2d95432a435e74a31634"
+    },
+    "바닷가 돌다리": {
+      "src": "audio/sua/28997fb1e11d6a9524049747.mp3",
+      "sha256": "3097184b76e0928803748093d1a8de551bd21827ba6c40f51fefa3c897fd21cc"
+    },
+    "홍학": {
+      "src": "audio/sua/32d09858460224d13401cd39.mp3",
+      "sha256": "0a30862d2af4059e39bf3d6ce0b190ae87208decfba68abac2a59d03c96a7e71"
+    },
+    "날치": {
+      "src": "audio/sua/b4aa038cdcc49db162d13f9d.mp3",
+      "sha256": "6cdfb89ed7268956c501467ae9931c7046e07a006adfb0c04164086997365d41"
+    },
+    "해리슨 동굴": {
+      "src": "audio/sua/798b0d677b2b2286e5679a57.mp3",
+      "sha256": "aaa2d5367b3c23064312c0c453d49ba8d263f9ca0fc59d8025401a866ad5db3d"
+    },
+    "마호가니 나무": {
+      "src": "audio/sua/21c696c0a7826c93260e34b0.mp3",
+      "sha256": "4436e34ff46a203ab862cb73e9d53c14cfe761eba333826e0a6e687e7e435cc4"
+    },
+    "그레이트 블루홀": {
+      "src": "audio/sua/825c4f3be33f49cea9e60b79.mp3",
+      "sha256": "19e11203108207be5d0e43770ac35b8678d8ae1ef602e7667e46710762ca5371"
+    },
+    "단풍잎": {
+      "src": "audio/sua/13cfeb75844518d02b418ac0.mp3",
+      "sha256": "2bbc63665f337a50c274829e79c8dbbc38898fcf60cbb17a0566def9722372b7"
+    },
+    "옐로나이프 오로라": {
+      "src": "audio/sua/11481428dabfb6e5c431e727.mp3",
+      "sha256": "b8f8d8ae0ba888da0c1134e72be1561e66eb863382c818e0a9c30044c87cf376"
+    },
+    "나무늘보": {
+      "src": "audio/sua/dbc7105572cbfa23b784373a.mp3",
+      "sha256": "1819052c74ea6a77488e148c2f6a981d3818f68dec0acfe60491b4508e5b53b3"
+    },
+    "아레날 화산": {
+      "src": "audio/sua/17264b66af52515fe8b9f8cd.mp3",
+      "sha256": "8bea5d7e77e8e70adc9e87df0d92d94503204be488c45dbbc12a59a23ee41fef"
+    },
+    "옛날 자동차": {
+      "src": "audio/sua/bc018c96d72439271ce643f1.mp3",
+      "sha256": "0bffb1157948951d1e6631253d329a1542faf58710183e9d4ff750e2952e3108"
+    },
+    "시세루 앵무": {
+      "src": "audio/sua/dec9745f97424e7f4a2581a1.mp3",
+      "sha256": "99bd23f985e6ab707a2112ee948c1fcf7187668eb62f19a04569b547be19c12a"
+    },
+    "끓는 호수": {
+      "src": "audio/sua/412f54d83ce6338df6c68944.mp3",
+      "sha256": "88d39fb01540d78561220473d978f4965868d7a514f7d8c780ec8c1e2cf7b264"
+    },
+    "야구 글러브와 공": {
+      "src": "audio/sua/6a9e6d9600d433172042fef2.mp3",
+      "sha256": "ec1a05a8e2435854f5b07207096b315de48f6ec35baa1e42523dd08feba3e619"
+    },
+    "푸푸사": {
+      "src": "audio/sua/fd9a04ee5cab45a437869b27.mp3",
+      "sha256": "de03c1fb5bdfefc1a29b317ceb17fa60fe9998c4c8dad7fa2d9ffbf6a3c69267"
+    },
+    "산타아나 화산": {
+      "src": "audio/sua/0e3959c3223fe6eb3636fe2d.mp3",
+      "sha256": "47e3e5f4ff9faa2cdabe5a69662f6edabecadb69a652509c0bf8444f1d3ec1ab"
+    },
+    "육두구 열매": {
+      "src": "audio/sua/30ce8276a007fca66738454c.mp3",
+      "sha256": "c0a687d01f0d627a46a515e7333400e6118fa0aac46fcb9940ba917c8c9451af"
+    },
+    "케찰": {
+      "src": "audio/sua/d201699b3448db38f058fbab.mp3",
+      "sha256": "4fca928ca0c1792f306a106c19113a2c441d30d1317997f5c35213676db866cd"
+    },
+    "티칼 신전": {
+      "src": "audio/sua/dd4d1e116b34f99a4a0a9440.mp3",
+      "sha256": "3e38bf90d124f4d8918713850a3593904356e7dd4ca85632192af1660521623d"
+    },
+    "야자나무": {
+      "src": "audio/sua/0c0be38c928c13a7bc2d992b.mp3",
+      "sha256": "9ad8fb8e92fe0e7132a2a98e07b983b27e073bcf25164441b8eae076a2d53a8a"
+    },
+    "흰꼬리사슴": {
+      "src": "audio/sua/6dd547c06d075bf60e8d6682.mp3",
+      "sha256": "3fd47de0d0738af80e35239b990cd207c8d4e3041f0eeed67485ced3aed41532"
+    },
+    "코판 석비": {
+      "src": "audio/sua/2427d5a1cbf4d040b30a5968.mp3",
+      "sha256": "9e27ee1acb7d61a1d19f15c89b589a465cb1309d63fc98719e8218267016c6b4"
+    },
+    "닥터버드": {
+      "src": "audio/sua/a27b52298092d3fd8a1c4ea5.mp3",
+      "sha256": "009be41c7287ac0e71fa751c975ec4282f0b8b970578fbc0529ec89096a51b74"
+    },
+    "던스리버 폭포": {
+      "src": "audio/sua/54e63452bbd4b038016edfe2.mp3",
+      "sha256": "02849fb00424ff4f9cb005f50e68341a1226bdfc52e55c437d33191a2ccf212e"
+    },
+    "제왕나비": {
+      "src": "audio/sua/60b27a67c9da898c2859d6b6.mp3",
+      "sha256": "5842d31a46e4c06db7fd7455b796604d1ba18d88dd4da9843a06eca4e2b42084"
+    },
+    "치첸이트사": {
+      "src": "audio/sua/a57e868a26ffbd044ee61d01.mp3",
+      "sha256": "eba64a9f6934b78c19ceec4f2f9f2c6edea117a6baafb2e0fb0a46012505136a"
+    },
+    "사쿠안호체 꽃": {
+      "src": "audio/sua/cf0914e24c4b9e5a541f871b.mp3",
+      "sha256": "0ed8c682b28a219ba3ba63540db1407581bb9dd46dfcd2ae017ee92a4606d2ce"
+    },
+    "오메테페 섬": {
+      "src": "audio/sua/f1a8ab9c7d2bb23aaab8965e.mp3",
+      "sha256": "e2b218ca0688ef9415b56b7471401a5c05da2cf6db2022dd133d277673798a68"
+    },
+    "몰라 자수천": {
+      "src": "audio/sua/71680b89da5caac97c3ef6c1.mp3",
+      "sha256": "d8aee138452ab1420ec443c7a8bf85e5234e98e638bbe1617daab8538bfaef70"
+    },
+    "파나마 운하": {
+      "src": "audio/sua/2729337d20897453d6772a8b.mp3",
+      "sha256": "cc6bc8a18d3670ef1d9383547e32261725a0aee3e48169df95e71529c1feea17"
+    },
+    "봉황목 꽃나무": {
+      "src": "audio/sua/b7fd71718c2938d433041d1b.mp3",
+      "sha256": "20a14c8fdf43140e8c2e7195fc828d8ac662063d963ad057ed496dac18ede5d7"
+    },
+    "피통 쌍둥이 봉우리": {
+      "src": "audio/sua/2793f626354a71f96e7f5723.mp3",
+      "sha256": "c8030c6a11be8bd2aa5b074cdd3b686cc3a0d07c4a3bd2981c3dcad6b1689b0c"
+    },
+    "빵나무 열매": {
+      "src": "audio/sua/e2dfe99f2f7e69de12ab61f7.mp3",
+      "sha256": "1e58405e9ed3b57345db13d8fe62be7c322b8db031ba3dea0d3e6378da89c357"
+    },
+    "흰머리수리": {
+      "src": "audio/sua/b91ad65be4c220a7fd100fe9.mp3",
+      "sha256": "330afebc73f4902e049dd3a49cabd4b2cb83a5291e08835f5cb7d953fbc9e27e"
+    },
+    "자유의 여신상": {
+      "src": "audio/sua/a697fbfabe4cb6caa748e79f.mp3",
+      "sha256": "2f2fd4460f65b11a0a674afac92178c6458360f460e3e6fa95c0d171f5f81fb6"
+    },
+    "금색 해": {
+      "src": "audio/sua/2fb986062423094522afda4c.mp3",
+      "sha256": "ca7859ccacf81c4c950e1a74bd1138a3363789c5fdf485046d3083a4d9a4b48b"
+    },
+    "페리토 모레노 빙하": {
+      "src": "audio/sua/e88b84f5794f39466faca0f4.mp3",
+      "sha256": "6d93dce29dea04dcaed3c1edbad9c3e6159827335d31d2ad050ef45a04c486f8"
+    },
+    "라마": {
+      "src": "audio/sua/405f39f11bc4a8682970b890.mp3",
+      "sha256": "ef1106a4380d69751fee16f1d17ba070eae978385f76a70498e06f96f971abdc"
+    },
+    "우유니 소금사막": {
+      "src": "audio/sua/f361d98426b7725635c522c7.mp3",
+      "sha256": "217579afc638829bd34bb14f454fb0e2c522c5d048bccf3e3944689d510a538e"
+    },
+    "큰부리새": {
+      "src": "audio/sua/75878851bcac189c093b06a7.mp3",
+      "sha256": "6235e130b504374731902173f91a49177767c72b337665b78af29d0196212481"
+    },
+    "설탕빵 산": {
+      "src": "audio/sua/387d08a7c0a3a5ac590024d7.mp3",
+      "sha256": "99f1ca29c18c899edbb093ce68bacaa5f8e200704b43c0656f4eff9f71e9a7ce"
+    },
+    "코피우에 꽃": {
+      "src": "audio/sua/e97e2ead10a52131547c76da.mp3",
+      "sha256": "90ab62200fe514885efdfc42a9cafc68cbda3950c031fc3941c0fa1fb9d000c0"
+    },
+    "모아이 석상": {
+      "src": "audio/sua/b45d0d146b9303e16abe35b5.mp3",
+      "sha256": "be94447a46a887b0c961b68b0b0694647534f5b08e25fa9a0b9ce0a01e37fbd7"
+    },
+    "에메랄드 원석": {
+      "src": "audio/sua/dae18b82c96b5f6e6f2e1520.mp3",
+      "sha256": "f680e8cb4f0208a3d6dacc24faa64fa0bdd035b76f85d345285714c2449ed922"
+    },
+    "엘 페뇰 바위": {
+      "src": "audio/sua/f4fc9a9971ba3c4bd18ba642.mp3",
+      "sha256": "cf8b9a04be2a6c0be827945768ac7c899f8e1cc91dde017b80e6fb8752dfebe7"
+    },
+    "갈라파고스 땅거북": {
+      "src": "audio/sua/4182617f0566e7a97ed30ae9.mp3",
+      "sha256": "c0c0613e5d27efc10ab142a8729116fc6969ecb476b2f3634c6e2f588677a052"
+    },
+    "빅토리아 수련": {
+      "src": "audio/sua/3a25247d8e16d9521e377be4.mp3",
+      "sha256": "b807365c1812177ac36912ed18b317a69ab2f7c939744d1733230c00345003a2"
+    },
+    "냔두티 레이스": {
+      "src": "audio/sua/e52a6bfc9135f9b5964b18ee.mp3",
+      "sha256": "37736757b26b3e1f1222cf08366cd057a0cc798f1e61b5286b9fe63ff7d3431d"
+    },
+    "안데스 감자": {
+      "src": "audio/sua/b41f5e38a81dfe8ab1c36bde.mp3",
+      "sha256": "58912270fa294f6061b1e8811b66f24ab84ac89e40bdc9fde469eceaee69235c"
+    },
+    "마추픽추": {
+      "src": "audio/sua/2f58f89d5b168ae5b7d0d8f9.mp3",
+      "sha256": "92802e6827eb09d22068bd92dfea14d40ceb54ca3664ea3112dc9e6d0fd7cea1"
+    },
+    "파야 로비": {
+      "src": "audio/sua/25aeee5fa1a2a54c3b56969b.mp3",
+      "sha256": "9aec91639d78dce635db35e59ecb4961593dc9b606a23063a4f2e221aaa6dc12"
+    },
+    "스틸팬": {
+      "src": "audio/sua/3e4fa06d546dc8c128bf813d.mp3",
+      "sha256": "50e038960eef5a8f6e65253ca6d6fbbacb65feb2435402b8cfa727161f095651"
+    },
+    "축구공": {
+      "src": "audio/sua/ae0ef98c41e7d941ea444b55.mp3",
+      "sha256": "c05d3d87c53af63014d7a614627cf6f1faa39a6eac26a33006e1574de58aa274"
+    },
+    "트루피알": {
+      "src": "audio/sua/92f495c977315d298a4e3b21.mp3",
+      "sha256": "9027379dad12cc6b318835a86ed03835d0afaad74a190e79cc504c828888e5fd"
+    },
+    "앙헬 폭포": {
+      "src": "audio/sua/0841c545579d87dfa8a920ab.mp3",
+      "sha256": "bbd134b16475da4a7a13907e62c0109c5b7c15ab70c426b2ac835242aa88401b"
+    },
+    "캥거루": {
+      "src": "audio/sua/09cff5ecf39945247589afed.mp3",
+      "sha256": "80cc792b61e8c543a14aec0bbc6b7fe097248c0f6dd7b77f6dc25576dacbe5e7"
+    },
+    "울루루": {
+      "src": "audio/sua/3150b50bae38a49e9e6bf9f4.mp3",
+      "sha256": "1ee23c607151511f04534b9adfd0d47ecae442092fbcab638031e9059b94463f"
+    },
+    "야프섬 돌 돈": {
+      "src": "audio/sua/ef37ea2f35b18726c597ebcd.mp3",
+      "sha256": "4c6e4c78088d6b9bbc378595cd900c4a298394bc5e264a0465ddbba81ba37427"
+    },
+    "난마돌": {
+      "src": "audio/sua/91f5dd8b25819599ce54e787.mp3",
+      "sha256": "9c2c1ddd6d3d8c2bacf7f3469c02dcb24305fc13ed4782101963930a7c415f3c"
+    },
+    "바나나": {
+      "src": "audio/sua/847abdedbc681ddc3cd39f00.mp3",
+      "sha256": "85e1f58f16750bfee6c5b8eb75cf58ff15900c34db9bd983a341ccef1608c5f7"
+    },
+    "군함조": {
+      "src": "audio/sua/9f0eead19c047f413ff8ab94.mp3",
+      "sha256": "62128ade157cbc96529561872ad35d446a4da7589b786f38b0f2be8f9295b916"
+    },
+    "섬의 해돋이": {
+      "src": "audio/sua/b45bac6e1507cefa14baaafb.mp3",
+      "sha256": "bbba7e170706385c619bec49a87a0124106513854fbe2fab8adc3721643e2f9a"
+    },
+    "스틱 차트": {
+      "src": "audio/sua/f6ce60e1e2eecc59268d7399.mp3",
+      "sha256": "883cef0b707b2d273a66dd5377b1345100850572421f2026b67ac08e0fc4a667"
+    },
+    "바다 위 섬": {
+      "src": "audio/sua/101559e128710eb6d48eb0b4.mp3",
+      "sha256": "5dc384e6d7ee20ee65f148b717a22dbe31a75ec82fa090cd513a292618bc5eaa"
+    },
+    "아니바레만": {
+      "src": "audio/sua/ce660665a30f27a2bcbcae2c.mp3",
+      "sha256": "c8a61619ec17456b8d9ce9a3c7bc656a565ce7438f40190791a0d4967915e987"
+    },
+    "키위 새": {
+      "src": "audio/sua/9523526848b2f5340388d0a3.mp3",
+      "sha256": "3c21f6b14a749ece495041a399f5b976ca690509dedf388cf3db01becc1ca45e"
+    },
+    "밀퍼드사운드": {
+      "src": "audio/sua/1c0ae2930ec91e3e3f518be6.mp3",
+      "sha256": "8486c9d225abe4f74a90f924c183366779758864981a8975e28d57514b0e9c24"
+    },
+    "노란 보름달": {
+      "src": "audio/sua/dd2d392037208ff76276fce8.mp3",
+      "sha256": "57209f69ce2a8badf66ed21e667e6cd7d5b21ce9e8c98b79fe4ddaf8911d9db8"
+    },
+    "해파리 호수": {
+      "src": "audio/sua/1c23d074f78e02c57aab7541.mp3",
+      "sha256": "b9d97a649703ec041e6daa4f5acc133ba2097aad9c31069c4031266df6f32c45"
+    },
+    "극락조": {
+      "src": "audio/sua/71dbcab4a269425c8ecff2f4.mp3",
+      "sha256": "177f02273c4a1ad226054efbc59d94b8d438e107aab888110ce31a01507b0281"
+    },
+    "전통 집 파레": {
+      "src": "audio/sua/594d2e4e3de30d895cb10863.mp3",
+      "sha256": "889be36894f5b93bbddfe97b31d5775a1cb66ab05b09448d085a720608b8cc7a"
+    },
+    "토수아 오션 트렌치": {
+      "src": "audio/sua/bfe1c951db95e1d300614c00.mp3",
+      "sha256": "373f76e267ef72ff01cdb32102a63a30c6f8e0bf2719d6b3cd33539d89dbef3a"
+    },
+    "조개 돈 목걸이": {
+      "src": "audio/sua/0482dd3fbef5b7cc73db6b7d.mp3",
+      "sha256": "c3d720baddbccc091d4d743749238723392a6d501d3d7e458702371018d40783"
+    },
+    "마로보 석호": {
+      "src": "audio/sua/178cbc4373c0bd962ecebac9.mp3",
+      "sha256": "03dd62a3128726d9b33c7acbe1ffa07c44c3d98911298658b49987a58d86466a"
+    },
+    "혹등고래와 새끼": {
+      "src": "audio/sua/a5327dbe93f8f785781da551.mp3",
+      "sha256": "3411ee03d0d06ca2095c6438c25b384f9127fa31efa77e6a02bf23ca0da7e781"
+    },
+    "마푸아 블로우홀": {
+      "src": "audio/sua/6b08e9041a0e421d7083d92d.mp3",
+      "sha256": "47ccca99085c677f1ea84846a1520b88f862fd3e28746a815abd5e5c251e240d"
+    },
+    "소라 껍데기": {
+      "src": "audio/sua/a8bdc0d2bc7af73d43588681.mp3",
+      "sha256": "d7c58323734a1a8149462c539ed052060a63b6acb02bb053078a9ba61317fffe"
+    },
+    "푸나푸티 활주로": {
+      "src": "audio/sua/5ffcb2d224ac681703221714.mp3",
+      "sha256": "cfeeba71cd97f6fffe9ca7d7c1d7b004c2e5710005cf73fe748aaa6adbcd2191"
+    },
+    "엄니와 고사리": {
+      "src": "audio/sua/97d367fc61d7856a6a96fac3.mp3",
+      "sha256": "2be559b4b6e6e28d4488e01edf8b8ffd6f57225490c0f0ef6d4f46cb42c07cd9"
+    },
+    "야수르 화산": {
+      "src": "audio/sua/80e8e27d6faea11c807cc622.mp3",
+      "sha256": "a3e937dd45366f7845489d6d9e8b0933a65a9c41b49ffa4e459a6f75555668f3"
     }
   }
 };

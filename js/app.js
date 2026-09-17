@@ -472,6 +472,51 @@
     if (s.mode !== 'voice') playMusic('start');
   }
 
+  /** 그 축으로 한 번도 만나지 않은 나라인지 읽기만 한다. 조회로 빈 기록을 만들지 않는다(도감 원칙과 같다). */
+  function needsMeet(q) {
+    if (!artFor(q.country.code, q.mode)) return false;
+    var records = store.allAxisStats ? store.allAxisStats(q.mode) : {};
+    var r = records && records[q.country.code];
+    return !r || !(r.seen > 0);
+  }
+
+  /** 🔊 단추 하나로 이름을 읽는다. data-speak 문구 뒤에 data-speak-extra 문구가 있으면 이어서 읽는다. */
+  function speakFromButton(t) {
+    var lines = [t.getAttribute('data-speak')];
+    var extra = t.getAttribute('data-speak-extra');
+    if (extra) lines.push(extra);
+    speakLines(t, lines, t.getAttribute('data-label') || '🔊 들어보기');
+  }
+
+  function speakLines(t, lines, label) {
+    // 읽어주기가 꺼져 있으면 눌러도 아무 일이 없었다. 켜 주고 바로 읽는다.
+    if (!store.settings().speak) {
+      store.updateSettings({ speak: true });
+      audio.setSpeakEnabled(true);
+      var chip = ui.$('#listen-tip') || ui.$('#heard');
+      if (chip) chip.textContent = '읽어주기를 켰어요';
+    }
+    if (state.cancelFeedbackVoice) state.cancelFeedbackVoice();
+    stopMusic();
+    var generation = state.feedbackGeneration;
+    var cancelled = false;
+    state.cancelFeedbackVoice = function () { cancelled = true; };
+    function nameCurrent() {
+      return !cancelled && generation === state.feedbackGeneration && !doc.hidden;
+    }
+    t.classList.remove('needs-tap');
+    t.textContent = label;
+    audio.stopSpeaking();
+    FQ.speech.stopAnd(function () {
+      if (!nameCurrent()) return;
+      audio.say(lines, {}, function () {
+        if (!nameCurrent()) return;
+        t.classList.add('needs-tap');
+        t.textContent = '🔊 다시 눌러서 듣기';
+      });
+    });
+  }
+
   /* =================== 퀴즈 화면 =================== */
   function renderQuiz() {
     cancelPendingFeedback();
@@ -488,6 +533,8 @@
     var q = g.current();
     var s = store.settings();
     var duel = g.players.length > 1;
+    // 처음 만나는 그림·명소는 채점 전에 먼저 알려 준다(2026-09-17). 그 축의 기록이 없는 나라만, 문제마다 한 번.
+    var meet = (q.mode === 'symbol' || q.mode === 'place') && state.metQuestion !== q && needsMeet(q);
 
     var stage;
     if (q.mode === 'symbol' || q.mode === 'place') {
@@ -496,12 +543,24 @@
       // 여기에 닿을 수 있다 — 그때 죽으면 아이가 시작을 눌러도 화면이 멈춘 채 아무 일도 안 난다.
       // 기다릴 그림이 아예 없으면 잠그지 않는다. 아이가 건너뛸 수 있어야 한다.
       state.artUnavailable = !!art;
-      stage = '<div class="flag-stage art-question"><div class="q-label">' +
-        (q.mode === 'place' ? '이 명소가 있는 나라는 어디일까요?' : '이 그림은 어느 나라를 떠올리게 하나요?') + '</div>' +
-        (art ? '<img id="question-art" src="' + esc(art.src) + '" alt="' + esc(art.alt) + '" width="1024" height="768">' +
+      // 그림 이름은 수아 음원으로 읽어 준다(2026-09-17 추가). 글자를 못 읽는 아이가 이름을 듣고 고른다.
+      var stageArtName = artAlt(q.country.code, q.mode);
+      var artImage = art ? '<img id="question-art" src="' + esc(art.src) + '" alt="' + esc(art.alt) + '" width="1024" height="768">' +
           '<p id="art-loading" role="status">그림을 불러오고 있어요…</p>' +
           '<div id="art-error" hidden><p>그림을 불러오지 못했어요.</p><button class="btn" id="art-retry" type="button">다시 불러오기</button></div>'
-          : '<div id="art-error"><p>그림을 불러오지 못했어요.</p></div>') + '</div>';
+          : '<div id="art-error"><p>그림을 불러오지 못했어요.</p></div>';
+      stage = meet
+        // 처음 만나는 그림은 문제보다 먼저 알려 준다. 나라 이름과 그림 이름을 함께 듣고 나서 같은 나라를 문제로 만난다.
+        ? '<div class="flag-stage art-question meet-card"><div class="q-label">처음 만나는 나라예요 · 먼저 들어 볼까요?</div>' +
+          artImage +
+          '<div class="big-name"><img class="map-question-flag" src="' + ui.flagSrc(q.country.code) + '" alt="' + esc(q.country.ko) + ' 국기"> ' + esc(q.country.ko) + '</div>' +
+          '<div class="meet-caption">' + esc(stageArtName) + '</div>' +
+          '<button class="btn btn-sm" id="meet-speak" data-speak="' + esc(q.country.ko) + '" data-speak-extra="' + esc(stageArtName) + '" data-label="🔊 다시 듣기" type="button">🔊 다시 듣기</button>' +
+          '<button class="btn btn-primary btn-big" id="meet-next" type="button" style="width:100%;margin-top:12px">문제 풀어 볼게요 →</button></div>'
+        : '<div class="flag-stage art-question"><div class="q-label">' +
+          (q.mode === 'place' ? '이 명소가 있는 나라는 어디일까요?' : '이 그림은 어느 나라를 떠올리게 하나요?') + '</div>' +
+          artImage +
+          (stageArtName ? '<button class="btn btn-sm" data-speak="' + esc(stageArtName) + '" type="button">🔊 들어보기</button>' : '') + '</div>';
     } else if (q.mode === 'map') {
       stage = '<div class="flag-stage map-question">' +
         '<div class="q-label">이 나라는 어디에 있을까요?</div>' +
@@ -572,8 +631,8 @@
         '<div class="quiz-body' + (q.mode === 'map' ? ' map-quiz' : '') + '">' +
           '<div>' + stage + '</div>' +
           '<div>' +
-            '<div id="answer-area">' + answerArea(q) + '</div>' +
-            '<div class="row" style="margin-top:14px">' +
+            '<div id="answer-area"' + (meet ? ' hidden' : '') + '>' + answerArea(q) + '</div>' +
+            '<div class="row" style="margin-top:14px' + (meet ? ';display:none' : '') + '">' +
               '<button class="btn btn-sm" id="hint" type="button">💡 같이 보기</button>' +
               '<button class="btn btn-sm btn-ghost" id="skip" type="button">🤷 모르겠어요</button>' +
             '</div>' +
@@ -585,35 +644,22 @@
 
     var m = ui.setMain(html);
 
-    ui.on(m, '[data-speak]', 'click', function (e, t) {
-      // 읽어주기가 꺼져 있으면 눌러도 아무 일이 없었다. 켜 주고 바로 읽는다.
-      if (!store.settings().speak) {
-        store.updateSettings({ speak: true });
-        audio.setSpeakEnabled(true);
-        var chip = ui.$('#listen-tip') || ui.$('#heard');
-        if (chip) chip.textContent = '읽어주기를 켰어요';
-      }
-      if (state.cancelFeedbackVoice) state.cancelFeedbackVoice();
-      stopMusic();
-      var name = t.getAttribute('data-speak');
-      var generation = state.feedbackGeneration;
-      var cancelled = false;
-      state.cancelFeedbackVoice = function () { cancelled = true; };
-      function nameCurrent() {
-        return !cancelled && generation === state.feedbackGeneration && !doc.hidden;
-      }
-      t.classList.remove('needs-tap');
-      t.textContent = '🔊 들어보기';
-      audio.stopSpeaking();
-      FQ.speech.stopAnd(function () {
-        if (!nameCurrent()) return;
-        audio.say([name], {}, function () {
-          if (!nameCurrent()) return;
-          t.classList.add('needs-tap');
-          t.textContent = '🔊 다시 눌러서 듣기';
-        });
+    ui.on(m, '[data-speak]', 'click', function (e, t) { speakFromButton(t); });
+
+    if (meet) {
+      // 만나기 카드: 채점 없이 나라 이름과 그림 이름을 들려주고, 아이가 누르면 같은 나라를 문제로 낸다.
+      state.meeting = true;
+      ui.$('#meet-next', m).addEventListener('click', function () {
+        if (state.game !== g || g.current() !== q) return;
+        state.metQuestion = q;
+        state.meeting = false;
+        audio.stopSpeaking();
+        renderQuiz();
       });
-    });
+      speakLines(ui.$('#meet-speak', m), [q.country.ko, artAlt(q.country.code, q.mode)], '🔊 다시 듣기');
+    } else {
+      state.meeting = false;
+    }
     ui.$('#quit', m).addEventListener('click', function () {
       var g2 = state.game;
       var played = g2 ? g2.index : 0;
@@ -650,7 +696,7 @@
         ui.$('#skip', m).disabled = false;
         ui.$('#hint', m).disabled = state.usedHint;
         if (unavailable) stopTimer();
-        else if (s.timer && !state.timerId) startTimer();
+        else if (s.timer && !state.timerId && !meet) startTimer();
       }
       questionArt.addEventListener('error', function () { artState('error'); });
       questionArt.addEventListener('load', function () { artState('ready'); });
@@ -658,7 +704,7 @@
       artState(questionArt.complete ? (questionArt.naturalWidth > 0 ? 'ready' : 'error') : 'loading');
     }
     preloadNext();
-    if (!state.artUnavailable && !state.timerId) startTimer();
+    if (!meet && !state.artUnavailable && !state.timerId) startTimer();
 
     if (q.mode === 'voice') {
       state.listenOn = true;
@@ -1012,7 +1058,8 @@
 
   /* --------- 제출 --------- */
   function submit(payload, gaveUp) {
-    if (state.answered || state.artUnavailable) return;
+    // 만나기 카드가 떠 있는 동안은 채점하지 않는다(숫자 키 등 우회 입력 포함).
+    if (state.answered || state.artUnavailable || state.meeting) return;
     state.answered = true;
     stopTimer();
     // 마이크는 showFeedback 에서 놓는다. 놓인 것을 확인한 뒤에 읽어 줘야
@@ -1099,12 +1146,13 @@
     if (cTitle) cTitle.textContent = res.chest ? '여행책에 다섯 장이 모였어요' :
       '여행 카드 ' + chestNow.into + ' / ' + chestNow.need + '장 · 상자까지 ' + chestNow.left + '장';
 
-    // 정오답 모두 이름 한 번과 쉬운 설명 한 문장만 읽는다.
+    // 정오답 모두 이름 한 번과 쉬운 설명 한 문장만 읽는다. 그림 문제는 나라 이름 뒤에 그림 이름을 한 번 더 읽어 쌍을 잇는다.
     var isCapitalQ = q.mode === 'capital';
     var isMapQ = q.mode === 'map';
     var isArtQ = q.mode === 'symbol' || q.mode === 'place';
+    var feedbackArtName = isArtQ ? artAlt(c.code, q.mode) : '';
     state.lastSpeech = {
-      lines: isCapitalQ ? [c.capital, c.ko + '의 수도예요'] : (isMapQ || isArtQ) ? [c.ko, c.fact] : [c.ko, c.flagHint],
+      lines: isCapitalQ ? [c.capital, c.ko + '의 수도예요'] : isArtQ ? [c.ko, feedbackArtName, c.fact].filter(Boolean) : isMapQ ? [c.ko, c.fact] : [c.ko, c.flagHint],
       opts: { rate: 0.93, pitch: 1.1 }
     };
     var feedbackSpeech = state.lastSpeech;
