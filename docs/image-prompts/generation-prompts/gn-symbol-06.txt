@@ -1,4 +1,6 @@
-SUBJECT: One djembe drum with a goblet shaped wooden body, a taut pale goat skin head, a black rope lacing pattern and a narrow open base, standing upright alone.
+Use case: illustration-story
+Asset type: FlagQuiz country-symbol quiz card
+Primary request: One djembe drum with a goblet shaped wooden body, a taut pale goat skin head, a black rope lacing pattern and a narrow open base, standing upright alone.
 Keep the goblet silhouette with one wide drum head on top, rope lacing down the body and a narrow flared foot; no drummer, hands, writing or decorative flag pattern.
 
 COMPOSITION (identical for every image in this set): one single subject, centered, whole, never touched or cut by the frame edge. Eye-level camera tilted about 10 degrees above the subject; the subject turned slightly toward the viewer's left. The subject fills about 70 percent of the frame height. Keep empty background on all four sides, and at least 12 percent of the frame width empty at the left and right edges so the picture can be cropped to a 4:3 rectangle later without touching the subject. The background is one flat solid colour, pale blue-grey #F1F5FB — no gradient, no texture, no horizon line, no ground plane, no scenery, no props. The only shadow is one small soft blurred oval directly under the subject.

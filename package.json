@@ -18,7 +18,7 @@
     "map:build": "node scripts/build-map.mjs",
     "subjects:build": "node scripts/build-subjects.mjs",
     "images:lint": "node scripts/image-ledger.mjs lint",
-    "images:prompts": "node scripts/build-image-prompts.mjs --board",
+    "images:prompts": "node scripts/build-image-prompts.mjs --style b --board",
     "images:prepare": "node scripts/prepare-images.mjs",
     "images:check": "node scripts/check-images.mjs",
     "images:contact": "node scripts/image-ledger.mjs contact",

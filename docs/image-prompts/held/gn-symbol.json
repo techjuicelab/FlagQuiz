@@ -1,7 +1,7 @@
 {
   "id": "gn-symbol",
-  "status": "held",
-  "reason": "원본과 4회 재생성에서 코라의 21현을 확인하지 못함. 예비 젬베 북 변경 여부 사용자 답변 대기.",
+  "status": "resolved",
+  "reason": "코라를 5회 시도해도 21현 구조를 그리지 못해 2026-09-17 사용자 결정으로 젬베 북으로 교체했다. 코라의 tries·failureCount 5 이력은 보존하며, 젬베 최종 그림 승인으로 이 보류는 해결됐다.",
   "attempts": [
     {
       "id": "gn-symbol",
@@ -91,5 +91,57 @@
       "lastAttempt": 5
     }
   ],
-  "humanApproval": false
+  "humanApproval": false,
+  "substitutedTo": "젬베 북",
+  "decidedOn": "2026-09-17",
+  "resolution": {
+    "status": "approved-image",
+    "resolvedAt": "2026-09-17",
+    "subject": "젬베 북",
+    "productionRecord": "docs/image-prompts/production.json#gn-symbol",
+    "attempts": [
+      {
+        "attempt": 6,
+        "source": "/Users/techjuice/.codex/generated_images/01a0acbc-eb32-7ee1-b233-d2788eb6c507/exec-d4c739dc-7600-4ece-9d71-5b46a4a044ff.png",
+        "output": "docs/artifacts/art-production-2026-09-17/variants/africa/raw/gn-symbol-06.png",
+        "sha256": "3141c7ca3f4f4702ab4b955dc29bb960e6a1b9d53b63eb9dc5ab6ea9ee37b912",
+        "prompt": "docs/image-prompts/generation-prompts/gn-symbol-06.txt",
+        "promptSha256": "984a444171605374c80b5196017c2d367313cdb7b81f949a8601014c84d4c026",
+        "width": 1448,
+        "height": 1086,
+        "status": "rejected",
+        "tool": "builtin-image_gen",
+        "humanApproval": false,
+        "visualReview": "not adopted: subject height was too large and the base did not read as open"
+      },
+      {
+        "attempt": 7,
+        "source": "/Users/techjuice/.codex/generated_images/01a0acbc-eb32-7ee1-b233-d2788eb6c507/exec-9be66a19-4c89-40dd-b5d9-7d1d843fdd5f.png",
+        "output": "docs/artifacts/art-production-2026-09-17/variants/africa/raw/gn-symbol-07.png",
+        "sha256": "e2bf31ef47e7327eeeb45f0b1ebfa2ac5674a329b017947369476a2c275f9e4e",
+        "prompt": "docs/image-prompts/generation-prompts/gn-symbol-07.txt",
+        "promptSha256": "054bb0e11db61ef88b0a2e34511bee499af368d7923c752b1587bccca092010c",
+        "width": 1448,
+        "height": 1086,
+        "status": "rejected",
+        "tool": "builtin-image_gen",
+        "humanApproval": false,
+        "visualReview": "not adopted: the initial review still found the composition and flatness too uncertain"
+      },
+      {
+        "attempt": 8,
+        "source": "/Users/techjuice/.codex/generated_images/01a0acbc-eb32-7ee1-b233-d2788eb6c507/exec-2824269a-a954-4412-bc13-5e8f57b9fbb6.png",
+        "output": "docs/artifacts/art-production-2026-09-17/raw/gn-symbol.png",
+        "sha256": "b0f495bce92c24fcd4cc0e2fa30182fa6816c51fadb05acf22df01fc9029148a",
+        "prompt": "docs/image-prompts/generation-prompts/gn-symbol-08.txt",
+        "promptSha256": "1b91bba6186fb716890edec9a5bc5755fea364108907c6fcd070dc3b3036a630",
+        "width": 1448,
+        "height": 1086,
+        "status": "approved-image",
+        "tool": "builtin-image_gen",
+        "humanApproval": false,
+        "visualReview": "accepted after independent visual review: open base, one djembe, no text/flag/person, approximately 70 percent height and one shadow"
+      }
+    ]
+  }
 }

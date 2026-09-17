@@ -3520,6 +3520,46 @@
       }
     },
     {
+      "id": "gn-symbol",
+      "sourceFile": "docs/artifacts/art-production-2026-09-17/raw/gn-symbol.png",
+      "nativeSource": "/Users/techjuice/.codex/generated_images/01a0acbc-eb32-7ee1-b233-d2788eb6c507/exec-2824269a-a954-4412-bc13-5e8f57b9fbb6.png",
+      "sourceSha256": "b0f495bce92c24fcd4cc0e2fa30182fa6816c51fadb05acf22df01fc9029148a",
+      "output": "images/symbols/gn.webp",
+      "outputSha256": "cb715b0855fb15cfbb022da8e2832dcf89e403b9ec0b4322ff15f4753d96572f",
+      "actualPrompts": [
+        {
+          "attempt": 6,
+          "path": "docs/image-prompts/generation-prompts/gn-symbol-06.txt",
+          "sha256": "984a444171605374c80b5196017c2d367313cdb7b81f949a8601014c84d4c026"
+        },
+        {
+          "attempt": 7,
+          "path": "docs/image-prompts/generation-prompts/gn-symbol-07.txt",
+          "sha256": "054bb0e11db61ef88b0a2e34511bee499af368d7923c752b1587bccca092010c"
+        },
+        {
+          "attempt": 8,
+          "path": "docs/image-prompts/generation-prompts/gn-symbol-08.txt",
+          "sha256": "1b91bba6186fb716890edec9a5bc5755fea364108907c6fcd070dc3b3036a630"
+        }
+      ],
+      "conversion": {
+        "tool": "sips + cwebp",
+        "width": 1024,
+        "height": 768,
+        "quality": 80,
+        "inset": 0.01
+      },
+      "review": {
+        "reviewer": "Codex",
+        "humanApproval": false,
+        "result": "accepted",
+        "originalAndWebp": true,
+        "notes": "코라 5회 보류 뒤 젬베를 3회 제작했다. 앞의 두 젬베 후보는 크기·배경·열린 받침 검수에서 채택하지 않았고, 세 번째 후보는 열린 하단·단일성·무글자·무국기·무인물·약 70% 높이·4:3·단일 하단 그림자를 교차 검수해 채택했다. 최종 WebP에서 원본 전체와 1% 여백 보정을 함께 확인했다.",
+        "independentReview": "/root/third_art_review"
+      }
+    },
+    {
       "id": "gq-symbol",
       "sourceFile": "docs/artifacts/art-production-2026-09-15/raw/gq-symbol.png",
       "nativeSource": "/Users/techjuice/.codex/generated_images/01a0a4aa-7e36-74a0-adde-8efe75cc150d/exec-4307d42d-bad6-4b9d-9370-5fad27d96299.png",

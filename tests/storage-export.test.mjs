@@ -217,6 +217,9 @@ test('딸 수 없는 도장은 도감에 아예 그리지 않는다', () => {
   // 그림이 보류된 나라와 명소가 없는 나라는 그 축으로 출제되지 않는다.
   // 도장 자리를 남겨 두면 아이가 영원히 못 채우는 칸이 된다.
   const f = screenFixture();
+  const heldCode = f.c.FQ.countries.find((country) => f.c.FQ.subjects[country.code]?.symbol)?.code;
+  assert.ok(heldCode, '보류 도장 동작을 검증할 상징물 소재가 없다');
+  f.c.FQ.subjects[heldCode].symbol.noArt = true;
   f.storage.updateSettings({ dev: { art: true } });
   f.c.FQ.screens.dex('all');
   const html = f.node('#dex-list').innerHTML;
@@ -236,6 +239,6 @@ test('딸 수 없는 도장은 도감에 아예 그리지 않는다', () => {
     // 위치 도장은 194개국 모두 딸 수 있다.
     assert.ok(cell.includes('data-axis="map"'), c.code + ' 에 위치 도장이 없다');
   }
-  assert.ok(checkedHeld > 0, '이 검사는 보류가 최소 1건일 때를 고정한다');
+  assert.equal(checkedHeld, 1, '주입한 보류 상징물의 도장만 숨겨야 한다');
   assert.ok(checkedNoPlace > 0, '이 검사는 명소 없는 나라가 있을 때를 고정한다');
 });

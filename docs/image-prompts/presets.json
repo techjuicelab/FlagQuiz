@@ -4739,12 +4739,12 @@
       "id": "gn-symbol",
       "code": "gn",
       "kind": "symbol",
-      "koRaw": "커다란 박에 줄을 스물한 개 맨 악기 코라",
-      "koApprove": "코라 악기",
-      "subjectEn": "One kora has a large round brown calabash body covered by a pale hide soundboard, a long upright wooden neck and exactly twenty one fine strings spreading over a tall central bridge.",
+      "koRaw": "젬베 북 — 잔 모양 나무 몸통에 염소 가죽을 씌우고 검은 줄로 조인 손북",
+      "koApprove": "젬베 북",
+      "subjectEn": "One djembe drum with a goblet shaped wooden body, a taut pale goat skin head, a black rope lacing pattern and a narrow open base, standing upright alone.",
       "accuracy": false,
-      "override": "Keep exactly twenty one strings, the large gourd resonator and two short handgrips clearly visible; no musician, face, writing or decorative flag pattern.",
-      "substitutedFrom": null,
+      "override": "Keep the goblet silhouette with one wide drum head on top, rope lacing down the body and a narrow flared foot; no drummer, hands, writing or decorative flag pattern.",
+      "substitutedFrom": "코라 악기",
       "keepsBackdrop": false,
       "continent": "아프리카",
       "category": "만든것",
@@ -4755,9 +4755,9 @@
         "줄 악기·관악기"
       ],
       "csvStatus": "final",
-      "status": "held",
-      "tries": 5,
-      "bytes": null,
+      "status": "approved-image",
+      "tries": 8,
+      "bytes": 19382,
       "outputStem": "images/symbols/gn",
       "textReview": {
         "reviewer": "Codex",
@@ -4766,14 +4766,17 @@
         "date": "2026-09-15"
       },
       "failureCount": 5,
-      "holdReason": "원본과 4회 재생성에서 코라의 21현을 확인하지 못함. 예비 젬베 북 변경 여부 사용자 답변 대기.",
-      "generatedAt": "2026-09-15",
+      "holdReason": "코라를 5회 시도해도 21현 구조를 그리지 못해 2026-09-17 사용자 결정으로 젬베 북으로 교체했다. 기존 failureCount 5는 코라 보류 이력이며, 젬베 최종 그림은 별도로 승인했다.",
+      "generatedAt": "2026-09-17",
       "imageReview": {
         "reviewer": "Codex",
         "humanApproval": false,
-        "result": "held",
-        "notes": "21현·높은 브리지 조건 미충족. 배포 파일 없음."
-      }
+        "result": "accepted",
+        "notes": "코라 보류 이력 5회 뒤 젬베 후보 3회를 제작했다. 앞의 두 후보는 구도·바탕·열린 받침 검수에서 채택하지 않았고, 세 번째 후보는 열린 하단, 단일성, 무글자·무국기·무인물, 약 70% 높이, 4:3, 단일 하단 그림자를 원본·최종 WebP에서 교차 검수해 승인했다.",
+        "independentReview": "/root/third_art_review"
+      },
+      "substitutedOn": "2026-09-17",
+      "productionRecord": "docs/image-prompts/production.json#gn-symbol"
     },
     {
       "id": "gq-symbol",
