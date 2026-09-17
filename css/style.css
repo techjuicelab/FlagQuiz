@@ -1774,3 +1774,6 @@ button.cont-item:focus-visible { outline: 3px solid var(--accent); outline-offse
 /* D1 후속: 명소 정답 카드의 수도 한 줄 + 듣기 단추 */
 .remember-capital { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-weight: 800; flex-wrap: wrap; }
 .remember-capital .cap-listen { min-width: 44px; padding: 8px 10px; }
+
+/* 수도 듣고 국기 찾기: 🔊 는 88px 로 크게(시안 PhoneCapital) */
+.capital-question .btn-listen { min-height: 88px; font-size: 1.5rem; }

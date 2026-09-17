@@ -1148,8 +1148,9 @@ test('수도 놀이는 처음 만나는 나라에 만나기 카드(국기·나�
 test('수도 문제는 큰 🔊 가 수도 이름을 자동으로 한 번 읽고, 보기는 국기 4장(나라 이름 작게)이며 답은 나라 code 로 채점한다',()=>{
   const f=fixture();f.c.FQ.storage.updateSettings({mode:'capital'});f.c.FQ.app.startGame(['mx']);meetNext(f);
   const a=f.c.FQ.test,q=a.state.game.current(),html=f.node('main').innerHTML,mx=f.c.FQ.quiz.byCode('mx');
-  // 무대(시안 PhoneCapital): 작은 지시문 → 88px 노란 🔊 '눌러서 들어보기' → 보조 글자 수도 이름. 국기·나라 이름은 무대에 없다(답이 된다).
-  assert.match(html,/<div class="flag-stage capital-question"><div class="q-label">🏙️ 어느 나라의 수도일까요\?<\/div><button class="btn btn-listen capital-listen" id="capital-listen" data-speak="멕시코시티" data-label="🔊 눌러서 들어보기" type="button" style="min-height:88px;font-size:1\.5rem">🔊 눌러서 들어보기<\/button><div class="big-name capital-name muted">멕시코시티<\/div><\/div>/);
+  // 무대(시안 PhoneCapital): 작은 지시문 → 88px 노란 🔊 '눌러서 들어보기'(CSS 규칙) → 보조 글자 수도 이름. 국기·나라 이름은 무대에 없다(답이 된다).
+  assert.match(css,/\.capital-question \.btn-listen \{ min-height: 88px; font-size: 1\.5rem; \}/);
+  assert.match(html,/<div class="flag-stage capital-question"><div class="q-label">🏙️ 어느 나라의 수도일까요\?<\/div><button class="btn btn-listen capital-listen" id="capital-listen" data-speak="멕시코시티" data-label="🔊 눌러서 들어보기" type="button">🔊 눌러서 들어보기<\/button><div class="big-name capital-name muted">멕시코시티<\/div><\/div>/);
   const stage=html.match(/<div class="flag-stage capital-question">[\s\S]*?<div id="feedback-area">/)[0];
   assert.doesNotMatch(stage,/flags\/mx|>멕시코</);
   // 보기: 그림 놀이와 같은 국기 격자 부품, 4장, 나라 중복 없음, 정답 포함, 수도 이름은 보기에 없다.

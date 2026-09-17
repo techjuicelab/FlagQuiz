@@ -1590,7 +1590,7 @@ await check({
   }
   const SPOT = [
     ['design/SPEC.md', 37, '44px'],
-    ['css/style.css', 531, 'prefers-reduced-motion'],
+    ['css/style.css', null, 'prefers-reduced-motion'],   // 줄 번호 대신 규칙의 존재만 본다 — CSS 를 앞에 더해도 검사가 흔들리지 않게
     ['js/effects.js', 7, 'reducedMotion'],
     ['js/effects.js', 80, 'celebrate'],
     ['index.html', 32, 'aria-live']
@@ -1598,6 +1598,7 @@ await check({
   for (const [file, line, keyword] of SPOT) {
     if (!exists(file) || !src.includes(file)) continue;
     const all = read(file).split('\n');
+    if (line === null) { t.ok(all.some((l) => l.includes(keyword)), file + ' 에 ' + keyword + ' 규칙이 없다'); continue; }
     const near = all.slice(Math.max(0, line - 4), line + 3).join('\n');
     if (!near.includes(keyword)) {
       const real = all.findIndex((l) => l.includes(keyword)) + 1;

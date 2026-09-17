@@ -865,7 +865,7 @@
         : '<div class="flag-stage capital-question">' +
           '<div class="q-label">🏙️ 어느 나라의 수도일까요?</div>' +
           // 88px 는 이 단추만의 크기라 인라인으로 둔다(.btn-listen 은 폰 56px·아이패드 64px). 라벨은 speakLines 가 textContent 로 바꾸므로 글자 그대로.
-          '<button class="btn btn-listen capital-listen" id="capital-listen" data-speak="' + esc(q.country.capital) + '" data-label="🔊 눌러서 들어보기" type="button" style="min-height:88px;font-size:1.5rem">🔊 눌러서 들어보기</button>' +
+          '<button class="btn btn-listen capital-listen" id="capital-listen" data-speak="' + esc(q.country.capital) + '" data-label="🔊 눌러서 들어보기" type="button">🔊 눌러서 들어보기</button>' +
           '<div class="big-name capital-name muted">' + esc(q.country.capital) + '</div>' +
         '</div>';
     } else {
