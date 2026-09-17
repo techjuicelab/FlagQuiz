@@ -7,7 +7,7 @@
 - **B 화풍 최종 그림 342/342개**: 상징물 194/194, 대표 명소 148/148. 기니 상징물은 코라 보류 이력을 보존한 채 젬베 북으로 교체했고, 독립 시각 검수·WebP 변환·전량 파일 검사를 통과했다. 보호자 개별 승인이나 아이 인지 검사를 했다는 뜻은 아니다.
 - **나라 위치 핀·상징물·명소 퀴즈 구현 완료**. 지도는 194개 핀과 402개 육지 서브패스이며, 새 축의 정오답 기록은 기존 국기 기록과 분리한다.
 - **그림 공개 상태**: `js/features.js` 기본값 `art: true` 에서 `noArt` 소재는 0개이며, 전량 필수 게이트 `FQ_REQUIRE_ART=1`도 통과한다. 기니의 최종 경로는 `images/symbols/gn.webp`다.
-- **병합·배포**: `claude/flag-game-expansion-design-rpv24x` 는 [PR #12](https://github.com/techjuicelab/FlagQuiz/pull/12)로 2026-09-16 main 에 병합됐고(67b887f), GitHub Pages 에 배포됐다. 배포 사이트의 `features.js` 도 `art: true` 다.
+- **병합·배포**: `claude/flag-game-expansion-design-rpv24x` 는 [PR #12](https://github.com/techjuicelab/FlagQuiz/pull/12)로 2026-09-16 main 에 병합됐다. 기니 젬베 커밋 `a74c445`의 [GitHub Pages 배포](https://github.com/techjuicelab/FlagQuiz/actions/runs/35167904817)는 성공했고, 공개 `gn.webp`는 HTTP 200·`image/webp`·19,382 bytes·승인 SHA로 응답했다.
 - **2026-09-17 추가 작업**: 기니 상징물을 젬베 북으로 교체해 최종 승인했다. 후보 3회 중 앞의 2회는 채택하지 않았고, 3번째 후보만 열린 하단·단일성·무글자·무국기·무인물·약 70% 높이·4:3·단일 하단 그림자를 교차 검수해 채택했다. 수아 음원에 상징물·명소 이름 342개를 추가해 총 1,319문구가 됐고(HANDOFF 금지 6 해제), 그림 문제·정답 카드·도감에서 그림 이름을 읽어 준다.
 
 ## 남은 일
@@ -15,7 +15,7 @@
 | 항목 | 상태와 다음 조건 |
 | --- | --- |
 | 기니 그림 1개 | 완료. 2026-09-17 사용자 결정으로 소재를 **젬베 북**으로 교체했고(SUBJECTS.csv·presets.json·settings.csv·prompts/gn-symbol.txt), `approved-text` → 원본 보존 → `images:prepare` → `approved-image` 기록 → subjects/contact/prompts 재생성 → 전수 검사 순으로 마쳤다. 코라는 예비1 및 실패 5회 이력으로 보존한다. |
-| 그림 전량 공개 | 완료. `art` 기본값은 이미 켜져 있고, 기니 `noArt`를 해제해 342개 필수 게이트·엄격 빌드·실제 브라우저 GN 디코딩을 통과했다. main 반영 및 GitHub Pages 공개 응답은 이 변경의 배포 단계에서 별도로 확인한다. |
+| 그림 전량 공개 | 완료. `art` 기본값은 이미 켜져 있고, 기니 `noArt`를 해제해 342개 필수 게이트·엄격 빌드·실제 브라우저 GN 디코딩을 통과했다. `a74c445`를 main에 반영하고 GitHub Pages 공개 자산의 HTTP 200·`image/webp`·19,382 bytes·SHA 일치까지 확인했다. |
 | 아이패드 실기기 | 설치형 Safari PWA에서 비행기 모드 앱·국기·수아 재생, 기존 114MB 음원 재다운로드 없음 확인이 남았다. macOS 브라우저 검증으로 완료 처리하지 않았다. |
 | 보호자·아이 검수 | 소재 문장·B 앵커·4세 인지 및 선호 확인은 수행하지 않았다. 원장에 `humanApproval: false`로 기록했다. |
 
@@ -30,7 +30,7 @@
 | 4 제작 도구 | CSV·원장·문장 lint·프롬프트 조립·오프라인 보드·WebP 변환·파일 검수·컨택트시트·후속 회차 기록 | 없음 |
 | 5 소재·파일럿·앵커 | 342개 문장 개별 작성 및 에이전트 교차 검토, 사용자 B 선택 반영, B 8종 파일럿 검수와 앵커 1장 등록 | 보호자·아이 평가 |
 | 6 그림·앱 배선 | 342개 B 그림, 생성·수정 이력, 소재 이름 연결, 그림 로딩 전 타이머·채점 차단, 오류 재시도, 지도 핀 선택 퀴즈 | 실제 아이 인지 확인 |
-| 7 전량 공개 | 342개 필수 게이트·엄격 빌드·GN 실제 브라우저 디코딩 | main 반영·GitHub Pages 공개 응답 확인 |
+| 7 전량 공개 | 342개 필수 게이트·엄격 빌드·GN 실제 브라우저 디코딩·main GitHub Pages 공개 응답 | 없음 |
 | 지도 독립 트랙 | 원자료 획득·조인·공유 경계 단순화·핀 보정·정합성·출처·44px 터치 핀 | 실기기 사용성 |
 
 사용자의 후속 지시인 전체 구현·B 선택·나라 위치 핀 선택에 따라 구현과 제작을 진행했다. 과거의 '1~4단계 미착수', '342장 생성 금지', '화풍 미정' 상태는 현재 진행 상태가 아니다. 승인받지 않은 실기기 확인이나 보호자 검수를 완료로 바꾸지는 않았다.
@@ -57,6 +57,7 @@
 | `npm run images:lint` / `images:check` | 성공. 최종 파일 342개·승인 342개·헤더 342개, 실패 0·경고 0 |
 | 전량 필수 빌드 | `FQ_REQUIRE_ART=1 node scripts/build-site.mjs` **성공**. 342개 그림·1,319개 Sua 음원·음악 16개를 포함한 배포 파일을 만들었다. |
 | 실제 브라우저 전수 로딩 | 기존 341개 전수 `Image.decode()` 성공에 더해, GN 최종 WebP도 격리 Chrome의 `HTMLImageElement.decode()`에서 **1024×768**으로 성공했다. |
+| GitHub Pages 공개 자산 | `a74c445`의 배포 워크플로 test·deploy 성공 후 `https://techjuicelab.github.io/FlagQuiz/images/symbols/gn.webp`가 HTTP **200**·`image/webp`·**19,382 bytes**·SHA `cb715b…6572f`로 응답했다. |
 | 지도 재현 | 바다 핀 **10 → 0**, 면적 0 서브패스 **1 → 0**. 194개 핀·402개 서브패스 |
 
 요청한 검사 원문을 요약 없이 저장했다: [npm test](verification/2026-09-16-completion/npm-test.txt), [기본 verify 전문](verification/2026-09-16-completion/verify.txt), [심화 verify 전문](verification/2026-09-16-completion/verify-deep.txt), [전체 증거 안내](verification/2026-09-16-completion/README.md).
