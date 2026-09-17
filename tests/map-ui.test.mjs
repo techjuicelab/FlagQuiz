@@ -137,3 +137,20 @@ test('지도 승인 범위 검사는 map.js만 허용하고 임의 스크립트�
   assert.match(failures(actual.concat('map-extra.js')).join('\n'), /승인 범위 밖/);
   assert.match(failures(actual.filter((file) => file !== 'app.js')).join('\n'), /기존 파일/);
 });
+
+test('폰 세로에서는 지도판을 위아래로 늘리고 핀은 44px 기본을 지킨 채 넓은 화면에서만 52·56px 로 키운다', () => {
+  const css = read('css/map.css');
+  // 첫 .map-board .map-pin 블록(기본 44px)은 그대로다 — chooseOptions 의 44px 분리 규칙과 같은 수다.
+  const base = css.match(/\.map-board \.map-pin\s*\{([^}]+)\}/)[1];
+  assert.match(base, /width:\s*44px/);
+  // 폰 세로: 342×250 비율(2:1 의 약 1.46배). 육지 svg 의 preserveAspectRatio="none" 은 app.js 가 렌더 뒤에 붙인다(map.js 는 그대로).
+  assert.match(css, /@media \(max-width: 743px\) and \(orientation: portrait\) \{\s*\.map-surface \{ aspect-ratio: 342 \/ 250; \}\s*\}/);
+  assert.doesNotMatch(read('js/map.js'), /preserveAspectRatio/);
+  assert.match(read('js/app.js'), /land\.setAttribute\('preserveAspectRatio', 'none'\)/);
+  // 핀 확대는 폭 조건 안에서만. 기본 상태(<360px)는 44px 그대로다.
+  assert.match(css, /@media \(min-width: 360px\) \{\s*\.map-board \.map-pin \{ width: 52px; min-width: 52px; max-width: 52px; height: 52px; min-height: 52px; max-height: 52px; \}/);
+  assert.match(css, /@media \(min-width: 744px\) \{\s*\.map-board \.map-pin \{ width: 56px; min-width: 56px; max-width: 56px; height: 56px; min-height: 56px; max-height: 56px; \}/);
+  assert.doesNotMatch(css, /@keyframes|animation\s*:|opacity:\s*0/);
+  // 아이패드 가로 두 칸 배치는 그대로다.
+  assert.match(css, /@media \(min-width: 760px\) and \(orientation: landscape\) \{[^@]*grid-template-columns: minmax\(0, 5fr\) minmax\(0, 7fr\)/);
+});

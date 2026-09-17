@@ -66,3 +66,21 @@
   .quiz-body.map-quiz .map-question { margin-bottom: 0; }
   .quiz-body.map-quiz .map-question-flag { width: 120px; height: 80px; }
 }
+
+/* 폰 세로(2026-09-17 시안 PhoneMap): 지도판을 위아래로 약 1.46배 늘려(342×250) 남쪽 핀에도 손가락이 닿게 한다.
+   육지 svg 는 app.js 가 preserveAspectRatio="none" 을 붙여 판을 꽉 채우고, 핀은 판의 % 좌표라 육지와 함께 늘어난다 —
+   좌표 공식과 chooseOptions 의 분리 규칙(280px 판·44px 사각)은 그대로다. 판이 2:1 인 아이패드에서는 아무 변화가 없다. */
+@media (max-width: 743px) and (orientation: portrait) {
+  .map-surface { aspect-ratio: 342 / 250; }
+}
+.map-surface { background: var(--bg); border-radius: 12px; }
+/* 핀: 기본 44px 은 위 규칙 그대로. 폭이 넉넉하면 52·56px 로 키운다 — 280px 판에서 44px 이 안 겹치는 조합은 폭에 비례해 더 벌어진다. */
+.map-dot { width: 32px; height: 32px; font-size: 1rem; box-shadow: 0 0 0 3px var(--card), 0 6px 18px rgba(31, 41, 55, .28); }
+@media (min-width: 360px) {
+  .map-board .map-pin { width: 52px; min-width: 52px; max-width: 52px; height: 52px; min-height: 52px; max-height: 52px; }
+  .map-dot { width: 40px; height: 40px; font-size: 1.25rem; }
+}
+@media (min-width: 744px) {
+  .map-board .map-pin { width: 56px; min-width: 56px; max-width: 56px; height: 56px; min-height: 56px; max-height: 56px; }
+  .map-dot { width: 48px; height: 48px; font-size: 1.5rem; }
+}

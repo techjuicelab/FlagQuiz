@@ -1094,39 +1094,6 @@ a:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-
   .mode-grid { grid-template-columns: 1fr 1fr; }
 }
 
-/* 모드 카드 두 묶음: '국기 놀이' 다섯 장 / '그림·지도 놀이' 세 장. 묶음마다 작은 제목이 붙는다. */
-.mode-group + .mode-group { margin-top: 12px; }
-.mode-group-title {
-  font-size: .86rem;
-  font-weight: 800;
-  color: var(--text-soft);
-  margin: 0 0 6px 2px;
-  word-break: keep-all;
-}
-
-/* 좁은 화면에서는 두 칸 껍데기가 없는 셈 치고 지금 순서 그대로 흐른다 */
-.home-cols > .col { display: contents; }
-
-/* 아이패드 가로: 한 칸으로 길게 늘어놓으면 한참 내려야 한다.
-   설정 화면을 두 칸으로 갈라 한눈에 들어오게 한다. */
-@media (min-width: 1000px) and (orientation: landscape) {
-  .home-cols {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: 20px;
-    align-items: start;
-  }
-  .home-cols > .col { display: flex; flex-direction: column; gap: 16px; }
-  .home-cols .section { margin: 0; }
-  /* 모드 카드 여덟 장이 왼쪽 칸 첫 화면(768px 높이) 안에 다 들어오도록 카드를 낮게 잡는다 */
-  .home-cols .mode-grid { gap: 8px; grid-template-columns: 1fr 1fr; }
-  .home-cols .mode-card { min-height: 60px; padding: 9px 12px; gap: 10px; }
-  .home-cols .mode-card .emo { font-size: 1.5rem; }
-  .home-cols .mode-card .t { font-size: .98rem; }
-  .home-cols .mode-card .d { font-size: .76rem; }
-  .home-cols .mode-group + .mode-group { margin-top: 10px; }
-}
-
 /* ---- 결과: 복습 판을 끝냈을 때 ---- */
 .review-done {
   display: flex;
@@ -1231,16 +1198,16 @@ button.cont-item:focus-visible { outline: 3px solid var(--accent); outline-offse
 .art-error .btn { width: 100%; max-width: 360px; }
 .art-error-emoji { font-size: 4.2rem; line-height: 1; filter: grayscale(.4); }
 /* 오류 상자가 보이는 동안은 그 안의 큰 '그림 이름 듣기' 하나만 남기고 작은 들어보기 단추는 감춘다 */
-.art-question:has(> .art-error:not([hidden])) > .btn-sm { display: none; }
+.art-question:has(> .art-error:not([hidden])) > .btn-listen { display: none; }
 /* 만나기 카드: 처음 보는 그림을 채점 전에 이름과 함께 보여 준다. */
 .meet-card .big-name { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 12px; }
 .meet-card .meet-caption { font-size: 1.35rem; font-weight: 700; margin: 4px 0 10px; }
 .meet-card #meet-speak { margin-bottom: 4px; }
-.art-choice { display: flex; align-items: center; gap: 12px; }
-/* 보기 국기는 손가락으로 짚을 만큼 크게, 밝은 국기가 카드에 묻히지 않게 테두리를 두른다 */
+.art-choice { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 8px 8px 12px; }
+/* 보기 국기가 주인공이다(2026-09-17 시안): 폰 2×2 에서 96px 이상, 아이패드 200px 이상. 밝은 국기가 카드에 묻히지 않게 테두리를 두른다 */
 .art-choice img {
-  width: 64px; height: 44px; object-fit: contain; flex-shrink: 0;
-  border: 1px solid var(--line); border-radius: 6px; background: var(--card-2);
+  width: 100%; max-width: 200px; min-width: 96px; height: auto; aspect-ratio: 4 / 3; object-fit: contain; flex-shrink: 0;
+  border: 1px solid var(--line); border-radius: 10px; background: var(--card-2);
 }
 
 /* 아이패드 가로: 만나기 카드는 두 칸을 다 쓰고, 안에서 그림(왼쪽)과 이름·단추(오른쪽)를 나란히 놓는다.
@@ -1258,4 +1225,525 @@ button.cont-item:focus-visible { outline: 3px solid var(--accent); outline-offse
   .quiz-body .meet-card img#question-art { max-height: calc(100vh - 400px); min-height: 160px; }
   .quiz-body .meet-card .big-name { margin-top: 0; }
   .quiz-body .art-question img#question-art { max-height: calc(100vh - 380px); }
+}
+
+/* ==========================================================================
+   홈 (2026-09-17 아이 기준 시안) — 큰 놀이 단추 4개 · 알약 · 아빠 설정은 길게 눌러 열기
+   폰: 위→아래 한 줄, 844px 안에 스크롤 없이. 아이패드 가로: 왼쪽 2/3 단추 2×2, 오른쪽 1/3 레벨·도전·카드·설정.
+   ========================================================================== */
+.home-kid {
+  --tint-flag: #eef2ff;
+  --tint-art: #fdf2f8;
+  --tint-map: #ecfdf5;
+  --tint-capital: #fff7e6;
+  --play-min: 120px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  .home-kid {
+    --tint-flag: rgba(107, 147, 255, .2);
+    --tint-art: rgba(244, 114, 182, .2);
+    --tint-map: rgba(74, 222, 128, .18);
+    --tint-capital: rgba(255, 183, 3, .2);
+  }
+}
+
+/* 레벨 링 한 줄: 링 · 이름 · 단계 이름 · 경험치 · 막대 */
+.home-kid .player-card { margin: 0; padding: 10px 14px; gap: 12px; min-height: 72px; }
+.home-kid .level-ring { width: 56px; height: 56px; }
+.home-kid .level-ring > .hole { inset: 6px; font-size: 1.4rem; }
+.home-kid .player-meta { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.player-top { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.home-kid .player-name { font-size: 1.15rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.home-kid .player-level { font-size: .86rem; white-space: nowrap; }
+.player-xp { margin-left: auto; font-size: .8rem; font-weight: 800; color: var(--text-soft); white-space: nowrap; }
+.player-bar { display: block; height: 10px; border-radius: 999px; background: var(--line); overflow: hidden; }
+.player-bar > i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--accent), #ffd166); transition: width .8s ease; }
+
+.home-kid .daily-card { margin: 0; padding: 10px 14px; min-height: 60px; }
+
+/* 놀이 단추 2×2. 폰에서는 알약 줄이 단추 아래에 전체 너비로 내려온다(.play-tile 은 껍데기만). */
+.play-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.play-tile { display: contents; }
+.play-btn {
+  position: relative;
+  min-height: var(--play-min);
+  box-sizing: border-box;
+  padding: 8px;
+  border: 3px solid transparent;
+  border-radius: 20px;
+  background: var(--card);
+  box-shadow: var(--shadow);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  text-align: center;
+  -webkit-user-select: none;
+  user-select: none;
+  transition: transform .15s ease, border-color .15s ease;
+}
+.play-btn:hover { transform: translateY(-2px); }
+.play-btn:active { transform: scale(.98); }
+.play-btn:focus-visible { outline: 4px solid var(--accent); outline-offset: 2px; }
+.play-btn[aria-pressed="true"] { border-color: var(--primary); box-shadow: 0 6px 18px rgba(79, 124, 255, .22); }
+.play-emo {
+  width: 52px; height: 52px; border-radius: 16px;
+  display: grid; place-items: center;
+  font-size: 30px; line-height: 1;
+  background: var(--tint-flag);
+}
+[data-play="art"] .play-emo { background: var(--tint-art); }
+[data-play="map"] .play-emo { background: var(--tint-map); }
+[data-play="capital"] .play-emo { background: var(--tint-capital); }
+.play-t { font-size: 1.15rem; font-weight: 900; letter-spacing: -.02em; line-height: 1.2; }
+.play-d { font-size: .72rem; font-weight: 700; color: var(--text-soft); line-height: 1.25; word-break: keep-all; }
+.play-check {
+  position: absolute; top: 8px; right: 8px;
+  width: 24px; height: 24px; border-radius: 999px;
+  background: var(--primary); color: #fff;
+  display: grid; place-items: center;
+  font-size: 14px; font-weight: 900; line-height: 1;
+}
+/* 세부 놀이 알약: 폰에서는 단추 2×2 아래에 국기 줄 → 그림 줄. 앞의 🚩/🎨 표는 어느 단추의 알약인지 알려 준다. */
+.play-pills {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: stretch;
+  gap: 5px;
+  min-width: 0;
+}
+.play-pills::before {
+  content: attr(data-tag);
+  flex: 0 0 32px;
+  display: grid; place-items: center;
+  font-size: 1.1rem;
+}
+[data-play-tile="flag"] > .play-btn { order: 1; }
+[data-play-tile="art"] > .play-btn { order: 2; }
+[data-play-tile="map"] > .play-btn { order: 3; }
+[data-play-tile="capital"] > .play-btn { order: 4; }
+[data-play-tile="flag"] > .play-pills { order: 5; }
+[data-play-tile="art"] > .play-pills { order: 6; }
+.play-pill {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0 4px;
+  font-size: .8rem;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  white-space: nowrap;
+  box-shadow: var(--shadow);
+  border-color: var(--card);
+}
+.play-pill[aria-pressed="true"] { border-color: var(--primary); box-shadow: 0 6px 18px rgba(79, 124, 255, .28); }
+.play-pill .lbl-l { display: none; }
+
+/* 여행 카드 다섯 칸 한 줄 */
+.travel-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 46px;
+  padding: 6px 12px;
+  background: var(--card);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+}
+.travel-ic { font-size: 1.3rem; line-height: 1; flex: 0 0 auto; }
+.travel-slots { flex: 1; display: flex; gap: 6px; min-width: 0; }
+.travel-slot {
+  flex: 1 1 0;
+  height: 30px;
+  border-radius: 8px;
+  border: 1.5px dashed var(--line);
+  background: var(--card-2);
+  display: grid; place-items: center;
+  font-size: .9rem; font-weight: 900; line-height: 1;
+  color: #5b4300;
+}
+.travel-slot.filled { background: var(--accent); border: 1.5px solid var(--accent); }
+.travel-num { font-size: .9rem; font-weight: 900; flex: 0 0 auto; }
+
+/* '아빠 설정 · 길게 눌러 열어요' 한 줄 */
+.dad-open {
+  min-height: 48px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0 14px;
+  border: 1.5px dashed var(--line);
+  border-radius: 16px;
+  background: var(--card-2);
+  color: var(--text-soft);
+  font: inherit;
+  font-size: .9rem;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-align: left;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: manipulation;
+}
+.dad-open:focus-visible { outline: 4px solid var(--accent); outline-offset: 2px; }
+.dad-open .dad-ic { flex: 0 0 auto; }
+.dad-open .dad-t { white-space: nowrap; color: var(--text); }
+.dad-open .dad-d { font-size: .74rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.dad-open .dad-hint { font-size: .74rem; font-weight: 700; white-space: nowrap; }
+.dad-open.nudge { border-color: var(--accent); animation: nudge .5s ease-in-out 2; }
+.dad-open.nudge .dad-hint { color: var(--accent); }
+.dad-open[aria-expanded="true"] { border-style: solid; border-color: var(--primary); }
+@media (max-width: 359px) { .dad-open .dad-d { display: none; } }
+
+.dad-panel { display: flex; flex-direction: column; gap: 14px; }
+.dad-panel[hidden] { display: none; }
+.dad-panel .section { margin: 0; }
+.dad-panel .cont-card h3 { margin-bottom: 10px; }
+
+/* 아이패드(가로·세로 공통, ≥744px): 알약은 단추 안(카드 아래)으로 들어가고 긴 이름을 보인다 */
+@media (min-width: 744px) {
+  .home-kid { --play-min: 220px; gap: 14px; }
+  .play-grid { gap: 16px; grid-template-rows: 1fr 1fr; }
+  .play-tile {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 0;
+  }
+  .play-tile > .play-btn { flex: 1 1 auto; order: 0; gap: 8px; }
+  .play-tile > .play-pills { order: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .play-pills::before { display: none; }
+  .play-emo { width: 96px; height: 96px; border-radius: 999px; font-size: 54px; }
+  .play-t { font-size: 1.9rem; }
+  .play-d { font-size: 1rem; }
+  .play-pill { min-height: 46px; padding: 0 12px; font-size: .95rem; }
+  .play-pill .lbl-l { display: inline; }
+  .play-pill .lbl-s { display: none; }
+  .home-kid .player-card { padding: 14px 18px; min-height: 96px; }
+  .home-kid .level-ring { width: 72px; height: 72px; }
+  .home-kid .level-ring > .hole { inset: 8px; font-size: 1.8rem; }
+  .home-kid .player-name { font-size: 1.4rem; }
+  .home-kid .player-level { font-size: 1rem; }
+  .home-kid .daily-card { padding: 14px 18px; }
+  .travel-row { min-height: 60px; padding: 8px 16px; }
+  .travel-slot { height: 40px; }
+  .dad-open { min-height: 58px; font-size: 1rem; border-radius: 16px; }
+  .dad-open .dad-d, .dad-open .dad-hint { font-size: .86rem; }
+}
+
+/* 아이패드 세로(≥744px): 레벨 링과 오늘의 도전을 나란히, 그 아래 단추 2×2 */
+@media (min-width: 744px) and (orientation: portrait) {
+  .home-kid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px 16px; align-items: stretch; }
+  .home-kid .player-card { grid-column: 1; grid-row: 1; }
+  .home-kid .daily-card { grid-column: 2; grid-row: 1; margin: 0; }
+  .home-kid .play-grid { grid-column: 1 / -1; grid-row: 2; }
+  .home-kid .travel-row { grid-column: 1 / -1; grid-row: 3; }
+  .home-kid .dad-open { grid-column: 1 / -1; grid-row: 4; }
+  .home-kid .dad-panel { grid-column: 1 / -1; grid-row: 5; }
+  .home-kid .dad-panel[hidden] { display: none; }
+}
+
+/* 아이패드 가로(≥1000px): 왼쪽 2/3 놀이 단추 2×2, 오른쪽 1/3 레벨·도전·여행 카드·아빠 설정 */
+@media (min-width: 1000px) and (orientation: landscape) {
+  .home-kid {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+    gap: 14px 20px;
+    align-items: start;
+  }
+  .home-kid .play-grid { grid-column: 1; grid-row: 1 / 5; align-self: stretch; }
+  .home-kid .player-card { grid-column: 2; grid-row: 1; }
+  .home-kid .daily-card { grid-column: 2; grid-row: 2; margin: 0; }
+  .home-kid .travel-row { grid-column: 2; grid-row: 3; }
+  .home-kid .dad-open { grid-column: 2; grid-row: 4; align-self: end; }
+  .home-kid .dad-panel { grid-column: 1 / -1; grid-row: 5; }
+  .home-kid .dad-panel[hidden] { display: none; }
+  .play-btn { min-height: 220px; }
+  .dad-panel { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; }
+  .dad-panel > #review, .dad-panel > #dad-close { grid-column: 1 / -1; }
+}
+
+/* ==========================================================================
+   문제 화면 · 정답 카드 · 결과 · 스티커 판 (2026-09-17 아이 기준 시안)
+   글자 대신 소리(🔊 크게) · 보기는 국기가 주인공 · 한 화면에 스크롤 없이 · 손가락 44px 이상
+   ========================================================================== */
+
+/* ---- 문제 화면 머리: 그만하기 · 여행 카드 알약(#combo-title) · 레벨 알약(아이패드에서만 보임) ---- */
+.kid-head { gap: 8px; margin-bottom: 12px; }
+.kid-head .head-back {
+  display: inline-flex; align-items: center; gap: 4px;
+  min-height: 44px; padding: 0 14px 0 10px; border-radius: 999px;
+  background: var(--card); box-shadow: var(--shadow); border-color: transparent;
+  font-size: .9rem; font-weight: 800; color: var(--text-soft);
+}
+.kid-head .chip { min-height: 44px; display: inline-flex; align-items: center; gap: 7px; }
+.kid-head .q-count { display: none; }
+.travel-chip { padding: 0 10px; }
+.travel-chip .combo-title { font-size: .76rem; font-weight: 800; color: var(--text-soft); white-space: nowrap; }
+.travel-chip .travel-ic { font-size: 1.05rem; }
+.travel-chip .travel-slots, .chest-note .travel-slots { flex: 0 0 auto; gap: 3px; }
+.travel-chip .travel-slot, .chest-note .travel-slot {
+  flex: 0 0 24px; width: 24px; height: 32px; border-radius: 6px;
+  border: 1.5px dashed var(--line); background: var(--card-2);
+  font-size: .7rem; color: var(--primary); overflow: hidden;
+}
+.travel-chip .travel-slot.filled, .chest-note .travel-slot.filled { border: 1.5px solid var(--line); background: var(--card); }
+.travel-chip .travel-slot.now { border: 2px dashed var(--accent); box-shadow: 0 0 0 3px rgba(255, 183, 3, .28); background: #fff7e6; }
+.travel-slot img { width: 20px; height: 14px; object-fit: cover; border-radius: 2px; display: block; }
+/* 폰(390px)에서는 그만하기 + 카드 칸 다섯 개만 한 줄에 들어간다. 글자 수(#combo-title)는 읽어 주는 기계용으로 남기고 눈에서만 감춘다 — 아이는 칸을 본다. */
+.kid-head .travel-chip .combo-title { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.kid-head .travel-gift { display: none; }
+.kid-head .lv-chip { display: none; }
+.lv-chip .lv-name { font-size: .9rem; white-space: nowrap; }
+.lv-chip .lv-bar { display: block; width: 84px; height: 8px; border-radius: 999px; background: var(--line); overflow: hidden; }
+.lv-chip .lv-bar > i { display: block; height: 100%; background: var(--primary); border-radius: 999px; transition: width .8s ease; }
+.lv-chip .lv-val { font-size: .8rem; color: var(--text-soft); white-space: nowrap; }
+@media (prefers-color-scheme: dark) { .travel-chip .travel-slot.now { background: #3a2f14; } }
+
+/* ---- 지시문은 작게(흐린 글자), 🔊 들어보기는 크게(폰 56px · 아이패드 64px · 노란 바탕에 진한 글자) ---- */
+.flag-stage .q-label { font-size: .88rem; font-weight: 800; color: var(--text-soft); margin-bottom: 10px; }
+.btn-listen {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; min-height: 56px; padding: 0 18px; margin-top: 12px;
+  border: 0; border-radius: 16px;
+  background: var(--accent); color: #1f2937;
+  font-size: 1.25rem; font-weight: 900; letter-spacing: -.02em;
+  box-shadow: 0 8px 20px rgba(255, 183, 3, .38);
+}
+.btn-listen-soft { background: #fff7e6; border: 2px solid var(--accent); box-shadow: none; font-size: 1.12rem; }
+.btn-listen.needs-tap { color: #fff; }
+@media (prefers-color-scheme: dark) { .btn-listen-soft { background: #3a2f14; color: var(--text); } }
+.btn-go { width: 100%; min-height: 64px; margin-top: 12px; font-size: 1.3rem; font-weight: 900; letter-spacing: -.02em; }
+.meet-card .meet-caption {
+  display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px; margin: 4px 0 10px;
+  border-radius: 999px; background: var(--bg); color: var(--primary-dark); font-size: 1.25rem; font-weight: 800;
+}
+.meet-card .big-name { font-size: 2.2rem; }
+.meet-card .big-name .map-question-flag { width: 74px; height: 56px; border-radius: 10px; border: 1px solid var(--line); object-fit: cover; }
+.meet-card #meet-speak { margin: 0; }
+
+/* ---- 힌트 · 몰라요: 선 그림 + 한 낱말, 폰 56px · 아이패드 60px ---- */
+.tool-row { margin-top: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.btn-tool { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 56px; border-radius: 16px; font-size: 1.05rem; font-weight: 800; border-color: var(--line); }
+.btn-tool .ic { flex: 0 0 auto; color: var(--primary); }
+.btn-tool-soft { background: var(--card-2); box-shadow: none; color: var(--text-soft); }
+.btn-tool-soft .ic { color: var(--text-soft); }
+
+/* ---- 그림·명소 보기: 국기가 주인공 — 폰 2×2 국기 96px 이상, 아이패드 200px 이상, 이름은 국기 아래 작게 ---- */
+.answer-grid.art-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
+.art-choice .art-choice-name { font-size: .95rem; font-weight: 800; color: var(--text-soft); line-height: 1.2; }
+.art-choice.is-correct .art-choice-name { color: var(--success); }
+
+/* 폰 세로(<744px): 그림 22vh · 보기 국기 128px 이면 머리·그림·🔊·보기 2×2·힌트/몰라요가 844px 한 화면에 들어간다 */
+@media (max-width: 743px) and (orientation: portrait) {
+  .art-question img#question-art { max-height: 22vh; }
+  .art-question.meet-card img#question-art { max-height: 30vh; }
+  .art-choice img { max-width: 128px; }
+  .art-choice { gap: 6px; padding: 6px 6px 8px; }
+  .flag-stage { margin-bottom: 12px; }
+  .quiz-body .flag-stage.art-question { padding: 12px; }
+}
+
+/* ---- 정답 카드: 정오답 같은 카드 — 국기 전폭 · 이름 34px · 노란 상자 · 🔊 56px · 다음 64px ---- */
+.discovery-card { padding: 14px; margin-top: 12px; }
+.discovery-card .fb-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.discovery-card .verdict { font-size: 1rem; font-weight: 900; color: var(--primary-dark); margin: 0; }
+.discovery-card .fb-head .small { margin-left: auto; font-size: .78rem; font-weight: 700; }
+.discovery-card .name-row { flex-direction: column; gap: 8px; margin-top: 10px; }
+.discovery-card .name-row img.fb-flag { width: 100%; max-width: 360px; aspect-ratio: 4 / 3; object-fit: contain; border-radius: 16px; border: 1px solid var(--line); background: var(--card-2); }
+.discovery-card .kname { font-size: 2.1rem; font-weight: 900; letter-spacing: -.02em; line-height: 1.3; }
+.discovery-card .remember-box { display: flex; align-items: center; gap: 12px; text-align: left; border: 0; border-left: 6px solid var(--accent); border-radius: 14px; padding: 12px 14px; }
+.discovery-card .remember-art { width: 68px; height: 52px; flex: 0 0 68px; object-fit: cover; border-radius: 10px; background: #fff; }
+.discovery-card .remember-hint { margin: 0; display: flex; flex-direction: column; gap: 4px; min-width: 0; font-size: .92rem; }
+.discovery-card .remember-title { font-size: 1.12rem; font-weight: 900; letter-spacing: -.02em; color: #7a5b00; }
+.discovery-card .remember-body { font-weight: 700; line-height: 1.45; }
+@media (prefers-color-scheme: dark) { .discovery-card .remember-title { color: #ffd97a; } }
+.discovery-card #replay, .discovery-card #speak-on, .discovery-card #next { margin-top: 12px; }
+.discovery-card #speak-on { font-size: .98rem; }
+/* 답을 낸 뒤 — 폰(<744px): 무대·보기를 접고 카드만 남긴다(한 화면). 아이패드 세로는 다 보이고, 가로는 무대만 접는다(아래 미디어) */
+@media (max-width: 743px) {
+  .quiz-screen.answered .quiz-stage-col > .flag-stage { display: none; }
+  .quiz-screen.answered .quiz-answer-col { display: none; }
+  .quiz-screen.answered .discovery-card { margin-top: 0; }
+}
+/* 답을 낸 뒤 힌트·몰라요는 잠긴 단추다 — 아이에게는 눌러도 아무 일 없는 단추일 뿐이니 어디서든 감춘다 */
+.quiz-screen.answered .tool-row { display: none; }
+
+/* ---- 지도 무대: 국기와 이름 한 줄, 🔊 전폭 ---- */
+.map-who { display: flex; align-items: center; justify-content: center; gap: 16px; }
+.map-who .map-question-flag { width: 120px; height: 80px; border-radius: 12px; border: 1px solid var(--line); object-fit: cover; }
+.map-who .big-name { margin: 0; font-size: 2rem; }
+
+/* ---- 결과 화면: 큰 제목 · 큰 숫자 둘 · 여행 카드 5장 · 레벨 링 · 🎁 상자 · 새 스티커 · 한 번 더 64px · 홈으로 56px ---- */
+.result-screen { display: flex; flex-direction: column; gap: 10px; }
+.result-head { display: flex; align-items: center; gap: 10px; }
+.result-ic { width: 52px; height: 52px; flex: 0 0 52px; border-radius: 18px; background: var(--card); box-shadow: var(--shadow); display: grid; place-items: center; font-size: 1.9rem; }
+.result-title { flex: 1; min-width: 0; }
+.result-title h2 { margin: 0; font-size: 1.55rem; font-weight: 900; letter-spacing: -.03em; line-height: 1.15; }
+.result-title p { margin: 2px 0 0; font-size: .8rem; font-weight: 800; }
+.result-replay { flex: 0 0 auto; width: auto; min-height: 44px; margin: 0; padding: 0 12px; font-size: .88rem; border-radius: 999px; }
+.big-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.big-stat { min-height: 88px; background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 12px 14px; display: flex; flex-direction: column; justify-content: center; gap: 2px; }
+.big-stat .k { display: flex; align-items: center; gap: 4px; font-size: .82rem; font-weight: 800; color: var(--text-soft); }
+.big-stat .k .ic { color: var(--success); }
+.big-stat .v { font-size: 2.75rem; font-weight: 900; letter-spacing: -.03em; line-height: 1.1; color: var(--primary-dark); }
+.big-stat .v small { font-size: 1.1rem; font-weight: 800; color: var(--text-soft); margin-left: 4px; }
+.big-stat.ok .v { color: var(--success); }
+.travel-cards { padding: 12px 14px; }
+.tc-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.tc-title { font-size: .82rem; font-weight: 800; color: var(--primary-dark); white-space: nowrap; }
+.tc-note { font-size: .76rem; font-weight: 800; white-space: nowrap; }
+.tc-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+.travel-card { padding: 0; border: 0; background: transparent; display: flex; flex-direction: column; align-items: center; gap: 4px; min-height: 44px; color: var(--text); cursor: pointer; animation: stickerPop .32s cubic-bezier(.2, 1.5, .4, 1) both; }
+.tc-flag { position: relative; display: block; width: 58px; max-width: 100%; }
+.tc-flag img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 8px; border: 1px solid var(--line); background: var(--card-2); }
+.travel-card.again .tc-flag img { border: 2px solid var(--accent); }
+.tc-badge { position: absolute; right: -6px; top: -6px; width: 20px; height: 20px; border-radius: 999px; border: 2px solid var(--card); display: grid; place-items: center; background: var(--success); color: #fff; }
+.travel-card.again .tc-badge { background: var(--accent); color: #1f2937; }
+.tc-name { font-size: .72rem; font-weight: 800; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.level-card { display: flex; align-items: center; gap: 12px; padding: 12px 14px; }
+.level-card .level-ring { width: 64px; height: 64px; }
+.level-card .level-ring > .track { background: conic-gradient(var(--accent) calc(var(--p) * 1turn), var(--line) 0); }
+.level-card .level-ring > .hole { inset: 7px; font-size: 1.6rem; background: var(--card-2); }
+.level-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.level-top { display: flex; align-items: center; gap: 6px; min-width: 0; flex-wrap: wrap; }
+.level-name { font-size: 1rem; font-weight: 900; letter-spacing: -.02em; white-space: nowrap; }
+.level-next { font-size: .86rem; font-weight: 800; color: var(--primary-dark); white-space: nowrap; }
+.level-gain { min-height: 22px; padding: 0 8px; border-radius: 999px; background: var(--bg); color: var(--primary-dark); display: inline-flex; align-items: center; font-size: .76rem; font-weight: 800; white-space: nowrap; }
+.level-foot { display: flex; font-size: .78rem; font-weight: 800; }
+.chest-note { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 14px; background: #fff7e6; border-left: 6px solid var(--accent); }
+.chest-note.soft { background: var(--card); border-left-color: var(--line); box-shadow: var(--shadow); padding: 8px 14px; }
+.chest-note-ic { width: 48px; height: 48px; flex: 0 0 48px; border-radius: 16px; background: var(--card); display: grid; place-items: center; font-size: 1.7rem; }
+.chest-note-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.chest-note-body b { font-size: 1rem; font-weight: 900; letter-spacing: -.02em; }
+.chest-note-pill { min-height: 24px; padding: 0 8px; border-radius: 999px; background: var(--accent); color: #1f2937; display: inline-flex; align-items: center; font-size: .76rem; font-weight: 900; white-space: nowrap; }
+.chest-note .travel-slots { flex: 1; }
+@media (prefers-color-scheme: dark) { .chest-note { background: #3a2f14; } .chest-note.soft { background: var(--card); } .chest-note-ic { background: var(--card-2); } }
+.new-sticker-card { display: flex; align-items: center; gap: 14px; padding: 12px 14px; border: 2px solid var(--success); }
+.new-sticker-card img { width: 92px; height: 64px; flex: 0 0 92px; object-fit: cover; border-radius: 10px; border: 1px solid var(--line); background: var(--card-2); }
+.ns-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+.ns-pill { align-self: flex-start; min-height: 26px; padding: 0 10px; border-radius: 999px; background: var(--success-bg); color: var(--success); display: inline-flex; align-items: center; font-size: .76rem; font-weight: 900; white-space: nowrap; }
+.ns-name { font-size: 1.4rem; font-weight: 900; letter-spacing: -.02em; line-height: 1.2; word-break: keep-all; }
+.ns-count { white-space: nowrap; font-weight: 800; }
+.journey-record { padding: 14px 16px; margin: 0; }
+.journey-record .stat-grid { margin: 12px 0; }
+.journey-record .jr-title { font-size: 1rem; margin: 14px 0 8px; }
+.result-actions { display: flex; flex-direction: column; gap: 12px; margin-top: auto; }
+.result-actions .btn { width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 10px; }
+.btn-yellow { background: var(--accent); color: #1f2937; border: 0; box-shadow: 0 8px 20px rgba(255, 183, 3, .38); }
+.btn-mid { min-height: 56px; font-size: 1.12rem; border-color: var(--line); }
+
+/* ---- 스티커 판: 큰 숫자 · 굵은 진행바 · 대륙 알약 한 줄 · 돋보기·체크 원형 단추로 검색·필터 접기 · 폰 3열 ---- */
+.dex-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.dex-head h2 { margin: 0; font-size: 1.4rem; font-weight: 900; letter-spacing: -.02em; }
+.dex-head .dex-ic { font-size: 1.4rem; line-height: 1; }
+.dex-back, .dex-toggle { flex: 0 0 auto; display: grid; place-items: center; padding: 0; border-radius: 999px; background: var(--card); box-shadow: var(--shadow); color: var(--text); cursor: pointer; }
+.dex-back { width: 44px; height: 44px; min-height: 44px; border: 0; color: var(--text-soft); }
+.dex-toggle { width: 48px; height: 48px; min-height: 48px; border: 1.5px solid var(--line); }
+.dex-toggle[aria-expanded="true"] { border-color: var(--primary); background: var(--bg); color: var(--primary-dark); }
+.dex-toggle:focus-visible, .dex-back:focus-visible { outline: 4px solid var(--accent); outline-offset: 2px; }
+.dex-tools { margin-bottom: 12px; }
+.dex-tools[hidden] { display: none; }
+.dex-tools .field { margin: 0; }
+.dex-filters { display: flex; gap: 12px 20px; flex-wrap: wrap; margin-bottom: 12px; }
+.dex-filters[hidden] { display: none; }
+.dex-count-card { padding: 14px 16px; margin-bottom: 12px; }
+.dex-count-row { display: flex; align-items: baseline; gap: 8px; }
+.dex-count-row .k { font-size: 1rem; font-weight: 800; color: var(--text-soft); white-space: nowrap; }
+.dex-count-row .v { font-size: 1.9rem; font-weight: 900; letter-spacing: -.02em; line-height: 1.1; white-space: nowrap; }
+.dex-count-row .v small { font-size: 1.1rem; font-weight: 800; color: var(--text-soft); }
+.dex-count-row .stamps { margin-left: auto; font-size: .82rem; font-weight: 800; color: var(--text-soft); white-space: nowrap; }
+.dex-bar { display: block; height: 14px; border-radius: 999px; background: var(--bg); overflow: hidden; margin-top: 10px; }
+.dex-bar > i { display: block; height: 100%; min-width: 14px; border-radius: 999px; background: linear-gradient(90deg, var(--primary), var(--primary-dark)); transition: width .8s ease; }
+.dex-conts { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 8px; margin-bottom: 8px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.dex-conts::-webkit-scrollbar { display: none; }
+.dex-conts .pill { flex: 0 0 auto; min-height: 44px; white-space: nowrap; }
+.sticker-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.sticker-cell { min-height: 124px; padding: 6px 5px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
+.sticker-cell img, .sticker-cell .flag-ghost { width: 100%; aspect-ratio: 4 / 3; border-radius: 6px; }
+.sticker-cell .flag-ghost { position: relative; display: grid; place-items: center; background: var(--card-2); overflow: hidden; }
+.sticker-cell .flag-ghost svg { width: 100%; height: 100%; display: block; }
+.sticker-cell.locked .lock { position: absolute; inset: 0; display: grid; place-items: center; }
+.sticker-cell.locked .lock > span { width: 28px; height: 28px; border-radius: 999px; background: var(--card); box-shadow: var(--shadow); display: grid; place-items: center; color: var(--text-soft); }
+.sticker-cell.locked { opacity: 1; color: var(--text-soft); }
+.sticker-cell .n { margin-top: 0; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.axis-stamps { margin-top: 2px; }
+
+/* ---- 아이패드(≥744px) ---- */
+@media (min-width: 744px) {
+  .kid-head .q-count { display: inline-flex; }
+  .kid-head .lv-chip { display: inline-flex; }
+  .kid-head .travel-gift { display: inline; }
+  .kid-head .travel-chip .combo-title { position: static; width: auto; height: auto; overflow: visible; clip: auto; font-size: .95rem; color: var(--text); }
+  .travel-chip .travel-slot { flex-basis: 38px; width: 38px; height: 28px; }
+  .travel-slot img { width: 34px; height: 24px; }
+  .flag-stage .q-label { font-size: .95rem; }
+  .btn-listen { min-height: 64px; font-size: 1.5rem; }
+  .btn-tool { min-height: 60px; font-size: 1.25rem; }
+  .art-choice img { max-width: 300px; min-width: 200px; }
+  .art-choice .art-choice-name { font-size: 1.12rem; }
+  .discovery-card .kname { font-size: 2.4rem; }
+  .map-who .map-question-flag { width: 200px; height: 134px; }
+  .map-who .big-name { font-size: 2.6rem; }
+  .result-title h2 { font-size: 2rem; }
+  .big-stat .v { font-size: 3.2rem; }
+  .tc-flag { width: 76px; }
+  .tc-name { font-size: .9rem; }
+  .sticker-grid { grid-template-columns: repeat(auto-fill, minmax(124px, 1fr)); gap: 12px; }
+  .dex-head h2 { font-size: 1.65rem; }
+}
+/* 아이패드 세로: 머리는 그만하기 · 여행 카드 · 레벨 막대만(이름·문제 수는 가로에서만) 한 줄. 그림 26vh · 보기 국기 220px 이면 1180px 한 화면.
+   정답 카드는 무대·지도·보기 아래에 붙는다(공간이 있다). 지도 무대는 국기 · 지시문+이름 · 🔊 한 줄 카드 */
+@media (min-width: 744px) and (max-width: 999px) and (orientation: portrait) {
+  .kid-head .q-count { display: none; }
+  .lv-chip .lv-name { display: none; }
+  .art-question img#question-art { max-height: 26vh; }
+  .art-choice img { max-width: 220px; }
+  .art-choice { gap: 6px; padding: 6px 6px 8px; }
+}
+@media (min-width: 744px) and (orientation: portrait) {
+  .quiz-screen.answered .quiz-body { display: flex; flex-direction: column; }
+  .quiz-screen.answered .quiz-stage-col { display: contents; }
+  .quiz-screen.answered #feedback-area { order: 3; }
+  .discovery-card .name-row { flex-direction: row; }
+  .discovery-card .name-row img.fb-flag { width: 120px; }
+  .map-question {
+    display: grid; grid-template-columns: 200px minmax(0, 1fr) 240px;
+    grid-template-areas: "flag label listen" "flag name listen";
+    align-items: center; column-gap: 20px; row-gap: 6px; text-align: left;
+  }
+  .map-question .map-who { display: contents; }
+  .map-question .q-label { grid-area: label; margin: 0; align-self: end; }
+  .map-question .map-question-flag { grid-area: flag; }
+  .map-question .big-name { grid-area: name; align-self: start; }
+  .map-question .btn-listen { grid-area: listen; margin: 0; width: 240px; }
+}
+/* 아이패드 가로: 답을 낸 뒤 왼쪽은 정답 카드, 오른쪽 보기(지도 핀·국기)는 그대로. 카드 안 국기는 이름 옆 작은 크기 */
+@media (min-width: 760px) and (orientation: landscape) {
+  .quiz-screen.answered .quiz-stage-col > .flag-stage { display: none; }
+  .discovery-card .name-row { flex-direction: row; }
+  .discovery-card .name-row img.fb-flag { width: 120px; }
+  .quiz-body .tool-row.row { display: grid; }
+  .sticker-grid { grid-template-columns: repeat(8, minmax(0, 1fr)); }
+  .result-screen { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px 20px; align-items: start; }
+  .result-screen .result-head, .result-screen .big-stats { grid-column: 1 / -1; }
+  .result-screen .result-actions { grid-column: 1 / -1; flex-direction: row; }
 }

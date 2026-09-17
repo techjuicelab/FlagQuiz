@@ -408,10 +408,7 @@ group('문제 만들기', () => {
       const set = new Set(q.options.map((o) => o.code));
       ok(set.size === 4, mode + ' 보기 중복 없음', c.code);
       ok(set.has(c.code), mode + ' 보기에 정답 포함', c.code);
-      if (mode === 'capital') {
-        const caps = new Set(q.options.map((o) => o.capital));
-        ok(caps.size === 4, 'capital 보기의 수도가 서로 달라야 함', c.code);
-      }
+      // 수도 놀이의 보기도 국기(나라)다(2026-09-17). 수도 이름이 겹치는 나라는 자료에 없고, 나라 중복만 막으면 된다.
     }
   }
   // 대륙을 좁혀도 보기가 만들어져야 한다

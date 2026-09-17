@@ -1,0 +1,32 @@
+{
+  "v": 3,
+  "createdOnFiles": { "v": 1, "at": "2026-09-17T10:20:00Z" },
+  "title": "국기 퀴즈 화면 개선",
+  "launch": { "view": "canvas" },
+  "pages": [],
+  "boards": {
+    "Main.dc.html":          { "x": 0,    "y": 0,    "w": 390,  "h": 844,  "title": "아이폰 · 홈 (아이 모드)" },
+    "PhonePlay.dc.html":     { "x": 470,  "y": 0,    "w": 390,  "h": 844,  "title": "아이폰 · 만나기 카드" },
+    "PhoneAnswer.dc.html":   { "x": 940,  "y": 0,    "w": 390,  "h": 844,  "title": "아이폰 · 정답 카드" },
+    "PhoneCapital.dc.html":  { "x": 1410, "y": 0,    "w": 390,  "h": 844,  "title": "아이폰 · 수도 듣고 국기 찾기(제안)" },
+    "PhoneMap.dc.html":      { "x": 1880, "y": 0,    "w": 390,  "h": 844,  "title": "아이폰 · 지도 놀이" },
+    "PhoneStickers.dc.html": { "x": 2350, "y": 0,    "w": 390,  "h": 844,  "title": "아이폰 · 스티커 판" },
+    "PhoneResult.dc.html":   { "x": 2820, "y": 0,    "w": 390,  "h": 844,  "title": "아이폰 · 한 판 결과" },
+    "IpadHome.dc.html":      { "x": 0,    "y": 964,  "w": 1180, "h": 820,  "title": "아이패드 가로 · 홈 (아이 모드)" },
+    "IpadPlay.dc.html":      { "x": 1260, "y": 964,  "w": 1180, "h": 820,  "title": "아이패드 가로 · 그림 놀이" },
+    "IpadMap.dc.html":       { "x": 2520, "y": 964,  "w": 1180, "h": 820,  "title": "아이패드 가로 · 지도 놀이" },
+    "IpadStickers.dc.html":  { "x": 3780, "y": 964,  "w": 1180, "h": 820,  "title": "아이패드 가로 · 스티커 판" },
+    "PortraitHome.dc.html":  { "x": 0,    "y": 1904, "w": 820,  "h": 1180, "title": "아이패드 세로 · 홈" },
+    "PortraitPlay.dc.html":  { "x": 900,  "y": 1904, "w": 820,  "h": 1180, "title": "아이패드 세로 · 그림 놀이" },
+    "PortraitMap.dc.html":   { "x": 1800, "y": 1904, "w": 820,  "h": 1180, "title": "아이패드 세로 · 지도 놀이" }
+  },
+  "order": ["Main.dc.html", "PhonePlay.dc.html", "PhoneAnswer.dc.html", "PhoneCapital.dc.html", "PhoneMap.dc.html", "PhoneStickers.dc.html", "PhoneResult.dc.html", "IpadHome.dc.html", "IpadPlay.dc.html", "IpadMap.dc.html", "IpadStickers.dc.html", "PortraitHome.dc.html", "PortraitPlay.dc.html", "PortraitMap.dc.html"],
+  "notes": {
+    "t-phone":    { "x": 0, "y": -300,  "text": "아이폰 · 아이가 혼자 쓰는 화면", "kind": "title1", "maxW": 3210 },
+    "t-ipad":     { "x": 0, "y": 680,   "text": "아이패드 가로 · 한 화면 규칙", "kind": "title1", "maxW": 4960 },
+    "t-portrait": { "x": 0, "y": 1620,  "text": "아이패드 세로 · 위에서 아래로 한 줄", "kind": "title1", "maxW": 2620 },
+    "s-rules": { "x": 3290, "y": 0, "w": 380, "maxH": 560, "size": "m", "color": "orange",
+      "text": "아이(만 4~5세) 기준 다섯 가지\n1. 첫 화면은 큰 놀이 단추 4개만. 이름·난이도·대륙·설정은 '아빠 설정'으로 접는다.\n2. 글자 대신 소리. 🔊 단추는 크게(56~64px), 문제 지시문은 작게.\n3. 보기는 국기가 주인공. 폰 2×2 격자, 국기 96×64 이상.\n4. 처음 만나는 나라는 문제 전에 만나기 카드로 먼저 듣는다.\n5. 모든 화면은 스크롤 없이 한 화면. 손가락 목표 44px 이상." }
+  },
+  "designSystems": []
+}

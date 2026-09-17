@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    body { margin: 0; background: #eef4ff; color: #1f2937; font-family: "Pretendard", "Pretendard Variable", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif; word-break: keep-all; -webkit-font-smoothing: antialiased; }
+    a { color: #4f7cff; }
+    a:hover { color: #3b5fe0; }
+  </style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; overflow: hidden; padding: 54px 16px 34px; display: flex; flex-direction: column; gap: 12px; color: #1f2937; word-break: keep-all; font-family: &quot;Pretendard&quot;, &quot;Pretendard Variable&quot;, -apple-system, BlinkMacSystemFont, &quot;Apple SD Gothic Neo&quot;, &quot;Noto Sans KR&quot;, &quot;Malgun Gothic&quot;, sans-serif; background: radial-gradient(circle at 50% 0%, #fff1c2 0, rgba(255,241,194,0) 45%), radial-gradient(circle at 0% 100%, #dbeafe 0, rgba(219,234,254,0) 40%), radial-gradient(circle at 100% 100%, #fce7f3 0, rgba(252,231,243,0) 40%), #eef4ff;">
+
+  <div style="display: flex; align-items: center; gap: 12px; height: 56px; flex: 0 0 auto;">
+    <span style="width: 56px; height: 56px; flex: 0 0 56px; border-radius: 20px; background: #ffffff; box-shadow: 0 6px 18px rgba(31,41,55,.10); display: flex; align-items: center; justify-content: center; font-size: 32px; line-height: 1;" aria-hidden="true">🗺️</span>
+    <span style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 3px;">
+      <span style="font-size: 28px; font-weight: 900; letter-spacing: -.03em; line-height: 32px;">오늘 여행 끝!</span>
+      <span style="font-size: 13px; font-weight: 800; color: #4b5563; line-height: 18px;">여행책에 새로운 이야기가 쌓였어요</span>
+    </span>
+    <button type="button" aria-label="응원 다시 듣기" style="width: 48px; height: 48px; flex: 0 0 48px; padding: 0; box-sizing: border-box; border: 2px solid #ffb703; border-radius: 999px; background: #fff7e6; display: flex; align-items: center; justify-content: center; font: inherit; color: #1f2937; cursor: pointer;">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5z" /><path d="M15.5 8.5a5 5 0 0 1 0 7" /><path d="M18.5 5.5a9 9 0 0 1 0 13" /></svg>
+    </button>
+  </div>
+
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; flex: 0 0 auto;">
+    <div style="box-sizing: border-box; height: 96px; background: #ffffff; border-radius: 20px; box-shadow: 0 6px 18px rgba(31,41,55,.10); padding: 12px 14px; display: flex; flex-direction: column; justify-content: center; gap: 4px;">
+      <span style="font-size: 13px; font-weight: 800; color: #4b5563; line-height: 18px;"><span aria-hidden="true">🚩</span> 오늘 만난 나라</span>
+      <span style="display: flex; align-items: baseline; gap: 4px;">
+        <span style="font-size: 44px; font-weight: 900; letter-spacing: -.03em; line-height: 48px; color: #3b5fe0;">5</span>
+        <span style="font-size: 18px; font-weight: 800; color: #4b5563;">개</span>
+      </span>
+    </div>
+    <div style="box-sizing: border-box; height: 96px; background: #ffffff; border-radius: 20px; box-shadow: 0 6px 18px rgba(31,41,55,.10); padding: 12px 14px; display: flex; flex-direction: column; justify-content: center; gap: 4px;">
+      <span style="font-size: 13px; font-weight: 800; color: #4b5563; line-height: 18px; display: flex; align-items: center; gap: 4px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5L20 7" /></svg>
+        <span>맞힌 나라</span>
+      </span>
+      <span style="display: flex; align-items: baseline; gap: 4px;">
+        <span style="font-size: 44px; font-weight: 900; letter-spacing: -.03em; line-height: 48px; color: #16a34a;">4</span>
+        <span style="font-size: 18px; font-weight: 800; color: #4b5563;">개</span>
+      </span>
+    </div>
+  </div>
+
+  <div style="flex: 0 0 auto; box-sizing: border-box; background: #ffffff; border-radius: 20px; box-shadow: 0 6px 18px rgba(31,41,55,.10); padding: 12px 14px; display: flex; flex-direction: column; gap: 8px;">
+    <div style="display: flex; align-items: center; gap: 8px; height: 18px;">
+      <span style="font-size: 13px; font-weight: 800; color: #3b5fe0; white-space: nowrap;"><span aria-hidden="true">📖</span> 오늘의 여행 카드 5장</span>
+      <span style="flex: 1 1 auto;"></span>
+      <span style="font-size: 12px; font-weight: 800; color: #4b5563; white-space: nowrap;">한 번 더 만날 나라 1개</span>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px;">
+      <button type="button" style="padding: 0; border: 0; background: transparent; display: flex; flex-direction: column; align-items: center; gap: 4px; font: inherit; color: #1f2937; cursor: pointer;">
+        <span style="position: relative; width: 58px; height: 40px; display: block;">
+          <img src="/_blob/74c6300ee1eb4ee724919d23dfe46741" alt="미국 국기" width="58" height="40" style="width: 58px; height: 40px; box-sizing: border-box; object-fit: cover; border-radius: 8px; border: 1px solid #e5e7eb; display: block; background: #f8fafc;" />
+          <span aria-label="맞았어요" role="img" style="position: absolute; right: -6px; top: -6px; width: 20px; height: 20px; box-sizing: border-box; border-radius: 999px; background: #16a34a; border: 2px solid #ffffff; display: flex; align-items: center; justify-content: center; color: #ffffff;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5L20 7" /></svg></span>
+        </span>
+        <span style="font-size: 11px; font-weight: 800; line-height: 14px; white-space: nowrap;">미국</span>
+      </button>
+      <button type="button" style="padding: 0; border: 0; background: transparent; display: flex; flex-direction: column; align-items: center; gap: 4px; font: inherit; color: #1f2937; cursor: pointer;">
+        <span style="position: relative; width: 58px; height: 40px; display: block;">
+          <img src="/_blob/8be8d4ec95b4883bb548fb7b96410054" alt="캐나다 국기" width="58" height="40" style="width: 58px; height: 40px; box-sizing: border-box; object-fit: cover; border-radius: 8px; border: 2px solid #ffb703; display: block; background: #f8fafc;" />
+          <span aria-label="한 번 더 만나요" role="img" style="position: absolute; right: -6px; top: -6px; width: 20px; height: 20px; box-sizing: border-box; border-radius: 999px; background: #ffb703; border: 2px solid #ffffff; display: flex; align-items: center; justify-content: center; color: #1f2937;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.6-6.4" /><path d="M21 3v6h-6" /></svg></span>
+        </span>
+        <span style="font-size: 11px; font-weight: 800; line-height: 14px; white-space: nowrap;">캐나다</span>
+      </button>
+      <button type="button" style="padding: 0; border: 0; background: transparent; display: flex; flex-direction: column; align-items: center; gap: 4px; font: inherit; color: #1f2937; cursor: pointer;">
+        <span style="position: relative; width: 58px; height: 40px; display: block;">
+          <img src="/_blob/da8d8795b20fa2e2ef1f864703cd70b4" alt="브라질 국기" width="58" height="40" style="width: 58px; height: 40px; box-sizing: border-box; object-fit: cover; border-radius: 8px; border: 1px solid #e5e7eb; display: block; background: #f8fafc;" />
+          <span aria-label="맞았어요" role="img" style="position: absolute; right: -6px; top: -6px; width: 20px; height: 20px; box-sizing: border-box; border-radius: 999px; background: #16a34a; border: 2px solid #ffffff; display: flex; align-items: center; justify-content: center; color: #ffffff;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5L20 7" /></svg></span>
+        </span>
+        <span style="font-size: 11px; font-weight: 800; line-height: 14px; white-space: nowrap;">브라질</span>
+      </button>
+      <button type="button" style="padding: 0; border: 0; background: transparent; display: flex; flex-direction: column; align-items: center; gap: 4px; font: inherit; color: #1f2937; cursor: pointer;">
+        <span style="position: relative; width: 58px; height: 40px; display: block;">
+          <img src="/_blob/d080a24f3e16c3e0693cd91076fb085a" alt="덴마크 국기" width="58" height="40" style="width: 58px; height: 40px; box-sizing: border-box; object-fit: cover; border-radius: 8px; border: 1px solid #e5e7eb; display: block; background: #f8fafc;" />
+          <span aria-label="맞았어요" role="img" style="position: absolute; right: -6px; top: -6px; width: 20px; height: 20px; box-sizing: border-box; border-radius: 999px; background: #16a34a; border: 2px solid #ffffff; display: flex; align-items: center; justify-content: center; color: #ffffff;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5L20 7" /></svg></span>
+        </span>
+        <span style="font-size: 11px; font-weight: 800; line-height: 14px; white-space: nowrap;">덴마크</span>
+      </button>
+      <button type="button" style="padding: 0; border: 0; background: transparent; display: flex; flex-direction: column; align-items: center; gap: 4px; font: inherit; color: #1f2937; cursor: pointer;">
+        <span style="position: relative; width: 58px; height: 40px; display: block;">
+          <img src="/_blob/c6bbae8a10f7f8b27357e6a543096b77" alt="멕시코 국기" width="58" height="40" style="width: 58px; height: 40px; box-sizing: border-box; object-fit: cover; border-radius: 8px; border: 1px solid #e5e7eb; display: block; background: #f8fafc;" />
+          <span aria-label="맞았어요" role="img" style="position: absolute; right: -6px; top: -6px; width: 20px; height: 20px; box-sizing: border-box; border-radius: 999px; background: #16a34a; border: 2px solid #ffffff; display: flex; align-items: center; justify-content: center; color: #ffffff;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5L20 7" /></svg></span>
+        </span>
+        <span style="font-size: 11px; font-weight: 800; line-height: 14px; white-space: nowrap;">멕시코</span>
+      </button>
+    </div>
+  </div>
+
+  <div style="flex: 0 0 auto; box-sizing: border-box; background: #ffffff; border-radius: 20px; box-shadow: 0 6px 18px rgba(31,41,55,.10); padding: 12px 14px; display: flex; align-items: center; gap: 12px;">
+    <span style="position: relative; width: 64px; height: 64px; flex: 0 0 64px;">
+      <span style="position: absolute; inset: 0; border-radius: 999px; background: conic-gradient(#ffb703 0deg 98deg, #e5e7eb 98deg 360deg); display: block;"></span>
+      <span style="position: absolute; inset: 7px; border-radius: 999px; background: #f8fafc; display: flex; align-items: center; justify-content: center; font-size: 26px; line-height: 1;" aria-hidden="true">🌱</span>
+    </span>
+    <span style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 7px;">
+      <span style="display: flex; align-items: center; gap: 6px; height: 22px;">
+        <span style="font-size: 16px; font-weight: 900; letter-spacing: -.02em; white-space: nowrap;">씨앗 탐험가</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4b5563" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14" /><path d="m13 6 6 6-6 6" /></svg>
+        <span style="font-size: 14px; font-weight: 800; color: #3b5fe0; white-space: nowrap;"><span aria-hidden="true">🌿</span> 새싹 탐험가</span>
+        <span style="flex: 1 1 auto;"></span>
+        <span style="height: 22px; padding: 0 8px; border-radius: 999px; background: #eef4ff; display: inline-flex; align-items: center; font-size: 12px; font-weight: 800; color: #3b5fe0; white-space: nowrap;">경험치 +60</span>
+      </span>
+      <span style="height: 10px; border-radius: 999px; background: #eef4ff; overflow: hidden; display: block;">
+        <i style="display: block; width: 27.3%; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #ffb703, #ffd166);"></i>
+      </span>
+      <span style="display: flex; align-items: baseline; gap: 6px;">
+        <span style="font-size: 12px; font-weight: 800; color: #4b5563;">다음 레벨까지</span>
+        <span style="flex: 1 1 auto;"></span>
+        <span style="font-size: 13px; font-weight: 800; color: #4b5563;">82 / 300</span>
+      </span>
+    </span>
+  </div>
+
+  <div style="flex: 0 0 auto; box-sizing: border-box; background: #fff7e6; border-left: 6px solid #ffb703; border-radius: 14px; padding: 12px 14px; display: flex; align-items: center; gap: 12px;">
+    <span style="width: 48px; height: 48px; flex: 0 0 48px; border-radius: 16px; background: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 28px; line-height: 1;" aria-hidden="true">🎁</span>
+    <span style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 4px;">
+      <span style="font-size: 16px; font-weight: 900; letter-spacing: -.02em; line-height: 20px;">여행 상자가 열렸어요!</span>
+      <span style="font-size: 13px; font-weight: 800; color: #4b5563; line-height: 18px;">보너스 5점 · 경험치 20</span>
+    </span>
+    <span style="height: 24px; padding: 0 8px; border-radius: 999px; background: #ffb703; display: inline-flex; align-items: center; font-size: 12px; font-weight: 900; color: #1f2937; white-space: nowrap;">카드 5장</span>
+  </div>
+
+  <div style="flex: 0 0 auto; box-sizing: border-box; background: #ffffff; border: 2px solid #16a34a; border-radius: 20px; box-shadow: 0 6px 18px rgba(31,41,55,.10); padding: 12px 14px; display: flex; align-items: center; gap: 14px;">
+    <img src="/_blob/d080a24f3e16c3e0693cd91076fb085a" alt="덴마크 스티커" width="92" height="64" style="width: 92px; height: 64px; flex: 0 0 92px; box-sizing: border-box; object-fit: cover; border-radius: 10px; border: 1px solid #e5e7eb; display: block; background: #f8fafc;" />
+    <span style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 5px;">
+      <span style="align-self: flex-start; height: 26px; padding: 0 10px; border-radius: 999px; background: #dcfce7; display: inline-flex; align-items: center; font-size: 12px; font-weight: 900; color: #15803d; white-space: nowrap;">새 스티커!</span>
+      <span style="font-size: 24px; font-weight: 900; letter-spacing: -.02em; line-height: 28px;">덴마크</span>
+    </span>
+    <span style="font-size: 13px; font-weight: 800; color: #4b5563; white-space: nowrap;"><span aria-hidden="true">📖</span> 12 / 194</span>
+  </div>
+
+  <div style="margin-top: auto; flex: 0 0 auto; display: flex; flex-direction: column; gap: 12px;">
+    <button type="button" style="height: 64px; box-sizing: border-box; width: 100%; border: 0; border-radius: 16px; background: #ffb703; box-shadow: 0 8px 20px rgba(255,183,3,.38); display: flex; align-items: center; justify-content: center; gap: 10px; font: inherit; font-size: 21px; font-weight: 900; color: #1f2937; letter-spacing: -.02em; cursor: pointer;">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.6-6.4" /><path d="M21 3v6h-6" /></svg>
+      <span>한 번 더</span>
+    </button>
+    <button type="button" style="height: 56px; box-sizing: border-box; width: 100%; border: 1.5px solid #e5e7eb; border-radius: 16px; background: #ffffff; box-shadow: 0 6px 18px rgba(31,41,55,.10); display: flex; align-items: center; justify-content: center; gap: 10px; font: inherit; font-size: 18px; font-weight: 800; color: #1f2937; cursor: pointer;">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 11 9-8 9 8" /><path d="M5 10v10h5v-6h4v6h5V10" /></svg>
+      <span>홈으로</span>
+    </button>
+  </div>
+
+</div>
+</x-dc>
+<script data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>class Component extends DCLogic { renderVals() { return {}; } }</script>
+</body>
+</html>

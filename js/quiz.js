@@ -10,7 +10,9 @@
   var MODES = {
     choice4: { label: '국기 보고 나라 고르기', kind: 'choice', hasOptions: true, axis: 'flag' },
     reverse: { label: '나라 보고 국기 찾기', kind: 'choice', hasOptions: true, axis: 'flag' },
-    capital: { label: '수도 맞히기', kind: 'choice', hasOptions: true, axis: 'flag' },
+    // 수도 놀이(2026-09-17 D17 채택 B): 수도 이름을 듣고 국기 4장 중 그 나라를 찾는다. 기록은 axes.capital 에 따로 쌓여
+    // 새 축 규칙(axisWeightOf 가중치·한 판 안 다시 만나기·시간 초과 지나감·대결 없음·오늘의 도전 미집계)을 그대로 받는다.
+    capital: { label: '수도 듣고 국기 찾기', kind: 'choice', hasOptions: true, axis: 'capital' },
     typing:  { label: '이름 써서 맞히기', kind: 'text', hasOptions: false, axis: 'flag' },
     voice:   { label: '말로 답하기', kind: 'text', hasOptions: false, axis: 'flag' },
     map:     { label: '지도에서 나라 찾기', kind: 'choice', hasOptions: true, axis: 'map' },
@@ -87,13 +89,10 @@
     // 판단은 hasData() 한 곳에만 둔다. FQ.subjects 의 축 문장과 noArt(보류) 조건을 여기에
     // 인라인으로 복제하면 조건이 늘 때 한쪽만 고쳐 그림 없는 나라가 보기로 올라온다.
     var fallbackPool = all().filter(function (c) { return hasData(c, axis); });
+    // 수도 놀이의 보기도 국기(나라)이므로 나라 중복만 막으면 된다 — 수도 이름 특례는 필요 없다(2026-09-17).
     var candidates = (source && source.length >= count + 1 ? source : fallbackPool).filter(function (c) {
       return c.code !== answer.code && hasData(c, axis);
     });
-    if (mode === 'capital') {
-      // 수도 이름이 겹치면 정답이 둘이 되어 버린다
-      candidates = candidates.filter(function (c) { return c.capital !== answer.capital; });
-    }
 
     function tier(c) {
       if (c.region === answer.region) return 0;              // 같은 세부 지역이 가장 헷갈린다
@@ -107,18 +106,14 @@
 
     var out = [];
     var usedCode = {};
-    var usedCapital = {};
     usedCode[answer.code] = true;
-    usedCapital[answer.capital] = true;
 
     function take(c, relaxConfusion) {
       if (usedCode[c.code]) return false;
-      if (mode === 'capital' && usedCapital[c.capital]) return false;
       if (art && !relaxConfusion && Object.keys(usedCode).some(function (code) {
         return confusionSet(code)[c.code];
       })) return false;
       usedCode[c.code] = true;
-      usedCapital[c.capital] = true;
       out.push(c);
       return true;
     }
@@ -421,7 +416,7 @@
     if (total < 1) total = Math.min(1, source.length);
 
     // 출제 순서 정하기: 오답 우선이면 가중치로, 아니면 골고루 섞어서.
-    // 국기 축은 countries 의 weightOf, 새 축은 자기 axes 버킷만 읽는 axisWeightOf 를 쓴다 (D6: 축을 섞지 않는다).
+    // 국기 축은 countries 의 weightOf, 새 축(그림·명소·지도·수도)은 자기 axes 버킷만 읽는 axisWeightOf 를 쓴다 (D6: 축을 섞지 않는다).
     var weightFor = null;
     if (cfg.reviewFirst && FQ.storage) {
       if (axis === 'flag' && FQ.storage.weightOf) {
@@ -447,7 +442,7 @@
     var questions = order.map(function (c) { return makeQuestion(c, cfg.mode, source, { axis: axis }); });
 
     /* ---- 한 판 안에서 다시 만나기 (새 축 전용) ----
-     * 그림·명소·지도는 아이가 처음 보는 쌍이 많다. 처음 만난 쌍과 틀린 쌍은 같은 판에서 3문제 뒤에
+     * 그림·명소·지도·수도는 아이가 처음 보는 쌍이 많다. 처음 만난 쌍과 틀린 쌍은 같은 판에서 3문제 뒤에
      * 한 번 더 낸다. 총 문제 수는 그대로다 — 아직 안 만난 원래 문제 하나를 뒤에서 빼고 그 자리를 쓴다.
      * 국기 축은 여기에 들어오지 않는다. 국기 한 판은 "같은 나라가 두 번 안 나온다" 가 약속이다.
      */

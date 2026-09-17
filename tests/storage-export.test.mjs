@@ -96,8 +96,12 @@ test('직렬화가 실패해도 내보내기는 예외 대신 JSON 문자열을 
 function element(id) {
   let html = '', children = [];
   const listeners = new Map();
+  const attrs = {};
   return {
-    id, value: '', selectCalls: 0,
+    id, value: '', selectCalls: 0, hidden: false, attrs,
+    setAttribute(name, value) { attrs[name] = String(value); },
+    getAttribute(name) { return name in attrs ? attrs[name] : null; },
+    focus() { this.focused = true; },
     get innerHTML() { return html; },
     set innerHTML(value) {
       html = value;
@@ -141,6 +145,7 @@ test('194개 국기 스티커 안의 새 도장은 학습 축별 정답만 읽�
   f.storage.recordAnswer('kr', true, 'symbol');
   f.storage.recordAnswer('kr', false, 'place');
   f.storage.recordAnswer('kr', true, 'map');
+  f.storage.recordAnswer('kr', true, 'capital');
   const before = f.storage.exportJson();
   f.c.FQ.screens.dex('all');
   const html = f.node('#dex-list').innerHTML;
@@ -150,18 +155,23 @@ test('194개 국기 스티커 안의 새 도장은 학습 축별 정답만 읽�
   assert.match(kr, /axis-stamp earned" data-axis="symbol"/);
   assert.match(kr, /axis-stamp" data-axis="place"/);
   assert.match(kr, /axis-stamp earned" data-axis="map"/);
+  // 도장은 넷: 🎨 그림 · 🏞️ 명소 · 📍 위치 · 🏙️ 수도 (2026-09-17 D17 채택 B). 수도 정답은 국기 스티커를 열지 않는다.
+  assert.match(kr, /axis-stamp earned" data-axis="capital" title="수도 도장 획득" aria-label="수도 도장 획득">🏙️<\/span>/);
+  assert.equal((kr.match(/ data-axis="/g) || []).length, 4, '칸 안 도장은 넷');
   assert.equal(f.c.FQ.progress.stickers().owned, 0);
   assert.equal(f.storage.exportJson(), before);
+  assert.equal(JSON.parse(before).axes.capital.kr.correct, 1, '내보내기 JSON 에 capital 축이 들어간다');
   f.storage.updateSettings({ dev: { art: false } });
   f.c.FQ.screens.dex('all');
   assert.doesNotMatch(f.node('#dex-list').innerHTML, /data-axis="(?:symbol|place)"/);
   assert.match(f.node('#dex-list').innerHTML, /data-axis="map"/);
+  assert.match(f.node('#dex-list').innerHTML, /data-axis="capital"/, '수도 도장은 그림을 꺼도 보인다');
 });
 
-test('놀이별 기록은 국기·그림·명소·위치를 따로 집계하며 오래된 빈 레코드도 0으로 읽는다', () => {
+test('놀이별 기록은 국기·그림·명소·위치·수도를 따로 집계하며 오래된 빈 레코드도 0으로 읽는다', () => {
   const seed = fixture();
   const saved = JSON.parse(seed.storage.exportJson());
-  saved.axes = { symbol: { kr: { seen: 2, correct: 1 }, jp: {} }, map: { au: { seen: 1 } } };
+  saved.axes = { symbol: { kr: { seen: 2, correct: 1 }, jp: {} }, map: { au: { seen: 1 } }, capital: { mx: { seen: 3, correct: 2, wrong: 1 } } };
   const f = screenFixture({ saved: JSON.stringify(saved) });
   f.storage.recordAnswer('fr', true);
   const before = f.storage.exportJson();
@@ -170,6 +180,7 @@ test('놀이별 기록은 국기·그림·명소·위치를 따로 집계하며 
   assert.match(f.main.innerHTML, /data-axis="map"[\s\S]*?1개국 · 1문제[\s\S]*?정답 0개 · 0%/);
   assert.match(f.main.innerHTML, /data-axis="place"[\s\S]*?0개국 · 0문제/);
   assert.match(f.main.innerHTML, /data-axis="flag"[\s\S]*?1개국 · 1문제/);
+  assert.match(f.main.innerHTML, /data-axis="capital"><b>🏙️ 수도<\/b><div>1개국 · 3문제<\/div><div class="small muted">정답 2개 · 67%/);
   assert.doesNotMatch(f.main.innerHTML, /NaN|undefined/);
   assert.equal(f.storage.exportJson(), before);
 });
@@ -237,8 +248,9 @@ test('딸 수 없는 도장은 도감에 아예 그리지 않는다', () => {
       if (axis === 'symbol' && !earnable(c.code, axis)) checkedHeld += 1;
       if (axis === 'place' && !earnable(c.code, axis)) checkedNoPlace += 1;
     }
-    // 위치 도장은 194개국 모두 딸 수 있다.
+    // 위치·수도 도장은 194개국 모두 딸 수 있다.
     assert.ok(cell.includes('data-axis="map"'), c.code + ' 에 위치 도장이 없다');
+    assert.ok(cell.includes('data-axis="capital"'), c.code + ' 에 수도 도장이 없다');
   }
   assert.equal(checkedHeld, 1, '주입한 보류 상징물의 도장만 숨겨야 한다');
   assert.ok(checkedNoPlace > 0, '이 검사는 명소 없는 나라가 있을 때를 고정한다');
@@ -248,7 +260,7 @@ test('새로 만날 스티커가 비었을 때 조사가 맞고 아직 못 찍�
   const f = screenFixture();
   const FQ = f.c.FQ;
   const subjects = FQ.subjects;
-  const earnable = (code, axis) => axis === 'map' || (!!subjects[code]?.[axis] && !subjects[code][axis].noArt);
+  const earnable = (code, axis) => axis === 'map' || axis === 'capital' || (!!subjects[code]?.[axis] && !subjects[code][axis].noArt);
   const europe = FQ.countries.filter((c) => c.continent === '유럽');
   for (const c of europe) f.storage.recordAnswer(c.code, true);
   f.storage.updateSettings({ dev: { art: true } });
@@ -259,9 +271,9 @@ test('새로 만날 스티커가 비었을 때 조사가 맞고 아직 못 찍�
   assert.match(html, /유럽을 모두 모았어요/, '유럽 뒤에는 「을」');
   assert.doesNotMatch(html, /유럽를/);
   let left = 0;
-  for (const c of europe) for (const axis of ['symbol', 'place', 'map']) if (earnable(c.code, axis)) left += 1;
+  for (const c of europe) for (const axis of ['symbol', 'place', 'map', 'capital']) if (earnable(c.code, axis)) left += 1;
   assert.match(html, new RegExp('못 찍은 도장이 ' + left + '개 있어요'));
-  assert.match(html, /그림·명소·위치 놀이로 찍어 볼까요/);
+  assert.match(html, /그림·명소·위치·수도 놀이로 찍어 볼까요/);
   assert.doesNotMatch(html, /못 모은 칸이 하나도 없어요/, '도장이 남았는데 다 끝났다고 말하면 안 된다');
 
   // 도장을 몇 개 찍으면 남은 수가 줄고, 그림을 끄면 그림·명소 도장은 세지 않는다
@@ -273,8 +285,9 @@ test('새로 만날 스티커가 비었을 때 조사가 맞고 아직 못 찍�
   f.c.FQ.screens.dex('유럽');
   f.node('#dex-locked').change(true);
   html = f.node('#dex-list').innerHTML;
-  assert.match(html, new RegExp('못 찍은 도장이 ' + (europe.length - 1) + '개 있어요'));
-  assert.match(html, /위치 놀이로 찍어 볼까요/);
+  // 그림을 꺼도 위치·수도 도장은 남는다: 유럽 나라 수 × 2 에서 방금 찍은 위치 도장 하나를 뺀 수.
+  assert.match(html, new RegExp('못 찍은 도장이 ' + (europe.length * 2 - 1) + '개 있어요'));
+  assert.match(html, /위치·수도 놀이로 찍어 볼까요/);
   assert.doesNotMatch(html, /그림·명소/);
 
   // 받침 없는 대륙은 「를」. 전체는 194칸 국기 스티커라고 분명히 말한다.
@@ -288,7 +301,7 @@ test('새로 만날 스티커가 비었을 때 조사가 맞고 아직 못 찍�
   f.c.FQ.screens.dex('all');
   f.node('#dex-locked').change(true);
   assert.match(f.node('#dex-list').innerHTML, /국기 스티커 194칸을 모두 모았어요/);
-  for (const c of FQ.countries) for (const axis of ['symbol', 'place', 'map']) if (earnable(c.code, axis)) f.storage.recordAnswer(c.code, true, axis);
+  for (const c of FQ.countries) for (const axis of ['symbol', 'place', 'map', 'capital']) if (earnable(c.code, axis)) f.storage.recordAnswer(c.code, true, axis);
   f.c.FQ.screens.dex('all');
   f.node('#dex-locked').change(true);
   assert.match(f.node('#dex-list').innerHTML, /못 모은 칸도, 못 찍은 도장도 하나도 없어요/);
@@ -305,7 +318,7 @@ test('내 기록 상단은 어느 수가 모든 놀이 합산이고 어느 수�
   assert.match(html, /<div class="v">67%<\/div><div class="k">정답률 · 모든 놀이<\/div>/);
   assert.match(html, /<div class="k">최고 연속 · 모든 놀이<\/div>/);
   assert.match(html, /<div class="v">1<\/div><div class="k">국기로 만난 나라<\/div>/);
-  assert.match(html, /‘모든 놀이’는 국기·그림·명소·위치 놀이를 모두 더한 수예요/);
+  assert.match(html, /‘모든 놀이’는 국기·그림·명소·위치·수도 놀이를 모두 더한 수예요/);
   assert.match(html, /국기 놀이에서는 전체 194개국 중 1개국을 만났어요/);
 });
 
@@ -317,10 +330,74 @@ test('그림을 끄면 놀이별 기록도 홈·도감처럼 그림·명소 축�
   let html = f.main.innerHTML;
   assert.match(html, /data-axis="flag"/);
   assert.match(html, /data-axis="map"/);
+  assert.match(html, /data-axis="capital"/);
   assert.doesNotMatch(html, /data-axis="(?:symbol|place)"/);
   f.storage.updateSettings({ dev: { art: true } });
   f.c.FQ.screens.stats();
   html = f.main.innerHTML;
   assert.match(html, /data-axis="symbol"[\s\S]*?1개국 · 1문제/);
   assert.match(html, /data-axis="place"/);
+});
+
+test('스티커 판은 큰 숫자·굵은 진행바·대륙 알약 한 줄이고 검색·필터는 원형 단추로 접었다 편다', () => {
+  const css = fs.readFileSync(new URL('../css/style.css', import.meta.url), 'utf8');
+  const f = screenFixture();
+  f.storage.updateSettings({ dev: { art: true } });
+  f.storage.recordAnswer('kr', true);
+  f.storage.recordAnswer('kr', true, 'map');
+  f.storage.recordAnswer('jp', false, 'symbol');
+  const before = f.storage.exportJson();
+  f.c.FQ.screens.dex('all');
+  const html = f.main.innerHTML;
+  assert.match(html, /<div class="card dex-count-card" role="group" aria-label="모은 스티커 1 \/ 194 · 193개 남았어요">/);
+  assert.match(html, /<span class="v">1 <small>\/ 194<\/small><\/span><span class="stamps">도장 1개<\/span>/);
+  assert.match(html, /<span class="dex-bar" aria-hidden="true"><i style="width:1%"><\/i><\/span>/);
+  assert.match(html, /<button class="dex-back" id="back" type="button" aria-label="홈으로"><svg/);
+  assert.match(html, /<button class="dex-toggle" id="dex-search-toggle" type="button" aria-label="나라 이름으로 찾기" aria-expanded="false" aria-controls="dex-tools"><svg/);
+  assert.match(html, /<button class="dex-toggle" id="dex-filter-toggle" type="button" aria-label="한 번 더 만날 나라·새로 만날 스티커만 보기" aria-expanded="false" aria-controls="dex-filters"><svg/);
+  assert.match(html, /<div class="dex-tools" id="dex-tools" hidden>[\s\S]*id="dex-q"/);
+  assert.match(html, /<div class="dex-filters" id="dex-filters" hidden>[\s\S]*id="dex-wrong"[\s\S]*id="dex-locked"/);
+  assert.match(html, /<div class="dex-conts">(<button class="pill" type="button" data-cont="[^"]+" aria-pressed="(?:true|false)">[^<]+<\/button>){7}<\/div>/);
+  assert.doesNotMatch(html, /pill-grid|← 돌아가기|개 남았어요<\/span>/);
+  // 모은 칸은 국기, 못 모은 칸은 회색 실루엣 + 자물쇠 — 진짜 국기를 흐리게 보여 주지 않는다.
+  const list = f.node('#dex-list').innerHTML;
+  const kr = list.match(/<button class="sticker-cell [^>]*data-code="kr"[\s\S]*?<\/button>/)[0];
+  assert.match(kr, /^<button class="sticker-cell got" type="button" data-code="kr" aria-label="대한민국 · 모은 스티커"/);
+  assert.match(kr, /<img src="flags\/kr\.svg" alt="대한민국 스티커" loading="lazy">/);
+  assert.doesNotMatch(kr, /flag-ghost|class="lock"/);
+  const jp = list.match(/<button class="sticker-cell [^>]*data-code="jp"[\s\S]*?<\/button>/)[0];
+  assert.match(jp, /^<button class="sticker-cell locked" type="button" data-code="jp" aria-label="일본 · 아직 못 모은 스티커"/);
+  assert.match(jp, /<span class="flag-ghost"><svg viewBox="0 0 92 62" aria-hidden="true">[\s\S]*<\/svg><span class="lock"><span><svg[\s\S]*<\/svg><\/span><\/span><\/span><div class="n">일본<\/div>/);
+  assert.doesNotMatch(jp, /flags\/jp\.svg/);
+  assert.match(jp, /axis-stamp" data-axis="symbol"/);
+  assert.equal(f.storage.exportJson(), before, '화면을 그리는 것만으로 기록이 바뀌지 않는다');
+  // 단추를 누르면 접었다 편다. 검색을 펴면 입력칸에 초점이 간다. 열림은 저장하지 않는다.
+  const search = f.node('#dex-search-toggle'), tools = f.node('#dex-tools'), box = f.node('#dex-q');
+  search.click();
+  assert.equal(search.getAttribute('aria-expanded'), 'true'); assert.equal(tools.hidden, false); assert.equal(box.focused, true);
+  search.click();
+  assert.equal(search.getAttribute('aria-expanded'), 'false'); assert.equal(tools.hidden, true);
+  const filter = f.node('#dex-filter-toggle'), filters = f.node('#dex-filters');
+  filter.click();
+  assert.equal(filter.getAttribute('aria-expanded'), 'true'); assert.equal(filters.hidden, false);
+  assert.equal(f.storage.exportJson(), before);
+  // 필터를 켜 둔 채 다시 그리면 그 패널은 펼쳐진 채다 — 접힌 채 걸러지면 왜 나라가 줄었는지 알 수 없다.
+  f.node('#dex-locked').change(true);
+  f.c.FQ.screens.dex();
+  assert.match(f.main.innerHTML, /id="dex-filter-toggle"[^>]*aria-expanded="true"/);
+  assert.match(f.main.innerHTML, /<div class="dex-filters" id="dex-filters">/);
+  assert.match(f.main.innerHTML, /<div class="dex-tools" id="dex-tools" hidden>/);
+  assert.equal((f.node('#dex-list').innerHTML.match(/class="sticker-cell /g) || []).length, 193);
+  // css: 폰 3열(칸 124px 이상) · 아이패드 가로 8열 · 알약 44px · 원형 단추 48px · 대륙 줄 가로 스크롤
+  assert.match(css, /\.sticker-grid \{ grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/);
+  assert.match(css, /\.sticker-cell \{ min-height: 124px/);
+  assert.match(css, /\.dex-toggle \{ width: 48px; height: 48px; min-height: 48px/);
+  assert.match(css, /\.dex-back \{ width: 44px; height: 44px; min-height: 44px/);
+  assert.match(css, /\.dex-conts \{ display: flex; gap: 8px; overflow-x: auto/);
+  assert.match(css, /\.dex-conts \.pill \{[^}]*min-height: 44px/);
+  assert.match(css, /\.dex-bar \{[^}]*height: 14px/);
+  assert.match(css, /\.dex-tools\[hidden\] \{ display: none; \}/);
+  assert.match(css, /\.dex-filters\[hidden\] \{ display: none; \}/);
+  assert.match(css, /@media \(min-width: 760px\) and \(orientation: landscape\) \{[^@]*\.sticker-grid \{ grid-template-columns: repeat\(8, minmax\(0, 1fr\)\); \}/);
+  assert.match(css, /\.sticker-cell\.got \{ border-color: var\(--success\)/);
 });

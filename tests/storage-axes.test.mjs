@@ -69,10 +69,11 @@ test('새 축 기록을 초기화하면 비워지고 사용자 설정은 남는�
   assert.equal(store.settings().sound, true);
 });
 
-test('기존 다섯 모드는 국기 축이며 게임 제출은 모드 축에만 한 번 기록한다', () => {
+test('기존 네 모드는 국기 축, 수도는 capital 축이며 게임 제출은 모드 축에만 한 번 기록한다', () => {
   const { FQ } = fixture();
-  for (const mode of ['choice4', 'reverse', 'capital', 'typing', 'voice']) assert.equal(FQ.quiz.MODES[mode].axis, 'flag');
-  for (const axis of ['symbol', 'place', 'map']) {
+  for (const mode of ['choice4', 'reverse', 'typing', 'voice']) assert.equal(FQ.quiz.MODES[mode].axis, 'flag');
+  assert.equal(FQ.quiz.MODES.capital.axis, 'capital', 'D17 채택 B: 수도 기록은 axes.capital 에');
+  for (const axis of ['symbol', 'place', 'map', 'capital']) {
     const mode = 'axis-test-' + axis;
     FQ.quiz.MODES[mode] = { kind: 'choice', hasOptions: true, axis };
     const game = FQ.quiz.createGame({ mode, only: ['kr'], count: 1 });
@@ -243,7 +244,7 @@ test('짧은 판의 규칙: 2문제는 다시 만나기 없음, 3문제는 마�
 
 test('국기 축은 다시 만나기를 하지 않아 한 판에 같은 나라가 두 번 나오지 않는다', () => {
   const { FQ } = fixture();
-  for (const mode of ['choice4', 'capital']) {
+  for (const mode of ['choice4', 'reverse']) {
     const g = FQ.quiz.createGame({ mode, count: 8, level: 'all' });
     const log = play(g, (q) => (q.options.find(c => c.code !== q.country.code) || q.country).code);
     assert.ok(log.every(l => !l.correct && !l.scheduled && !l.again));
@@ -251,6 +252,31 @@ test('국기 축은 다시 만나기를 하지 않아 한 판에 같은 나라�
     assert.equal(g.againCount, 0);
     assert.equal(g.summary().wrong.length, 8);
   }
+});
+
+test('수도 축은 자기 버킷의 가중치와 다시 만나기를 쓰고 보기는 나라 중복만 막는다', () => {
+  const { FQ } = fixture();
+  FQ.storage.recordAnswer('kr', false, 'capital');
+  const weights = [];
+  const realPick = FQ.util.weightedPick;
+  FQ.util.weightedPick = (items, ws) => { weights.push(ws); return realPick(items, ws); };
+  const g = FQ.quiz.createGame({ mode: 'capital', count: 6, reviewFirst: true });
+  FQ.util.weightedPick = realPick;
+  assert.ok(weights.length > 0 && weights.every(ws => ws.every(w => Number.isFinite(w) && w > 0)));
+  assert.equal(FQ.storage.axisWeightOf('capital', 'kr'), 3.1, '수도 축에서 틀린 나라의 가중치');
+  assert.equal(FQ.storage.weightOf('kr'), 2, '국기 가중치는 그대로');
+  for (const q of g.questions) {
+    assert.equal(q.options.length, 4);
+    assert.equal(new Set(q.options.map(c => c.code)).size, 4, '보기(국기) 나라 중복 없음');
+    assert.ok(q.options.some(c => c.code === q.country.code));
+  }
+  const log = play(g, (q) => q.country.code);
+  assert.equal(log.length, 6);
+  assert.ok(g.againCount >= 1, '수도에서도 처음 만난 쌍을 다시 만난다');
+  assert.equal(Object.keys(FQ.storage.allCountryStats()).length, 0, '국기 기록은 그대로');
+  assert.equal(FQ.progress.hasSticker(g.questions[0].country.code), false, '194칸 국기 스티커는 국기 축만');
+  assert.ok(Object.keys(FQ.storage.allAxisStats('capital')).length >= 1);
+  assert.deepEqual(Object.keys(JSON.parse(FQ.storage.exportJson()).axes), ['capital'], '내보내기 JSON 에 capital 버킷');
 });
 
 test('지도 축도 자기 버킷의 가중치와 다시 만나기를 쓴다', () => {

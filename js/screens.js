@@ -6,11 +6,13 @@
 
   var CONTINENTS = ['all', '아시아', '유럽', '아프리카', '북아메리카', '남아메리카', '오세아니아'];
   var dexFilter = { continent: 'all', query: '', onlyWrong: false, onlyLocked: false };
+  // 칸 안 도장은 넷이다(2026-09-17 D17 채택 B): 🎨 그림 · 🏞️ 명소 · 📍 위치 · 🏙️ 수도. 국기 스티커(194칸)는 국기 축만 채운다.
   var AXES = [
     { id: 'flag', label: '국기', icon: '🚩' },
     { id: 'symbol', label: '그림', icon: '🎨' },
     { id: 'place', label: '명소', icon: '🏞️' },
-    { id: 'map', label: '위치', icon: '📍' }
+    { id: 'map', label: '위치', icon: '📍' },
+    { id: 'capital', label: '수도', icon: '🏙️' }
   ];
 
   /** 화면을 보는 것만으로 저장 기록이나 스티커 수를 바꾸지 않는다. */
@@ -18,10 +20,10 @@
     return axis === 'flag' ? FQ.storage.allCountryStats() : FQ.storage.allAxisStats(axis);
   }
 
-  /** 지금 보여 줄 축. 그림을 끄면 홈·도감과 똑같이 그림·명소 축을 감춘다. */
+  /** 지금 보여 줄 축. 그림을 끄면 홈·도감과 똑같이 그림·명소 축을 감춘다. 위치·수도는 늘 보인다. */
   function visibleAxes() {
     return AXES.filter(function (axis) {
-      if (axis.id === 'flag' || axis.id === 'map') return true;
+      if (axis.id === 'flag' || axis.id === 'map' || axis.id === 'capital') return true;
       return !!(FQ.features && FQ.features.on('art'));
     });
   }
@@ -47,16 +49,29 @@
       }).join('') + '</div></div>';
   }
 
-  /** 스티커 판 위쪽: 모은 개수 */
+  /** 지금까지 찍은 도장 수(그림·명소·위치·수도). 딸 수 없는 도장은 세지 않는다. 읽기만 한다. */
+  function stampsEarned() {
+    var count = 0;
+    stampAxes().forEach(function (axis) {
+      var records = axisRecords(axis.id);
+      (FQ.countries || []).forEach(function (c) {
+        if (canEarn(c.code, axis.id) && ((records[c.code] || {}).correct || 0) > 0) count += 1;
+      });
+    });
+    return count;
+  }
+
+  /** 스티커 판 위쪽: 큰 숫자와 굵은 진행바(2026-09-17 시안 PhoneStickers). 남은 수는 읽어 주는 기계용 한 문장에 넣는다. */
   function stickerHeader() {
     var st = FQ.progress.stickers();
-    return '<div class="card section">' +
-      '<div class="row" style="align-items:baseline">' +
-        '<b style="font-size:1.15rem">모은 스티커 ' + st.owned + ' / ' + st.total + '</b>' +
-        '<span class="spacer"></span>' +
-        '<span class="small muted">' + st.left + '개 남았어요</span>' +
+    var stamps = stampsEarned();
+    return '<div class="card dex-count-card" role="group" aria-label="모은 스티커 ' + st.owned + ' / ' + st.total + ' · ' + st.left + '개 남았어요">' +
+      '<div class="dex-count-row" aria-hidden="true">' +
+        '<span class="k">모은 스티커</span>' +
+        '<span class="v">' + st.owned + ' <small>/ ' + st.total + '</small></span>' +
+        (stamps ? '<span class="stamps">도장 ' + stamps + '개</span>' : '') +
       '</div>' +
-      '<div class="xp-bar" style="margin-top:8px"><i style="width:' + Math.round(st.ratio * 100) + '%"></i></div>' +
+      '<span class="dex-bar" aria-hidden="true"><i style="width:' + Math.round(st.ratio * 100) + '%"></i></span>' +
     '</div>';
   }
 
@@ -74,7 +89,7 @@
         '다른 나라의 국기도 펼쳐 볼까요?</div>';
     }
     if (dexFilter.onlyLocked) {
-      // 국기 스티커는 다 모았어도 칸 안의 도장(그림·명소·위치)은 남아 있을 수 있다. 도장까지 세어 말한다.
+      // 국기 스티커는 다 모았어도 칸 안의 도장(그림·명소·위치·수도)은 남아 있을 수 있다. 도장까지 세어 말한다.
       var cont = dexFilter.continent;
       var left = stampsLeft(cont);
       var head = cont === 'all'
@@ -110,6 +125,10 @@
         if (labels.indexOf(axis.label) === -1) labels.push(axis.label);
       });
     });
+    // 안내 문구의 놀이 순서는 도장 순서(그림·명소·위치·수도)와 같게 — 어느 나라가 먼저 걸리느냐에 따라 바뀌지 않는다.
+    labels.sort(function (a, b) {
+      return axes.map(function (axis) { return axis.label; }).indexOf(a) - axes.map(function (axis) { return axis.label; }).indexOf(b);
+    });
     return { count: count, labels: labels };
   }
 
@@ -125,31 +144,46 @@
       dexFilter.onlyWrong = false;
       dexFilter.onlyLocked = false;
     }
+    // 시안(PhoneStickers·IpadStickers): 검색과 두 필터는 오른쪽 위 돋보기·체크 원형 단추(48px)로 접었다 편다.
+    // 쓰던 검색어나 켜 둔 필터가 있으면 펼친 채로 그린다 — 접힌 채 걸러지면 왜 나라가 줄었는지 알 수 없다.
+    var searchOpen = !!dexFilter.query;
+    var filterOpen = !!(dexFilter.onlyWrong || dexFilter.onlyLocked);
     var html =
-      '<section class="screen">' +
-        '<div class="row" style="align-items:center;margin-bottom:12px">' +
-          '<button class="btn btn-sm btn-ghost" id="back" type="button">← 돌아가기</button>' +
-          '<h2 style="margin:0;font-size:1.4rem">📖 스티커 판</h2>' +
+      '<section class="screen dex-screen">' +
+        '<div class="dex-head">' +
+          '<button class="dex-back" id="back" type="button" aria-label="홈으로">' + ICON_BACK + '</button>' +
+          '<span class="dex-ic" aria-hidden="true">📖</span>' +
+          '<h2>스티커 판</h2>' +
+          '<span class="spacer"></span>' +
+          '<button class="dex-toggle" id="dex-search-toggle" type="button" aria-label="나라 이름으로 찾기" aria-expanded="' + searchOpen + '" aria-controls="dex-tools">' + ICON_SEARCH + '</button>' +
+          '<button class="dex-toggle" id="dex-filter-toggle" type="button" aria-label="한 번 더 만날 나라·새로 만날 스티커만 보기" aria-expanded="' + filterOpen + '" aria-controls="dex-filters">' + ICON_CHECK + '</button>' +
         '</div>' +
         stickerHeader() +
-        '<div class="card section">' +
+        '<div class="dex-tools" id="dex-tools"' + (searchOpen ? '' : ' hidden') + '>' +
           '<div class="field">' +
             '<input class="text-input" id="dex-q" placeholder="나라 이름으로 찾기 (예: 브라질)" value="' + esc(dexFilter.query) + '" autocomplete="off">' +
           '</div>' +
-          '<div class="pill-grid">' +
-            CONTINENTS.map(function (c) {
-              return '<button class="pill" type="button" data-cont="' + esc(c) + '" aria-pressed="' + (dexFilter.continent === c ? 'true' : 'false') + '">' +
-                (c === 'all' ? '전체' : esc(c)) + '</button>';
-            }).join('') +
-          '</div>' +
-          '<label class="switch" style="margin-top:12px"><input type="checkbox" id="dex-wrong"' + (dexFilter.onlyWrong ? ' checked' : '') + '> 한 번 더 만날 나라</label>' +
+        '</div>' +
+        '<div class="dex-filters" id="dex-filters"' + (filterOpen ? '' : ' hidden') + '>' +
+          '<label class="switch"><input type="checkbox" id="dex-wrong"' + (dexFilter.onlyWrong ? ' checked' : '') + '> 한 번 더 만날 나라</label>' +
           '<label class="switch"><input type="checkbox" id="dex-locked"' + (dexFilter.onlyLocked ? ' checked' : '') + '> 새로 만날 스티커</label>' +
+        '</div>' +
+        '<div class="dex-conts">' +
+          CONTINENTS.map(function (c) {
+            return '<button class="pill" type="button" data-cont="' + esc(c) + '" aria-pressed="' + (dexFilter.continent === c ? 'true' : 'false') + '">' +
+              (c === 'all' ? '전체' : esc(c)) + '</button>';
+          }).join('') +
         '</div>' +
         '<div id="dex-list"></div>' +
       '</section>';
 
     var m = ui.setMain(html);
     ui.$('#back', m).addEventListener('click', function () { FQ.app.home(); });
+    bindToggle(ui.$('#dex-search-toggle', m), ui.$('#dex-tools', m), searchOpen, function (open) {
+      var box = ui.$('#dex-q', m);
+      if (open && box && box.focus) box.focus();
+    });
+    bindToggle(ui.$('#dex-filter-toggle', m), ui.$('#dex-filters', m), filterOpen);
     ui.on(m, '[data-cont]', 'click', function (e, t) {
       dexFilter.continent = t.getAttribute('data-cont');
       ui.$$('[data-cont]', m).forEach(function (b) {
@@ -173,13 +207,31 @@
     paintDex();
   }
 
-  /* 자물쇠는 이모지 대신 선으로 그린다 */
-  var LOCK_SVG = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+  /** 접었다 펴는 단추. 열림은 화면 상태뿐이라 저장하지 않는다(dexFilter 는 필터 값만 기억한다). */
+  function bindToggle(button, panel, startOpen, onChange) {
+    if (!button || !panel) return;
+    var open = !!startOpen;
+    button.addEventListener('click', function () {
+      open = !open;
+      button.setAttribute('aria-expanded', open ? 'true' : 'false');
+      panel.hidden = !open;
+      if (onChange) onChange(open);
+    });
+  }
+
+  /* 자물쇠·돋보기·체크·뒤로는 이모지 대신 선으로 그린다. 읽어 주는 글이 아니라 눈으로 보는 표시다. */
+  var LOCK_SVG = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
     'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
     '<rect x="4" y="10" width="16" height="11" rx="2"></rect>' +
     '<path d="M8 10V7a4 4 0 0 1 8 0v3"></path></svg>';
+  var ICON_BACK = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"></path><path d="m11 18-6-6 6-6"></path></svg>';
+  var ICON_SEARCH = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>';
+  var ICON_CHECK = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12 5 5L20 6"></path></svg>';
+  /* 못 모은 칸의 회색 깃발 실루엣 — 진짜 국기를 흐리게 보여 주면 답을 미리 알려 주는 셈이다 */
+  var FLAG_GHOST = '<svg viewBox="0 0 92 62" aria-hidden="true"><rect x="20" y="6" width="4" height="50" rx="2" fill="currentColor" fill-opacity=".45"></rect>' +
+    '<path d="M26 10C40 4 54 16 76 10L76 36C54 42 40 30 26 36Z" fill="currentColor" fill-opacity=".3"></path></svg>';
 
-  /** 그 나라가 그 축으로 출제될 수 있는가 — js/quiz.js 의 hasData 와 같은 기준이다. */
+  /** 그 나라가 그 축으로 출제될 수 있는가 — js/quiz.js 의 hasData 와 같은 기준이다. 위치·수도 도장은 194개국 모두 딸 수 있다. */
   function canEarn(code, axis) {
     if (axis !== 'symbol' && axis !== 'place') return true;
     // 자료를 못 읽었으면 숨기지 않는다. 자료가 없다는 이유로 도장을 지우면
@@ -222,9 +274,11 @@
             var cs = stats[c.code];
             var got = cs && cs.correct > 0;
             return '<button class="sticker-cell ' + (got ? 'got' : 'locked') + '" type="button"' +
-              ' data-code="' + c.code + '" style="animation-delay:' + Math.min(0.5, i * 0.012).toFixed(3) + 's">' +
-              '<img src="' + ui.flagSrc(c.code) + '" alt="' + esc(c.ko) + ' 스티커" loading="lazy">' +
-              (got ? '' : '<span class="lock">' + LOCK_SVG + '</span>') +
+              ' data-code="' + c.code + '" aria-label="' + esc(c.ko) + ' · ' + (got ? '모은 스티커' : '아직 못 모은 스티커') + '"' +
+              ' style="animation-delay:' + Math.min(0.5, i * 0.012).toFixed(3) + 's">' +
+              (got
+                ? '<img src="' + ui.flagSrc(c.code) + '" alt="' + esc(c.ko) + ' 스티커" loading="lazy">'
+                : '<span class="flag-ghost">' + FLAG_GHOST + '<span class="lock"><span>' + LOCK_SVG + '</span></span></span>') +
               '<div class="n">' + esc(c.ko) + '</div>' +
               '<div class="axis-stamps">' + stamps.map(function (axis) {
                 // 딸 수 없는 도장은 그리지 않는다. 그림이 없는 나라(보류)와 명소가 없는 나라는
@@ -295,9 +349,9 @@
             '<div class="stat"><div class="v">' + seenCount + '</div><div class="k">국기로 만난 나라</div></div>' +
             '<div class="stat"><div class="v">' + learnedCount + '</div><div class="k">익숙한 국기</div></div>' +
           '</div>' +
-          // 위 세 칸은 국기·그림·명소·위치를 모두 더한 수이고, '국기로 만난 나라' 부터는 국기 놀이만 센다.
+          // 위 세 칸은 국기·그림·명소·위치·수도를 모두 더한 수이고, '국기로 만난 나라' 부터는 국기 놀이만 센다.
           // 어느 쪽인지 적어 두지 않으면 국기 판만 보는 아빠가 문제 수와 나라 수가 안 맞는다고 헷갈린다.
-          '<p class="small muted" style="margin:12px 0 0">‘모든 놀이’는 국기·그림·명소·위치 놀이를 모두 더한 수예요. ' +
+          '<p class="small muted" style="margin:12px 0 0">‘모든 놀이’는 국기·그림·명소·위치·수도 놀이를 모두 더한 수예요. ' +
             '국기 놀이에서는 전체 ' + total + '개국 중 ' + seenCount + '개국을 만났어요. ' +
             (seenCount >= total ? '온 세계를 한 바퀴 돌았네요! 🌐' : '아직 ' + (total - seenCount) + '개국이 남았어요.') + '</p>' +
         '</div>' +

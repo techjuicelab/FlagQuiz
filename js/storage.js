@@ -36,7 +36,7 @@
     /* code -> {seen, correct, wrong, streak} */
     countries: {},
     badges: {},
-    axes: {},   /* axis -> code -> {seen,correct,wrong,streak} */
+    axes: {},   /* axis(symbol·place·map·capital) -> code -> {seen,correct,wrong,streak} — 읽을 때는 늘 (x || 0) */
     history: []
   };
 
@@ -92,7 +92,7 @@
     return state.countries[code];
   }
 
-  /** 그림·명소·지도 기록은 국기 오답노트와 별도 버킷에 둔다. */
+  /** 그림·명소·지도·수도 기록은 국기 오답노트와 별도 버킷에 둔다(axes.symbol · axes.place · axes.map · axes.capital). */
   function axisStat(axis, code) {
     state.axes[axis] = state.axes[axis] || {};
     var records = state.axes[axis];
@@ -158,7 +158,7 @@
   }
 
   /**
-   * 새 축(그림·명소·지도)의 출제 가중치. 그 축의 버킷만 읽고, 국기 기록은 보지 않는다.
+   * 새 축(그림·명소·지도·수도)의 출제 가중치. 그 축의 버킷만 읽고, 국기 기록은 보지 않는다.
    * 읽기만 한다 — axisStat 과 달리 레코드를 만들지 않으므로 출제만으로 도장 수가 바뀌지 않는다.
    */
   function axisWeightOf(axis, code) {
