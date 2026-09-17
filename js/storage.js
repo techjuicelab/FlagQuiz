@@ -37,7 +37,9 @@
     countries: {},
     badges: {},
     axes: {},   /* axis(symbol·place·map·capital) -> code -> {seen,correct,wrong,streak} — 읽을 때는 늘 (x || 0) */
-    history: []
+    history: [],
+    /* 깜짝 상자: since = 지난 상자 뒤 쌓인 카드 수(8장 보장의 근거), opened = 연 상자 수, kinds = 종류별 수. 읽을 때는 (x || 0) */
+    chest: { since: 0, opened: 0, kinds: {} }
   };
 
   function deepClone(o) { return JSON.parse(JSON.stringify(o)); }
@@ -226,7 +228,31 @@
     state.axes = {};
     state.history = [];
     state.daily = deepClone(DEFAULTS.daily);
+    state.chest = deepClone(DEFAULTS.chest);
     save();
+  }
+
+  /* ---------------- 깜짝 상자 ---------------- */
+
+  /** 읽기 전용. 옛 저장분에는 chest 버킷이 없으므로 전부 (x || 0) 로 방어한다. */
+  function chestState() {
+    var c = state.chest && typeof state.chest === 'object' ? state.chest : {};
+    return { since: Number(c.since) || 0, opened: Number(c.opened) || 0, kinds: c.kinds && typeof c.kinds === 'object' ? c.kinds : {} };
+  }
+
+  /** 카드 한 장이 쌓였다. kind 가 있으면 그 종류의 상자가 열린 것이고 since 는 0 으로 돌아간다. */
+  function recordChest(kind) {
+    var c = state.chest = state.chest && typeof state.chest === 'object' ? state.chest : {};
+    if (kind) {
+      c.since = 0;
+      c.opened = (Number(c.opened) || 0) + 1;
+      c.kinds = c.kinds && typeof c.kinds === 'object' ? c.kinds : {};
+      c.kinds[kind] = (c.kinds[kind] || 0) + 1;
+    } else {
+      c.since = (Number(c.since) || 0) + 1;
+    }
+    save();
+    return chestState();
   }
 
   FQ.storage = {
@@ -250,6 +276,8 @@
     badges: badges,
     awardBadge: awardBadge,
     resetAll: resetAll,
-    resetProgress: resetProgress
+    resetProgress: resetProgress,
+    chestState: chestState,
+    recordChest: recordChest
   };
 })(window);

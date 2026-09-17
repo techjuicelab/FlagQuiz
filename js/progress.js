@@ -108,16 +108,49 @@
     return 0;
   }
 
-  /* ---------------- 보물상자 ---------------- */
+  /* ---------------- 깜짝 상자 ---------------- */
 
-  var CHEST_EVERY = 5;
+  // 2026-09-17: 카드 5장마다 100% 열리던 여행 상자를 깜짝 선물로 바꾼다(D22).
+  // 지난 상자 뒤 2장째부터 매 문제 15% 확률로 열리고 8장째에는 반드시 연다.
+  // 이 조합의 평균은 5.5장에 한 번 — 전(5장)보다 10% 뜸하다. 빈 상자는 없다.
+  var CHEST_EVERY = 5;            // 여행 카드 칸(진행 표시)은 다섯 칸 그대로 둔다
+  var CHEST_MIN = 2, CHEST_MAX = 8, CHEST_CHANCE = 0.15;
 
-  /** 누적 학습 카드로 여행 상자가 열리는가 (5, 10, 15 …) */
-  function chestOpensAt(cards) {
-    return cards > 0 && cards % CHEST_EVERY === 0;
+  /** 지난 상자 뒤 since 번째 카드에서 상자가 열리는가. r 은 0~1 난수(검사에서 주입한다). */
+  function chestRoll(since, r) {
+    since = Math.max(0, Number(since) || 0);
+    if (since < CHEST_MIN) return false;
+    if (since >= CHEST_MAX) return true;
+    var roll = typeof r === 'number' ? r : Math.random();
+    return roll < CHEST_CHANCE;
   }
 
-  /** 다음 상자까지 남은 개수와 진행 비율 */
+  // 상자 종류: 보통 75% · 반짝 20% · 황금 5%. 아이에게는 글자가 아니라 색과 반짝임으로 보인다.
+  var CHEST_KINDS = {
+    plain: { name: '여행 상자', score: 5, xp: 20 },
+    shiny: { name: '반짝 상자', score: 5, xp: 40 },
+    gold:  { name: '황금 상자', score: 10, xp: 60 }
+  };
+  function chestKind(r) {
+    var roll = typeof r === 'number' ? r : Math.random();
+    return roll < 0.05 ? 'gold' : roll < 0.25 ? 'shiny' : 'plain';
+  }
+  function chestLoot(kind) { return CHEST_KINDS[kind] || CHEST_KINDS.plain; }
+
+  // 상자 모양은 방금 만난 나라의 대륙을 따르고, 상자 음악 6곡을 대륙에 하나씩 붙인다.
+  var CHEST_SHAPES = {
+    '아시아':     { emoji: '🏮', name: '연등',      music: 'chest-01-musicbox' },
+    '유럽':       { emoji: '🎁', name: '리본 상자', music: 'chest-02-bubbles' },
+    '아프리카':   { emoji: '🥁', name: '북',        music: 'chest-03-fireflies' },
+    '북아메리카': { emoji: '🎈', name: '풍선',      music: 'chest-04-paperbird' },
+    '남아메리카': { emoji: '🪅', name: '피냐타',    music: 'chest-05-tinyspace' },
+    '오세아니아': { emoji: '🐚', name: '조개',      music: 'chest-06-seaglass' }
+  };
+  function chestShape(continent) {
+    return CHEST_SHAPES[continent] || { emoji: '🎁', name: '여행 상자', music: null };
+  }
+
+  /** 여행 카드 칸 다섯 개의 진행 — 카드 모으기 표시일 뿐, 상자가 열리는 때와는 무관하다 */
   function chestProgress(cards) {
     var into = Math.max(0, Number(cards) || 0) % CHEST_EVERY;
     return { into: into, need: CHEST_EVERY, left: CHEST_EVERY - into, ratio: into / CHEST_EVERY };
@@ -185,7 +218,11 @@
     hasSticker: hasSticker,
     stickers: stickers,
     starsFor: starsFor,
-    chestOpensAt: chestOpensAt,
+    chestRoll: chestRoll,
+    chestKind: chestKind,
+    chestLoot: chestLoot,
+    chestShape: chestShape,
+    CHEST_RULE: { min: CHEST_MIN, max: CHEST_MAX, chance: CHEST_CHANCE },
     chestProgress: chestProgress,
     daily: daily,
     noteDaily: noteDaily,

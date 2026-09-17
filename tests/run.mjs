@@ -507,9 +507,9 @@ group('보상 체계', () => {
   ok(P.starsFor(3, 10) === 0, '30%면 별 없음');
   ok(P.starsFor(0, 0) === 0, '문제가 없으면 별 없음');
 
-  // 여행 상자는 누적 학습 카드 5장마다
-  ok(P.chestOpensAt(5) && P.chestOpensAt(10) && P.chestOpensAt(15), '5·10·15장에 열림');
-  ok(!P.chestOpensAt(0) && !P.chestOpensAt(4) && !P.chestOpensAt(6), '그 밖에는 안 열림');
+  // 깜짝 상자(D22): 지난 상자 뒤 2장째부터 15%, 8장째에는 반드시
+  ok(!P.chestRoll(1, 0) && P.chestRoll(2, 0) && !P.chestRoll(2, 0.5) && P.chestRoll(8, 0.99), '굴림 규칙');
+  ok(P.chestKind(0) === 'gold' && P.chestKind(0.2) === 'shiny' && P.chestKind(0.9) === 'plain', '상자 종류');
   ok(P.chestProgress(3).left === 2, '3장이면 두 장 남음');
   ok(P.chestProgress(5).left === 5, '열린 직후에는 다시 다섯 장');
 

@@ -7,7 +7,7 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 
 const KEY = 'flagquiz.v1';
-const KEYS = ['settings', 'stats', 'daily', 'countries', 'badges', 'axes', 'history'];
+const KEYS = ['settings', 'stats', 'daily', 'countries', 'badges', 'axes', 'history', 'chest'];
 
 function fixture({ saved, blocked = false, getterBlocked = false } = {}) {
   const local = new Map(saved === undefined ? [] : [[KEY, saved]]);
@@ -42,7 +42,7 @@ function recordProgress(storage) {
   storage.finishGame({ mode: 'choice4', total: 2, correct: 1, seconds: 20, bestStreak: 1, players: ['민규'] });
 }
 
-test('기록 백업은 새 축을 포함한 일곱 버킷 JSON이며 저장된 내용과 일치한다', () => {
+test('기록 백업은 새 축과 깜짝 상자를 포함한 여덟 버킷 JSON이며 저장된 내용과 일치한다', () => {
   const f = fixture();
   const initial = f.storage.exportJson();
   assert.equal(typeof initial, 'string');

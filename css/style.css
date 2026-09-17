@@ -1747,3 +1747,26 @@ button.cont-item:focus-visible { outline: 3px solid var(--accent); outline-offse
   .result-screen .result-head, .result-screen .big-stats { grid-column: 1 / -1; }
   .result-screen .result-actions { grid-column: 1 / -1; flex-direction: row; }
 }
+
+/* ------------------------- 깜짝 상자 (D22): 대륙 모양 셋 중 하나 고르기 ------------------------- */
+.chest-picks { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 14px; }
+.chest-picks[hidden], .chest-open[hidden] { display: none; }
+.chest-pick {
+  min-height: 96px; border-radius: 20px; border: 2px solid var(--line); background: var(--card-2);
+  font-size: 3rem; line-height: 1; cursor: pointer; box-shadow: var(--shadow); padding: 0;
+  transition: transform .12s ease, border-color .12s ease;
+}
+.chest-pick:hover, .chest-pick:focus-visible { transform: translateY(-3px); border-color: var(--accent); outline: none; }
+.chest-pick.wobble { animation: chestShake .4s ease-in-out 3; }
+.chest-kind { font-size: 1.15rem; font-weight: 900; margin-top: 4px; color: var(--primary-dark); }
+.chest-card.shiny .chest-emoji { filter: drop-shadow(0 0 14px rgba(79, 124, 255, .85)); }
+.chest-card.gold { background: linear-gradient(180deg, #fff3c4, var(--card) 62%); box-shadow: 0 0 0 4px var(--accent), var(--shadow-lg); }
+.chest-card.gold .chest-kind { color: #b45309; }
+.chest-friend { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 14px; }
+.chest-friend img { width: 72px; height: 48px; object-fit: cover; border-radius: 8px; box-shadow: var(--shadow); }
+.chest-friend img.art { width: 72px; height: 54px; border-radius: 10px; }
+.chest-friend-name { font-weight: 900; font-size: 1.05rem; }
+@media (prefers-color-scheme: dark) {
+  .chest-card.gold { background: linear-gradient(180deg, #4a3a10, var(--card) 62%); }
+  .chest-card.gold .chest-kind { color: #ffd97a; }
+}

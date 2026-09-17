@@ -238,3 +238,13 @@ test('끝 콜백이 곧바로 새 곡을 시작해도 이전 정리가 새 곡�
   assert.equal(env.music.isPlaying(), true);
   await ended(env); assert.equal(env.timers.size, 0);
 });
+
+test('깜짝 상자는 대륙 곡(prefer)을 지정하면 바로 전 곡 피하기보다 우선한다', () => {
+  const env = setup();
+  env.music.play('chest');
+  assert.equal(env.player.src, 'audio/music/chest-one.mp3');
+  env.music.play('chest', { prefer: 'chest-one' });
+  assert.equal(env.player.src, 'audio/music/chest-one.mp3', '지정한 곡은 직전 곡이어도 다시 튼다');
+  env.music.play('chest', { prefer: 'chest-nine' });
+  assert.equal(env.player.src, 'audio/music/chest-two.mp3', '없는 곡을 지정하면 원래 규칙으로 고른다');
+});

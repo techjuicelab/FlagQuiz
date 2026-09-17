@@ -12,7 +12,6 @@
   var ui = FQ.ui;
   var esc = ui.esc;
 
-  var CHEST_BONUS = 5;   // 학습 카드 다섯 장을 모으면 더해 주는 점수
   var DISCOVERIES = ['여행책에 한 장', '지도에 톡', '하나 더 만났어요', '깃발이 살랑'];
 
   // 첫 화면은 큰 놀이 단추 네 개뿐이다(2026-09-17 아이 기준 시안). 단추를 누르면 저장된 조건 그대로 바로 시작한다.
@@ -147,8 +146,8 @@
     if (FQ.music) FQ.music.stop();
   }
 
-  function playMusic(event, done) {
-    if (FQ.music) return FQ.music.play(event, { onDone: done, onFail: done });
+  function playMusic(event, done, extra) {
+    if (FQ.music) return FQ.music.play(event, Object.assign({ onDone: done, onFail: done }, extra || {}));
     var pending = global.setTimeout(function () { if (done) done(); }, 0);
     return function () { global.clearTimeout(pending); };
   }
@@ -658,7 +657,8 @@
     state.unscored = 0;        // 점수 없이 지나간 문제 수 (그림 실패·새 축 시간 초과). 총 문항에서 뺀다.
     state.answeredCodes = {};  // 이 판에서 실제로 채점한 나라. 결과의 '오늘 만난 나라'는 문제 수가 아니라 나라 수다.
     state.met = [];            // 이 판에서 채점한 순서대로 { country, correct }. 여행 카드 칸과 결과의 카드 다섯 장이 읽는다(저장 안 함).
-    state.chestsOpened = 0;    // 이 판에서 열린 여행 상자 수. 결과 화면의 🎁 카드만 읽는다.
+    state.chestsOpened = 0;    // 이 판에서 열린 깜짝 상자 수. 결과 화면의 🎁 카드만 읽는다.
+    state.chestLoot = [];      // 이 판에서 연 상자의 { kind, score, xp } — 결과 화면 합계용(저장 안 함).
     renderQuiz();
     // 말하기는 클릭한 순간 바로 마이크를 연다. 시작 음악보다 듣기를 우선한다.
     if (s.mode !== 'voice') playMusic('start');
@@ -1365,15 +1365,28 @@
       }
       if (flagAxis) res.dailyDone = FQ.progress.noteDaily(q.country, true);
     }
-    // recordAnswer는 제출 때 딱 한 번 증가한다. 오답·건너뛰기도 쌓이고 다음 판에 이어진다.
-    res.chest = FQ.progress.chestOpensAt(store.stats().asked);
+    // 깜짝 상자(D22): 지난 상자 뒤 쌓인 카드 수로 굴린다 — 2장째부터 15%, 8장째에는 반드시. 오답·건너뛰기도 한 장이고
+    // 다음 판에 이어진다. 종류(보통·반짝·황금)와 흔들기 여부도 여기서 정하므로 셋 중 무엇을 골라도 결과는 같다.
+    // state.rng / state.rngKind 는 검사에서 난수를 주입하는 자리다.
+    var roll = state.rng || global.Math.random;
+    var rollKind = state.rngKind || roll;
+    var chestNow = store.chestState();
+    res.chest = FQ.progress.chestRoll(chestNow.since + 1, roll());
     if (res.chest) {
+      res.chestKind = FQ.progress.chestKind(rollKind());
+      res.chestLoot = FQ.progress.chestLoot(res.chestKind);
+      res.chestShape = FQ.progress.chestShape(q.country.continent);
+      res.chestShake = rollKind() < 0.3;   // 열에 셋은 한 번 더 두드려야 열린다
+      store.recordChest(res.chestKind);
       state.chestsOpened = (state.chestsOpened || 0) + 1;
-      var chestLevel = FQ.progress.addXp(20);
+      state.chestLoot = (state.chestLoot || []).concat([{ kind: res.chestKind, score: res.chestLoot.score, xp: res.chestLoot.xp }]);
+      var chestLevel = FQ.progress.addXp(res.chestLoot.xp);
       if (chestLevel) res.levelUp = chestLevel;
-      state.xpGained += 20;
-      res.xpGain = (res.xpGain || 0) + 20;
-      g.addBonus(CHEST_BONUS);
+      state.xpGained += res.chestLoot.xp;
+      res.xpGain = (res.xpGain || 0) + res.chestLoot.xp;
+      g.addBonus(res.chestLoot.score);
+    } else {
+      store.recordChest(null);
     }
     showFeedback(res);
   }
@@ -1421,9 +1434,9 @@
     if (xpVal) xpVal.textContent = lvNow.isMax ? '최고 레벨' : lvNow.into + ' / ' + lvNow.need;
     var chestNow = FQ.progress.chestProgress(store.stats().asked);
     var cTitle = ui.$('#combo-title');
-    if (cTitle) cTitle.textContent = res.chest ? '여행책에 다섯 장이 모였어요' : '여행 카드 ' + chestNow.into + ' / ' + chestNow.need + '장';
+    if (cTitle) cTitle.textContent = res.chest ? '깜짝 상자를 찾았어요!' : '여행 카드 ' + chestNow.into + ' / ' + chestNow.need + '장';
     var slots = ui.$('.travel-slots');
-    if (slots) slots.innerHTML = travelSlots(res.chest ? { into: chestNow.need, need: chestNow.need } : chestNow, false);
+    if (slots) slots.innerHTML = travelSlots(chestNow, false);
 
     // 정오답 모두 이름 한 번과 쉬운 설명 한 문장만 읽는다. 그림 문제는 나라 이름 뒤에 그림 이름을 한 번 더 읽어 쌍을 잇는다.
     var isCapitalQ = q.mode === 'capital';
@@ -1450,7 +1463,7 @@
     function afterExplanation(request) {
       if (!feedbackCurrent() || request !== narrationRequest || !res.chest || chestShown) return;
       chestShown = true;
-      showChest(c, res.newSticker);
+      showChest(c, res, q.mode);
     }
     function narrate(request) {
       if (!feedbackCurrent() || request !== narrationRequest) return;
@@ -1551,38 +1564,72 @@
     try { btn.focus({ preventScroll: true }); } catch (e) {}
   }
 
+  var CHEST_KIND_LABEL = { plain: '여행 상자', shiny: '반짝 상자 ✨', gold: '황금 상자 👑' };
+  var CHEST_KIND_ICON = { plain: '🎁', shiny: '✨', gold: '👑' };
+
+  /** 이 판에서 연 깜짝 상자의 합계 — 결과 화면용 */
+  function chestSummary() {
+    var all = state.chestLoot || [];
+    var counts = { plain: 0, shiny: 0, gold: 0 };
+    var score = 0, xp = 0;
+    all.forEach(function (l) { counts[l.kind] = (counts[l.kind] || 0) + 1; score += l.score || 0; xp += l.xp || 0; });
+    var kinds = ['gold', 'shiny', 'plain'].filter(function (k) { return counts[k]; })
+      .map(function (k) { return CHEST_KIND_ICON[k] + ' ' + counts[k]; }).join(' · ');
+    return { count: all.length, score: score, xp: xp, kinds: kinds, icon: counts.gold ? '👑' : counts.shiny ? '✨' : '🎁' };
+  }
+
   /**
-   * 학습 카드 다섯 장으로 여행 상자가 열리는 순간.
-   * 눌러서 닫을 때까지 떠 있고, 안에서 무엇을 얻었는지 보여 준다.
+   * 깜짝 상자(D22). 대륙 모양 상자 셋 중 하나를 아이가 고르면 열린다. 열에 셋은 한 번 더 두드려야 한다.
+   * 종류·보상은 submit 에서 이미 정해 반영했으므로 무엇을 골라도 같다. 여기서는 화면과 효과만 보여 준다.
    */
-  function showChest(country, gotSticker) {
+  function showChest(country, res, mode) {
     var st = FQ.progress.stickers();
+    var shape = res.chestShape || FQ.progress.chestShape(country && country.continent);
+    var kind = res.chestKind || 'plain';
+    var loot = res.chestLoot || FQ.progress.chestLoot(kind);
+    var art = (mode === 'symbol' || mode === 'place') && country ? artFor(country.code, mode) : null;
+    var picks = '';
+    for (var i = 0; i < 3; i++) {
+      picks += '<button class="chest-pick" type="button" data-pick="' + i + '" aria-label="' + esc(shape.name) + ' ' + (i + 1) + '">' + shape.emoji + '</button>';
+    }
     var back = doc.createElement('div');
     back.className = 'chest-back';
     back.innerHTML =
-      '<div class="chest-card" role="dialog" aria-modal="true" aria-label="여행 상자가 열렸어요">' +
-        '<div class="chest-art">' +
-          '<div class="chest-rays"></div>' +
-          '<div class="chest-emoji">🎁</div>' +
-        '</div>' +
-        '<div class="chest-title">여행 상자가 열렸어요!</div>' +
-        '<div class="chest-sub">여행책에 다섯 장이 모였어요</div>' +
-        '<div class="chest-loot">' +
-          '<div class="loot" style="animation-delay:.15s">' +
-            '<div class="ic">⭐</div><div class="n">보너스 별</div><div class="d">+' + CHEST_BONUS + '점</div>' +
+      '<div class="chest-card ' + kind + '" role="dialog" aria-modal="true" aria-label="깜짝 상자를 찾았어요">' +
+        '<div class="chest-title">깜짝 상자를 찾았어요!</div>' +
+        '<div class="chest-sub" id="chest-sub">' + esc(shape.name) + ' 셋 중 하나를 골라 봐요</div>' +
+        '<div class="chest-picks" id="chest-picks">' + picks + '</div>' +
+        '<div class="chest-open" id="chest-open" hidden>' +
+          '<div class="chest-art">' +
+            '<div class="chest-rays"></div>' +
+            '<div class="chest-emoji">' + shape.emoji + '</div>' +
           '</div>' +
-          '<div class="loot" style="animation-delay:.3s">' +
-            '<div class="ic">✨</div><div class="n">경험치</div><div class="d">+20</div>' +
+          '<div class="chest-kind">' + (CHEST_KIND_LABEL[kind] || CHEST_KIND_LABEL.plain) + '</div>' +
+          '<div class="chest-loot">' +
+            '<div class="loot" style="animation-delay:.15s">' +
+              '<div class="ic">⭐</div><div class="n">보너스 별</div><div class="d">+' + loot.score + '점</div>' +
+            '</div>' +
+            '<div class="loot" style="animation-delay:.3s">' +
+              '<div class="ic">✨</div><div class="n">경험치</div><div class="d">+' + loot.xp + '</div>' +
+            '</div>' +
+            (res.newSticker && country
+              ? '<div class="loot" style="animation-delay:.45s">' +
+                  '<div class="ic">🏳️</div><div class="n">' + esc(country.ko) + '</div><div class="d">새 스티커</div>' +
+                '</div>'
+              : '<div class="loot" style="animation-delay:.45s">' +
+                  '<div class="ic">📖</div><div class="n">스티커 판</div><div class="d">' + st.owned + ' / ' + st.total + '</div>' +
+                '</div>') +
           '</div>' +
-          (gotSticker && country
-            ? '<div class="loot" style="animation-delay:.45s">' +
-                '<div class="ic">🏳️</div><div class="n">' + esc(country.ko) + '</div><div class="d">새 스티커</div>' +
+          // 나라 친구 카드: 방금 만난 나라의 국기(그림 놀이면 그림도)가 상자에서 나온다. 새 읽어주기 문구는 없다.
+          (country
+            ? '<div class="chest-friend" role="group" aria-label="' + esc(country.ko) + ' 친구 카드">' +
+                '<img src="' + ui.flagSrc(country.code) + '" alt="' + esc(country.ko) + ' 국기">' +
+                (art ? '<img class="art" src="' + esc(art.src) + '" alt="' + esc(art.alt) + '">' : '') +
+                '<span class="chest-friend-name">' + esc(country.ko) + '</span>' +
               '</div>'
-            : '<div class="loot" style="animation-delay:.45s">' +
-                '<div class="ic">📖</div><div class="n">스티커 판</div><div class="d">' + st.owned + ' / ' + st.total + '</div>' +
-              '</div>') +
+            : '') +
+          '<button class="btn btn-primary btn-big" id="chest-close" type="button" style="width:100%;margin-top:18px">좋아요!</button>' +
         '</div>' +
-        '<button class="btn btn-primary btn-big" id="chest-close" type="button" style="width:100%;margin-top:18px">좋아요!</button>' +
       '</div>';
     doc.body.appendChild(back);
 
@@ -1590,13 +1637,35 @@
     // 상자를 못 본 채 다음 문제로 넘어가 버린다.
     var behind = ui.$('#next');
     if (behind) behind.disabled = true;
-    var closeBtn0 = back.querySelector('#chest-close');
-    if (closeBtn0) { try { closeBtn0.focus({ preventScroll: true }); } catch (e) { closeBtn0.focus(); } }
+    var firstPick = back.querySelector('.chest-pick');
+    if (firstPick) { try { firstPick.focus({ preventScroll: true }); } catch (e) { firstPick.focus(); } }
 
-    // 보상은 submit 에서 이미 반영했다. 여기서는 화면과 효과만 보여 준다.
-    playMusic('chest');
-    FQ.effects.burst(35);
+    // 상자가 나타나는 소리는 대륙 곡. 보상은 submit 에서 이미 반영했다.
+    playMusic('chest', null, shape.music ? { prefer: shape.music } : null);
 
+    var opened = false;
+    var shaken = !res.chestShake;
+    function openBox(pick) {
+      if (opened) return;
+      if (!shaken) {
+        // 첫 두드림은 흔들리기만 한다. 아이가 한 번 더 두드리면 열린다.
+        shaken = true;
+        if (pick && pick.classList) pick.classList.add('wobble');
+        var sub = back.querySelector('#chest-sub');
+        if (sub) sub.textContent = '한 번 더 두드려요!';
+        return;
+      }
+      opened = true;
+      var picksBox = back.querySelector('#chest-picks');
+      if (picksBox) picksBox.hidden = true;
+      var openArea = back.querySelector('#chest-open');
+      if (openArea) openArea.hidden = false;
+      var sub2 = back.querySelector('#chest-sub');
+      if (sub2) sub2.textContent = kind === 'gold' ? '와, 황금 상자예요!' : kind === 'shiny' ? '반짝반짝 상자예요!' : '상자가 열렸어요!';
+      FQ.effects.burst(kind === 'gold' ? 70 : kind === 'shiny' ? 50 : 35);
+      var closeBtn = back.querySelector('#chest-close');
+      if (closeBtn) { try { closeBtn.focus({ preventScroll: true }); } catch (e2) { closeBtn.focus(); } }
+    }
     function close() {
       stopMusic();
       back.remove();
@@ -1604,7 +1673,10 @@
       if (nextBtn) { nextBtn.disabled = false; nextBtn.focus(); }
     }
     back.addEventListener('click', function (ev) {
-      if (ev.target === back || ev.target.closest('#chest-close')) close();
+      // 바깥을 눌러 닫는 것은 상자를 연 뒤에만. 고르기 전에 실수로 닫히면 아이가 선물을 못 본다.
+      if (ev.target.closest('#chest-close') || (ev.target === back && opened)) { close(); return; }
+      var pick = ev.target.closest('.chest-pick');
+      if (pick) openBox(pick);
     });
   }
 
@@ -1772,14 +1844,14 @@
         resultLevelBlock() +
         (state.chestsOpened
           ? '<div class="chest-note">' +
-              '<span class="chest-note-ic" aria-hidden="true">🎁</span>' +
-              '<span class="chest-note-body"><b>여행 상자가 열렸어요!</b><span class="small muted">보너스 ' + CHEST_BONUS + '점 · 경험치 20' + (state.chestsOpened > 1 ? ' · ' + state.chestsOpened + '번' : '') + '</span></span>' +
-              '<span class="chest-note-pill">카드 ' + chest.need + '장</span>' +
+              '<span class="chest-note-ic" aria-hidden="true">' + chestSummary().icon + '</span>' +
+              '<span class="chest-note-body"><b>깜짝 상자 ' + state.chestsOpened + '개를 열었어요!</b><span class="small muted">보너스 ' + chestSummary().score + '점 · 경험치 ' + chestSummary().xp + '</span></span>' +
+              '<span class="chest-note-pill">' + chestSummary().kinds + '</span>' +
             '</div>'
-          : '<div class="chest-note soft" role="group" aria-label="여행 카드 ' + chest.into + ' / ' + chest.need + '장 · 상자까지 ' + chest.left + '장">' +
+          : '<div class="chest-note soft" role="group" aria-label="여행 카드 ' + chest.into + ' / ' + chest.need + '장 · 깜짝 상자를 기다려요">' +
               '<span class="chest-note-ic" aria-hidden="true">📖</span>' +
               '<span class="travel-slots" aria-hidden="true">' + travelSlots(chest, false) + '</span>' +
-              '<span class="chest-note-pill" aria-hidden="true">🎁 ' + chest.left + '장</span>' +
+              '<span class="chest-note-pill" aria-hidden="true">🎁 깜짝</span>' +
             '</div>') +
         (state.newStickers.length
           ? '<div class="card new-sticker-card">' +

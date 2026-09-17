@@ -103,7 +103,7 @@
     }, 0);
   }
 
-  function choose(event) {
+  function choose(event, prefer) {
     var manifest = FQ.musicManifest;
     if (!manifest || manifest.ready !== true || !Array.isArray(manifest.clips)) return null;
     var clips = manifest.clips.filter(function (clip) {
@@ -111,6 +111,12 @@
         /^audio\/music\/[a-z0-9-]+\.mp3$/.test(clip.src) && Number(clip.duration) > 0;
     });
     if (!clips.length) return null;
+    // 깜짝 상자는 대륙마다 정해진 곡을 원한다. 그 곡이 있으면 '바로 전 곡 피하기'보다 우선한다.
+    if (typeof prefer === 'string') {
+      for (var i = 0; i < clips.length; i++) {
+        if (clips[i].id === prefer) { last[event] = prefer; return clips[i]; }
+      }
+    }
     var choices = clips.length > 1 ? clips.filter(function (clip) { return clip.id !== last[event]; }) : clips;
     if (!choices.length) choices = clips;
     var clip = choices[Math.floor(Math.random() * choices.length)];
@@ -130,7 +136,7 @@
     };
     run.cancel = function () { if (isCurrent(run)) stop(); };
     current = run;
-    var clip = enabled && (event !== 'homeBgm' || bgmEnabled) ? choose(event) : null;
+    var clip = enabled && (event !== 'homeBgm' || bgmEnabled) ? choose(event, run.options.prefer) : null;
     if (!clip) { complete(run); return run.cancel; }
     var audio = getPlayer();
     if (!audio) { complete(run); return run.cancel; }
