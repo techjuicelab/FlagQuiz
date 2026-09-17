@@ -59,6 +59,8 @@ function fixture() {
   const source=fs.readFileSync(path.join(root,'js/app.js'),'utf8').replace('FQ.app = { home:',
     'FQ.test = {state:state,startListening:startListening,submit:submit,goNext:goNext,toggleMic:toggleMic};\n  FQ.app = { home:');
   vm.runInContext(source,c,{filename:'js/app.js'});
+  // 깜짝 상자 난수는 기본으로 고정한다(굴림 0.99 → 8장째 보장 전에는 안 열림, 종류 보통·흔들기 없음). 상자를 보려는 검사만 덮어쓴다.
+  c.FQ.test.state.rng=()=>0.99;c.FQ.test.state.rngKind=()=>0.5;
   function runDelay(delay){for(const [id,t] of [...timers])if(t.delay===delay){if(!t.interval)timers.delete(id);t.fn();}}
   function startVoice(only=['id','in']){
     c.FQ.storage.updateSettings({mode:'voice'});
