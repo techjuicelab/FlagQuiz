@@ -88,3 +88,45 @@ test('자료 없는 환경과 기존 국기 모드는 혼동군에 영향받지 
   f.confusionGroups = [{codes: f.countries.map(c => c.code)}];
   assert.equal(f.quiz.makeQuestion(answer, 'choice4', [answer]).options.length, 4);
 });
+
+test('only 목록에서 자료 없는 나라는 빠지고, 전부 빠지면 조용히 바꾸지 않고 game 에 남긴다', () => {
+  const f = load();
+  f.features = { on: () => true };
+  const noPlace = f.countries.filter(c => !f.subjects[c.code]?.place || f.subjects[c.code].place.noArt).map(c => c.code);
+  const withPlace = f.countries.filter(c => f.subjects[c.code]?.place && !f.subjects[c.code].place.noArt).map(c => c.code);
+  assert.ok(noPlace.length >= 2 && withPlace.length >= 2, '이 검사는 명소 없는 나라가 있을 때를 고정한다');
+
+  // 일부만 자료 없음: 있는 나라만 내고 뺀 나라를 알려 준다
+  const part = f.quiz.createGame({ mode: 'place', only: [withPlace[0], noPlace[0], 'zz'], count: 10 });
+  assert.equal(part.fallback, null);
+  assert.deepEqual([...part.skipped], [noPlace[0], 'zz']);
+  assert.equal(part.total, 1);
+  assert.equal(part.questions[0].country.code, withPlace[0]);
+
+  // 전부 자료 없음: 난이도·대륙 조건 풀로 가되 game.fallback 으로 알린다
+  const none = f.quiz.createGame({ mode: 'place', only: noPlace.slice(0, 2), count: 3, level: '1', continent: 'all' });
+  assert.equal(none.fallback, 'only');
+  assert.deepEqual([...none.skipped], [...noPlace.slice(0, 2)]);
+  assert.equal(none.total, 3, '빈 판을 만들지 않는다');
+  assert.ok(none.questions.every(q => f.subjects[q.country.code].place && !f.subjects[q.country.code].place.noArt));
+  assert.ok(none.questions.every(q => q.country.level <= 1), 'only 를 버려도 난이도 조건은 지킨다');
+
+  // 국기 축은 모든 나라에 자료가 있어 아무것도 빠지지 않는다
+  const flag = f.quiz.createGame({ mode: 'choice4', only: noPlace.slice(0, 3), count: 3 });
+  assert.equal(flag.fallback, null);
+  assert.deepEqual([...flag.skipped], []);
+  assert.equal(flag.total, 3);
+  const plain = f.quiz.createGame({ mode: 'choice4', count: 3 });
+  assert.equal(plain.fallback, null);
+  assert.deepEqual([...plain.skipped], []);
+});
+
+test('난이도·대륙 조건에 맞는 나라가 없으면 전체 풀로 가며 fallback 으로 알린다', () => {
+  const f = load();
+  f.features = { on: () => true };
+  f.subjects = Object.fromEntries(f.countries.filter(c => c.continent === '유럽').map(c => [c.code, { place: { ko: c.code } }]));
+  const g = f.quiz.createGame({ mode: 'place', continent: '오세아니아', count: 2 });
+  assert.equal(g.fallback, 'filters');
+  assert.equal(g.total, 2);
+  assert.ok(g.questions.every(q => q.country.continent === '유럽'));
+});

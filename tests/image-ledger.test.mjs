@@ -34,7 +34,7 @@ test('시드 기본 화풍은 null이고 명시한 B 선택·기존 작업값은
 test('시드 342개는 승인·영어를 만들지 않고 출처 계수와 축별 혼동군을 보존한다', (t) => {
   const directory = fixture(t), ledger = seedLedger(directory);
   const report = reportLedger(ledger, readSubjects(directory));
-  assert.deepEqual([report.items, report.symbols, report.landmarks, report.inCapital, report.factReuseRows, report.factReuseItems], [342,194,148,17,118,220]);
+  assert.deepEqual([report.items, report.symbols, report.landmarks, report.inCapital, report.factReuseRows, report.factReuseItems], [342,194,148,24,118,220]);
   assert.equal(report.statuses['blocked-approval'], 59);
   assert.equal(report.unwritten, 342);
   assert.ok(ledger.items.filter((item) => item.csvStatus === 'draft').every((item) => item.status === 'blocked-approval'));

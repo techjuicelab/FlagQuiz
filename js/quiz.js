@@ -402,19 +402,40 @@
 
     cfg.mode = availableMode(cfg.mode);
     var axis = MODES[cfg.mode].axis;
-    var source = pool({ level: cfg.level, continent: cfg.continent, only: cfg.only, axis: axis });
-    if (source.length === 0) source = pool({ axis: axis });
+    var only = cfg.only && cfg.only.length ? cfg.only : null;
+    var source = pool({ level: cfg.level, continent: cfg.continent, only: only, axis: axis });
+    // only 목록(다시 살펴볼 나라)에서 자료 없는 나라는 빠진다. 전부 빠졌다고 조용히 전역 풀로 바꾸면
+    // 아이가 고른 적 없는 엉뚱한 나라가 나오므로, 무엇을 뺐고 어디로 대신 갔는지 game 에 남겨 호출자가 알게 한다.
+    var fallback = null;
+    var skipped = only ? only.filter(function (code) {
+      var c = byCode(code);
+      return !c || !hasData(c, axis);
+    }) : [];
+    if (only && source.length === 0) {
+      fallback = 'only';
+      source = pool({ level: cfg.level, continent: cfg.continent, axis: axis });
+    }
+    if (source.length === 0) { fallback = fallback || 'filters'; source = pool({ axis: axis }); }
 
     var total = cfg.count === 'all' ? source.length : Math.min(cfg.count, source.length);
     if (total < 1) total = Math.min(1, source.length);
 
-    // 출제 순서 정하기: 오답 우선이면 가중치로, 아니면 골고루 섞어서
+    // 출제 순서 정하기: 오답 우선이면 가중치로, 아니면 골고루 섞어서.
+    // 국기 축은 countries 의 weightOf, 새 축은 자기 axes 버킷만 읽는 axisWeightOf 를 쓴다 (D6: 축을 섞지 않는다).
+    var weightFor = null;
+    if (cfg.reviewFirst && FQ.storage) {
+      if (axis === 'flag' && FQ.storage.weightOf) {
+        weightFor = function (c) { return FQ.storage.weightOf(c.code); };
+      } else if (axis !== 'flag' && FQ.storage.axisWeightOf) {
+        weightFor = function (c) { return FQ.storage.axisWeightOf(axis, c.code); };
+      }
+    }
     var order;
-    if (axis === 'flag' && cfg.reviewFirst && FQ.storage && source.length > total) {
+    if (weightFor && source.length > total) {
       var remaining = source.slice();
       order = [];
       while (order.length < total && remaining.length) {
-        var weights = remaining.map(function (c) { return FQ.storage.weightOf(c.code); });
+        var weights = remaining.map(weightFor);
         var chosen = util.weightedPick(remaining, weights);
         order.push(chosen);
         remaining = remaining.filter(function (c) { return c.code !== chosen.code; });
@@ -425,10 +446,28 @@
 
     var questions = order.map(function (c) { return makeQuestion(c, cfg.mode, source, { axis: axis }); });
 
+    /* ---- 한 판 안에서 다시 만나기 (새 축 전용) ----
+     * 그림·명소·지도는 아이가 처음 보는 쌍이 많다. 처음 만난 쌍과 틀린 쌍은 같은 판에서 3문제 뒤에
+     * 한 번 더 낸다. 총 문제 수는 그대로다 — 아직 안 만난 원래 문제 하나를 뒤에서 빼고 그 자리를 쓴다.
+     * 국기 축은 여기에 들어오지 않는다. 국기 한 판은 "같은 나라가 두 번 안 나온다" 가 약속이다.
+     */
+    var revisit = axis !== 'flag';
+    var firstMeet = {};
+    if (revisit) {
+      var records = (FQ.storage && FQ.storage.allAxisStats) ? (FQ.storage.allAxisStats(axis) || {}) : {};
+      order.forEach(function (c) {
+        var r = records[c.code];
+        firstMeet[c.code] = !(r && (r.seen || 0) > 0);
+      });
+    }
+
     var game = {
       config: cfg,
       source: source,
       questions: questions,
+      fallback: fallback,   // null | 'only' (only 목록이 전부 자료 없음) | 'filters' (난이도·대륙 조건에 맞는 나라 없음)
+      skipped: skipped,     // only 목록에서 자료가 없어 뺀 나라 코드
+      againCount: 0,        // 이 판에서 다시 만나기로 잡은 문제 수
       index: 0,
       streak: 0,
       bestStreak: 0,
@@ -450,6 +489,32 @@
     game.currentPlayerIndex = function () { return game.turn % game.players.length; };
     game.isLast = function () { return game.index >= game.questions.length - 1; };
     game.isOver = function () { return game.index >= game.questions.length; };
+
+    var AGAIN_GAP = 3;
+    var againDone = {};
+    /**
+     * 지금 문제의 나라를 3문제 뒤에 한 번 더 낸다. 판이 그보다 짧으면 마지막 자리에, 바로 다음 자리뿐이면 내지 않는다.
+     * 쌍마다 한 판에 한 번만. 이미 잡아 둔 다시 만나기는 자리를 내주지 않는다.
+     */
+    function scheduleAgain(country) {
+      if (!revisit || againDone[country.code]) return false;
+      var i = game.index;
+      var len = game.questions.length;
+      var at = Math.min(i + AGAIN_GAP, len - 1);
+      if (at - i < 2) return false;
+      var drop = -1;
+      for (var k = len - 1; k > i; k--) {
+        if (!game.questions[k].again) { drop = k; break; }
+      }
+      if (drop === -1) return false;
+      game.questions.splice(drop, 1);
+      var q = makeQuestion(country, cfg.mode, source, { axis: axis });
+      q.again = true;
+      game.questions.splice(Math.min(at, game.questions.length), 0, q);
+      againDone[country.code] = true;
+      game.againCount += 1;
+      return true;
+    }
 
     /**
      * 답을 채점하고 게임 상태를 갱신한다.
@@ -487,12 +552,16 @@
         res.gained = gained;
       } else {
         game.streak = 0;
-        game.wrong.push(q.country);
+        // 다시 만난 문제를 또 틀려도 '한 번 더 만날 나라' 에는 한 번만 싣는다
+        if (!game.wrong.some(function (c) { return c.code === q.country.code; })) game.wrong.push(q.country);
         res.gained = 0;
       }
       if (usedHint) game.hintsUsed += 1;
       if (FQ.storage) FQ.storage.recordAnswer(q.country.code, res.correct, MODES[cfg.mode] && MODES[cfg.mode].axis);
       res.question = q;
+      res.again = !!q.again;
+      // 처음 만난 쌍이거나 틀린 쌍이면 3문제 뒤에 한 번 더 (새 축만). 다시 만난 문제 자체는 또 잡지 않는다.
+      res.scheduledAgain = !q.again && (!res.correct || firstMeet[q.country.code]) ? scheduleAgain(q.country) : false;
       return res;
     };
 

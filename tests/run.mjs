@@ -445,6 +445,7 @@ group('한 판 진행', () => {
   const g = quiz.createGame({ mode: 'choice4', count: 5, level: 'all', continent: 'all', players: ['민규'] });
   ok(g.total === 5, '문제 수 5개', String(g.total));
   ok(new Set(g.questions.map((q) => q.country.code)).size === 5, '같은 나라가 두 번 나오지 않음');
+  ok(g.fallback === null && g.skipped.length === 0, '조건에 맞는 나라가 있으면 폴백 표시가 없다');
   let asked = 0;
   while (!g.isOver()) {
     const q = g.current();
@@ -455,6 +456,7 @@ group('한 판 진행', () => {
   }
   ok(asked === 5, '5문제 모두 진행', String(asked));
   ok(g.correct === 5, '5문제 정답', String(g.correct));
+  ok(g.againCount === 0 && g.questions.every((q) => !q.again), '국기 축은 한 판 안에서 다시 만나기를 하지 않는다');
   ok(g.bestStreak === 5, '최고 연속 5', String(g.bestStreak));
   ok(g.score >= 50, '점수 누적', String(g.score));
   const s = g.summary();

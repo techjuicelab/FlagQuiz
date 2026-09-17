@@ -136,23 +136,32 @@ python3 -m http.server 8080
 FlagQuiz/
 ├── index.html            게임 화면 뼈대
 ├── css/style.css         스타일 (밝은 화면·어두운 화면 모두 지원)
+├── css/map.css           지도 놀이 스타일
 ├── data/countries.js     194개국 자료 (한글 이름, 별칭, 수도, 대륙, 난이도, 상식, 국기 힌트)
+├── data/subjects.js      194개국 상징물·명소 이름 (생성물, 원문은 docs/expansion/SUBJECTS.csv)
+├── data/confusion-groups.js  같은 판에 내지 않는 혼동군 58개
+├── data/map-coords.js    나라 핀 좌표 194개 · data/map-shapes.js 국경선 없는 육지 실루엣
 ├── flags/                국기 SVG 194개
+├── images/               상징물(symbols/)·명소(places/) 그림 WebP 342개
 ├── js/
 │   ├── util.js           한글 자모 비교 등 순수 함수
-│   ├── storage.js        브라우저 저장소 (설정·기록·오답노트·배지)
+│   ├── storage.js        브라우저 저장소 (설정·기록·오답노트·배지, 새 축 기록은 axes)
+│   ├── features.js       기능 스위치
 │   ├── audio.js          기본 효과음과 Sua 읽어주기
 │   ├── music.js          생성 음악 재생·중단·배경음 관리
 │   ├── music-manifest.js 음악 16종의 경로·길이·해시
 │   ├── speech.js         말하기 인식 (Web Speech API, ko-KR)
 │   ├── effects.js        색종이 효과
-│   ├── ui.js             화면 공통 도구
+│   ├── ui.js             화면 공통 도구 (도감 카드 그림 포함)
+│   ├── map.js            지도 그리기와 핀 보기 고르기
+│   ├── progress.js       경험치·상자·오늘의 도전
 │   ├── quiz.js           출제·채점 엔진 (화면과 분리돼 있어 그대로 검사 가능)
 │   ├── badges.js         배지 규칙
 │   ├── screens.js        국기 도감 / 내 기록 화면
 │   └── app.js            홈·퀴즈·결과 화면과 흐름
-├── scripts/serve.mjs     의존성 없는 로컬 서버
-└── tests/run.mjs         자료·엔진 검사 (npm test)
+├── sw.js                 오프라인 캐시 (셸·국기·그림·음원 버킷)
+├── scripts/serve.mjs     의존성 없는 로컬 서버 (그 밖의 scripts/ 는 자료·그림·음원 제작 도구)
+└── tests/                자료·엔진·화면 검사 (npm test)
 ```
 
 ## 검사하기

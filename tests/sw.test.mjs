@@ -36,7 +36,8 @@ function worker({ buckets = new Map(['another-app-v1', 'flagquiz-v2', 'flagquiz-
         stored.set(urlOf(request), response.clone());
       },
       async add(request) {
-        const response = await sandbox.fetch(new Request(urlOf(request)));
+        // 워커가 만든 Request(cache 모드 등)는 그대로 넘겨 검사에서 볼 수 있게 한다.
+        const response = await sandbox.fetch(request instanceof Request ? request : new Request(urlOf(request)));
         if (!response.ok) throw new TypeError('Cache.add requires a successful response');
         await this.put(request, response);
       },
@@ -687,4 +688,148 @@ test('그림 예열이 실패해도 활성화는 끝까지 간다', async () => 
   await w.sandbox.self.warmArtDone;
   assert.equal(await w.read(FLAGS, './flags/kr.svg').text(), '<svg>flag</svg>');
   assert.equal(w.read(ART, './images/symbols/kr.webp'), undefined);
+});
+
+/* 실제 data/subjects.js 와 같은 모양의 본문. 머리말 주석에 'subjects' 가 있고 IIFE 로 감싸여 있다. */
+function subjectsScript(subjects) {
+  return '/* 생성물: npm run subjects:build. 원문은 docs/expansion/ 에 있습니다. */\n(function () {\n' +
+    '  var FQ = window.FQ = window.FQ || {};\n  FQ.subjects = ' + JSON.stringify(subjects, null, 2) + ';\n})();\n';
+}
+const MARK = './images/_warm-art';
+
+test('그림 예열 파서는 문장 속 중괄호·따옴표·이스케이프에 흔들리지 않고 보류 소재만 거른다', async () => {
+  const w = worker();
+  const fetched = [];
+  w.sandbox.fetch = async req => {
+    const url = urlOf(req);
+    fetched.push(url);
+    if (url.endsWith('/data/countries.js')) return new Response('[]');
+    if (url.endsWith('/data/subjects.js')) return new Response(subjectsScript({
+      kr: { symbol: { ko: '김치', prompt: '김치 — 배추 {한 포기}에 "빨간" 양념 \\ 끝', bytes: 5 }, place: { ko: '광화문 }', prompt: '지붕 { 곡선 }' } },
+      gn: { symbol: { ko: '코라 악기', noArt: true, prompt: '{보류}' } },
+      jp: { symbol: { ko: '벚꽃 "}" 문양' } }
+    }));
+    if (url.includes('/images/')) return new Response('12345');
+    throw new Error('network failure');
+  };
+  await lifecycle(w, 'activate');
+  assert.equal(await w.sandbox.self.warmArtDone, true);
+  for (const path of ['./images/symbols/kr.webp', './images/places/kr.webp', './images/symbols/jp.webp']) {
+    assert.equal(await w.read(ART, path).text(), '12345', path);
+  }
+  assert.ok(!fetched.some(url => url.includes('symbols/gn.webp')), '보류 소재를 받으러 갔다');
+  assert.equal(w.read(ART, './images/places/jp.webp'), undefined, '명소가 없는 나라의 명소를 받으러 갔다');
+  assert.match(await w.read(ART, MARK).text(), /symbols\/kr\.webp 5\n/, '다 채운 목록을 기록해 둔다');
+});
+
+test('그림 예열은 활성화를 붙잡지 않는다', async () => {
+  const w = worker();
+  let release;
+  const gate = new Promise(resolve => { release = resolve; });
+  w.sandbox.fetch = async req => {
+    const url = urlOf(req);
+    if (url.endsWith('/data/countries.js')) return new Response('[]');
+    if (url.endsWith('/data/subjects.js')) return new Response(subjectsScript({ kr: { symbol: { ko: '김치' } } }));
+    await gate;  // 그림은 아직 오지 않는다
+    return new Response('webp');
+  };
+  await lifecycle(w, 'activate');  // 그림이 멈춰 있어도 활성화는 끝난다
+  let settled = false;
+  w.sandbox.self.warmArtDone.then(() => { settled = true; });
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(settled, false, '활성화가 끝난 뒤에도 그림 예열은 아직 도는 중이어야 한다');
+  release();
+  assert.equal(await w.sandbox.self.warmArtDone, true);
+  assert.equal(await w.read(ART, './images/symbols/kr.webp').text(), 'webp');
+});
+
+test('워커가 중간에 꺼져도 다음 워커가 온라인 셸 응답에서 남은 그림을 이어받고, 다 채우면 다시 훑지 않는다', async () => {
+  const subjects = subjectsScript({ kr: { symbol: { ko: '김치' }, place: { ko: '광화문' } }, jp: { symbol: { ko: '벚꽃' } } });
+  const network = (log, imageLimit) => async req => {
+    const url = urlOf(req);
+    log.push(url);
+    if (url.endsWith('/data/countries.js')) return new Response('[]');
+    if (url.endsWith('/data/subjects.js')) return new Response(subjects);
+    if (url.includes('/images/')) {
+      if (log.filter(u => u.includes('/images/')).length > imageLimit) throw new Error('worker killed');
+      return new Response('webp ' + url);
+    }
+    return new Response('shell file');
+  };
+  // 1) 첫 워커: 그림 한 장만 받고 꺼진 것으로 친다.
+  const first = worker();
+  const firstLog = [];
+  first.sandbox.fetch = network(firstLog, 1);
+  await lifecycle(first, 'activate');
+  assert.equal(await first.sandbox.self.warmArtDone, false);
+  const cachedAfterFirst = ['./images/symbols/kr.webp', './images/places/kr.webp', './images/symbols/jp.webp'].filter(p => first.read(ART, p));
+  assert.equal(cachedAfterFirst.length, 1);
+  assert.equal(first.read(ART, MARK), undefined, '못 채운 예열은 완료 기록을 남기지 않는다');
+  // 같은 워커 안에서는 곧바로 되풀이하지 않는다 — 온라인 신호가 와도 5분은 기다린다.
+  const before = firstLog.length;
+  await request(first, './js/app.js');
+  assert.deepEqual(firstLog.slice(before), [BASE + 'js/app.js'], '실패 직후의 같은 워커가 예열을 다시 돌렸다');
+
+  // 2) 새 워커(같은 캐시): 활성화 없이 셸 파일 하나를 네트워크에서 받는 순간 이어받는다.
+  const second = worker({ buckets: first.buckets });
+  const secondLog = [];
+  second.sandbox.fetch = network(secondLog, Infinity);
+  assert.equal(await (await request(second, './js/app.js')).text(), 'shell file');
+  for (const path of ['./images/symbols/kr.webp', './images/places/kr.webp', './images/symbols/jp.webp']) {
+    assert.ok(second.read(ART, path), path + ' 를 이어받지 못했다');
+  }
+  assert.ok(!secondLog.includes(BASE + cachedAfterFirst[0].slice(2)), '이미 받은 그림을 다시 받았다');
+  assert.equal(secondLog.filter(u => u.includes('/images/')).length, 2);
+  assert.ok(second.read(ART, MARK), '다 채운 뒤 완료 기록이 없다');
+  assert.ok(second.puts.every(put => put.name === SHELL || put.name === ART));
+  assert.ok(secondLog.every(url => !new URL(url).pathname.includes('/audio/')));
+
+  // 3) 또 새 워커: 완료 기록이 같으면 342번 조회 없이 끝낸다.
+  const third = worker({ buckets: first.buckets });
+  const thirdLog = [];
+  third.sandbox.fetch = network(thirdLog, Infinity);
+  await request(third, './js/app.js');
+  assert.ok(!thirdLog.some(u => u.includes('/images/')), '완료된 예열이 그림을 다시 받았다');
+  assert.deepEqual(third.matches.filter(m => m.name === ART).map(m => m.url), [urlOf(MARK)], '완료 기록만 보고 그림 조회는 건너뛴다');
+});
+
+test('배포에서 같은 이름으로 바뀐 그림은 크기가 달라져 HTTP 캐시를 건너뛰고 새로 받고, 같은 크기는 그대로 둔다', async () => {
+  const w = worker();
+  const kr = './images/symbols/kr.webp', place = './images/places/kr.webp';
+  w.seed(ART, kr, new Response('old-image', { headers: { 'content-type': 'image/webp' } }));                 // 9바이트, 헤더 없음
+  w.seed(ART, place, new Response('x', { headers: { 'content-type': 'image/webp', 'content-length': '7' } })); // 헤더로 7바이트
+  w.seed(ART, MARK, new Response('지난 배포의 목록'));
+  const fetched = [];
+  w.sandbox.fetch = async req => {
+    fetched.push(req);
+    const url = urlOf(req);
+    if (url.endsWith('/data/subjects.js')) return new Response(subjectsScript({ kr: { symbol: { ko: '김치', bytes: 5 }, place: { ko: '광화문', bytes: 7 } } }));
+    if (url.endsWith(kr.slice(1))) return new Response('new!!', { headers: { 'content-type': 'image/webp' } });
+    return new Response('shell file');
+  };
+  await request(w, './js/app.js');
+  assert.equal(await w.read(ART, kr).text(), 'new!!', '크기가 다른 옛 그림을 새 그림으로 바꾸지 않았다');
+  assert.equal(await w.read(ART, place).text(), 'x', '크기가 같은 그림을 건드렸다');
+  const reload = fetched.filter(req => urlOf(req).endsWith(kr.slice(1)));
+  assert.equal(reload.length, 1);
+  assert.equal(reload[0].cache, 'reload', '바뀐 그림은 브라우저 HTTP 캐시를 건너뛰어야 한다');
+  assert.ok(!fetched.some(req => urlOf(req).endsWith(place.slice(1))));
+  assert.match(await w.read(ART, MARK).text(), /symbols\/kr\.webp 5\n.*places\/kr\.webp 7/);
+  assert.ok(w.puts.every(put => put.name === SHELL || put.name === ART));
+  assert.equal(w.buckets.get(AUDIO).size, 0);
+});
+
+test('바뀐 그림을 못 받으면 옛 그림을 남기고 완료 기록도 남기지 않는다', async () => {
+  const w = worker();
+  const kr = './images/symbols/kr.webp';
+  w.seed(ART, kr, new Response('old-image'));
+  w.sandbox.fetch = async req => {
+    const url = urlOf(req);
+    if (url.endsWith('/data/subjects.js')) return new Response(subjectsScript({ kr: { symbol: { ko: '김치', bytes: 5 } } }));
+    if (url.includes('/images/')) throw new Error('offline again');
+    return new Response('shell file');
+  };
+  await request(w, './js/app.js');
+  assert.equal(await w.read(ART, kr).text(), 'old-image', '새 그림을 못 받았으면 옛 그림이라도 남아야 한다');
+  assert.equal(w.read(ART, MARK), undefined);
 });

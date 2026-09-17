@@ -116,6 +116,7 @@ function element(id) {
       listeners.get(type).push(callback);
     },
     click() { for (const callback of listeners.get('click') || []) callback({ target: this }); },
+    change(checked) { this.checked = checked; for (const callback of listeners.get('change') || []) callback({ target: this }); },
     select() { this.selectCalls++; }
   };
 }
@@ -241,4 +242,85 @@ test('딸 수 없는 도장은 도감에 아예 그리지 않는다', () => {
   }
   assert.equal(checkedHeld, 1, '주입한 보류 상징물의 도장만 숨겨야 한다');
   assert.ok(checkedNoPlace > 0, '이 검사는 명소 없는 나라가 있을 때를 고정한다');
+});
+
+test('새로 만날 스티커가 비었을 때 조사가 맞고 아직 못 찍은 도장 수를 말해 준다', () => {
+  const f = screenFixture();
+  const FQ = f.c.FQ;
+  const subjects = FQ.subjects;
+  const earnable = (code, axis) => axis === 'map' || (!!subjects[code]?.[axis] && !subjects[code][axis].noArt);
+  const europe = FQ.countries.filter((c) => c.continent === '유럽');
+  for (const c of europe) f.storage.recordAnswer(c.code, true);
+  f.storage.updateSettings({ dev: { art: true } });
+
+  f.c.FQ.screens.dex('유럽');
+  f.node('#dex-locked').change(true);
+  let html = f.node('#dex-list').innerHTML;
+  assert.match(html, /유럽을 모두 모았어요/, '유럽 뒤에는 「을」');
+  assert.doesNotMatch(html, /유럽를/);
+  let left = 0;
+  for (const c of europe) for (const axis of ['symbol', 'place', 'map']) if (earnable(c.code, axis)) left += 1;
+  assert.match(html, new RegExp('못 찍은 도장이 ' + left + '개 있어요'));
+  assert.match(html, /그림·명소·위치 놀이로 찍어 볼까요/);
+  assert.doesNotMatch(html, /못 모은 칸이 하나도 없어요/, '도장이 남았는데 다 끝났다고 말하면 안 된다');
+
+  // 도장을 몇 개 찍으면 남은 수가 줄고, 그림을 끄면 그림·명소 도장은 세지 않는다
+  f.storage.recordAnswer(europe[0].code, true, 'map');
+  f.c.FQ.screens.dex('유럽');
+  f.node('#dex-locked').change(true);
+  assert.match(f.node('#dex-list').innerHTML, new RegExp('못 찍은 도장이 ' + (left - 1) + '개 있어요'));
+  f.storage.updateSettings({ dev: { art: false } });
+  f.c.FQ.screens.dex('유럽');
+  f.node('#dex-locked').change(true);
+  html = f.node('#dex-list').innerHTML;
+  assert.match(html, new RegExp('못 찍은 도장이 ' + (europe.length - 1) + '개 있어요'));
+  assert.match(html, /위치 놀이로 찍어 볼까요/);
+  assert.doesNotMatch(html, /그림·명소/);
+
+  // 받침 없는 대륙은 「를」. 전체는 194칸 국기 스티커라고 분명히 말한다.
+  f.storage.updateSettings({ dev: { art: true } });
+  const asia = FQ.countries.filter((c) => c.continent === '아시아');
+  for (const c of asia) f.storage.recordAnswer(c.code, true);
+  f.c.FQ.screens.dex('아시아');
+  f.node('#dex-locked').change(true);
+  assert.match(f.node('#dex-list').innerHTML, /아시아를 모두 모았어요/);
+  for (const c of FQ.countries) f.storage.recordAnswer(c.code, true);
+  f.c.FQ.screens.dex('all');
+  f.node('#dex-locked').change(true);
+  assert.match(f.node('#dex-list').innerHTML, /국기 스티커 194칸을 모두 모았어요/);
+  for (const c of FQ.countries) for (const axis of ['symbol', 'place', 'map']) if (earnable(c.code, axis)) f.storage.recordAnswer(c.code, true, axis);
+  f.c.FQ.screens.dex('all');
+  f.node('#dex-locked').change(true);
+  assert.match(f.node('#dex-list').innerHTML, /못 모은 칸도, 못 찍은 도장도 하나도 없어요/);
+});
+
+test('내 기록 상단은 어느 수가 모든 놀이 합산이고 어느 수가 국기 놀이인지 문구로 밝힌다', () => {
+  const f = screenFixture();
+  f.storage.recordAnswer('kr', true);
+  f.storage.recordAnswer('kr', false, 'symbol');
+  f.storage.recordAnswer('jp', true, 'map');
+  f.c.FQ.screens.stats();
+  const html = f.main.innerHTML;
+  assert.match(html, /<div class="v">3<\/div><div class="k">푼 문제 · 모든 놀이<\/div>/);
+  assert.match(html, /<div class="v">67%<\/div><div class="k">정답률 · 모든 놀이<\/div>/);
+  assert.match(html, /<div class="k">최고 연속 · 모든 놀이<\/div>/);
+  assert.match(html, /<div class="v">1<\/div><div class="k">국기로 만난 나라<\/div>/);
+  assert.match(html, /‘모든 놀이’는 국기·그림·명소·위치 놀이를 모두 더한 수예요/);
+  assert.match(html, /국기 놀이에서는 전체 194개국 중 1개국을 만났어요/);
+});
+
+test('그림을 끄면 놀이별 기록도 홈·도감처럼 그림·명소 축을 감춘다', () => {
+  const f = screenFixture();
+  f.storage.recordAnswer('kr', true, 'symbol');
+  f.storage.updateSettings({ dev: { art: false } });
+  f.c.FQ.screens.stats();
+  let html = f.main.innerHTML;
+  assert.match(html, /data-axis="flag"/);
+  assert.match(html, /data-axis="map"/);
+  assert.doesNotMatch(html, /data-axis="(?:symbol|place)"/);
+  f.storage.updateSettings({ dev: { art: true } });
+  f.c.FQ.screens.stats();
+  html = f.main.innerHTML;
+  assert.match(html, /data-axis="symbol"[\s\S]*?1개국 · 1문제/);
+  assert.match(html, /data-axis="place"/);
 });

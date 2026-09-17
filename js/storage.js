@@ -138,13 +138,33 @@
     });
   }
 
-  /** 출제 가중치: 틀렸던 나라일수록 자주 나온다. */
+  /**
+   * 레코드 하나의 출제 가중치. 틀렸던 나라일수록 자주 나온다.
+   * 옛 저장분에는 wrong·streak 가 없을 수 있다. 그대로 셈하면 NaN 이 되어
+   * weightedPick 의 합이 NaN 이 되고, 결국 늘 마지막 후보만 뽑혀 가중 출제가 통째로 죽는다.
+   */
+  function weightFrom(s) {
+    if (!s || !((s.seen || 0) > 0)) return 2.0;       // 아직 안 본 나라
+    var wrong = s.wrong || 0;
+    var streak = s.streak || 0;
+    if (wrong === 0) return 1.0;                        // 늘 맞힌 나라
+    if (streak >= 2) return 1.2;                        // 최근 두 번 연속 맞힘
+    return 2.5 + Math.min(wrong, 4) * 0.6;              // 자주 틀린 나라
+  }
+
+  /** 출제 가중치 (국기 축). */
   function weightOf(code) {
-    var s = state.countries[code];
-    if (!s || s.seen === 0) return 2.0;          // 아직 안 본 나라
-    if (s.wrong === 0) return 1.0;               // 늘 맞힌 나라
-    if (s.streak >= 2) return 1.2;               // 최근 두 번 연속 맞힘
-    return 2.5 + Math.min(s.wrong, 4) * 0.6;     // 자주 틀린 나라
+    return weightFrom(state.countries[code]);
+  }
+
+  /**
+   * 새 축(그림·명소·지도)의 출제 가중치. 그 축의 버킷만 읽고, 국기 기록은 보지 않는다.
+   * 읽기만 한다 — axisStat 과 달리 레코드를 만들지 않으므로 출제만으로 도장 수가 바뀌지 않는다.
+   */
+  function axisWeightOf(axis, code) {
+    if (!axis || axis === FLAG_AXIS) return weightOf(code);
+    var bucket = (state.axes || {})[axis];
+    return weightFrom(bucket ? bucket[code] : null);
   }
 
   function finishGame(summary) {
@@ -217,6 +237,7 @@
     recordAnswer: recordAnswer,
     wrongList: wrongList,
     weightOf: weightOf,
+    axisWeightOf: axisWeightOf,
     finishGame: finishGame,
     stats: stats,
     addXp: addXp,

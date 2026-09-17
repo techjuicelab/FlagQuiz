@@ -15,16 +15,50 @@
   var CHEST_BONUS = 5;   // 학습 카드 다섯 장을 모으면 더해 주는 점수
   var DISCOVERIES = ['여행책에 한 장', '지도에 톡', '하나 더 만났어요', '깃발이 살랑'];
 
+  // 모드 카드는 두 묶음으로 보인다. 여덟 장을 한 줄로 늘어놓으면 만 4세는 앞의 서너 장만 누르고
+  // 그림·명소 카드는 아이패드 가로에서 첫 화면 밖으로 밀린다. 묶음 안 순서는 늘 같다 —
+  // 글자를 못 읽는 아이는 자리로 카드를 기억하므로, 마지막에 고른 카드를 앞으로 끌어오지 않는다.
   var MODE_CARDS = [
-    { id: 'choice4', emo: '🚩', title: '국기 보고 나라 고르기', desc: '네 개 중에서 골라요' },
-    { id: 'reverse', emo: '🔎', title: '나라 보고 국기 찾기', desc: '이름을 보고 국기를 골라요' },
-    { id: 'voice',   emo: '🎤', title: '말로 답하기', desc: '누르지 않고 바로 말하면 돼요' },
-    { id: 'typing',  emo: '⌨️', title: '이름 써서 맞히기', desc: '글자로 입력해요' },
-    { id: 'capital', emo: '🏙️', title: '수도 맞히기', desc: '나라의 수도를 골라요' },
-    { id: 'map', emo: '🗺️', title: '지도에서 나라 찾기', desc: '나라가 있는 위치 핀을 골라요' },
-    { id: 'symbol', emo: '🎨', title: '그림 보고 나라 고르기', desc: '이 그림은 어느 나라의 친구일까요?' },
-    { id: 'place', emo: '🏞️', title: '명소 보고 나라 고르기', desc: '이 멋진 곳이 있는 나라를 골라요' }
+    { id: 'choice4', group: 'flag', emo: '🚩', title: '국기 보고 나라 고르기', desc: '네 개 중에서 골라요' },
+    { id: 'reverse', group: 'flag', emo: '🔎', title: '나라 보고 국기 찾기', desc: '이름을 보고 국기를 골라요' },
+    { id: 'voice',   group: 'flag', emo: '🎤', title: '말로 답하기', desc: '누르지 않고 바로 말하면 돼요' },
+    { id: 'typing',  group: 'flag', emo: '⌨️', title: '이름 써서 맞히기', desc: '글자로 입력해요' },
+    { id: 'capital', group: 'flag', emo: '🏙️', title: '수도 맞히기', desc: '나라의 수도를 골라요' },
+    { id: 'symbol', group: 'explore', emo: '🎨', title: '그림 보고 나라 고르기', desc: '이 그림은 어느 나라의 친구일까요?' },
+    { id: 'place', group: 'explore', emo: '🏞️', title: '명소 보고 나라 고르기', desc: '이 멋진 곳이 있는 나라를 골라요' },
+    { id: 'map', group: 'explore', emo: '🗺️', title: '지도에서 나라 찾기', desc: '나라가 있는 위치 핀을 골라요' }
   ];
+  var MODE_GROUPS = [
+    { id: 'flag', title: '🚩 국기 놀이' },
+    { id: 'explore', title: '🎨 그림·지도 놀이', titleNoArt: '🗺️ 지도 놀이' }
+  ];
+
+  /** 둘이서 대결은 국기 축에서만 연다. 그림·명소·지도는 어른이 압도적이라 아이가 매번 진다. */
+  function duelAllowed(mode) {
+    var m = quiz.MODES[mode];
+    return !!m && m.axis === 'flag';
+  }
+
+  function modeGrid(s) {
+    var cards = MODE_CARDS.filter(function (m) { return quiz.availableMode(m.id) === m.id; });
+    return MODE_GROUPS.map(function (group) {
+      var mine = cards.filter(function (m) { return m.group === group.id; });
+      if (!mine.length) return '';
+      var hasArt = mine.some(function (m) { return m.id === 'symbol' || m.id === 'place'; });
+      var title = !hasArt && group.titleNoArt ? group.titleNoArt : group.title;
+      return '<div class="mode-group" data-mode-group="' + group.id + '">' +
+        '<div class="mode-group-title">' + esc(title) + '</div>' +
+        '<div class="mode-grid">' +
+          mine.map(function (m) {
+            return '<button class="mode-card" type="button" data-mode="' + m.id + '" aria-pressed="' + (s.mode === m.id ? 'true' : 'false') + '">' +
+              '<span class="emo" aria-hidden="true">' + m.emo + '</span>' +
+              '<span class="txt"><span class="t">' + esc(m.title) + '</span><span class="d">' + esc(m.desc) + '</span></span>' +
+            '</button>';
+          }).join('') +
+        '</div>' +
+      '</div>';
+    }).join('');
+  }
 
   function totalCountries() { return quiz.all().length; }
 
@@ -118,6 +152,9 @@
     musicScreen('home');
     var wrongCount = store.wrongList().length;
     var duel = s.players.length > 1;
+    // 그림·명소·지도 놀이에서는 대결 스위치를 감춘다. 저장된 두 이름은 그대로 두어 국기 놀이로 돌아오면 다시 보인다.
+    var canDuel = duelAllowed(s.mode);
+    var showDuel = duel && canDuel;
     var poolSize = quiz.pool({ level: s.level, continent: s.continent, axis: quiz.MODES[s.mode] && quiz.MODES[s.mode].axis }).length;
 
     var html =
@@ -129,33 +166,28 @@
 
         '<div class="col">' +
 
+        // 아이가 고르는 놀이 카드를 이름 칸보다 위에 둔다. 이름·대결은 어른 몫이라 아래로 내려도 된다.
+        '<div class="section mode-section">' +
+          '<h3>어떻게 맞힐까요?</h3>' +
+          modeGrid(s) +
+          (s.mode === 'voice' ? voiceNotice() : '') +
+        '</div>' +
+
         '<div class="card section">' +
           '<h3>누가 하나요?</h3>' +
           '<div class="field">' +
             '<label for="p1">이름</label>' +
             '<input class="text-input" id="p1" maxlength="10" value="' + esc(s.players[0] || '') + '" placeholder="민규">' +
           '</div>' +
-          '<label class="switch"><input type="checkbox" id="duel"' + (duel ? ' checked' : '') + '> 둘이서 번갈아 대결하기</label>' +
-          '<p class="small muted' + (duel ? '' : ' hidden') + '" id="duel-note" style="margin:8px 0 0">' +
+          '<label class="switch' + (canDuel ? '' : ' hidden') + '" id="duel-switch"><input type="checkbox" id="duel"' + (duel ? ' checked' : '') + '> 둘이서 번갈아 대결하기</label>' +
+          (canDuel ? '' : '<p class="small muted" id="duel-off-note" style="margin:8px 0 0">둘이서 대결하기는 국기 놀이에서 할 수 있어요.</p>') +
+          '<p class="small muted' + (showDuel ? '' : ' hidden') + '" id="duel-note" style="margin:8px 0 0">' +
             '점수는 각자 따로 매기지만, 스티커·경험치·레벨은 <b id="duel-owner">' +
             esc(s.players[0] || '민규') + '</b> 것으로 쌓여요.</p>' +
-          '<div class="field' + (duel ? '' : ' hidden') + '" id="p2-field" style="margin-top:10px">' +
+          '<div class="field' + (showDuel ? '' : ' hidden') + '" id="p2-field" style="margin-top:10px">' +
             '<label for="p2">함께할 사람</label>' +
             '<input class="text-input" id="p2" maxlength="10" value="' + esc(s.players[1] || '아빠') + '" placeholder="아빠">' +
           '</div>' +
-        '</div>' +
-
-        '<div class="section">' +
-          '<h3>어떻게 맞힐까요?</h3>' +
-          '<div class="mode-grid">' +
-            MODE_CARDS.filter(function (m) { return quiz.availableMode(m.id) === m.id; }).map(function (m) {
-              return '<button class="mode-card" type="button" data-mode="' + m.id + '" aria-pressed="' + (s.mode === m.id ? 'true' : 'false') + '">' +
-                '<span class="emo" aria-hidden="true">' + m.emo + '</span>' +
-                '<span class="txt"><span class="t">' + esc(m.title) + '</span><span class="d">' + esc(m.desc) + '</span></span>' +
-              '</button>';
-            }).join('') +
-          '</div>' +
-          (s.mode === 'voice' ? voiceNotice() : '') +
         '</div>' +
 
         '</div>' +
@@ -455,18 +487,22 @@
     audio.unlock();
     if (FQ.music) FQ.music.unlock();
     musicScreen('quiz');
+    // 대결 스위치가 켜져 있어도 그림·명소·지도 놀이는 혼자 논다 (홈에서 스위치를 감추는 것과 같은 규칙).
+    var players = duelAllowed(s.mode) ? s.players : s.players.slice(0, 1);
     state.game = quiz.createGame({
       mode: s.mode,
       level: s.level,
       continent: s.continent,
       count: onlyCodes && onlyCodes.length ? Math.min(onlyCodes.length, 20) : s.count,
-      players: s.players,
+      players: players,
       reviewFirst: s.reviewFirst,
       only: onlyCodes && onlyCodes.length ? onlyCodes : null
     });
     state.lastBadges = [];
     state.xpGained = 0;
     state.newStickers = [];
+    state.unscored = 0;        // 점수 없이 지나간 문제 수 (그림 실패·새 축 시간 초과). 총 문항에서 뺀다.
+    state.answeredCodes = {};  // 이 판에서 실제로 채점한 나라. 결과의 '오늘 만난 나라'는 문제 수가 아니라 나라 수다.
     renderQuiz();
     // 말하기는 클릭한 순간 바로 마이크를 연다. 시작 음악보다 듣기를 우선한다.
     if (s.mode !== 'voice') playMusic('start');
@@ -545,18 +581,27 @@
       state.artUnavailable = !!art;
       // 그림 이름은 수아 음원으로 읽어 준다(2026-09-17 추가). 글자를 못 읽는 아이가 이름을 듣고 고른다.
       var stageArtName = artAlt(q.country.code, q.mode);
+      // 그림을 못 받았을 때의 화면은 글자를 못 읽는 아이가 봐도 알 수 있어야 한다 — 큰 그림 하나, 큰 단추 하나.
+      // 읽어 주는 것은 수아 음원에 이미 있는 그림 이름뿐이다(만나기 카드에서는 그 이름이 이미 아래에 있으니 빼지 않아도 된다).
+      var artErrorBody = '<div class="art-error-emoji" aria-hidden="true">🖼️</div><p>그림을 불러오지 못했어요.</p>';
       var artImage = art ? '<img id="question-art" src="' + esc(art.src) + '" alt="' + esc(art.alt) + '" width="1024" height="768">' +
           '<p id="art-loading" role="status">그림을 불러오고 있어요…</p>' +
-          '<div id="art-error" hidden><p>그림을 불러오지 못했어요.</p><button class="btn" id="art-retry" type="button">다시 불러오기</button></div>'
-          : '<div id="art-error"><p>그림을 불러오지 못했어요.</p></div>';
+          '<div id="art-error" class="art-error" hidden>' + artErrorBody +
+            '<button class="btn btn-primary btn-big" id="art-retry" type="button">🔄 다시 불러오기</button>' +
+            (stageArtName && !meet ? '<button class="btn btn-big" data-speak="' + esc(stageArtName) + '" type="button">🔊 그림 이름 듣기</button>' : '') +
+          '</div>'
+          : '<div id="art-error" class="art-error">' + artErrorBody + '</div>';
       stage = meet
         // 처음 만나는 그림은 문제보다 먼저 알려 준다. 나라 이름과 그림 이름을 함께 듣고 나서 같은 나라를 문제로 만난다.
+        // 그림과 이름·단추를 따로 감싼다 — 아이패드 가로에서는 둘을 나란히 놓아야 단추가 한 화면에 들어온다.
         ? '<div class="flag-stage art-question meet-card"><div class="q-label">처음 만나는 나라예요 · 먼저 들어 볼까요?</div>' +
-          artImage +
+          '<div class="meet-art">' + artImage + '</div>' +
+          '<div class="meet-body">' +
           '<div class="big-name"><img class="map-question-flag" src="' + ui.flagSrc(q.country.code) + '" alt="' + esc(q.country.ko) + ' 국기"> ' + esc(q.country.ko) + '</div>' +
           '<div class="meet-caption">' + esc(stageArtName) + '</div>' +
           '<button class="btn btn-sm" id="meet-speak" data-speak="' + esc(q.country.ko) + '" data-speak-extra="' + esc(stageArtName) + '" data-label="🔊 다시 듣기" type="button">🔊 다시 듣기</button>' +
-          '<button class="btn btn-primary btn-big" id="meet-next" type="button" style="width:100%;margin-top:12px">문제 풀어 볼게요 →</button></div>'
+          '<button class="btn btn-primary btn-big" id="meet-next" type="button" style="width:100%;margin-top:12px">문제 풀어 볼게요 →</button>' +
+          '</div></div>'
         : '<div class="flag-stage art-question"><div class="q-label">' +
           (q.mode === 'place' ? '이 명소가 있는 나라는 어디일까요?' : '이 그림은 어느 나라를 떠올리게 하나요?') + '</div>' +
           artImage +
@@ -628,7 +673,7 @@
         '</div>' +
 
         '<div class="qdots">' + dots + '</div>' +
-        '<div class="quiz-body' + (q.mode === 'map' ? ' map-quiz' : '') + '">' +
+        '<div class="quiz-body' + (q.mode === 'map' ? ' map-quiz' : '') + (meet ? ' meet-quiz' : '') + '">' +
           '<div>' + stage + '</div>' +
           '<div>' +
             '<div id="answer-area"' + (meet ? ' hidden' : '') + '>' + answerArea(q) + '</div>' +
@@ -1012,18 +1057,21 @@
     var box = ui.$('#hint-area');
     var lines = [];
     if (q.mode === 'symbol' || q.mode === 'place') {
-      lines.push(esc(artAlt(q.country.code, q.mode)));
-      lines.push(esc(q.country.continent) + '에 있는 나라예요');
+      // 소재 이름에 나라 이름이 들어 있으면('레바논 삼나무', '파나마 운하') 그 줄이 곧 정답이다. 그때는 이름 줄을 뺀다.
+      var artName = artAlt(q.country.code, q.mode);
+      if (artName && !revealsCountry(artName, q.country)) lines.push(esc(artName));
+      lines.push('🗺️ ' + esc(q.country.continent) + '에 있는 나라예요');
     } else if (q.mode === 'map') {
       lines.push('🗺️ ' + esc(q.country.continent) + ' · ' + esc(q.country.region) + '에서 찾아보세요');
     } else if (q.mode === 'capital') {
-      lines.push('첫 글자는 <b>' + esc(util.initialOf(q.country.capital)) + '</b> 로 시작해요');
-      lines.push(esc(q.country.continent) + ' · ' + esc(q.country.region) + ' 에 있어요');
+      // '첫 글자는 ㅅ 로 시작해요'는 글자를 못 읽는 아이에게 아무 뜻이 없고 조사도 틀렸다. 국기·대륙 단서로 바꾼다.
+      lines.push('🚩 ' + esc(q.country.flagHint));
+      lines.push('🗺️ ' + esc(q.country.continent) + ' · ' + esc(q.country.region) + '에 있어요');
     } else if (q.mode === 'reverse') {
       lines.push('🚩 ' + esc(q.country.flagHint));
     } else {
       lines.push('🚩 ' + esc(q.country.flagHint));
-      lines.push(esc(q.country.continent) + ' 에 있고, 이름은 <b>' + esc(util.initialOf(q.country.ko)) + '</b> 소리로 시작해요');
+      lines.push(esc(q.country.continent) + '에 있고, 이름은 <b>' + esc(util.initialOf(q.country.ko)) + '</b> 소리로 시작해요');
     }
     box.innerHTML = '<div class="hint-box">' + lines.join('<br>') + '</div>';
     audio.play('click');
@@ -1052,8 +1100,19 @@
     state.listenOn = false;
     if (state.listenTimer) { global.clearTimeout(state.listenTimer); state.listenTimer = null; }
     audio.stopSpeaking();
-    state.game.next();
+    var g = state.game;
+    var turn = g.turn;
+    state.unscored = (state.unscored || 0) + 1;
+    g.next();
+    // 지나간 문제는 그 사람 차례로 세지 않는다. 대결에서 그림이 안 온 쪽만 차례를 잃으면 안 된다.
+    g.turn = turn;
     renderQuiz();
+  }
+
+  /** 소재 이름 안에 나라 이름(별칭 포함)이 들어 있는가 — 힌트로 보여 주면 정답을 알려 주는 셈이다. */
+  function revealsCountry(name, country) {
+    var names = [country.ko].concat(country.aliases || []);
+    return names.some(function (n) { return n && name.indexOf(n) !== -1; });
   }
 
   /* --------- 제출 --------- */
@@ -1076,6 +1135,7 @@
     var res = g.submit(payload, state.usedHint);
     if (!res) return;
     res.gaveUp = !!gaveUp;
+    if (q) (state.answeredCodes || (state.answeredCodes = {}))[q.country.code] = true;
 
     if (res.correct && q) {
       var gain = FQ.progress.xpFor(g.streak);
@@ -1132,6 +1192,8 @@
     var wins = [];
     if (res.newSticker) wins.push('새 스티커가 여행책에 들어왔어요');
     if (res.levelUp) wins.push('새 길이 열렸어요 · ' + esc(res.levelUp.name));
+    // 새 축에서 처음 만나거나 틀린 나라는 조금 뒤에 한 번 더 나온다. 화면 글자로만 알리고 읽어 주지는 않는다(음원 없음).
+    if (res.scheduledAgain) wins.push('조금 뒤에 한 번 더 만나요');
     if (wins.length) extra = '<div class="small muted">' + wins.join(' · ') + '</div>';
 
     var lvNow = FQ.progress.level();
@@ -1363,6 +1425,10 @@
         stopTimer();
         if (!state.answered) {
           state.timedOut = true;
+          // 그림·명소·지도는 아이가 처음 보는 것이 많다. 다 보기도 전에 시간이 끝난 것을 오답으로 적으면
+          // 안 틀린 것을 틀렸다고 배우고 그 나라가 '어려운 나라'로 더 자주 나온다. 기록 없이 지나간다.
+          var q = state.game && state.game.current();
+          if (q && quiz.MODES[q.mode] && quiz.MODES[q.mode].axis !== 'flag') { skipUnscored(); return; }
           // 쓰던 답이 있으면 버리지 않고 그것으로 채점한다
           var typed = ui.$('#answer-input');
           var left = typed && typed.value ? typed.value.trim() : '';
@@ -1383,6 +1449,10 @@
     var g = state.game;
     if (!g) return renderHome();
     var summary = g.summary();
+    // 점수 없이 지나간 문제는 총 문항·정답률·기록·만점 배지 어디에도 들어가지 않는다.
+    summary.total = Math.max(0, (summary.total || 0) - (state.unscored || 0));
+    summary.unscored = state.unscored || 0;
+    summary.countries = Object.keys(state.answeredCodes || {}).length;
     store.finishGame(summary);
     var earned = FQ.badges.check(summary);
     state.lastSummary = summary;
@@ -1423,7 +1493,8 @@
         '<div class="card">' +
           '<div class="result-hero">' +
             '<div class="journey-finish" aria-hidden="true">🗺️</div>' +
-            '<div class="score">오늘 만난 나라 ' + summary.total + '개</div>' +
+            // 새 축은 한 판에 같은 나라를 두 번 만나므로 문제 수가 아니라 나라 수를 센다.
+            '<div class="score">오늘 만난 나라 ' + (summary.countries === undefined ? summary.total : summary.countries) + '개</div>' +
             '<p class="muted">여행책에 새로운 이야기가 쌓였어요</p>' +
             '<button class="btn btn-sm" id="result-replay" type="button">🔊 응원 다시 듣기</button>' +
             (state.xpGained

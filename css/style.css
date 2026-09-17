@@ -130,7 +130,7 @@ a:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-
 }
 .btn-ghost { background: transparent; box-shadow: none; border-color: var(--line); }
 .btn-big { font-size: 1.25rem; min-height: 64px; padding: 16px 24px; }
-.btn-sm { font-size: .92rem; min-height: 42px; padding: 8px 14px; border-radius: 12px; white-space: nowrap; }
+.btn-sm { font-size: .92rem; min-height: 44px; /* 작은 단추도 손가락 규칙(44px)은 지킨다 */ padding: 8px 14px; border-radius: 12px; white-space: nowrap; }
 
 .row { display: flex; gap: 10px; flex-wrap: wrap; }
 .row-center { justify-content: center; align-items: center; }
@@ -236,7 +236,7 @@ a:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-
 }
 .mode-card .emo { font-size: 1.8rem; flex: 0 0 auto; }
 .mode-card .txt { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.mode-card .t { display: block; font-weight: 800; font-size: 1.02rem; line-height: 1.25; }
+.mode-card .t { display: block; font-weight: 800; font-size: 1.02rem; line-height: 1.25; word-break: keep-all; }
 .mode-card .d { display: block; font-size: .82rem; color: var(--text-soft); line-height: 1.3; }
 
 .field { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
@@ -471,7 +471,7 @@ a:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-
   text-align: center;
 }
 .stat .v { font-size: 1.5rem; font-weight: 900; }
-.stat .k { font-size: .82rem; color: var(--text-soft); }
+.stat .k { font-size: .82rem; color: var(--text-soft); word-break: keep-all; line-height: 1.3; } /* 긴 라벨은 낱말 사이에서만 줄바꿈 */
 
 .wrong-grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); }
 .wrong-item { text-align: center; background: var(--card-2); border-radius: 14px; padding: 10px; border: none; cursor: pointer; color: var(--text); }
@@ -1094,6 +1094,16 @@ a:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-
   .mode-grid { grid-template-columns: 1fr 1fr; }
 }
 
+/* 모드 카드 두 묶음: '국기 놀이' 다섯 장 / '그림·지도 놀이' 세 장. 묶음마다 작은 제목이 붙는다. */
+.mode-group + .mode-group { margin-top: 12px; }
+.mode-group-title {
+  font-size: .86rem;
+  font-weight: 800;
+  color: var(--text-soft);
+  margin: 0 0 6px 2px;
+  word-break: keep-all;
+}
+
 /* 좁은 화면에서는 두 칸 껍데기가 없는 셈 치고 지금 순서 그대로 흐른다 */
 .home-cols > .col { display: contents; }
 
@@ -1108,6 +1118,13 @@ a:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-
   }
   .home-cols > .col { display: flex; flex-direction: column; gap: 16px; }
   .home-cols .section { margin: 0; }
+  /* 모드 카드 여덟 장이 왼쪽 칸 첫 화면(768px 높이) 안에 다 들어오도록 카드를 낮게 잡는다 */
+  .home-cols .mode-grid { gap: 8px; grid-template-columns: 1fr 1fr; }
+  .home-cols .mode-card { min-height: 60px; padding: 9px 12px; gap: 10px; }
+  .home-cols .mode-card .emo { font-size: 1.5rem; }
+  .home-cols .mode-card .t { font-size: .98rem; }
+  .home-cols .mode-card .d { font-size: .76rem; }
+  .home-cols .mode-group + .mode-group { margin-top: 10px; }
 }
 
 /* ---- 결과: 복습 판을 끝냈을 때 ---- */
@@ -1197,13 +1214,48 @@ button.cont-item:focus-visible { outline: 3px solid var(--accent); outline-offse
 /* 그림은 다크 화면에서도 원래 배경색과 색감을 유지한다. */
 .country-art { margin: 16px 0; overflow: hidden; border: 1px solid var(--line); border-radius: 18px; touch-action: manipulation; user-select: none; }
 .country-art img { display: block; width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: contain; background: #f1f5fb; }
+/* display: block 이 hidden 속성을 이기므로, 깨진 그림을 감출 때는 이 규칙이 한 번 더 막는다 (ui.js 의 인라인 style 과 이중 안전망) */
+.country-art img[hidden] { display: none; }
 .country-art figcaption { padding: 10px 14px; text-align: center; font-weight: 700; background: var(--card-2); }
 .art-question { min-height: 0; padding: 16px; }
-.art-question > img { display: block; width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: contain; border-radius: 16px; background: #f1f5fb; }
-.art-question > img[hidden] { display: none; }
+/* 그림은 화면 높이에 맞춘다(국기 34vh 와 같은 기준). 상한이 없으면 아이패드 세로에서 그림이 절반을 먹어 보기 네 개가 화면 끝에 걸린다. */
+.art-question img#question-art {
+  display: block; width: auto; max-width: 100%; height: auto; max-height: 34vh; margin: 0 auto;
+  aspect-ratio: 4 / 3; object-fit: contain; border-radius: 16px; background: #f1f5fb;
+}
+.art-question img#question-art[hidden] { display: none; }
+/* 그림을 못 받았을 때: 글자를 못 읽어도 알 수 있게 큰 그림 하나와 큰 단추 */
+.art-error { display: grid; gap: 10px; justify-items: center; padding: 8px 0; }
+.art-error[hidden] { display: none; }
+.art-error p { margin: 0; font-weight: 700; color: var(--text-soft); }
+.art-error .btn { width: 100%; max-width: 360px; }
+.art-error-emoji { font-size: 4.2rem; line-height: 1; filter: grayscale(.4); }
+/* 오류 상자가 보이는 동안은 그 안의 큰 '그림 이름 듣기' 하나만 남기고 작은 들어보기 단추는 감춘다 */
+.art-question:has(> .art-error:not([hidden])) > .btn-sm { display: none; }
 /* 만나기 카드: 처음 보는 그림을 채점 전에 이름과 함께 보여 준다. */
 .meet-card .big-name { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 12px; }
 .meet-card .meet-caption { font-size: 1.35rem; font-weight: 700; margin: 4px 0 10px; }
 .meet-card #meet-speak { margin-bottom: 4px; }
 .art-choice { display: flex; align-items: center; gap: 12px; }
-.art-choice img { width: 48px; height: 32px; object-fit: contain; flex-shrink: 0; }
+/* 보기 국기는 손가락으로 짚을 만큼 크게, 밝은 국기가 카드에 묻히지 않게 테두리를 두른다 */
+.art-choice img {
+  width: 64px; height: 44px; object-fit: contain; flex-shrink: 0;
+  border: 1px solid var(--line); border-radius: 6px; background: var(--card-2);
+}
+
+/* 아이패드 가로: 만나기 카드는 두 칸을 다 쓰고, 안에서 그림(왼쪽)과 이름·단추(오른쪽)를 나란히 놓는다.
+   한 칸에 세로로 쌓으면 '문제 풀어 볼게요' 단추가 화면 아래로 밀린다. */
+@media (min-width: 760px) and (orientation: landscape) {
+  .quiz-body.meet-quiz { display: block; }
+  .quiz-body .meet-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 8px 20px;
+    align-items: center;
+  }
+  .quiz-body .meet-card .q-label { grid-column: 1 / -1; margin-bottom: 0; }
+  .quiz-body .meet-card .meet-art { min-width: 0; }
+  .quiz-body .meet-card img#question-art { max-height: calc(100vh - 400px); min-height: 160px; }
+  .quiz-body .meet-card .big-name { margin-top: 0; }
+  .quiz-body .art-question img#question-art { max-height: calc(100vh - 380px); }
+}

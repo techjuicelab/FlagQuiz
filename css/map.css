@@ -52,3 +52,17 @@
 .map-question { min-height: 0; padding: 14px; margin-bottom: 16px; }
 .map-question .big-name { font-size: 1.8rem; margin: 8px 0; }
 .map-question-flag { width: 80px; height: 54px; object-fit: contain; }
+
+/* 아이패드 가로(1024×768·1180×820): 국기·이름 무대를 왼쪽, 지도판을 오른쪽에 두어 한 화면에 넣는다.
+   한 칸으로 쌓으면 지도판(폭의 절반 높이)이 화면 아래로 잘려 남쪽 핀에 스크롤 없이 닿지 못한다.
+   지도판 폭은 최소 280px 이상이어야 핀 네 개가 겹치지 않는다 — 5:7 로 갈라도 1024px 에서 500px 이 넘는다. */
+@media (min-width: 760px) and (orientation: landscape) {
+  .quiz-body.map-quiz {
+    display: grid;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    gap: 20px;
+    align-items: start;
+  }
+  .quiz-body.map-quiz .map-question { margin-bottom: 0; }
+  .quiz-body.map-quiz .map-question-flag { width: 120px; height: 80px; }
+}

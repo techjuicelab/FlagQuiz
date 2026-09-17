@@ -18,9 +18,22 @@
     return axis === 'flag' ? FQ.storage.allCountryStats() : FQ.storage.allAxisStats(axis);
   }
 
+  /** 지금 보여 줄 축. 그림을 끄면 홈·도감과 똑같이 그림·명소 축을 감춘다. */
+  function visibleAxes() {
+    return AXES.filter(function (axis) {
+      if (axis.id === 'flag' || axis.id === 'map') return true;
+      return !!(FQ.features && FQ.features.on('art'));
+    });
+  }
+
+  /** 스티커 칸 안에 겹치는 도장 축 (국기 제외) */
+  function stampAxes() {
+    return visibleAxes().filter(function (axis) { return axis.id !== 'flag'; });
+  }
+
   function axisSummary() {
     return '<div class="card section"><h3>놀이별 기록</h3><div class="axis-stat-list">' +
-      AXES.map(function (axis) {
+      visibleAxes().map(function (axis) {
         var records = axisRecords(axis.id), seen = 0, correct = 0, countries = 0;
         (FQ.countries || []).forEach(function (c) {
           var r = records[c.code] || {};
@@ -61,10 +74,43 @@
         '다른 나라의 국기도 펼쳐 볼까요?</div>';
     }
     if (dexFilter.onlyLocked) {
-      return (dexFilter.continent === 'all' ? '194칸을 모두 모았어요! 🌍' : esc(dexFilter.continent) + '를 모두 모았어요! 🎉') +
-        '<div class="small muted" style="margin-top:6px">못 모은 칸이 하나도 없어요.</div>';
+      // 국기 스티커는 다 모았어도 칸 안의 도장(그림·명소·위치)은 남아 있을 수 있다. 도장까지 세어 말한다.
+      var cont = dexFilter.continent;
+      var left = stampsLeft(cont);
+      var head = cont === 'all'
+        ? '국기 스티커 ' + (FQ.countries || []).length + '칸을 모두 모았어요! 🌍'
+        : esc(cont) + objectParticle(cont) + ' 모두 모았어요! 🎉';
+      var tail = left.count > 0
+        ? '국기는 다 모았고, 아직 못 찍은 도장이 ' + left.count + '개 있어요. ' + left.labels.join('·') + ' 놀이로 찍어 볼까요?'
+        : '못 모은 칸도, 못 찍은 도장도 하나도 없어요.';
+      return head + '<div class="small muted" style="margin-top:6px">' + tail + '</div>';
     }
     return '찾는 나라가 없어요.';
+  }
+
+  /** 한글 이름 뒤에 붙일 목적격 조사 (을/를) — util 의 받침 판정을 그대로 쓴다 */
+  function objectParticle(word) {
+    return FQ.util.hasJongseong(word) ? '을' : '를';
+  }
+
+  /** 그 대륙(또는 전체)에서 아직 못 찍은 도장 수. 딸 수 없는 도장은 세지 않는다. 읽기만 한다. */
+  function stampsLeft(continent) {
+    var axes = stampAxes();
+    var records = {};
+    axes.forEach(function (axis) { records[axis.id] = axisRecords(axis.id); });
+    var count = 0;
+    var labels = [];
+    (FQ.countries || []).forEach(function (c) {
+      if (continent !== 'all' && c.continent !== continent) return;
+      axes.forEach(function (axis) {
+        if (!canEarn(c.code, axis.id)) return;
+        var earned = ((records[axis.id][c.code] || {}).correct || 0) > 0;
+        if (earned) return;
+        count += 1;
+        if (labels.indexOf(axis.label) === -1) labels.push(axis.label);
+      });
+    });
+    return { count: count, labels: labels };
   }
 
   function init() { ui = FQ.ui; esc = ui.esc; }
@@ -146,11 +192,9 @@
   function paintDex() {
     var util = FQ.util;
     var stats = FQ.storage.allCountryStats();
-    var stampAxes = AXES.slice(1).filter(function (axis) {
-      return axis.id === 'map' || (FQ.features && FQ.features.on('art'));
-    });
+    var stamps = stampAxes();
     var stampRecords = {};
-    stampAxes.forEach(function (axis) { stampRecords[axis.id] = axisRecords(axis.id); });
+    stamps.forEach(function (axis) { stampRecords[axis.id] = axisRecords(axis.id); });
     var wrongSet = {};
     FQ.storage.wrongList().forEach(function (c) { wrongSet[c] = true; });
     var norm = util.normalize(dexFilter.query);
@@ -182,7 +226,7 @@
               '<img src="' + ui.flagSrc(c.code) + '" alt="' + esc(c.ko) + ' 스티커" loading="lazy">' +
               (got ? '' : '<span class="lock">' + LOCK_SVG + '</span>') +
               '<div class="n">' + esc(c.ko) + '</div>' +
-              '<div class="axis-stamps">' + stampAxes.map(function (axis) {
+              '<div class="axis-stamps">' + stamps.map(function (axis) {
                 // 딸 수 없는 도장은 그리지 않는다. 그림이 없는 나라(보류)와 명소가 없는 나라는
                 // 그 축에 출제되지 않으므로, 자리를 남겨 두면 아이가 영원히 못 채우는 칸이 된다.
                 if (!canEarn(c.code, axis.id)) return '';
@@ -245,13 +289,16 @@
         '<div class="card section">' +
           '<div class="stat-grid" style="margin:0">' +
             '<div class="stat"><div class="v">' + st.games + '</div><div class="k">놀이 횟수</div></div>' +
-            '<div class="stat"><div class="v">' + st.asked + '</div><div class="k">푼 문제</div></div>' +
-            '<div class="stat"><div class="v">' + rate + '%</div><div class="k">정답률</div></div>' +
-            '<div class="stat"><div class="v">' + st.bestStreak + '</div><div class="k">최고 연속</div></div>' +
+            '<div class="stat"><div class="v">' + st.asked + '</div><div class="k">푼 문제 · 모든 놀이</div></div>' +
+            '<div class="stat"><div class="v">' + rate + '%</div><div class="k">정답률 · 모든 놀이</div></div>' +
+            '<div class="stat"><div class="v">' + st.bestStreak + '</div><div class="k">최고 연속 · 모든 놀이</div></div>' +
             '<div class="stat"><div class="v">' + seenCount + '</div><div class="k">국기로 만난 나라</div></div>' +
             '<div class="stat"><div class="v">' + learnedCount + '</div><div class="k">익숙한 국기</div></div>' +
           '</div>' +
-          '<p class="small muted" style="margin:12px 0 0">국기 놀이에서 전체 ' + total + '개국 중 ' + seenCount + '개국을 만났어요. ' +
+          // 위 세 칸은 국기·그림·명소·위치를 모두 더한 수이고, '국기로 만난 나라' 부터는 국기 놀이만 센다.
+          // 어느 쪽인지 적어 두지 않으면 국기 판만 보는 아빠가 문제 수와 나라 수가 안 맞는다고 헷갈린다.
+          '<p class="small muted" style="margin:12px 0 0">‘모든 놀이’는 국기·그림·명소·위치 놀이를 모두 더한 수예요. ' +
+            '국기 놀이에서는 전체 ' + total + '개국 중 ' + seenCount + '개국을 만났어요. ' +
             (seenCount >= total ? '온 세계를 한 바퀴 돌았네요! 🌐' : '아직 ' + (total - seenCount) + '개국이 남았어요.') + '</p>' +
         '</div>' +
 

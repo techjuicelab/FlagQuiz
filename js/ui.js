@@ -36,10 +36,11 @@
       var art = artFor(code, axis);
       var label = axis === 'place' ? '나라 대표 명소 · ' : art ? '나라를 떠올리는 그림 · ' : '나라를 떠올리는 것 · ';
       return '<figure class="country-art">' +
-        // 그림은 선캐시가 아니라 필요할 때 받는다. 오프라인에서 아직 안 받아 둔 나라를 열면
-        // 깨진 아이콘이 뜨므로, 그때는 그림만 감추고 아래 이름은 그대로 남긴다.
+        // 오프라인에서 아직 안 받아 둔 나라를 열면 깨진 아이콘이 뜨므로, 그때는 그림만 감추고
+        // 아래 이름은 그대로 남긴다. hidden 속성만으로는 css 의 `.country-art img { display: block }` 에
+        // 밀려 깨진 그림이 그대로 보이니, 인라인 style 로 확실히 감춘다.
         (art ? '<img src="' + esc(art.src) + '" alt="' + esc(art.alt) + '" width="1024" height="768" loading="lazy"' +
-          ' onerror="this.hidden = true">' : '') +
+          ' onerror="this.hidden = true; this.style.display = \'none\'">' : '') +
         '<figcaption>' + label + esc(subject.ko) +
           ' <button class="btn btn-sm btn-ghost" data-speak-art="' + esc(subject.ko) + '" type="button" aria-label="' + esc(subject.ko) + ' 들어보기">🔊</button>' +
         '</figcaption></figure>';

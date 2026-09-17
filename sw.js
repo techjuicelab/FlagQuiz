@@ -85,49 +85,121 @@ function warmFlags() {
  * 상징물·명소 그림을 활성화 뒤에 조금씩 담아 둔다.
  * 아이는 차 안에서 비행기 모드로 논다. 그림을 그때 받으려 하면 문제가 통째로 잠기고
  * 답도 못 하고 넘기지도 못한다. 국기와 같은 방식으로 미리 받아 둔다.
- * 341장 8.1MB 라 설치를 붙잡으면 안 되고, 실패해도 그냥 넘어간다.
+ * 342장 8.5MB 라 설치·활성화를 붙잡으면 안 되고, 실패해도 그냥 넘어간다.
+ *
+ * 워커는 30초쯤 한가하면 브라우저가 꺼 버린다. 예열이 중간에 끊기면 다음 온라인 신호
+ * (셸 파일을 네트워크에서 받은 순간)에 resumeArtWarm 이 남은 것을 이어받는다.
+ * 다 채운 목록은 그림 버킷 안의 기록(ART_WARM_MARK)으로 남겨, 워커가 다시 뜰 때마다
+ * 342번 조회를 되풀이하지 않는다. 목록이나 그림 크기가 바뀐 배포에서는 기록이 어긋나
+ * 다시 훑고, 크기가 다른 옛 그림은 새로 받는다.
  */
+var ART_WARM_MARK = './images/_warm-art'; // 페이지가 절대 요청하지 않는 이름이라 cacheFirst 와 섞이지 않는다.
+var artWarm = null;       // 이 워커 수명 안에서 도는 예열 약속
+var artWarmRetryAt = 0;   // 끝까지 못 채운 예열을 곧바로 되풀이하지 않는다
+
+/** 대입 자리부터 짝이 맞는 닫는 중괄호까지 잘라 낸다. JSON 문자열 속 중괄호·따옴표는 세지 않는다. */
+function sliceObjectLiteral(src, start) {
+  var depth = 0, inString = false;
+  for (var i = start; i < src.length; i++) {
+    var ch = src.charAt(i);
+    if (inString) {
+      if (ch === '\\') i += 1;
+      else if (ch === '"') inString = false;
+    } else if (ch === '"') inString = true;
+    else if (ch === '{') depth += 1;
+    else if (ch === '}') { depth -= 1; if (!depth) return src.slice(start, i + 1); }
+  }
+  return null;
+}
+
+/** subjects.js 본문에서 받아야 할 그림 경로와, 원장이 적어 둔 바이트 수를 뽑는다. */
+function artItemsFrom(src) {
+  // 파일은 IIFE 로 감싸여 있고 머리말 주석에도 'subjects' 라는 글자가 있다. 대입 자리를 정확히 집는다.
+  var assign = /FQ\.subjects\s*=\s*\{/.exec(src);
+  if (!assign) return [];
+  var literal = sliceObjectLiteral(src, assign.index + assign[0].length - 1);
+  if (!literal) return [];
+  var subjects;
+  try { subjects = JSON.parse(literal); }
+  catch (e) { return []; }
+  var items = [];
+  Object.keys(subjects).forEach(function (code) {
+    [['symbol', './images/symbols/'], ['place', './images/places/']].forEach(function (pair) {
+      var subject = subjects[code] && subjects[code][pair[0]];
+      // noArt 는 원장이 보류한 소재다. 받을 파일이 아예 없으므로 요청하지 않는다.
+      if (subject && !subject.noArt) items.push({ url: pair[1] + code + '.webp', bytes: subject.bytes > 0 ? subject.bytes : 0 });
+    });
+  });
+  return items;
+}
+
+/** 담아 둔 그림이 배포본과 같은 크기인가. 'fresh' | 'stale' | 'missing'. 크기를 모르면 있는 것을 믿는다. */
+function artState(hit, bytes) {
+  if (!hit || !hit.ok) return Promise.resolve('missing');
+  if (!bytes) return Promise.resolve('fresh');
+  var length = Number(hit.headers.get('content-length'));
+  if (length > 0) return Promise.resolve(length === bytes ? 'fresh' : 'stale');
+  return hit.arrayBuffer().then(function (buffer) { return buffer.byteLength === bytes ? 'fresh' : 'stale'; })
+    ['catch'](function () { return 'fresh'; });
+}
+
+/** 한 바퀴 돈다. 전부 담겼으면 true, 하나라도 못 받았으면 false. 절대 거부하지 않는다. */
 function warmArt() {
   return fetch('./data/subjects.js')
     .then(function (res) { return res.ok ? res.text() : ''; })
     .then(function (src) {
-      // 파일은 IIFE 로 감싸여 있고 머리말 주석에도 'subjects' 라는 글자가 있다.
-      // 대입 자리를 정확히 집어 거기서부터 괄호를 세어 잘라낸다.
-      var assign = /FQ\.subjects\s*=\s*\{/.exec(src);
-      if (!assign) return;
-      var start = assign.index + assign[0].length - 1;
-      var depth = 0, end = -1;
-      for (var i = start; i < src.length; i++) {
-        var ch = src.charAt(i);
-        if (ch === '{') depth += 1;
-        else if (ch === '}') { depth -= 1; if (!depth) { end = i; break; } }
-      }
-      if (end === -1) return;
-      var subjects;
-      try { subjects = JSON.parse(src.slice(start, end + 1)); }
-      catch (e) { return; }
-      var urls = [];
-      Object.keys(subjects).forEach(function (code) {
-        // noArt 는 원장이 보류한 소재다. 받을 파일이 아예 없으므로 요청하지 않는다.
-        if (subjects[code].symbol && !subjects[code].symbol.noArt) urls.push('./images/symbols/' + code + '.webp');
-        if (subjects[code].place && !subjects[code].place.noArt) urls.push('./images/places/' + code + '.webp');
-      });
-      if (!urls.length) return;
+      var items = artItemsFrom(src);
+      if (!items.length) return false;
+      var stamp = items.map(function (it) { return it.url + ' ' + it.bytes; }).join('\n');
       return caches.open(ART_CACHE).then(function (cache) {
-        var i = 0;
-        function nextChunk() {
-          if (i >= urls.length) return;
-          var chunk = urls.slice(i, i + 10);
-          i += 10;
-          return Promise.all(chunk.map(function (u) {
-            return cache.match(u).then(function (hit) {
-              return hit ? null : cache.add(u)['catch'](function () { return null; });
+        return cache.match(ART_WARM_MARK)
+          .then(function (mark) { return mark ? mark.text() : ''; })
+          ['catch'](function () { return ''; })
+          .then(function (previous) {
+            if (previous === stamp) return true; // 지난 예열이 같은 목록을 다 채웠다.
+            var i = 0, failed = 0;
+            function refill(it) {
+              return cache.match(it.url)
+                .then(function (hit) { return artState(hit, it.bytes); }, function () { return 'missing'; })
+                .then(function (state) {
+                  if (state === 'fresh') return null;
+                  // 크기가 다른 옛 그림은 브라우저 HTTP 캐시도 건너뛰고 서버에서 새로 받는다. 못 받으면 옛 것이 남는다.
+                  // Request 는 상대 경로를 못 받으므로 워커 주소 기준으로 절대 경로를 만든다.
+                  var req = state === 'stale' ? new Request(new URL(it.url, self.location.href).href, { cache: 'reload' }) : it.url;
+                  return cache.add(req)['catch'](function () { failed += 1; });
+                });
+            }
+            function nextChunk() {
+              if (i >= items.length) return null;
+              var chunk = items.slice(i, i + 10);
+              i += 10;
+              return Promise.all(chunk.map(refill)).then(nextChunk);
+            }
+            return Promise.resolve(nextChunk()).then(function () {
+              if (failed) return false;
+              return cache.put(ART_WARM_MARK, new Response(stamp))
+                .then(function () { return true; }, function () { return true; });
             });
-          })).then(nextChunk);
-        }
-        return nextChunk();
+          });
       });
-    })['catch'](function () { return null; });
+    })['catch'](function () { return false; });
+}
+
+/** 도는 예열이 있으면 그것을, 없으면 새로 시작한 것을 돌려준다. 못 채운 예열은 5분 뒤에야 다시 시도한다. */
+function resumeArtWarm() {
+  if (artWarm) return artWarm;
+  if (Date.now() < artWarmRetryAt) return Promise.resolve(false);
+  artWarm = warmArt().then(function (done) {
+    if (!done) { artWarm = null; artWarmRetryAt = Date.now() + 5 * 60 * 1000; }
+    return done;
+  });
+  return artWarm;
+}
+
+/** 응답을 막지 않고 워커 수명만 늘린다. 옛 검사 도구처럼 waitUntil 이 없거나 이미 닫힌 이벤트면 조용히 넘어간다. */
+function extend(event, promise) {
+  try { if (event && typeof event.waitUntil === 'function') event.waitUntil(promise); }
+  catch (e) { /* 이벤트가 이미 끝났다 — 예열은 어차피 배경 작업이다. */ }
 }
 
 function preserveLegacyFlag(legacy, req) {
@@ -170,11 +242,11 @@ self.addEventListener('activate', function (event) {
       })
       .then(function () { return self.clients.claim(); })
       .then(function () { return warmFlags(); })
-      // 그림 8.2MB 는 활성화를 붙잡지 않는다. waitUntil 이 끝나야 상태가 activated 가 되고
+      // 그림 8.5MB 는 활성화를 붙잡지 않는다. waitUntil 이 끝나야 상태가 activated 가 되고
       // 그때까지 fetch 가 대기하는데, 국기 1.3MB 와 달리 그림까지 기다리면 갱신 직후 아이
-      // 화면이 눈에 띄게 밀린다. 끊겨도 온라인에서는 필요한 그림을 그때그때 담고 다음
-      // 활성화가 부족분을 이어받는다 — warmArtDone 은 검사에서 그 끝을 기다리기 위한 것이다.
-      .then(function () { self.warmArtDone = warmArt()['catch'](function () { return null; }); })
+      // 화면이 눈에 띄게 밀린다. 끊기면 다음 온라인 신호에서 resumeArtWarm 이 이어받는다.
+      // warmArtDone 은 검사에서 그 끝을 기다리기 위한 것이다.
+      .then(function () { self.warmArtDone = resumeArtWarm(); })
   );
 });
 
@@ -281,6 +353,8 @@ self.addEventListener('fetch', function (event) {
       .then(function (res) {
         if (res && res.ok) {
           var copy = res.clone();
+          // 네트워크가 살아 있다는 신호다. 워커가 꺼져 멈췄던 그림 예열이 있으면 여기서 이어받는다.
+          extend(event, resumeArtWarm());
           return putCache(SHELL_CACHE, req, copy).then(function () { return res; });
         }
         // 404·503 은 fetch 가 '성공'으로 돌려준다. 배포 전환이나 CDN 퍼지 구간이 바로

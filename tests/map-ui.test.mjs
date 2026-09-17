@@ -116,6 +116,10 @@ test('핀은 기본 상태부터 보이며 44px을 유지하고 별도 화면 �
   assert.match(css, /aspect-ratio:\s*2\s*\/\s*1/);
   assert.match(css, /padding:\s*22px/);
   assert.doesNotMatch(css, /@keyframes|animation\s*:|opacity:\s*0/);
+  // 아이패드 가로에서는 무대와 지도판을 나란히 놓아 남쪽 핀까지 스크롤 없이 닿는다. 세로·폰은 한 칸 그대로다.
+  const landscape = css.slice(css.indexOf('@media (min-width: 760px) and (orientation: landscape)'));
+  assert.match(landscape, /\.quiz-body\.map-quiz \{[^}]*display: grid;[^}]*grid-template-columns: minmax\(0, 5fr\) minmax\(0, 7fr\)/);
+  assert.match(css.slice(0, css.indexOf('@media')), /\.quiz-body\.map-quiz \{ display: block; \}/);
   assert.match(read('index.html'), /href="css\/map.css"/);
   assert.match(read('index.html'), /src="js\/map.js"/);
   assert.match(read('sw.js'), /'\.\/css\/map.css'/);

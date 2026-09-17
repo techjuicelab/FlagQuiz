@@ -101,3 +101,17 @@ test('기존 국기 기록은 도감에 표시하면서 그대로 보존한다',
   assert.equal(f.storage.exportJson(), before);
   assert.equal(writes(), writesBefore);
 });
+
+test('도감 그림이 깨지면 onerror 가 인라인 style 로도 감춘다 — css 의 display:block 이 hidden 을 이긴다', () => {
+  const {f, render} = fixture();
+  f.storage.updateSettings({dev: {art: true}});
+  const html = render();
+  const handlers = [...html.matchAll(/<img [^>]*class="[^"]*"[^>]*>|<img [^>]*onerror="([^"]*)"/g)].map(m => m[1]).filter(Boolean);
+  assert.equal(handlers.length, 2, '상징물·명소 그림 두 장 모두 onerror 가 있어야 한다');
+  for (const handler of handlers) {
+    const img = {hidden: false, style: {}};
+    vm.runInNewContext('(function () { ' + handler + ' }).call(img)', {img});
+    assert.equal(img.hidden, true);
+    assert.equal(img.style.display, 'none', 'hidden 속성만으로는 .country-art img { display: block } 에 밀려 깨진 그림이 보인다');
+  }
+});

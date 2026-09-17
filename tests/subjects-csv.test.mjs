@@ -24,7 +24,9 @@ test('실제 SUBJECTS는 15열·194행이며 두 축으로 342개가 된다', ()
   assert.equal(items.length, 342);
   assert.equal(items.filter((item) => item.kind === 'symbol').length, 194);
   assert.equal(items.filter((item) => item.kind === 'landmark').length, 148);
-  assert.equal(items.filter((item) => item.inCapital).length, 17);
+  // 24 = 명소도시가 그 나라 수도와 같은 행 수(2026-09-17 정정: az·th·ee·li·lv·se·cg 7행이 Y 없이 남아 있었다).
+  // '수도 인근'(mv·ao·ng·sn·dm)은 수도 밖이라 세지 않는다.
+  assert.equal(items.filter((item) => item.inCapital).length, 24);
   assert.ok(items.filter((item) => item.inCapital).every((item) => item.kind === 'landmark'));
   assert.equal(items.filter((item) => item.factReuse).length, 220);
   assert.equal(items.filter((item) => item.status === 'blocked-approval').length, 59);
@@ -37,7 +39,7 @@ test('실제 SUBJECTS는 15열·194행이며 두 축으로 342개가 된다', ()
 test('원자료 계수는 등급·상태·대륙별로 정확한 기준값을 고정한다', () => {
   assert.deepEqual(counts(readSubjects(root)), {
     rows: 194, symbols: 194, places: 148, grades: { S: 25, A: 61, B: 62, blank: 46 },
-    statuses: { final: 148, draft: 31, 'fixed-r1': 15 }, inCapital: 17, factReuse: 118,
+    statuses: { final: 148, draft: 31, 'fixed-r1': 15 }, inCapital: 24, factReuse: 118,
     continents: { 아시아: 46, 유럽: 45, 아프리카: 54, 북아메리카: 23, 남아메리카: 12, 오세아니아: 14 },
     placesByContinent: { 아시아: 36, 유럽: 38, 아프리카: 42, 북아메리카: 14, 남아메리카: 7, 오세아니아: 11 }
   });
