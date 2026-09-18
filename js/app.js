@@ -103,6 +103,9 @@
 
   var CONTINENTS = ['all', '아시아', '유럽', '아프리카', '북아메리카', '남아메리카', '오세아니아'];
   var COUNTS = [5, 10, 20, 'all'];
+  // 말로 답하기에서 맞힌 뒤 저절로 다음으로 가기까지(D25): 설명을 다 들은 뒤 0.9초, 읽어주기가 꺼져 있으면 1.8초.
+  var AUTO_NEXT_AFTER_SPEECH = 900;
+  var AUTO_NEXT_SILENT = 1800;
 
   var state = {
     game: null,
@@ -116,6 +119,7 @@
     listenOn: false,
     listenTimer: null,
     listenFailures: 0,
+    autoNextTimer: null,   // 말로 맞힌 뒤 저절로 다음으로 가는 예약(D25)
     feedbackGeneration: 0,
     screen: 'home',
     musicGeneration: 0,
@@ -135,6 +139,7 @@
     state.cancelFeedbackVoice = null;
     state.feedbackGeneration += 1;
     stopMusic();
+    if (state.autoNextTimer) { global.clearTimeout(state.autoNextTimer); state.autoNextTimer = null; }
     var chest = ui.$('.chest-back');
     if (chest) {
       chest.remove();
@@ -1167,7 +1172,11 @@
         state.listenFailures = 0;
         var heard = ui.$('#heard');
         if (heard) heard.textContent = text;
-        // 중간 결과는 바뀔 수 있다. “인도네시아”의 “인도”를 먼저 채점하지 않는다.
+        // 중간 결과라도 목표 나라 이름이 확실히 들렸으면 바로 채점한다(D25). 최종 결과를 기다리다
+        // 사파리가 스스로 끊어 놓치는 것보다 낫고, 아이는 말하자마자 정답 카드를 본다.
+        // 단 이름이 다른 나라 이름의 앞부분인 나라(인도·기니)는 끝까지 듣는다 — “인도네시아”의 “인도”를 먼저 채점하지 않는다.
+        // 다른 나라 이름은 중간 결과로 채점하지 않는다(말이 끝나기 전에 틀렸다고 하지 않는다).
+        if (!quiz.prefixRisky(question.country) && quiz.checkText(question.country, text).correct) submit({ text: text });
       },
       result: function (alts) {
         if (!current()) return;
@@ -1480,6 +1489,7 @@
     function cancelNarration() {
       narrationRequest += 1;
       stopMusic();
+      if (state.autoNextTimer) { global.clearTimeout(state.autoNextTimer); state.autoNextTimer = null; }
     }
     state.cancelFeedbackVoice = cancelNarration;
     function feedbackCurrent() {
@@ -1491,11 +1501,23 @@
       chestShown = true;
       showChest(c, res, q.mode);
     }
+    // 말로 답하기에서 맞히면 설명을 다 듣고 저절로 다음 나라로 간다(D25). 틀리면 아이가 답을 보고 스스로 넘기고,
+    // 깜짝 상자가 열리면 상자를 닫고 넘기며, 낭독이 실패하면 '눌러서 들어보기' 를 두고 기다린다. 다른 놀이는 종전대로다.
+    var autoNext = q.mode === 'voice' && !!res.correct;
+    function scheduleAutoNext(request, delay) {
+      if (!autoNext || res.chest || !feedbackCurrent() || request !== narrationRequest) return;
+      if (state.autoNextTimer) global.clearTimeout(state.autoNextTimer);
+      state.autoNextTimer = global.setTimeout(function () {
+        state.autoNextTimer = null;
+        if (!feedbackCurrent() || request !== narrationRequest) return;
+        goNext();
+      }, delay);
+    }
     function narrate(request) {
       if (!feedbackCurrent() || request !== narrationRequest) return;
-      if (!store.settings().speak) { afterExplanation(request); return; }
+      if (!store.settings().speak) { afterExplanation(request); scheduleAutoNext(request, AUTO_NEXT_SILENT); return; }
       audio.say(feedbackSpeech.lines, Object.assign({}, feedbackSpeech.opts, {
-        onEnd: function () { afterExplanation(request); }
+        onEnd: function () { afterExplanation(request); scheduleAutoNext(request, AUTO_NEXT_AFTER_SPEECH); }
       }), function () {
         if (!feedbackCurrent() || request !== narrationRequest) return;
         nudgeReplay();

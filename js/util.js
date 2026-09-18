@@ -113,6 +113,48 @@
     return out;
   }
 
+  /* ---------------- 소리 닮은꼴 키 (말로 답하기, D25) ----------------
+   * 아이 발음과 받아쓰기가 흔히 헷갈리는 소리를 한 묶음으로 본다.
+   *   초성  ㄱ·ㅋ·ㄲ → ㄱ / ㄷ·ㅌ·ㄸ → ㄷ / ㅂ·ㅍ·ㅃ → ㅂ / ㅈ·ㅊ·ㅉ → ㅈ / ㅅ·ㅆ → ㅅ
+   *   중성  ㅐ·ㅔ → ㅐ / ㅒ·ㅖ → ㅒ / ㅙ·ㅚ·ㅞ → ㅙ / ㅢ → ㅣ
+   *   받침  소리 나는 대로 ㄱ·ㄴ·ㄷ·ㄹ·ㅁ·ㅂ·ㅇ 일곱으로
+   * 자모 문자열(compareKey·latinToJamo 결과)을 받는다. 닿소리 뒤에 홀소리가 오면 초성, 아니면 받침이다.
+   * 글자 수는 바뀌지 않으므로 편집 거리를 그대로 견줄 수 있다.
+   */
+  var CHO_CLASS = { 'ㅋ': 'ㄱ', 'ㄲ': 'ㄱ', 'ㅌ': 'ㄷ', 'ㄸ': 'ㄷ', 'ㅍ': 'ㅂ', 'ㅃ': 'ㅂ', 'ㅊ': 'ㅈ', 'ㅉ': 'ㅈ', 'ㅆ': 'ㅅ' };
+  var JUNG_CLASS = { 'ㅔ': 'ㅐ', 'ㅖ': 'ㅒ', 'ㅚ': 'ㅙ', 'ㅞ': 'ㅙ', 'ㅢ': 'ㅣ' };
+  var JONG_CLASS = {
+    'ㄲ': 'ㄱ', 'ㅋ': 'ㄱ', 'ㄳ': 'ㄱ', 'ㄺ': 'ㄱ',
+    'ㅅ': 'ㄷ', 'ㅆ': 'ㄷ', 'ㅈ': 'ㄷ', 'ㅊ': 'ㄷ', 'ㅌ': 'ㄷ', 'ㅎ': 'ㄷ',
+    'ㅍ': 'ㅂ', 'ㅄ': 'ㅂ', 'ㄿ': 'ㅂ',
+    'ㄼ': 'ㄹ', 'ㄽ': 'ㄹ', 'ㄾ': 'ㄹ', 'ㅀ': 'ㄹ',
+    'ㄵ': 'ㄴ', 'ㄶ': 'ㄴ', 'ㄻ': 'ㅁ'
+  };
+  var CONSONANT_SET = {};
+  CHO.concat(JONG).forEach(function (c) { if (c) CONSONANT_SET[c] = true; });
+  function soundKey(jamo) {
+    var s = String(jamo || '');
+    var out = '';
+    for (var i = 0; i < s.length; i++) {
+      var ch = s[i];
+      if (JUNG_SET[ch]) { out += JUNG_CLASS[ch] || ch; continue; }
+      if (CONSONANT_SET[ch]) {
+        var next = s[i + 1];
+        out += next && JUNG_SET[next] ? (CHO_CLASS[ch] || ch) : (JONG_CLASS[ch] || ch);
+        continue;
+      }
+      out += ch;
+    }
+    return out;
+  }
+  /** 자모 문자열의 홀소리 수 = 음절 수 */
+  function vowelCount(jamo) {
+    var s = String(jamo || '');
+    var n = 0;
+    for (var i = 0; i < s.length; i++) if (JUNG_SET[s[i]]) n++;
+    return n;
+  }
+
   /**
    * 말한 내용(input) 안에서 이름(pattern)과 가장 가까운 부분을 찾아
    * 그 부분과 이름 사이의 편집 거리를 돌려준다.
@@ -233,6 +275,8 @@
     compareKey: compareKey,
     hasLatin: hasLatin,
     latinToJamo: latinToJamo,
+    soundKey: soundKey,
+    vowelCount: vowelCount,
     editDistance: editDistance,
     containsDistance: containsDistance,
     similarity: similarity,

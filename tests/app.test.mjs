@@ -1130,6 +1130,67 @@ test('명소 정답 카드에는 수도 한 줄과 듣기 단추가 있고 누�
   g.node('#question-art').handlers.load();g.c.FQ.test.submit({code:'kr'});
   assert.doesNotMatch(g.node('#feedback-area').innerHTML,/remember-capital/);
 });
+/* ---- 2026-09-18 말로 답하기 (D25): 확실한 중간 결과 바로 채점 · 소리 닮은꼴 인정 · 맞히면 저절로 다음 ---- */
+test('중간 결과라도 목표 나라 이름이 확실하면 바로 채점하고, 인도·기니처럼 앞부분이 겹치는 나라는 끝까지 듣는다',()=>{
+  const f=fixture(),a=f.startVoice(['fr']);f.c.callbacks.start();
+  f.c.callbacks.interim('프');assert.equal(a.state.answered,false);assert.equal(f.node('#heard').textContent,'프');
+  f.c.callbacks.interim('프랑스');assert.equal(a.state.answered,true);assert.equal(a.state.game.correct,1);
+  // 인도는 인도네시아의 앞부분이라 최종 결과를 기다린다.
+  const g=fixture(),b=g.startVoice(['in']);g.c.callbacks.start();
+  g.c.callbacks.interim('인도');assert.equal(b.state.answered,false,'인도는 끝까지 듣는다');
+  g.c.callbacks.result(['인도']);assert.equal(b.state.answered,true);assert.equal(b.state.game.correct,1);
+  // 소리 닮은꼴은 중간 결과에서도 인정한다.
+  const h=fixture(),c=h.startVoice(['ke']);h.c.callbacks.start();
+  h.c.callbacks.interim('캐냐');assert.equal(c.state.answered,true);assert.equal(c.state.game.correct,1);
+  // 다른 나라 이름은 중간 결과로 채점하지 않고 최종 결과에서 오답이다.
+  const i=fixture(),d=i.startVoice(['fr']);i.c.callbacks.start();
+  i.c.callbacks.interim('독일');assert.equal(d.state.answered,false);
+  i.c.callbacks.result(['독일']);assert.equal(d.state.answered,true);assert.equal(d.state.game.correct,0);
+});
+
+test('말로 맞히면 설명이 끝난 뒤 저절로 다음 나라로 가고, 틀리거나 다른 놀이에서는 아이가 누를 때까지 기다린다',()=>{
+  const f=fixture(),a=f.startVoice(['id','fr']);
+  const first=a.state.game.current().country.code;
+  a.submit({code:first});assert.equal(a.state.answered,true);
+  f.releases.at(-1)();                                    // 마이크 해제 → 발견음
+  f.finishMusic();                                         // 발견음 끝 → 설명 낭독
+  assert.equal(f.spoken.length,1);
+  f.runDelay(900);assert.equal(a.state.game.index,0,'낭독이 끝나기 전에는 안 넘어간다');
+  f.finishVoice();                                         // 낭독 끝 → 0.9초 예약
+  assert.ok([...f.timers.values()].some(t=>t.delay===900),'0.9초 뒤 다음 나라');
+  f.runDelay(900);
+  assert.equal(a.state.game.index,1);assert.equal(a.state.answered,false);assert.equal(a.state.autoNextTimer,null);
+  assert.equal(f.c.listening,true,'다음 문제에서 마이크가 다시 열린다');
+  // 틀리면(몰라요) 저절로 넘어가지 않는다.
+  a.submit({text:''},true);f.releases.at(-1)();f.finishMusic();f.finishVoice();
+  assert.ok(![...f.timers.values()].some(t=>t.delay===900));
+  f.runDelay(900);assert.equal(a.state.game.index,1);assert.equal(a.state.answered,true);
+  // 국기 보고 고르기는 종전대로 기다린다.
+  const g=fixture();g.c.FQ.storage.updateSettings({mode:'choice4'});g.c.FQ.app.startGame(['kr','jp']);const b=g.c.FQ.test;
+  b.submit({code:b.state.game.current().country.code});g.releases.at(-1)();g.finishMusic();g.finishVoice();
+  assert.ok(![...g.timers.values()].some(t=>t.delay===900));g.runDelay(900);assert.equal(b.state.game.index,0);
+});
+
+test('자동 넘어가기는 설명 다시 듣기를 누르면 미뤄졌다가 다시 들은 뒤에 가고, 읽어주기가 꺼져 있으면 1.8초 뒤에 간다',()=>{
+  const f=fixture(),a=f.startVoice(['id','fr']);
+  a.submit({code:a.state.game.current().country.code});f.releases.at(-1)();f.finishMusic();f.finishVoice();
+  assert.ok([...f.timers.values()].some(t=>t.delay===900));
+  f.node('#replay').click();
+  assert.ok(![...f.timers.values()].some(t=>t.delay===900),'다시 듣기를 누르면 예약이 사라진다');
+  f.releases.at(-1)();                                     // 다시 듣기는 음악 없이 바로 낭독
+  assert.equal(f.spoken.length,2);
+  f.runDelay(900);assert.equal(a.state.game.index,0);
+  f.finishVoice();f.runDelay(900);assert.equal(a.state.game.index,1);
+  // 읽어주기 꺼짐: 낭독 없이 1.8초 뒤.
+  const g=fixture();g.c.FQ.storage.updateSettings({speak:false});const b=g.startVoice(['id','fr']);
+  b.submit({code:b.state.game.current().country.code});g.releases.at(-1)();g.finishMusic();
+  assert.equal(g.spoken.length,0);assert.ok([...g.timers.values()].some(t=>t.delay===1800));
+  g.runDelay(1800);assert.equal(b.state.game.index,1);
+  // 마지막 문제를 맞히면 결과 화면으로 간다.
+  b.submit({code:b.state.game.current().country.code});g.releases.at(-1)();g.finishMusic();g.runDelay(1800);
+  assert.match(g.node('main').innerHTML,/result-screen/);
+});
+
 console.log('앱 흐름 회귀 검사 '+passed+'건 통과');
 
 /* ---- 2026-09-17 수도 놀이 뒤집기 (시안 PhoneCapital · D17 채택 B: capital 축 분리 + 🏙️ 도장) ---- */

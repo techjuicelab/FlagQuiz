@@ -345,6 +345,85 @@
     return tie ? null : best;
   }
 
+  /* ---------------- 소리 닮은꼴·앞부분 인정 (말로 답하기, D25) ---------------- */
+
+  // 194개국 이름·별칭의 자모 키 목록과 '앞부분이 겹치는 나라' 표. FQ.countries 가 바뀌면 다시 만든다.
+  var indexedList = null;
+  var nameIndex = [];
+  var prefixRiskyByCode = {};
+  function names() {
+    var list = all();
+    if (list !== indexedList) {
+      indexedList = list;
+      nameIndex = [];
+      list.forEach(function (c) {
+        (c.aliases || []).concat([c.ko]).forEach(function (n) {
+          var key = util.compareKey(n);
+          if (key) nameIndex.push({ code: c.code, key: key });
+        });
+      });
+      prefixRiskyByCode = {};
+      nameIndex.forEach(function (a) {
+        if (prefixRiskyByCode[a.code]) return;
+        for (var i = 0; i < nameIndex.length; i++) {
+          var b = nameIndex[i];
+          if (b.code !== a.code && b.key.length > a.key.length && b.key.indexOf(a.key) === 0) {
+            prefixRiskyByCode[a.code] = true;
+            break;
+          }
+        }
+      });
+    }
+    return nameIndex;
+  }
+
+  /** 이 나라 이름이 다른 나라 이름의 앞부분인가 (인도 ⊂ 인도네시아, 기니 ⊂ 기니비사우). 그런 나라는 말을 끝까지 듣고 채점한다. */
+  function prefixRisky(country) {
+    names();
+    return !!(country && prefixRiskyByCode[country.code]);
+  }
+
+  /** 이 앞부분으로 시작하는 이름이 이 나라 것뿐인가 */
+  function uniquePrefix(key, code) {
+    var list = names();
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].code !== code && list[i].key.indexOf(key) === 0) return false;
+    }
+    return true;
+  }
+
+  /**
+   * 목표 나라만 소리 기준으로 한 번 더 본다. 다른 나라 이름이 하나도 걸리지 않았을 때만 부른다(checkText).
+   *   소리 닮은꼴  '캐냐'→케냐, '구바'→쿠바 처럼 초성·중성·받침 묶음이 같으면 같은 소리로 본다 (허용 오차는 엄격 채점과 같다)
+   *   앞부분      세 음절 이상을 말했고 그것으로 시작하는 이름이 이 나라뿐이면 인정 ('사우디아라'→사우디아라비아, '오스트레일리'→오스트레일리아)
+   *               '도미니카'(공화국·연방 둘 다)·'오스트'(오스트리아·오스트레일리아 둘 다)·'사우'(두 음절)는 인정하지 않는다
+   * 인정하면 { name: 인정한 이름, sound: 소리 거리(앞부분 인정은 -1) } 을, 아니면 null 을 돌려준다.
+   */
+  function soundsLike(country, keys) {
+    if (!country || !keys) return null;
+    var list = (country.aliases || []).concat([country.ko]);
+    var best = null;
+    for (var i = 0; i < list.length; i++) {
+      var nameKey = util.compareKey(list[i]);
+      if (!nameKey) continue;
+      var nameSound = util.soundKey(nameKey);
+      var allowed = allowedSlip(nameKey.length);
+      for (var j = 0; j < keys.length; j++) {
+        var k = keys[j];
+        if (!k) continue;
+        if (Math.abs(k.length - nameKey.length) <= allowed) {
+          var d = util.editDistance(util.soundKey(k), nameSound);
+          if (d <= allowed && (!best || d < best.sound)) best = { name: list[i], sound: d };
+          if (best && best.sound === 0) return best;
+        }
+        if (!best && k.length < nameKey.length && util.vowelCount(k) >= 3 && nameKey.indexOf(k) === 0 && uniquePrefix(k, country.code)) {
+          best = { name: list[i], sound: -1 };
+        }
+      }
+    }
+    return best;
+  }
+
   /**
    * 자유 입력(말하기/쓰기) 채점.
    * 넉넉하게 인정하되, 다른 나라가 더 잘 맞아떨어지면 정답으로 치지 않는다.
@@ -352,7 +431,7 @@
    */
   function checkText(answer, text) {
     var norm = util.normalize(text);
-    var result = { correct: false, exact: false, score: 0, matched: null, confusedWith: null };
+    var result = { correct: false, exact: false, lenient: false, score: 0, matched: null, confusedWith: null };
     if (!norm) return result;
     var keys = candidateKeys(text);
 
@@ -387,6 +466,19 @@
     else rivalWins = rivalStrength > mine.strength ||               // 둘 다 같은 만큼 맞았으면 긴 이름이 이긴다
                      (rivalStrength === mine.strength && rivalDist <= mine.dist);
     if (!mine.near || rivalWins) {
+      // 목표 나라만 소리 닮은꼴·앞부분으로 한 번 더 본다(D25). 다른 나라 이름이 낱말 그대로 걸렸으면 밟지 않고,
+      // 비슷하게만 걸렸을 때('부단' 에 수단이 가깝다)는 목표 나라가 소리로 정확히 같을 때만 인정한다('부단'→부탄).
+      var rivalExact = rivalStrength === Infinity || rivalDist === 0;
+      if (!rivalExact) {
+        var alike = soundsLike(answer, keys);
+        if (alike && (!rival || alike.sound === 0)) {
+          result.correct = true;
+          result.lenient = true;
+          result.matched = alike.name;
+          if (!result.score) result.score = 0.5;
+          return result;
+        }
+      }
       if (rival) result.confusedWith = rival;
       return result;
     }
@@ -790,6 +882,9 @@
     confusionSet: confusionSet,
     makeQuestion: makeQuestion,
     checkText: checkText,
+    candidateKeys: candidateKeys,
+    soundsLike: soundsLike,
+    prefixRisky: prefixRisky,
     findCountry: findCountry,
     isGiveUp: isGiveUp,
     createGame: createGame
