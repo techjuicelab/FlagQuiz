@@ -108,6 +108,8 @@
     game: null,
     answered: false,
     usedHint: false,
+    hintLevel: 0,      // 수도 놀이 힌트 단계(D24): 1 오답 지우기 + 수도 다시 듣기, 2 나라 이름 듣기
+    revealed: false,   // 힌트 2단계로 나라 이름까지 들었다 — 채점은 정답이어도 기록은 '아직'
     removed: [],
     timerId: null,
     timeLeft: 0,
@@ -786,6 +788,8 @@
     state.answered = false;
     state.artUnavailable = false;
     state.usedHint = false;
+    state.hintLevel = 0;
+    state.revealed = false;
     state.removed = [];
     state.timedOut = false;
     state.timerPaused = false;
@@ -1278,10 +1282,23 @@
     } else if (q.mode === 'map') {
       lines.push('🗺️ ' + esc(q.country.continent) + ' · ' + esc(q.country.region) + '에서 찾아보세요');
     } else if (q.mode === 'capital') {
-      // 보기가 국기라 국기 힌트는 곧 정답이다. 대륙·지역 단서 + 오답 2개 지우기(아래 공통) + 수도 이름 다시 읽기(기존 음원).
-      lines.push('🗺️ ' + esc(q.country.continent) + ' · ' + esc(q.country.region) + '에 있어요');
+      // 소리 힌트 2단계(D24). 글자를 못 읽는 아이에게 대륙·지역 글자는 닿지 않으니 소리로 돕는다 — 둘 다 기존 음원이다.
+      // 1단계: 오답 2개 지우기(아래 공통) + 수도 이름 다시 읽기. 대륙·지역 글자는 옆에서 읽어 주는 어른 몫으로 남긴다.
+      // 2단계: '○○의 수도예요'(나라 이름)까지 읽는다. 나라 이름을 들으면 국기는 100% 찾으니 늘 성공으로 끝나되(무오류 학습),
+      //         기록에는 '아직 모른다'로 남겨 곧 다시 만난다(quiz.js submit 의 opts.revealed).
+      state.hintLevel = (state.hintLevel || 0) + 1;
       var capitalBtn = ui.$('#capital-listen');
-      if (capitalBtn) speakLines(capitalBtn, [q.country.capital], '🔊 눌러서 들어보기');
+      if (state.hintLevel >= 2) {
+        state.revealed = true;
+        lines.push('🏙️ ' + esc(q.country.capital) + ' · ' + esc(q.country.ko) + '의 수도예요');
+        if (capitalBtn) {
+          capitalBtn.setAttribute('data-speak-extra', q.country.ko + '의 수도예요');
+          speakLines(capitalBtn, [q.country.capital, q.country.ko + '의 수도예요'], '🔊 눌러서 들어보기');
+        }
+      } else {
+        lines.push('🗺️ ' + esc(q.country.continent) + ' · ' + esc(q.country.region) + '에 있어요');
+        if (capitalBtn) speakLines(capitalBtn, [q.country.capital], '🔊 눌러서 들어보기');
+      }
     } else if (q.mode === 'reverse') {
       lines.push('🚩 ' + esc(q.country.flagHint));
     } else {
@@ -1301,7 +1318,14 @@
       });
     }
     var hintBtn = ui.$('#hint');
-    if (hintBtn) hintBtn.disabled = true;
+    if (hintBtn) {
+      if (q.mode === 'capital' && state.hintLevel < 2) {
+        // 한 번 더 누르면 나라 이름을 들려준다. 🔊 는 아이가 아는 '듣기' 표시다.
+        hintBtn.innerHTML = ICONS.bulb + '<span>🔊 나라 듣기</span>';
+      } else {
+        hintBtn.disabled = true;
+      }
+    }
   }
 
   /**
@@ -1347,12 +1371,13 @@
     var flagAxis = q && quiz.MODES[q.mode].axis === 'flag';
     var isNewSticker = flagAxis && !FQ.progress.hasSticker(q.country.code);
 
-    var res = g.submit(payload, state.usedHint);
+    var res = g.submit(payload, state.usedHint, { revealed: !!state.revealed });
     if (!res) return;
     res.gaveUp = !!gaveUp;
     if (q) {
       (state.answeredCodes || (state.answeredCodes = {}))[q.country.code] = true;
-      noteMet(q.country, !!res.correct);
+      // 여행 카드의 ✓ 는 '외웠다' 표시다. 나라 이름까지 듣고 맞힌 수도 문제는 '한 번 더 만나요' 로 남긴다(D24).
+      noteMet(q.country, !!res.learned);
     }
 
     if (res.correct && q) {

@@ -870,16 +870,31 @@ test('힌트는 정답을 노출하지 않고, 수도 힌트는 첫 글자 대�
   const g=fixture();g.c.FQ.storage.updateSettings({mode:'symbol',dev:{art:true}});g.c.FQ.app.startGame(['kr']);meetNext(g);
   g.node('#question-art').handlers.load();g.node('#hint').click();
   assert.match(g.node('#hint-area').innerHTML,new RegExp(g.c.FQ.subjects.kr.symbol.ko));
-  // 수도(2026-09-17 뒤집기): 보기가 국기라 국기 힌트는 곧 정답이다. 대륙·지역 단서 + 오답 2개 지우기 + 수도 이름 다시 읽기(기존 음원).
+  // 수도(2026-09-17 뒤집기): 보기가 국기라 국기 힌트는 곧 정답이다. 1단계는 대륙·지역 단서 + 오답 2개 지우기 + 수도 이름 다시 읽기(기존 음원).
   const h=fixture();h.c.FQ.storage.updateSettings({mode:'capital'});h.c.FQ.app.startGame(['kr']);meetNext(h);
   const heardBefore=h.releases.length;h.node('#hint').click();
   const cap=h.node('#hint-area').innerHTML,kr=h.c.FQ.quiz.byCode('kr');
-  assert.doesNotMatch(cap,/첫 글자|로 시작해요| 에 있|🚩/);
+  assert.doesNotMatch(cap,/첫 글자|로 시작해요| 에 있|🚩|대한민국/);
   assert.doesNotMatch(cap,new RegExp(rx(kr.flagHint)));assert.match(cap,/🗺️ 아시아 · 동아시아에 있어요/);
   assert.equal(h.c.FQ.test.state.removed.length,2,'오답 두 개를 지운다');
   assert.equal(h.releases.length,heardBefore+1);h.releases.at(-1)();assert.deepEqual(h.spoken.at(-1),['서울']);
+  // 2단계(D24): 힌트 단추가 '🔊 나라 듣기' 로 바뀌어 한 번 더 누르면 '대한민국의 수도예요' 까지 읽는다 — 그 뒤 정답은 기록에 '아직' 으로 남는다.
+  assert.equal(h.node('#hint').disabled,false,'한 번 더 누를 수 있다');assert.match(h.node('#hint').innerHTML,/<span>🔊 나라 듣기<\/span>/);
+  assert.equal(h.c.FQ.test.state.revealed,false);
+  h.node('#hint').click();
+  assert.match(h.node('#hint-area').innerHTML,/🏙️ 서울 · 대한민국의 수도예요/);
+  assert.equal(h.releases.length,heardBefore+2);h.releases.at(-1)();assert.deepEqual(h.spoken.at(-1),['서울','대한민국의 수도예요']);
+  assert.equal(h.node('#capital-listen').getAttribute('data-speak-extra'),'대한민국의 수도예요','🔊 를 다시 눌러도 나라 이름까지');
+  assert.equal(h.node('#hint').disabled,true);assert.equal(h.c.FQ.test.state.revealed,true);
+  assert.equal(h.c.FQ.test.state.removed.length,2,'오답은 두 개까지만 지운다');
+  h.c.FQ.test.submit({code:'kr'});
+  const gm=h.c.FQ.test.state.game;
+  assert.equal(gm.correct,1,'아이에게는 정답');assert.equal(gm.score,10);
+  assert.match(h.node('#feedback-area').innerHTML,/🏙️ 서울 · 대한민국의 수도예요/);
+  assert.deepEqual([gm.wrong.length,h.c.FQ.storage.allAxisStats('capital').kr.wrong,h.c.FQ.storage.allAxisStats('capital').kr.correct],[1,1,0],'기록은 틀림');
+  assert.equal(h.c.FQ.test.state.met.at(-1).correct,false,'여행 카드는 한 번 더 만나요');
   const i=fixture();i.c.FQ.storage.updateSettings({mode:'choice4'});i.c.FQ.app.startGame(['kr']);i.node('#hint').click();
-  assert.match(i.node('#hint-area').innerHTML,/아시아에 있고/);
+  assert.match(i.node('#hint-area').innerHTML,/아시아에 있고/);assert.equal(i.node('#hint').disabled,true,'국기 놀이 힌트는 한 번');
 });
 
 test('새 축에서 한 번 더 만나기로 잡힌 나라는 결과 카드에 글자로만 알린다',()=>{
@@ -1201,14 +1216,16 @@ test('수도 놀이는 새 축 규칙을 받는다 — 시간 초과는 지나�
   // 수도 놀이에는 제한 시간이 없어 10초가 지나도 그대로다(D23).
   assert.equal(f.c.FQ.storage.allAxisStats('capital')[first],undefined);
   assert.equal(a.state.game.index,0);assert.equal(a.state.answered,false);assert.equal(a.state.unscored,0);assert.equal(a.state.timerId,null);
-  // 한 판 안 다시 만나기: 처음 만난 나라는 3문제 뒤에 한 번 더 나온다(국기 축 함수는 쓰지 않는다).
+  // 한 판 안 다시 만나기(D24): 처음 만난 나라는 3개까지만 소개하고 1문제 뒤·3문제 뒤·판 끝에 다시 나온다(국기 축 함수는 쓰지 않는다).
   const g=fixture();g.c.FQ.storage.updateSettings({mode:'capital',count:6,level:'all',speak:false});g.c.FQ.app.startGame(null);
   const b=g.c.FQ.test;let seen=[];
   for(let n=0;n<40&&b.state.game&&!b.state.game.isOver();n++){
     meetNext(g);const cur=b.state.game.current();if(!cur)break;seen.push(cur.country.code);b.submit({code:cur.country.code});b.goNext();
   }
   assert.equal(seen.length,6);assert.ok(b.state.game.againCount>=1,'수도에서도 처음 만난 쌍을 다시 만난다');
-  assert.ok(new Set(seen).size<6,'같은 나라를 한 판에 두 번 만난다');
+  assert.equal(new Set(seen).size,3,'6문제 판은 새 나라 3개를 여러 번 만난다');
+  assert.equal(seen[0],seen[2],'첫 나라는 1문제 뒤에 다시');
+  assert.match(g.node('main').innerHTML,/오늘 만난 나라 3개/,'결과의 만난 나라는 나라 수');
   assert.deepEqual(Object.keys(g.c.FQ.storage.allCountryStats()),[]);
   // 결과: 국기 스티커 없음, 만난 나라는 나라 수, 한 번 더 만날 나라 줄에는 수도 이름.
   const h=fixture();h.c.FQ.storage.updateSettings({mode:'capital',speak:false});h.c.FQ.app.startGame(['mx']);meetNext(h);
