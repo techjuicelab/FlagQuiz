@@ -116,3 +116,32 @@ test('앞부분이 다른 나라 이름과 겹치는 나라는 인도·기니뿐
   for (const code of ['id', 'gw', 'kr', 'cg', 'cd', 'do', 'dm', 'at', 'au']) assert.equal(FQ.quiz.prefixRisky(FQ.quiz.byCode(code)), false, code);
   assert.equal(FQ.quiz.prefixRisky(null), false);
 });
+
+test('D28: 수도 이름 채점 — 수도·영문·별칭을 나라 이름과 같은 규칙으로 견주고, 다른 나라의 수도는 오답이며 나라 이름은 수도가 아니다', () => {
+  const FQ = fixture();
+  const q = FQ.quiz, by = q.byCode;
+  const ok = (code, said) => { const r = q.checkText(by(code), said, 'capital'); assert.equal(r.correct, true, code + ' ← "' + said + '"'); return r; };
+  ok('kr', '서울'); ok('kr', '서울이요'); ok('kr', '음 서울'); ok('kr', 'Seoul'); ok('jp', '도쿄'); ok('jp', '동경');
+  ok('us', '워싱턴'); ok('us', '워싱턴 D.C.'); ok('at', '비엔나'); ok('at', '빈'); ok('cn', '북경'); ok('in', '델리');
+  ok('ar', '부에노스'); ok('ar', '부에노스아이레스'); ok('bn', '반다르'); ok('mn', '울란바타르'); ok('my', '콸라룸푸르'); ok('th', '방콕');
+  assert.equal(ok('jp', '도교').lenient, true, '소리 닮은꼴은 수도에도');
+  assert.equal(ok('fr', '빠리').lenient, true);
+  assert.equal(ok('sa', '리야드').lenient, false);
+  const bad = (code, said) => assert.equal(q.checkText(by(code), said, 'capital').correct, false, code + ' ← "' + said + '"');
+  bad('kr', '도쿄'); bad('kr', '대한민국'); bad('mx', '멕시코'); bad('jp', '일본'); bad('kr', ''); bad('kr', '음 그러니까'); bad('us', '뉴욕');
+  assert.equal(q.checkText(by('kr'), '도쿄', 'capital').confusedWith.code, 'jp');
+  assert.equal(q.findCountry('도쿄', 'capital').code, 'jp');
+  assert.equal(q.findCountry('워싱턴', 'capital').code, 'us');
+  assert.equal(q.findCountry('일본', 'capital'), null, '나라 이름은 수도 찾기에 걸리지 않는다');
+  // 나라 이름 채점은 그대로다.
+  assert.equal(q.checkText(by('kr'), '서울').correct, false);
+  assert.equal(q.findCountry('서울'), null);
+  assert.equal(q.entryFor(by('us'), 'capital').ko, '워싱턴 D.C.');
+  assert.equal(q.entryFor(by('us')), by('us'), '나라 이름 채점은 나라 자료 그대로');
+  // 앞부분이 겹치는 수도 표: 인도·기니 같은 겹침이 수도에는 거의 없다.
+  const risky = Array.from(FQ.countries).filter(c => q.prefixRisky(c, 'capital')).map(c => c.code);
+  assert.ok(risky.length <= 3, '앞부분이 겹치는 수도: ' + risky.join(','));
+  assert.equal(q.prefixRisky(by('kr'), 'capital'), false);
+  assert.equal(q.prefixRisky(by('in'), 'capital'), false, '인도의 수도 뉴델리는 겹치지 않는다');
+  assert.equal(q.prefixRisky(by('in')), true, '나라 이름 표는 그대로');
+});

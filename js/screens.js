@@ -49,6 +49,19 @@
       }).join('') + '</div></div>';
   }
 
+  /**
+   * 도장 단계(D26). 0 없음 · 1 한 번 맞힘(연한) · 2 다른 날에도 맞힘(진한) · 3 다른 날에도 맞혔고 최근 세 번 연속(반짝).
+   * 옛 기록(correctDays 없음)은 맞힌 날을 하루로 친다 — 이미 찍힌 도장을 뺏지 않는다. 읽기만 한다.
+   */
+  function stampStage(r) {
+    if (!r || !((r.correct || 0) > 0)) return 0;
+    var days = r.correctDays === undefined ? 1 : (r.correctDays || 0);
+    if (days >= 2 && (r.streak || 0) >= 3) return 3;
+    if (days >= 2) return 2;
+    return 1;
+  }
+  var STAGE_LABEL = { 1: '획득', 2: '진하게 · 다른 날에도 맞혔어요', 3: '반짝 · 세 번 연속 맞혔어요' };
+
   /** 지금까지 찍은 도장 수(그림·명소·위치·수도). 딸 수 없는 도장은 세지 않는다. 읽기만 한다. */
   function stampsEarned() {
     var count = 0;
@@ -284,9 +297,10 @@
                 // 딸 수 없는 도장은 그리지 않는다. 그림이 없는 나라(보류)와 명소가 없는 나라는
                 // 그 축에 출제되지 않으므로, 자리를 남겨 두면 아이가 영원히 못 채우는 칸이 된다.
                 if (!canEarn(c.code, axis.id)) return '';
-                var earned = ((stampRecords[axis.id][c.code] || {}).correct || 0) > 0;
-                var label = axis.label + ' 도장 ' + (earned ? '획득' : '아직');
-                return '<span class="axis-stamp' + (earned ? ' earned' : '') + '" data-axis="' + axis.id +
+                var stage = stampStage(stampRecords[axis.id][c.code]);
+                var earned = stage > 0;
+                var label = axis.label + ' 도장 ' + (earned ? STAGE_LABEL[stage] : '아직');
+                return '<span class="axis-stamp' + (earned ? ' earned s' + stage : '') + '" data-axis="' + axis.id +
                   '" title="' + label + '" aria-label="' + label + '">' + axis.icon + '</span>';
               }).join('') + '</div>' +
             '</button>';
@@ -428,5 +442,5 @@
     });
   }
 
-  FQ.screens = { dex: dex, stats: stats };
+  FQ.screens = { dex: dex, stats: stats, stampStage: stampStage };
 })(window);

@@ -107,6 +107,12 @@
     return r;
   }
 
+  /** 오늘 날짜(기기 시간) — 도장 단계의 '다른 날' 판정용. progress.js 의 today 와 같은 모양이다. */
+  function localDay() {
+    var d = new Date();
+    return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
+  }
+
   /** 한 문제의 결과를 기록한다. 축을 생략한 옛 호출은 계속 국기 기록이다. */
   function recordAnswer(code, isCorrect, axis) {
     var ax = axis || FLAG_AXIS;
@@ -115,9 +121,18 @@
     s.correct = s.correct || 0;
     s.wrong = s.wrong || 0;
     s.streak = s.streak || 0;
+    // 새 축 도장 단계(D26)용: 맞힌 날 수(correctDays)와 마지막으로 맞힌 날(lastCorrectDay).
+    // 옛 기록에 없으면 이미 맞힌 적이 있는 것을 하루로 친다 — 예전에 딴 도장은 그대로 인정한다.
+    var hadCorrect = (s.correct || 0) > 0;
+    var days = s.correctDays === undefined ? (hadCorrect ? 1 : 0) : (s.correctDays || 0);
     if (isCorrect) {
       s.correct = (s.correct || 0) + 1;
       s.streak = (s.streak || 0) + 1;
+      if (ax !== FLAG_AXIS) {
+        var day = localDay();
+        if (s.lastCorrectDay !== day) { s.correctDays = days + 1; s.lastCorrectDay = day; }
+        else s.correctDays = days;
+      }
     } else {
       s.wrong = (s.wrong || 0) + 1;
       s.streak = 0;

@@ -46,7 +46,9 @@ test('기존 국기 기록과 부분적인 새 축 기록을 복원해도 빠진
   f.FQ.storage.recordAnswer('kr', false);
   assert.equal(f.FQ.storage.countryStat('kr').wrong, 1);
   f.FQ.storage.recordAnswer('kr', true, 'symbol');
-  assert.deepEqual(JSON.parse(JSON.stringify(f.FQ.storage.axisStat('symbol', 'kr'))), { seen: 1, correct: 3, wrong: 0, streak: 1 });
+  // 도장 단계(D26)용 맞힌 날 기록: 옛 기록은 이미 맞힌 적이 있으니 하루로 치고, 오늘 맞혀 이틀이 된다.
+  const today = (() => { const d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); })();
+  assert.deepEqual(JSON.parse(JSON.stringify(f.FQ.storage.axisStat('symbol', 'kr'))), { seen: 1, correct: 3, wrong: 0, streak: 1, correctDays: 2, lastCorrectDay: today });
   f.load('js/storage.js');
   assert.equal(f.FQ.storage.allAxisStats('symbol').kr.correct, 3);
   assert.equal(f.FQ.storage.countryStat('kr').correct, 3);
@@ -486,4 +488,28 @@ test('지도 축도 자기 버킷의 가중치와 다시 만나기를 쓴다', (
   assert.equal(log.length, 5);
   assert.ok(g.againCount >= 1, '지도에서도 처음 만난 쌍을 다시 만난다');
   assert.equal(Object.keys(FQ.storage.allCountryStats()).length, 0, '국기 기록은 그대로');
+});
+
+test('D27: 처음 만나는 나라는 유명한 수도부터 정한 순서로, 그다음 짧은 이름·보통·나라 이름과 같은 수도·긴 이름 순이다', () => {
+  const { FQ } = fixture();
+  const g = FQ.quiz.createGame({ mode: 'capital', count: 10, level: '1' });
+  const codes = Array.from(g.questions, q => q.country.code);
+  assert.deepEqual([codes[0], codes[1], codes[4]], ['kr', 'jp', 'cn'], '서울·도쿄·베이징부터: ' + codes.join(' '));
+  const rule = FQ.quiz.LEARN.capital;
+  const by = (c) => FQ.quiz.byCode(c);
+  const ordered = Array.from(FQ.quiz.orderFresh(rule, ['bn', 'pe', 'sg', 'fr', 'mx'].map(by)), c => c.code);
+  assert.equal(ordered[0], 'fr', '첫 묶음(파리)');
+  assert.equal(ordered[1], 'pe', '짧은 이름(리마)');
+  assert.deepEqual(ordered.slice(2, 4).sort(), ['mx', 'sg'], '나라 이름과 같은 수도(싱가포르·멕시코시티)는 중간 이후');
+  assert.equal(ordered[4], 'bn', '긴 이름(반다르스리브가완)은 맨 뒤');
+  assert.equal(rule.freshTier(by('my')), 2, '쿠알라룸푸르 — 보통');
+  assert.equal(rule.freshTier(by('pe')), 1);
+  assert.equal(rule.freshTier(by('sg')), 3);
+  assert.equal(rule.freshTier(by('lk')), 4);
+  // 첫 묶음이 다 만난(굳은) 나라면 그다음 묶음에서 고른다
+  for (const code of rule.firstCapitals) for (let i = 0; i < 5; i++) FQ.storage.recordAnswer(code, true, 'capital');
+  const h = FQ.quiz.createGame({ mode: 'capital', count: 10, level: 'all' });
+  const fresh = [...new Set(Array.from(h.questions, q => q.country.code).filter(c => !rule.firstCapitals.includes(c)))];
+  assert.equal(fresh.length, 3);
+  assert.ok(fresh.every(c => rule.freshTier(by(c)) === 1), '짧은 이름 묶음: ' + fresh.map(c => by(c).capital).join(' '));
 });

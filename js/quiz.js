@@ -13,8 +13,11 @@
     // 수도 놀이(2026-09-17 D17 채택 B): 수도 이름을 듣고 국기 4장 중 그 나라를 찾는다. 기록은 axes.capital 에 따로 쌓여
     // 새 축 규칙(시간 초과 지나감·대결 없음·오늘의 도전 미집계)을 받되, 출제는 D15 대신 LEARN.capital(D24) 규칙을 탄다.
     capital: { label: '수도 듣고 국기 찾기', kind: 'choice', hasOptions: true, axis: 'capital' },
+    // 국기 보고 수도 말하기(D28): 국기와 나라 이름을 보고 수도를 말한다. 기록·계획(D24)·도장은 수도 축과 같고 답은 수도 이름으로 채점한다(answer).
+    // speech 는 마이크·중간 결과 채점·맞히면 저절로 다음(D25)을 같이 쓰는 표시다.
+    capitalVoice: { label: '국기 보고 수도 말하기', kind: 'text', hasOptions: false, axis: 'capital', answer: 'capital', speech: true },
     typing:  { label: '이름 써서 맞히기', kind: 'text', hasOptions: false, axis: 'flag' },
-    voice:   { label: '말로 답하기', kind: 'text', hasOptions: false, axis: 'flag' },
+    voice:   { label: '말로 답하기', kind: 'text', hasOptions: false, axis: 'flag', speech: true },
     map:     { label: '지도에서 나라 찾기', kind: 'choice', hasOptions: true, axis: 'map' },
     symbol:  { label: '그림 보고 나라 고르기', kind: 'choice', hasOptions: true, axis: 'symbol' },
     place:   { label: '명소 보고 나라 고르기', kind: 'choice', hasOptions: true, axis: 'place' }
@@ -322,14 +325,14 @@
    * 걸리는 나라가 없거나 둘 이상이 똑같이 걸리면 null 을 돌려준다.
    * 웅얼거림이나 나라 이름이 아닌 말에는 null 이 나온다.
    */
-  function findCountry(text) {
+  function findCountry(text, kind) {
     var norm = util.normalize(text);
     if (!norm) return null;
     var keys = candidateKeys(text);
     var list = all();
     var best = null, bestStrength = -1, bestDist = Infinity, bestExact = false, tie = false;
     for (var i = 0; i < list.length; i++) {
-      var m = matchOne(list[i], keys, norm);
+      var m = matchOne(entryFor(list[i], kind), keys, norm);
       if (!m.near) continue;
       // checkText 와 같은 규칙을 쓴다. 낱말 그대로 맞은 쪽이 긴 이름보다 먼저다.
       // 두 판정이 어긋나면 "어 가나" 를 정답으로 채점하면서 안내는 '우간다라고 했구나' 가 된다.
@@ -347,45 +350,58 @@
 
   /* ---------------- 소리 닮은꼴·앞부분 인정 (말로 답하기, D25) ---------------- */
 
-  // 194개국 이름·별칭의 자모 키 목록과 '앞부분이 겹치는 나라' 표. FQ.countries 가 바뀌면 다시 만든다.
-  var indexedList = null;
-  var nameIndex = [];
-  var prefixRiskyByCode = {};
-  function names() {
+  /**
+   * 채점 대상(kind). 'country' 는 나라 이름(ko·별칭·en), 'capital' 은 수도 이름(D28).
+   * 나라 자료를 같은 모양의 항목({code, ko, en, aliases})으로 바꿔 matchOne·soundsLike 가 그대로 쓰게 한다.
+   * 수도 별칭은 아이가 달리 부를 법한 것만 둔다 — 나라 이름과 같은 말('멕시코'로 멕시코시티)은 넣지 않는다: 그건 수도가 아니라 나라를 말한 것이다.
+   */
+  var CAPITAL_ALIASES = {
+    us: ['워싱턴', '워싱턴디씨'], at: ['비엔나'], cn: ['북경'], jp: ['동경'], 'in': ['델리'], ru: ['모스크바'],
+    mn: ['울란바토르', '울란바타르'], my: ['쿠알라룸푸르', '콸라룸푸르'], ar: ['부에노스'], lk: ['코테', '스리자야'], tt: ['포트오브'], bn: ['반다르']
+  };
+  function entryFor(country, kind) {
+    if (kind !== 'capital' || !country) return country;
+    var cap = country.capital || '';
+    return { code: country.code, ko: cap, en: country.capitalEn || '', aliases: [cap].concat(CAPITAL_ALIASES[country.code] || []) };
+  }
+
+  // 이름·별칭의 자모 키 목록과 '앞부분이 겹치는 나라' 표를 kind 마다 둔다. FQ.countries 가 바뀌면 다시 만든다.
+  var indexes = {};
+  function names(kind) {
+    kind = kind === 'capital' ? 'capital' : 'country';
     var list = all();
-    if (list !== indexedList) {
-      indexedList = list;
-      nameIndex = [];
+    var idx = indexes[kind];
+    if (!idx || idx.list !== list) {
+      idx = indexes[kind] = { list: list, names: [], risky: {} };
       list.forEach(function (c) {
-        (c.aliases || []).concat([c.ko]).forEach(function (n) {
+        var e = entryFor(c, kind);
+        (e.aliases || []).concat([e.ko]).forEach(function (n) {
           var key = util.compareKey(n);
-          if (key) nameIndex.push({ code: c.code, key: key });
+          if (key) idx.names.push({ code: c.code, key: key });
         });
       });
-      prefixRiskyByCode = {};
-      nameIndex.forEach(function (a) {
-        if (prefixRiskyByCode[a.code]) return;
-        for (var i = 0; i < nameIndex.length; i++) {
-          var b = nameIndex[i];
+      idx.names.forEach(function (a) {
+        if (idx.risky[a.code]) return;
+        for (var i = 0; i < idx.names.length; i++) {
+          var b = idx.names[i];
           if (b.code !== a.code && b.key.length > a.key.length && b.key.indexOf(a.key) === 0) {
-            prefixRiskyByCode[a.code] = true;
+            idx.risky[a.code] = true;
             break;
           }
         }
       });
     }
-    return nameIndex;
+    return idx;
   }
 
   /** 이 나라 이름이 다른 나라 이름의 앞부분인가 (인도 ⊂ 인도네시아, 기니 ⊂ 기니비사우). 그런 나라는 말을 끝까지 듣고 채점한다. */
-  function prefixRisky(country) {
-    names();
-    return !!(country && prefixRiskyByCode[country.code]);
+  function prefixRisky(country, kind) {
+    return !!(country && names(kind).risky[country.code]);
   }
 
   /** 이 앞부분으로 시작하는 이름이 이 나라 것뿐인가 */
-  function uniquePrefix(key, code) {
-    var list = names();
+  function uniquePrefix(key, code, kind) {
+    var list = names(kind).names;
     for (var i = 0; i < list.length; i++) {
       if (list[i].code !== code && list[i].key.indexOf(key) === 0) return false;
     }
@@ -399,7 +415,7 @@
    *               '도미니카'(공화국·연방 둘 다)·'오스트'(오스트리아·오스트레일리아 둘 다)·'사우'(두 음절)는 인정하지 않는다
    * 인정하면 { name: 인정한 이름, sound: 소리 거리(앞부분 인정은 -1) } 을, 아니면 null 을 돌려준다.
    */
-  function soundsLike(country, keys) {
+  function soundsLike(country, keys, kind) {
     if (!country || !keys) return null;
     var list = (country.aliases || []).concat([country.ko]);
     var best = null;
@@ -416,7 +432,7 @@
           if (d <= allowed && (!best || d < best.sound)) best = { name: list[i], sound: d };
           if (best && best.sound === 0) return best;
         }
-        if (!best && k.length < nameKey.length && util.vowelCount(k) >= 3 && nameKey.indexOf(k) === 0 && uniquePrefix(k, country.code)) {
+        if (!best && k.length < nameKey.length && util.vowelCount(k) >= 3 && nameKey.indexOf(k) === 0 && uniquePrefix(k, country.code, kind)) {
           best = { name: list[i], sound: -1 };
         }
       }
@@ -429,24 +445,31 @@
    * 넉넉하게 인정하되, 다른 나라가 더 잘 맞아떨어지면 정답으로 치지 않는다.
    * (니제르 ↔ 나이지리아, 인도 ↔ 인도네시아 같은 사고 방지)
    */
-  function checkText(answer, text) {
+  function checkText(answer, text, kind) {
+    kind = kind === 'capital' ? 'capital' : 'country';
     var norm = util.normalize(text);
     var result = { correct: false, exact: false, lenient: false, score: 0, matched: null, confusedWith: null };
     if (!norm) return result;
     var keys = candidateKeys(text);
 
-    var mine = matchOne(answer, keys, norm);
+    var mine = matchOne(entryFor(answer, kind), keys, norm);
     result.matched = mine.name;
     result.exact = mine.exact;
     result.score = mine.near ? (mine.strength / (mine.strength + mine.dist)) : 0;
     if (mine.exact) { result.correct = true; return result; }
+    if (kind === 'capital') {
+      // 나라 이름을 말한 것은 수도가 아니다 — '멕시코'는 멕시코시티가 아니고 '알제리'는 알제가 아니다.
+      // 수도와 나라 이름이 같은 나라(싱가포르·모나코)는 바로 위에서 이미 정답이다.
+      var asCountry = matchOne(answer, keys, norm);
+      if (asCountry.near && asCountry.dist === 0) return result;
+    }
 
     // 다른 나라 이름을 말한 것은 아닌지 확인한다
     var list = all();
     var rivalStrength = -1, rivalDist = Infinity, rival = null;
     for (var i = 0; i < list.length; i++) {
       if (list[i].code === answer.code) continue;
-      var r = matchOne(list[i], keys, norm);
+      var r = matchOne(entryFor(list[i], kind), keys, norm);
       if (!r.near) continue;
       if (r.exact) { rivalStrength = Infinity; rivalDist = 0; rival = list[i]; break; }
       if (r.strength > rivalStrength || (r.strength === rivalStrength && r.dist < rivalDist)) {
@@ -470,7 +493,7 @@
       // 비슷하게만 걸렸을 때('부단' 에 수단이 가깝다)는 목표 나라가 소리로 정확히 같을 때만 인정한다('부단'→부탄).
       var rivalExact = rivalStrength === Infinity || rivalDist === 0;
       if (!rivalExact) {
-        var alike = soundsLike(answer, keys);
+        var alike = soundsLike(entryFor(answer, kind), keys, kind);
         if (alike && (!rival || alike.sound === 0)) {
           result.correct = true;
           result.lenient = true;
@@ -512,9 +535,35 @@
         if (streak <= 1) return 2.0;                // 한 번 맞힌 것이 가장 먼저 흔들린다
         if (streak <= 4) return 1.4;
         return 0.6;                                 // 잘 아는 나라도 가끔은
+      },
+      // 소개 순서(D27): 아이가 들어 봤을 법한 짧고 유명한 수도부터. 그다음은 짧은 이름 → 보통 이름 → 나라 이름과 같은 수도 → 긴 이름.
+      // 나라 이름과 같은 수도(싱가포르·멕시코시티)는 쉽지만 '수도가 뭔지'를 흐릴 수 있어 중간 이후로, 반다르스리브가완 같은 긴 이름은 맨 뒤로.
+      firstCapitals: ['kr', 'jp', 'cn', 'us', 'gb', 'fr', 'it', 'de', 'es', 'ru', 'th', 'vn', 'ph', 'in', 'eg', 'gr', 'pt', 'no', 'ie', 'at'],
+      freshTier: function (c) {
+        var cap = String(c.capital || '').replace(/\s/g, '');
+        var sameName = cap === c.ko || cap.indexOf(c.ko) !== -1 || c.ko.indexOf(cap) !== -1;
+        if (cap.length >= 7) return 4;
+        if (sameName) return 3;
+        if (cap.length <= 4) return 1;
+        return 2;
       }
     }
   };
+
+  /** 처음 만나는 나라의 소개 순서(D27). 첫 묶음은 정한 순서대로, 나머지 묶음은 묶음 안에서 섞는다. */
+  function orderFresh(rule, fresh) {
+    var rank = {};
+    (rule.firstCapitals || []).forEach(function (code, i) { rank[code] = i; });
+    var groups = {};
+    fresh.forEach(function (c) {
+      var key = rank[c.code] !== undefined ? 0 : (rule.freshTier ? rule.freshTier(c) : 1);
+      (groups[key] = groups[key] || []).push(c);
+    });
+    var out = [];
+    if (groups[0]) out = out.concat(groups[0].sort(function (a, b) { return rank[a.code] - rank[b.code]; }));
+    [1, 2, 3, 4].forEach(function (t) { if (groups[t]) out = out.concat(util.shuffle(groups[t])); });
+    return out;
+  }
 
   /**
    * 수도 놀이 한 판의 문제 순서(D24). 새 나라는 '소개 → 1문제 뒤 → 3문제 뒤 → 판 끝' 리듬으로 여러 번 내고,
@@ -627,7 +676,7 @@
       // 복습이 밀리면 새 나라를 하나 줄인다 — 안 굳은 나라(복습 가중치 2 이상)가 한도의 두 배(10문제 6개) 이상일 때.
       var fragile = met.filter(function (c) { return learn.reviewWeight(recs[c.code]) >= 2; }).length;
       if (cap > 1 && fragile >= cap * 2) cap -= 1;
-      var picked = util.sample(fresh, Math.min(fresh.length, cap));
+      var picked = orderFresh(learn, fresh).slice(0, Math.min(fresh.length, cap));
       var reviewOrder = [];
       if (cfg.reviewFirst) {
         var left = met.slice();
@@ -793,7 +842,8 @@
           confusedWith: payload.code === q.country.code ? null : byCode(payload.code)
         };
       } else {
-        res = checkText(q.country, (payload && payload.text) || '');
+        // 국기 보고 수도 말하기는 수도 이름으로 채점한다(answer: 'capital', D28). 나머지 글자·말 놀이는 나라 이름이다.
+        res = checkText(q.country, (payload && payload.text) || '', MODES[cfg.mode] && MODES[cfg.mode].answer);
         res.picked = null;
       }
 
@@ -885,6 +935,9 @@
     candidateKeys: candidateKeys,
     soundsLike: soundsLike,
     prefixRisky: prefixRisky,
+    entryFor: entryFor,
+    CAPITAL_ALIASES: CAPITAL_ALIASES,
+    orderFresh: orderFresh,
     findCountry: findCountry,
     isGiveUp: isGiveUp,
     createGame: createGame

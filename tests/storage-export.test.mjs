@@ -152,11 +152,11 @@ test('194개 국기 스티커 안의 새 도장은 학습 축별 정답만 읽�
   assert.equal((html.match(/class="sticker-cell /g) || []).length, 194);
   const kr = html.match(/<button class="sticker-cell [^>]*data-code="kr"[\s\S]*?<\/button>/)[0];
   assert.match(kr, /sticker-cell locked/);
-  assert.match(kr, /axis-stamp earned" data-axis="symbol"/);
+  assert.match(kr, /axis-stamp earned s1" data-axis="symbol"/);
   assert.match(kr, /axis-stamp" data-axis="place"/);
-  assert.match(kr, /axis-stamp earned" data-axis="map"/);
-  // 도장은 넷: 🎨 그림 · 🏞️ 명소 · 📍 위치 · 🏙️ 수도 (2026-09-17 D17 채택 B). 수도 정답은 국기 스티커를 열지 않는다.
-  assert.match(kr, /axis-stamp earned" data-axis="capital" title="수도 도장 획득" aria-label="수도 도장 획득">🏙️<\/span>/);
+  assert.match(kr, /axis-stamp earned s1" data-axis="map"/);
+  // 도장은 넷: 🎨 그림 · 🏞️ 명소 · 📍 위치 · 🏙️ 수도 (2026-09-17 D17 채택 B). 수도 정답은 국기 스티커를 열지 않는다. s1 은 도장 단계(D26).
+  assert.match(kr, /axis-stamp earned s1" data-axis="capital" title="수도 도장 획득" aria-label="수도 도장 획득">🏙️<\/span>/);
   assert.equal((kr.match(/ data-axis="/g) || []).length, 4, '칸 안 도장은 넷');
   assert.equal(f.c.FQ.progress.stickers().owned, 0);
   assert.equal(f.storage.exportJson(), before);
@@ -400,4 +400,46 @@ test('스티커 판은 큰 숫자·굵은 진행바·대륙 알약 한 줄이고
   assert.match(css, /\.dex-filters\[hidden\] \{ display: none; \}/);
   assert.match(css, /@media \(min-width: 760px\) and \(orientation: landscape\) \{[^@]*\.sticker-grid \{ grid-template-columns: repeat\(8, minmax\(0, 1fr\)\); \}/);
   assert.match(css, /\.sticker-cell\.got \{ border-color: var\(--success\)/);
+});
+
+test('도장은 세 단계로 진해진다 — 한 번 맞힘 s1, 다른 날에도 맞힘 s2, 다른 날에도 맞혔고 세 번 연속 s3, 옛 기록은 s1 (D26)', () => {
+  const f = screenFixture();
+  f.storage.recordAnswer('kr', true, 'capital');
+  f.c.FQ.screens.dex('all');
+  const cell = () => f.node('#dex-list').innerHTML.match(/<button class="sticker-cell [^>]*data-code="kr"[\s\S]*?<\/button>/)[0];
+  assert.match(cell(), /axis-stamp earned s1" data-axis="capital" title="수도 도장 획득"/);
+  const rec = f.storage.axisStat('capital', 'kr');
+  assert.equal(rec.correctDays, 1);
+  assert.match(rec.lastCorrectDay, /^\d{4}-\d{2}-\d{2}$/);
+  // 같은 날 또 맞혀도 맞힌 날 수는 그대로다
+  f.storage.recordAnswer('kr', true, 'capital');
+  assert.equal(f.storage.axisStat('capital', 'kr').correctDays, 1);
+  // 다른 날에 또 맞히면 진한 도장
+  f.storage.axisStat('capital', 'kr').lastCorrectDay = '2000-01-01';
+  f.storage.recordAnswer('kr', true, 'capital');
+  assert.equal(f.storage.axisStat('capital', 'kr').correctDays, 2);
+  assert.equal(f.storage.axisStat('capital', 'kr').streak, 3);
+  f.c.FQ.screens.dex('all');
+  assert.match(cell(), /axis-stamp earned s3" data-axis="capital" title="수도 도장 반짝 · 세 번 연속 맞혔어요"/, '다른 날에도 맞혔고 세 번 연속이면 반짝');
+  // 틀리면 연속이 끊겨 진한 도장으로 돌아가되 도장은 남는다
+  f.storage.recordAnswer('kr', false, 'capital');
+  f.c.FQ.screens.dex('all');
+  assert.match(cell(), /axis-stamp earned s2" data-axis="capital" title="수도 도장 진하게 · 다른 날에도 맞혔어요"/);
+  // 세 번 연속이어도 하루뿐이면 연한 도장 — 한 자리에서 몰아 맞힌 것으로는 반짝이 되지 않는다
+  const s = screenFixture();
+  for (let i = 0; i < 3; i++) s.storage.recordAnswer('fr', true, 'capital');
+  assert.equal(s.c.FQ.screens.stampStage(s.storage.allAxisStats('capital').fr), 1);
+  // 옛 기록(맞힌 날 정보 없음)은 연한 도장이고, 오늘 맞히면 바로 진한 도장이 된다 — 예전 도장을 뺏지 않는다
+  const g = screenFixture({ saved: JSON.stringify({ axes: { capital: { jp: { seen: 2, correct: 1, wrong: 1, streak: 1 } } } }) });
+  assert.equal(g.c.FQ.screens.stampStage(g.storage.allAxisStats('capital').jp), 1);
+  g.storage.recordAnswer('jp', true, 'capital');
+  assert.equal(g.storage.allAxisStats('capital').jp.correctDays, 2);
+  assert.equal(g.c.FQ.screens.stampStage(g.storage.allAxisStats('capital').jp), 2, '옛 도장 + 오늘 한 번 = 진한 도장');
+  g.storage.recordAnswer('jp', true, 'capital');
+  assert.equal(g.c.FQ.screens.stampStage(g.storage.allAxisStats('capital').jp), 3, '세 번 연속이 되면 반짝');
+  assert.equal(g.c.FQ.screens.stampStage(undefined), 0);
+  assert.equal(g.c.FQ.screens.stampStage({ seen: 3, correct: 0, wrong: 3 }), 0);
+  // 국기 기록에는 날짜 필드를 쌓지 않는다
+  g.storage.recordAnswer('jp', true);
+  assert.equal(g.storage.allCountryStats().jp.correctDays, undefined);
 });

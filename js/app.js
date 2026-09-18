@@ -26,13 +26,14 @@
     { id: 'symbol',  group: 'art', emo: '🎨', title: '그림 보고 나라 고르기', pill: '그림 보고 고르기', short: '그림' },
     { id: 'place',   group: 'art', emo: '🏞️', title: '명소 보고 나라 고르기', pill: '명소 보고 고르기', short: '명소' },
     { id: 'map',     group: 'map', emo: '🗺️', title: '지도에서 나라 찾기', pill: '지도', short: '지도' },
-    { id: 'capital', group: 'capital', emo: '🏙️', title: '수도 듣고 국기 찾기', pill: '수도 듣기', short: '수도' }
+    { id: 'capital', group: 'capital', emo: '🏙️', title: '수도 듣고 국기 찾기', pill: '수도 듣기', short: '듣기' },
+    { id: 'capitalVoice', group: 'capital', emo: '🎤', title: '국기 보고 수도 말하기', pill: '수도 말하기', short: '말하기' }
   ];
   var PLAY_TILES = [
     { id: 'flag', emo: '🚩', title: '국기 놀이', pills: true },
     { id: 'art', emo: '🎨', title: '그림 놀이', pills: true },
     { id: 'map', emo: '🗺️', title: '지도 놀이', desc: '나라가 있는 자리를 찾아요' },
-    { id: 'capital', emo: '🏙️', title: '수도 놀이', desc: '수도를 듣고 국기를 찾아요' }
+    { id: 'capital', emo: '🏙️', title: '수도 놀이', pills: true }
   ];
 
   /** 둘이서 대결은 국기 축에서만 연다. 그림·명소·지도·수도는 어른이 압도적이라 아이가 매번 진다. */
@@ -40,6 +41,14 @@
     var m = quiz.MODES[mode];
     return !!m && m.axis === 'flag';
   }
+
+  /** 말로 답하는 놀이(말로 답하기·국기 보고 수도 말하기) — 마이크·중간 결과 채점·맞히면 저절로 다음(D25)을 같이 쓴다. */
+  function speechMode(mode) { var m = quiz.MODES[mode]; return !!(m && m.speech); }
+  /** 무엇을 말하면 답인가: 'country'(나라 이름) 또는 'capital'(수도 이름, D28) */
+  function answerKind(mode) { var m = quiz.MODES[mode]; return (m && m.answer) || 'country'; }
+  function answerWhat(mode) { return answerKind(mode) === 'capital' ? '수도 이름' : '나라 이름'; }
+  /** 수도 축 놀이(수도 듣고 국기 찾기·국기 보고 수도 말하기) — 만나기 카드·정답 카드·결과의 수도 줄을 같이 쓴다. */
+  function capitalAxis(mode) { var m = quiz.MODES[mode]; return !!(m && m.axis === 'capital'); }
 
   function modeCard(id) {
     for (var i = 0; i < MODE_CARDS.length; i++) if (MODE_CARDS[i].id === id) return MODE_CARDS[i];
@@ -284,7 +293,7 @@
               }).join('') +
             '</div>' +
           '</div>' +
-          (s.mode === 'voice' ? voiceNotice() : '') +
+          (speechMode(s.mode) ? voiceNotice(s.mode) : '') +
         '</div>' +
 
         continentCard() +
@@ -602,9 +611,9 @@
     '</button>';
   }
 
-  function voiceNotice() {
+  function voiceNotice(mode) {
     var reason = FQ.speech.unavailableReason();
-    if (!reason) return '<div class="notice">🎤 “듣고 있어요”가 나오면 <b>나라 이름을 끝까지 말해 주세요.</b> 마이크 사용을 물어보면 “허용”을 눌러 주세요. 음성 인식에는 인터넷 연결이 필요할 수 있어요.</div>';
+    if (!reason) return '<div class="notice">🎤 “듣고 있어요”가 나오면 <b>' + answerWhat(mode) + '을 끝까지 말해 주세요.</b> 마이크 사용을 물어보면 “허용”을 눌러 주세요. 음성 인식에는 인터넷 연결이 필요할 수 있어요.</div>';
     return '<div class="notice">⚠️ ' + esc(reason) +
       (FQ.speech.blocked() ? '<br>말하기 대신 <b>이름 써서 맞히기</b>로도 즐길 수 있어요.' : '') + '</div>';
   }
@@ -669,7 +678,7 @@
     state.chestLoot = [];      // 이 판에서 연 상자의 { kind, score, xp } — 결과 화면 합계용(저장 안 함).
     renderQuiz();
     // 말하기는 클릭한 순간 바로 마이크를 연다. 시작 음악보다 듣기를 우선한다.
-    if (s.mode !== 'voice') playMusic('start');
+    if (!speechMode(s.mode)) playMusic('start');
   }
 
   /** 이 판에서 만난 나라를 순서대로 적어 둔다. 같은 나라를 다시 만나면(재만남 엔진) 마지막 결과로 바꾼다. 화면용이며 저장하지 않는다. */
@@ -742,21 +751,45 @@
   /** 그 축으로 한 번도 만나지 않은 나라인지 읽기만 한다. 조회로 빈 기록을 만들지 않는다(도감 원칙과 같다).
    * 그림·명소는 그림이 있어야 만나기 카드를 낼 수 있고, 수도는 194개국 모두 자료가 있다. */
   function needsMeet(q) {
-    if (q.mode !== 'capital' && !artFor(q.country.code, q.mode)) return false;
-    var records = store.allAxisStats ? store.allAxisStats(q.mode) : {};
+    var axis = quiz.MODES[q.mode] && quiz.MODES[q.mode].axis;
+    if (axis !== 'capital' && !artFor(q.country.code, q.mode)) return false;
+    var records = store.allAxisStats ? store.allAxisStats(axis) : {};
     var r = records && records[q.country.code];
     return !r || !(r.seen > 0);
   }
 
-  /** 🔊 단추 하나로 이름을 읽는다. data-speak 문구 뒤에 data-speak-extra 문구가 있으면 이어서 읽는다. */
-  function speakFromButton(t) {
-    var lines = [t.getAttribute('data-speak')];
-    var extra = t.getAttribute('data-speak-extra');
-    if (extra) lines.push(extra);
-    speakLines(t, lines, t.getAttribute('data-label') || '🔊 들어보기');
+  /** 만나기 카드가 있는 놀이: 그림·명소·수도 축(수도 듣기·수도 말하기). */
+  function meetMode(mode) {
+    var m = quiz.MODES[mode];
+    return !!m && (m.axis === 'symbol' || m.axis === 'place' || m.axis === 'capital');
   }
 
-  function speakLines(t, lines, label) {
+  /** 수도 안에 있는 명소 그림(D26): 명소 도시가 수도와 같은 나라만. 수도 이름 소리에 그림 갈고리를 붙인다(파리=에펠탑, 런던=빅벤, 서울=광화문). */
+  function capitalPlace(country) {
+    if (!country || !FQ.features || !FQ.features.on('art')) return null;
+    var subject = artSubject(country.code, 'place');
+    if (!subject || !subject.city) return null;
+    var squeeze = function (s) { return String(s || '').replace(/\s/g, ''); };
+    if (squeeze(subject.city) !== squeeze(country.capital)) return null;
+    return artFor(country.code, 'place');
+  }
+
+  /** 🔊 단추 하나로 이름을 읽는다. data-speak 문구 뒤에 data-speak-extra 문구가 있으면 이어서 읽고, data-speak-lines('|'로 나눔)면 그 전부를 읽는다. */
+  function speakFromButton(t, after) {
+    var lines;
+    var joined = t.getAttribute('data-speak-lines');
+    if (joined) {
+      lines = joined.split('|').filter(Boolean);
+    } else {
+      lines = [t.getAttribute('data-speak')];
+      var extra = t.getAttribute('data-speak-extra');
+      if (extra) lines.push(extra);
+    }
+    speakLines(t, lines, t.getAttribute('data-label') || '🔊 들어보기', after);
+  }
+
+  /** 문구를 읽는다. 끝나거나 실패하면(같은 화면일 때만) after 를 부른다 — 말하기 놀이가 마이크를 다시 여는 자리다. */
+  function speakLines(t, lines, label, after) {
     // 읽어주기가 꺼져 있으면 눌러도 아무 일이 없었다. 켜 주고 바로 읽는다.
     if (!store.settings().speak) {
       store.updateSettings({ speak: true });
@@ -777,10 +810,11 @@
     audio.stopSpeaking();
     FQ.speech.stopAnd(function () {
       if (!nameCurrent()) return;
-      audio.say(lines, {}, function () {
+      audio.say(lines, { onEnd: function () { if (nameCurrent() && after) after(); } }, function () {
         if (!nameCurrent()) return;
         t.classList.add('needs-tap');
         t.textContent = '🔊 다시 눌러서 듣기';
+        if (after) after();
       });
     });
   }
@@ -804,7 +838,7 @@
     var s = store.settings();
     var duel = g.players.length > 1;
     // 처음 만나는 그림·명소·수도는 채점 전에 먼저 알려 준다(2026-09-17). 그 축의 기록이 없는 나라만, 문제마다 한 번.
-    var meet = (q.mode === 'symbol' || q.mode === 'place' || q.mode === 'capital') && state.metQuestion !== q && needsMeet(q);
+    var meet = meetMode(q.mode) && state.metQuestion !== q && needsMeet(q);
 
     var stage;
     if (q.mode === 'symbol' || q.mode === 'place') {
@@ -857,26 +891,40 @@
           '<div class="big-name">' + esc(q.country.ko) + '</div>' +
           listenButton(q.country.ko) +
         '</div>';
-    } else if (q.mode === 'capital') {
+    } else if (capitalAxis(q.mode)) {
       // 수도 놀이를 뒤집었다(2026-09-17 시안 PhoneCapital, D17 채택 B): 글자를 못 읽는 아이가 수도 이름을 '듣고' 국기 4장에서 나라를 찾는다.
       // 큰 🔊 (폰 88px 노란 단추)가 수도 이름 음원(voice-manifest 의 c.capital)을 읽고, 아래에 보조 글자로 수도 이름, 위에 작은 지시문.
       // 문제가 뜨면 수도 이름을 한 번 자동으로 읽는다(만나기 카드와 같은 speakLines — 실패하면 '다시 눌러서 듣기'로 바뀐다).
       // 처음 만나는 나라는 국기·나라 이름·수도 이름을 먼저 보여 주고 [수도, '나라의 수도예요'] 를 읽는다 — 둘 다 기존 음원이다.
+      // 수도 안에 있는 명소 그림(D26)이 있으면 만나기 카드의 국기 옆에 둔다 — 소리에 그림 갈고리를 붙인다.
+      // 국기 보고 수도 말하기(D28)는 같은 만나기 카드를 쓰고, 문제 화면은 국기·나라 이름·🔊(나라 이름)이며 답은 마이크로 받는다.
+      var place = capitalPlace(q.country);
       stage = meet
         ? '<div class="flag-stage meet-card capital-meet"><div class="q-label">처음 만나는 나라예요 · 먼저 들어 볼까요?</div>' +
-          '<div class="meet-art"><img class="flag-img" src="' + ui.flagSrc(q.country.code) + '" alt="' + esc(q.country.ko) + ' 국기"></div>' +
+          '<div class="meet-art"><img class="flag-img" src="' + ui.flagSrc(q.country.code) + '" alt="' + esc(q.country.ko) + ' 국기">' +
+            (place ? '<figure class="capital-place"><img src="' + esc(place.src) + '" alt="' + esc(place.alt) + '"><figcaption>' + esc(place.alt) + '</figcaption></figure>' : '') +
+          '</div>' +
           '<div class="meet-body">' +
           '<div class="big-name">' + esc(q.country.ko) + '</div>' +
           '<div class="meet-caption">🏙️ ' + esc(q.country.capital) + '</div>' +
           '<button class="btn btn-listen btn-listen-soft" id="meet-speak" data-speak="' + esc(q.country.capital) + '" data-speak-extra="' + esc(q.country.ko + '의 수도예요') + '" data-label="🔊 다시 듣기" type="button">🔊 다시 듣기</button>' +
           '<button class="btn btn-big btn-go btn-yellow" id="meet-next" type="button">문제 풀어 볼게요 →</button>' +
           '</div></div>'
-        : '<div class="flag-stage capital-question">' +
-          '<div class="q-label">🏙️ 어느 나라의 수도일까요?</div>' +
-          // 88px 는 이 단추만의 크기라 인라인으로 둔다(.btn-listen 은 폰 56px·아이패드 64px). 라벨은 speakLines 가 textContent 로 바꾸므로 글자 그대로.
-          '<button class="btn btn-listen capital-listen" id="capital-listen" data-speak="' + esc(q.country.capital) + '" data-label="🔊 눌러서 들어보기" type="button">🔊 눌러서 들어보기</button>' +
-          '<div class="big-name capital-name muted">' + esc(q.country.capital) + '</div>' +
-        '</div>';
+        : q.mode === 'capitalVoice'
+          ? '<div class="flag-stage capital-say">' +
+            '<div class="q-label">🏙️ 이 나라의 수도를 말해 보세요</div>' +
+            '<div class="map-who">' +
+              '<img class="map-question-flag" src="' + ui.flagSrc(q.country.code) + '" alt="' + esc(q.country.ko) + ' 국기">' +
+              '<div class="big-name">' + esc(q.country.ko) + '</div>' +
+            '</div>' +
+            listenButton(q.country.ko, null, 'say-listen') +
+          '</div>'
+          : '<div class="flag-stage capital-question">' +
+            '<div class="q-label">🏙️ 어느 나라의 수도일까요?</div>' +
+            // 88px 는 이 단추만의 크기라 인라인으로 둔다(.btn-listen 은 폰 56px·아이패드 64px). 라벨은 speakLines 가 textContent 로 바꾸므로 글자 그대로.
+            '<button class="btn btn-listen capital-listen" id="capital-listen" data-speak="' + esc(q.country.capital) + '" data-label="🔊 눌러서 들어보기" type="button">🔊 눌러서 들어보기</button>' +
+            '<div class="big-name capital-name muted">' + esc(q.country.capital) + '</div>' +
+          '</div>';
     } else {
       stage =
         '<div class="flag-stage">' +
@@ -912,7 +960,8 @@
     var land = ui.$('.map-land', m);
     if (land && land.setAttribute) land.setAttribute('preserveAspectRatio', 'none');
 
-    ui.on(m, '[data-speak]', 'click', function (e, t) { speakFromButton(t); });
+    // 🔊 를 듣고 나면 말하기 놀이는 마이크를 다시 연다(수도 말하기의 나라 이름 듣기·힌트).
+    ui.on(m, '[data-speak]', 'click', function (e, t) { speakFromButton(t, resumeListening); });
 
     if (meet) {
       // 만나기 카드: 채점 없이 나라 이름과 그림 이름을 들려주고, 아이가 누르면 같은 나라를 문제로 낸다.
@@ -925,7 +974,7 @@
         renderQuiz();
       });
       speakLines(ui.$('#meet-speak', m),
-        q.mode === 'capital' ? [q.country.capital, q.country.ko + '의 수도예요'] : [q.country.ko, artAlt(q.country.code, q.mode)],
+        capitalAxis(q.mode) ? [q.country.capital, q.country.ko + '의 수도예요'] : [q.country.ko, artAlt(q.country.code, q.mode)],
         '🔊 다시 듣기');
     } else {
       state.meeting = false;
@@ -978,11 +1027,12 @@
     preloadNext();
     if (!meet && !state.artUnavailable && !state.timerId) startTimer();
 
-    if (q.mode === 'voice') {
+    if (speechMode(q.mode) && !meet) {
       state.listenOn = true;
       audio.stopSpeaking();
       // 단추를 누른 그 흐름 안에서 시작해야 사파리가 마이크 권한을 다시 묻지 않는다.
       // 늦게(setTimeout) 시작하면 사용자가 누른 동작과 끊겨 매번 허용을 물어본다.
+      // 만나기 카드가 떠 있는 동안은 듣지 않는다 — '문제 풀어 볼게요'를 누르는 그 흐름에서 연다.
       startListening();
     }
   }
@@ -1034,9 +1084,10 @@
           '<img src="' + ui.flagSrc(c.code) + '" alt=""></button>';
       }).join('') + '</div>';
     }
-    if (q.mode === 'voice') {
+    if (speechMode(q.mode)) {
       var reason = FQ.speech.unavailableReason();
       var off = FQ.speech.blocked();
+      var what = answerWhat(q.mode);
       return '<div class="mic-wrap">' +
         (reason ? '<div class="notice">⚠️ ' + esc(reason) + '</div>' : '') +
         '<button class="mic-btn" id="mic" type="button" aria-label="듣기 시작하기" aria-pressed="false"' + (off ? ' disabled' : '') + '>🎤</button>' +
@@ -1045,12 +1096,12 @@
         '</div>' +
         '<div class="heard" id="heard"></div>' +
         '<div class="listen-tip small muted" id="listen-tip">' +
-          (off ? '아래에 나라 이름을 써서 답해 주세요' : '') +
+          (off ? '아래에 ' + what + '을 써서 답해 주세요' : '') +
         '</div>' +
         '<details class="type-fallback"' + (off ? ' open' : '') + '>' +
           '<summary>⌨️ 글자로 답하기</summary>' +
           '<div class="field" style="margin-top:10px">' +
-            '<input class="text-input" id="answer-input" placeholder="나라 이름을 써 보세요" autocomplete="off">' +
+            '<input class="text-input" id="answer-input" placeholder="' + what + '을 써 보세요" autocomplete="off">' +
             '<button class="btn btn-primary" id="answer-submit" type="button">확인</button>' +
           '</div>' +
         '</details>' +
@@ -1090,7 +1141,8 @@
     if (!input) return;
     var text = (input.value || '').trim();
     if (!text) { input.focus(); return; }
-    if (!quiz.findCountry(text) && quiz.isGiveUp(text)) { submit({ text: '' }, true); return; }
+    var q = state.game && state.game.current();
+    if (!quiz.findCountry(text, answerKind(q ? q.mode : '')) && quiz.isGiveUp(text)) { submit({ text: '' }, true); return; }
     submit({ text: text });
   }
 
@@ -1106,9 +1158,10 @@
     if (!text || !state.game) return null;
     var q = state.game.current();
     if (!q) return null;
-    // 나라 이름을 먼저 본다. "브라질 뭐지?" 처럼 이름을 말했으면 그것을 답으로 받는다
-    if (quiz.checkText(q.country, text).correct) return { kind: 'answer', text: text };
-    var other = quiz.findCountry(text);
+    // 나라 이름(수도 말하기는 수도 이름)을 먼저 본다. "브라질 뭐지?" 처럼 이름을 말했으면 그것을 답으로 받는다
+    var kind = answerKind(q.mode);
+    if (quiz.checkText(q.country, text, kind).correct) return { kind: 'answer', text: text };
+    var other = quiz.findCountry(text, kind);
     if (other && other.code !== q.country.code) return { kind: 'answer', text: text };
     if (quiz.isGiveUp(text)) return { kind: 'giveup' };
     return null;
@@ -1133,8 +1186,10 @@
     if (state.answered || !state.listenOn || doc.hidden || !state.game) return;
     var game = state.game;
     var question = game.current();
-    if (!question || question.mode !== 'voice') return;
+    if (!question || !speechMode(question.mode)) return;
     if (FQ.speech.isListening && FQ.speech.isListening()) return;
+    var kind = answerKind(question.mode);
+    var what = answerWhat(question.mode);
     var generation = state.feedbackGeneration;
     function current() {
       return state.game === game && game.current() === question &&
@@ -1165,7 +1220,7 @@
         if (!current()) return;
         mic.classList.add('listening');
         mic.setAttribute('aria-pressed', 'true');
-        setListenState('듣고 있어요. 나라 이름을 끝까지 말해 주세요!', 'on');
+        setListenState('듣고 있어요. ' + what + '을 끝까지 말해 주세요!', 'on');
       },
       interim: function (text) {
         if (!current()) return;
@@ -1176,7 +1231,7 @@
         // 사파리가 스스로 끊어 놓치는 것보다 낫고, 아이는 말하자마자 정답 카드를 본다.
         // 단 이름이 다른 나라 이름의 앞부분인 나라(인도·기니)는 끝까지 듣는다 — “인도네시아”의 “인도”를 먼저 채점하지 않는다.
         // 다른 나라 이름은 중간 결과로 채점하지 않는다(말이 끝나기 전에 틀렸다고 하지 않는다).
-        if (!quiz.prefixRisky(question.country) && quiz.checkText(question.country, text).correct) submit({ text: text });
+        if (!quiz.prefixRisky(question.country, kind) && quiz.checkText(question.country, text, kind).correct) submit({ text: text });
       },
       result: function (alts) {
         if (!current()) return;
@@ -1187,7 +1242,7 @@
         var i;
         for (i = 0; i < alts.length; i++) {
           var hit = interpret(alts[i]);
-          if (hit && hit.kind === 'answer' && quiz.checkText(state.game.current().country, alts[i]).correct) {
+          if (hit && hit.kind === 'answer' && quiz.checkText(state.game.current().country, alts[i], kind).correct) {
             submit({ text: alts[i] });
             return;
           }
@@ -1197,7 +1252,7 @@
         }
         if (heard) heard.textContent = alts[0] || '';
         var tip2 = ui.$('#listen-tip');
-        if (tip2) tip2.textContent = '나라 이름을 찾지 못했어요. 한 번 더 말하거나 글자로 답해 주세요.';
+        if (tip2) tip2.textContent = what + '을 찾지 못했어요. 한 번 더 말하거나 글자로 답해 주세요.';
       },
       error: function (code, message) {
         if (!current()) return;
@@ -1240,6 +1295,15 @@
     });
     // 동기 시작 실패에는 onend가 오지 않는다.
     if (requested === false && current()) retryListening();
+  }
+
+  /** 🔊 를 듣고 난 뒤 말하기 놀이면 마이크를 다시 연다(문제가 그대로이고 아직 답하지 않았을 때만). */
+  function resumeListening() {
+    var g = state.game;
+    var q = g && g.current();
+    if (!q || !speechMode(q.mode) || state.answered || state.meeting || doc.hidden) return;
+    state.listenOn = true;
+    startListening();
   }
 
   /** 말로 답할 수 없을 때, 글자 입력을 펼쳐 주고 그리로 안내한다 */
@@ -1307,6 +1371,17 @@
       } else {
         lines.push('🗺️ ' + esc(q.country.continent) + ' · ' + esc(q.country.region) + '에 있어요');
         if (capitalBtn) speakLines(capitalBtn, [q.country.capital], '🔊 눌러서 들어보기');
+      }
+    } else if (q.mode === 'capitalVoice') {
+      // 수도 말하기의 힌트는 수도 이름을 들려주는 것뿐이라 곧 답이다 — 듣고 따라 말하는 연습으로 삼는다(D28).
+      // 기록에는 '아직'으로 남긴다(D24 힌트 2단계와 같은 규칙). 듣고 나면 마이크를 다시 연다.
+      state.revealed = true;
+      lines.push('🏙️ ' + esc(q.country.capital) + ' · ' + esc(q.country.ko) + '의 수도예요');
+      var sayBtn = ui.$('#say-listen');
+      if (sayBtn) {
+        sayBtn.setAttribute('data-speak', q.country.capital);
+        sayBtn.setAttribute('data-speak-extra', q.country.ko + '의 수도예요');
+        speakLines(sayBtn, [q.country.capital, q.country.ko + '의 수도예요'], '🔊 눌러서 들어보기', resumeListening);
       }
     } else if (q.mode === 'reverse') {
       lines.push('🚩 ' + esc(q.country.flagHint));
@@ -1474,7 +1549,7 @@
     if (slots) slots.innerHTML = travelSlots(chestNow, false);
 
     // 정오답 모두 이름 한 번과 쉬운 설명 한 문장만 읽는다. 그림 문제는 나라 이름 뒤에 그림 이름을 한 번 더 읽어 쌍을 잇는다.
-    var isCapitalQ = q.mode === 'capital';
+    var isCapitalQ = capitalAxis(q.mode);
     var isMapQ = q.mode === 'map';
     var isArtQ = q.mode === 'symbol' || q.mode === 'place';
     var feedbackArtName = isArtQ ? artAlt(c.code, q.mode) : '';
@@ -1503,7 +1578,7 @@
     }
     // 말로 답하기에서 맞히면 설명을 다 듣고 저절로 다음 나라로 간다(D25). 틀리면 아이가 답을 보고 스스로 넘기고,
     // 깜짝 상자가 열리면 상자를 닫고 넘기며, 낭독이 실패하면 '눌러서 들어보기' 를 두고 기다린다. 다른 놀이는 종전대로다.
-    var autoNext = q.mode === 'voice' && !!res.correct;
+    var autoNext = speechMode(q.mode) && !!res.correct;
     function scheduleAutoNext(request, delay) {
       if (!autoNext || res.chest || !feedbackCurrent() || request !== narrationRequest) return;
       if (state.autoNextTimer) global.clearTimeout(state.autoNextTimer);
@@ -1537,7 +1612,8 @@
 
     // 정답 카드(시안 PhoneAnswer): 정오답이 같은 카드다. 폰에서 국기 전폭, 이름 34px, 노란 상자(그림 이름·상식 / 국기 특징 / 수도 설명),
     // 🔊 설명 다시 듣기 56px, '다음 나라 →' 64px. 수도 놀이는 kname 에 나라 이름, 상자에 '🏙️ 수도 · 나라의 수도예요'(읽는 문구는 [수도, 나라의 수도예요] 그대로).
-    var feedbackArt = isArtQ ? artFor(c.code, q.mode) : null;
+    // 수도 놀이의 정답 카드에는 수도 안 명소 그림(D26)을 같이 둔다 — 파리 옆에 에펠탑.
+    var feedbackArt = isArtQ ? artFor(c.code, q.mode) : isCapitalQ ? capitalPlace(c) : null;
     var rememberTitle = isArtQ ? esc(artAlt(c.code, q.mode)) : isMapQ ? '🗺️ ' + esc(c.continent) + ' · ' + esc(c.region) : '';
     var rememberBody = isCapitalQ ? '🏙️ ' + esc(c.capital) + ' · ' + esc(c.ko) + '의 수도예요' : isMapQ || isArtQ ? esc(c.fact) : '🚩 ' + esc(c.flagHint);
     var html =
@@ -1865,7 +1941,7 @@
         '<div class="n">' + esc(c.ko) + '</div>' +
         '<div class="wh">' + esc(summary.mode === 'map' ? c.continent + ' · ' + c.region :
           summary.mode === 'symbol' || summary.mode === 'place' ? artAlt(c.code, summary.mode) :
-          summary.mode === 'capital' ? '🏙️ ' + c.capital : c.flagHint) + '</div>' +
+          capitalAxis(summary.mode) ? '🏙️ ' + c.capital : c.flagHint) + '</div>' +
       '</button>';
     }).join('');
 
@@ -1902,6 +1978,7 @@
               }).join('') + '</div>' +
             '</div>'
           : '') +
+        capitalRecapBlock(summary) +
         resultLevelBlock() +
         (state.chestsOpened
           ? '<div class="chest-note">' +
@@ -2003,12 +2080,41 @@
       audio.stopSpeaking();
       ui.countryModal(quiz.byCode(t.getAttribute('data-code')));
     });
+    // 오늘 만난 수도 다시 듣기(D26): 응원을 멈추고 수도와 '○○의 수도예요'를 읽는다(기존 음원).
+    ui.on(m, '[data-speak]', 'click', function (e, t) {
+      cancelResultVoice();
+      speakFromButton(t);
+    });
     ui.$('#again', m).addEventListener('click', function () { startGame(null); });
     var rw = ui.$('#retry-wrong', m);
     if (rw) rw.addEventListener('click', function () {
       startGame(summary.wrong.map(function (c) { return c.code; }));
     });
     ui.$('#home', m).addEventListener('click', renderHome);
+  }
+
+  /**
+   * 수도 놀이의 결과에 '오늘 만난 수도 다시 듣기'(D26). 만난 나라마다 국기·이름·수도와 🔊, 위에는 전부 이어 듣는 단추.
+   * 아빠가 옆에서 같이 따라 하기 좋게 [수도, '○○의 수도예요'] 를 차례로 읽는다 — 새 문구 없음.
+   */
+  function capitalRecapBlock(summary) {
+    if (!capitalAxis(summary.mode) || !state.met || !state.met.length) return '';
+    var lines = [];
+    state.met.forEach(function (m2) { lines.push(m2.country.capital, m2.country.ko + '의 수도예요'); });
+    return '<div class="card capital-recap">' +
+      '<div class="tc-head"><span class="tc-title">🏙️ 오늘 만난 수도 다시 듣기</span><span class="spacer"></span>' +
+        '<button class="btn btn-sm btn-listen-soft" id="capital-recap-all" type="button" data-speak-lines="' + esc(lines.join('|')) + '" data-label="🔊 이어 듣기">🔊 이어 듣기</button>' +
+      '</div>' +
+      '<div class="recap-grid">' + state.met.map(function (m2) {
+        var c2 = m2.country;
+        return '<div class="recap-item' + (m2.correct ? '' : ' again') + '">' +
+          '<img src="' + ui.flagSrc(c2.code) + '" alt="' + esc(c2.ko) + ' 국기">' +
+          '<span class="n">' + esc(c2.ko) + '</span>' +
+          '<span class="c">🏙️ ' + esc(c2.capital) + '</span>' +
+          '<button class="btn btn-sm btn-ghost recap-listen" type="button" data-speak="' + esc(c2.capital) + '" data-speak-extra="' + esc(c2.ko) + '의 수도예요" data-label="🔊" aria-label="' + esc(c2.ko) + '의 수도 ' + esc(c2.capital) + ' 듣기">🔊</button>' +
+        '</div>';
+      }).join('') + '</div>' +
+    '</div>';
   }
 
   /** 한 번 더 만난 나라의 여정을 돌아본다. 정답 기록은 따로 보존한다. */
@@ -2099,7 +2205,7 @@
           startTimer(state.timeLeft);
         }
         var q = state.game.current();
-        if (q && q.mode === 'voice') {
+        if (q && speechMode(q.mode)) {
           setListenState('다시 말하려면 마이크를 눌러 주세요.', 'off');
         }
       }
