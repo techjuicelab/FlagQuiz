@@ -1787,18 +1787,101 @@ button.cont-item:focus-visible { outline: 3px solid var(--accent); outline-offse
 }
 @media (prefers-color-scheme: dark) { .axis-stamp.earned.s3 { background: #3a2f14; } }
 
-/* ---- 수도 안 명소 그림 (D26): 만나기 카드의 국기 옆에 작은 그림과 이름 ---- */
-.capital-meet .meet-art { display: flex; align-items: center; justify-content: center; gap: 14px; flex-wrap: wrap; }
+/* ---- 수도 명패 (D29): 수도 놀이의 주인공은 수도 이름이다 — 만나기 카드·문제·정답 카드가 같은 명패를 쓴다.
+   '🏙️ 수도' 꼬리표 아래 수도 이름이 화면에서 가장 큰 글자(폰 53px · 아이패드 74px)이고, 나라는 그 아래 '[국기] ○○의 수도예요' 한 줄로 받친다.
+   긴 이름(6~7 글자 len-m · 8 글자부터 len-l)은 폰 한 줄에 들어오게 한 단계씩 줄인다. ---- */
+.capital-plate {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px 18px;
+  padding: 14px 16px 16px; border-radius: 22px;
+  background: #fff7e6; border: 2px solid var(--accent);
+  box-shadow: 0 8px 20px rgba(255, 183, 3, .18);
+}
+.capital-plate-text { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; max-width: 100%; }
+.capital-tag {
+  display: inline-flex; align-items: center; min-height: 26px; padding: 0 12px; border-radius: 999px;
+  background: var(--accent); color: #1f2937; font-size: .82rem; font-weight: 900; white-space: nowrap;
+}
+.capital-word {
+  font-size: 3.3rem; font-weight: 900; letter-spacing: -.04em; line-height: 1.12; text-align: center;
+  color: var(--text); word-break: keep-all; overflow-wrap: anywhere; animation: pop .3s ease;
+}
+.capital-word.len-m { font-size: 2.45rem; }
+.capital-word.len-l { font-size: 1.95rem; }
+/* 수도 말하기 문제: 수도가 답이라 이름 자리는 물음표다. 힌트로 들려줄 때 이름이 뜬다 */
+.capital-plate.is-hidden { background: transparent; border-style: dashed; box-shadow: none; padding: 8px 16px 10px; }
+.capital-plate.is-hidden .capital-word { color: var(--accent); line-height: 1; }
+@media (prefers-color-scheme: dark) {
+  .capital-plate { background: #3a2f14; box-shadow: none; }
+  .capital-plate.is-hidden { background: transparent; }
+}
+
+/* 수도 안 명소 그림 (D26): 명패 안에서 수도 이름과 나란히(좁으면 이름 위에) 둔다 */
 .capital-place { margin: 0; display: grid; justify-items: center; gap: 4px; }
 .capital-place img {
-  width: 132px; max-width: 40vw; aspect-ratio: 4 / 3; object-fit: cover;
-  border-radius: 12px; border: 1px solid var(--line); background: #f1f5fb;
+  width: 150px; max-width: 42vw; aspect-ratio: 4 / 3; object-fit: cover;
+  border-radius: 14px; border: 1px solid var(--line); background: #f1f5fb;
 }
 .capital-place figcaption { font-size: .95rem; font-weight: 700; color: var(--text-soft); }
 
-/* ---- 국기 보고 수도 말하기 (D28): 국기·나라 이름·🔊 무대 ---- */
+/* 명패 아래 한 줄: 국기와 '○○의 수도예요'. 나라 이름만 굵고 진하게 */
+.capital-of { display: flex; flex-direction: column; align-items: center; gap: 8px; margin-top: 12px; }
+.capital-of-flag {
+  width: 168px; max-width: 56%; height: auto; aspect-ratio: 4 / 3; object-fit: contain;
+  border-radius: 12px; border: 1px solid var(--line); background: var(--card-2);
+}
+.capital-of-text {
+  font-size: 1.4rem; font-weight: 700; letter-spacing: -.02em; line-height: 1.3; text-align: center;
+  color: var(--text-soft); word-break: keep-all; overflow-wrap: anywhere;
+}
+.capital-of-text b { font-weight: 900; color: var(--text); }
+.capital-meet .capital-of { margin: 12px 0; }
+.capital-question .capital-plate { margin-bottom: 2px; }
+.capital-card .capital-plate { margin-top: 10px; }
+
+/* ---- 국기 보고 수도 말하기 (D28): 국기·나라 이름·물음표 명패·🔊 무대 ---- */
 .capital-say .map-who { display: flex; align-items: center; justify-content: center; gap: 12px; margin: 6px 0 10px; }
 .capital-say .map-question-flag { width: 120px; height: 80px; border-radius: 12px; border: 1px solid var(--line); object-fit: cover; }
+
+/* 아이패드(≥744px): 명패 글자 74px, 국기와 '○○의 수도예요' 는 한 줄로 나란히 */
+@media (min-width: 744px) {
+  .capital-plate { padding: 18px 22px 20px; gap: 10px 26px; }
+  .capital-tag { min-height: 32px; padding: 0 14px; font-size: 1rem; }
+  .capital-word { font-size: 4.6rem; }
+  .capital-word.len-m { font-size: 3.5rem; }
+  .capital-word.len-l { font-size: 2.7rem; }
+  .capital-place img { width: 220px; max-width: 100%; }
+  .capital-place figcaption { font-size: 1.1rem; }
+  .capital-of { flex-direction: row; justify-content: center; gap: 16px; margin-top: 16px; }
+  .capital-of-flag { width: 180px; max-width: 40%; }
+  .capital-of-text { font-size: 1.9rem; text-align: left; }
+}
+/* 아이패드 세로: 정답 카드가 명패를 다시 보여 주므로 답을 낸 뒤 무대는 접는다 — 보기 국기와 카드가 스크롤 없이 한 화면에 들어온다 */
+@media (min-width: 744px) and (orientation: portrait) {
+  .quiz-screen.answered .quiz-stage-col > .capital-question,
+  .quiz-screen.answered .quiz-stage-col > .capital-say { display: none; }
+}
+/* 아이패드 가로: 만나기 카드의 왼쪽 칸은 명패 혼자 쓴다 — 그림을 위에 크게, 이름은 그 아래 80px */
+@media (min-width: 760px) and (orientation: landscape) {
+  .capital-meet .capital-plate { flex-direction: column; padding: 20px 22px 24px; }
+  .capital-meet .capital-place img { width: 300px; }
+  .capital-meet .capital-word { font-size: 5rem; }
+  .capital-meet .capital-word.len-m { font-size: 3.6rem; }
+  .capital-meet .capital-word.len-l { font-size: 2.8rem; }
+  .capital-meet .capital-of { flex-direction: column; gap: 10px; margin: 0 0 14px; }
+  .capital-meet .capital-of-flag { width: 240px; max-width: 70%; }
+  .capital-meet .capital-of-text { text-align: center; }
+}
+/* 세로가 짧은 폰(SE 등): 명패·🔊 를 한 단계 줄여 보기 국기 네 장과 힌트가 한 화면에 남게 한다 */
+@media (max-height: 740px) and (orientation: portrait) {
+  .capital-plate { padding: 8px 14px 10px; }
+  .capital-word { font-size: 2.6rem; }
+  .capital-word.len-m { font-size: 2.1rem; }
+  .capital-word.len-l { font-size: 1.7rem; }
+  .capital-question .btn-listen { min-height: 64px; }
+  /* 문제 무대는 지시문이 이미 '수도'를 말하니 꼬리표를 접어 높이를 전과 같게 맞춘다 */
+  .capital-question .capital-tag { display: none; }
+  .capital-of-flag { width: 132px; }
+}
 
 /* ---- 오늘 만난 수도 다시 듣기 (D26): 결과 화면 ---- */
 .capital-recap .recap-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; margin-top: 10px; }
@@ -1807,7 +1890,8 @@ button.cont-item:focus-visible { outline: 3px solid var(--accent); outline-offse
   padding: 8px; border: 1px solid var(--line); border-radius: 14px; background: var(--card-2);
 }
 .recap-item img { grid-row: 1 / 3; width: 56px; height: 42px; object-fit: cover; border-radius: 8px; border: 1px solid var(--line); }
-.recap-item .n { grid-column: 2; font-weight: 800; font-size: .95rem; word-break: keep-all; }
-.recap-item .c { grid-column: 2; font-size: .88rem; color: var(--text-soft); }
+/* 칸의 큰 글자는 수도 이름이고 나라는 그 아래 '○○의 수도' 로 받친다(D29) */
+.recap-item .c { grid-column: 2; font-weight: 900; font-size: 1.2rem; letter-spacing: -.02em; line-height: 1.2; word-break: keep-all; overflow-wrap: anywhere; }
+.recap-item .n { grid-column: 2; font-weight: 700; font-size: .82rem; color: var(--text-soft); word-break: keep-all; }
 .recap-item .recap-listen { grid-column: 3; grid-row: 1 / 3; min-width: 44px; min-height: 44px; }
 .recap-item.again { border-style: dashed; }

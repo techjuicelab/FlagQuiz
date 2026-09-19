@@ -890,7 +890,7 @@ test('힌트는 정답을 노출하지 않고, 수도 힌트는 첫 글자 대�
   h.c.FQ.test.submit({code:'kr'});
   const gm=h.c.FQ.test.state.game;
   assert.equal(gm.correct,1,'아이에게는 정답');assert.equal(gm.score,10);
-  assert.match(h.node('#feedback-area').innerHTML,/🏙️ 서울 · 대한민국의 수도예요/);
+  assert.match(h.node('#feedback-area').innerHTML,/<span class="capital-word">서울<\/span>[\s\S]*<b>대한민국<\/b>의 수도예요/);
   assert.deepEqual([gm.wrong.length,h.c.FQ.storage.allAxisStats('capital').kr.wrong,h.c.FQ.storage.allAxisStats('capital').kr.correct],[1,1,0],'기록은 틀림');
   assert.equal(h.c.FQ.test.state.met.at(-1).correct,false,'여행 카드는 한 번 더 만나요');
   const i=fixture();i.c.FQ.storage.updateSettings({mode:'choice4'});i.c.FQ.app.startGame(['kr']);i.node('#hint').click();
@@ -998,9 +998,10 @@ test('정답 카드는 국기 전폭·큰 이름·노란 상자·🔊 56px·다�
   assert.match(f.node('.travel-slots').innerHTML,new RegExp('^<span class="travel-slot filled"><img src="flags/'+c.code+'\\.svg" alt=""></span><span class="travel-slot"></span>'));
   assert.equal(f.node('#combo-title').textContent,'여행 카드 1 / 5장');
   assert.equal(JSON.stringify(a.state.met.map(m=>[m.country.code,m.correct])),JSON.stringify([[c.code,true]]));
-  // 수도·지도·국기 모드의 상자 문구 — 수도는 국기 + 나라 이름, 상자에 '🏙️ 수도 · 나라의 수도예요'(2026-09-17 뒤집기).
+  // 수도·지도·국기 모드의 카드 — 수도는 수도 명패(가장 큰 글자) 아래 '[국기] 나라의 수도예요' 한 줄이고 큰 나라 이름·노란 상자는 없다(D29).
   const g=fixture();g.c.FQ.storage.updateSettings({mode:'capital'});g.c.FQ.app.startGame(['kr']);meetNext(g);g.c.FQ.test.submit({code:'jp'});
-  assert.match(g.node('#feedback-area').innerHTML,/<img class="fb-flag" src="flags\/kr\.svg" alt="대한민국 국기"><div class="kname">대한민국<\/div>[\s\S]*<div class="remember-hint"><span class="remember-body">🏙️ 서울 · 대한민국의 수도예요<\/span><\/div>/);
+  assert.match(g.node('#feedback-area').innerHTML,/^<div class="feedback learn discovery-card capital-card"><div class="fb-head">[\s\S]*?<\/div><div class="capital-plate has-art"><figure class="capital-place">[\s\S]*?<\/figure><div class="capital-plate-text"><span class="capital-tag">🏙️ 수도<\/span><span class="capital-word">서울<\/span><\/div><\/div><div class="capital-of"><img class="capital-of-flag" src="flags\/kr\.svg" alt="대한민국 국기"><span class="capital-of-text"><b>대한민국<\/b>의 수도예요<\/span><\/div><button/);
+  assert.doesNotMatch(g.node('#feedback-area').innerHTML,/kname|remember-box|name-row/);
   assert.deepEqual([...g.c.FQ.test.state.lastSpeech.lines],['서울','대한민국의 수도예요']);
   const h=fixture();h.c.FQ.storage.updateSettings({mode:'map'});h.c.FQ.app.startGame(['kr']);h.c.FQ.test.submit({code:'kr'});
   assert.match(h.node('#feedback-area').innerHTML,new RegExp('<b class="remember-title">🗺️ 아시아 · 동아시아</b><span class="remember-body">'+rx(kr.fact)+'</span>'));
@@ -1192,16 +1193,18 @@ test('자동 넘어가기는 설명 다시 듣기를 누르면 미뤄졌다가 �
 });
 
 /* ---- 2026-09-18 수도 놀이 후속 묶음 (D26~D28): 명소 그림 · 오늘 만난 수도 다시 듣기 · 국기 보고 수도 말하기 ---- */
-test('수도 안에 명소가 있는 나라는 만나기 카드와 정답 카드에 그림이 붙고, 아닌 나라와 그림을 끈 경우에는 없다',()=>{
+test('수도 안에 명소가 있는 나라는 만나기 카드와 정답 카드의 수도 명패에 그림이 붙고, 아닌 나라와 그림을 끈 경우에는 없다',()=>{
   const f=fixture();f.c.FQ.storage.updateSettings({mode:'capital',dev:{art:true}});f.c.FQ.app.startGame(['kr']);
-  assert.match(f.node('main').innerHTML,/<div class="meet-art"><img class="flag-img" src="flags\/kr\.svg" alt="대한민국 국기"><figure class="capital-place"><img src="images\/places\/kr\.webp" alt="광화문"><figcaption>광화문<\/figcaption><\/figure><\/div>/);
+  // 그림은 수도 명패 안, 수도 이름 옆에 선다(D29) — 광화문은 대한민국이 아니라 서울의 그림이다.
+  const plate='<div class="capital-plate has-art"><figure class="capital-place"><img src="images/places/kr.webp" alt="광화문"><figcaption>광화문</figcaption></figure><div class="capital-plate-text"><span class="capital-tag">🏙️ 수도</span><span class="capital-word">서울</span></div></div>';
+  assert.ok(f.node('main').innerHTML.includes('<div class="meet-art">'+plate+'</div>'));
   meetNext(f);assert.doesNotMatch(f.node('main').innerHTML,/capital-place/,'문제 화면에는 그림이 없다');
   f.c.FQ.test.submit({code:'kr'});
-  assert.match(f.node('#feedback-area').innerHTML,/<div class="remember-box"><img class="remember-art" src="images\/places\/kr\.webp" alt=""><div class="remember-hint"><span class="remember-body">🏙️ 서울 · 대한민국의 수도예요<\/span><\/div><\/div>/);
+  assert.ok(f.node('#feedback-area').innerHTML.includes(plate+'<div class="capital-of">'),'정답 카드도 같은 명패');
   assert.deepEqual([...f.c.FQ.test.state.lastSpeech.lines],['서울','대한민국의 수도예요'],'그림 이름은 읽지 않는다');
   const g=fixture();g.c.FQ.storage.updateSettings({mode:'capital',dev:{art:true}});g.c.FQ.app.startGame(['mx']);
   assert.doesNotMatch(g.node('main').innerHTML,/capital-place/,'치첸이트사는 수도 밖이라 붙이지 않는다');
-  meetNext(g);g.c.FQ.test.submit({code:'mx'});assert.doesNotMatch(g.node('#feedback-area').innerHTML,/remember-art/);
+  meetNext(g);g.c.FQ.test.submit({code:'mx'});assert.doesNotMatch(g.node('#feedback-area').innerHTML,/capital-place|has-art/);
   const h=fixture();h.c.FQ.storage.updateSettings({mode:'capital',dev:{art:false}});h.c.FQ.app.startGame(['kr']);
   assert.doesNotMatch(h.node('main').innerHTML,/capital-place/,'그림을 끄면 없다');
 });
@@ -1213,7 +1216,9 @@ test('수도 놀이의 결과에는 오늘 만난 수도 다시 듣기가 있어
   const res=f.node('main').innerHTML;
   assert.match(res,/result-screen/);assert.match(res,/🏙️ 오늘 만난 수도 다시 듣기/);
   assert.match(res,/<button class="btn btn-sm btn-listen-soft" id="capital-recap-all" type="button" data-speak-lines="서울\|대한민국의 수도예요\|도쿄\|일본의 수도예요" data-label="🔊 이어 듣기">🔊 이어 듣기<\/button>/);
-  assert.match(res,/<div class="recap-item"><img src="flags\/kr\.svg" alt="대한민국 국기"><span class="n">대한민국<\/span><span class="c">🏙️ 서울<\/span><button class="btn btn-sm btn-ghost recap-listen" type="button" data-speak="서울" data-speak-extra="대한민국의 수도예요" data-label="🔊" aria-label="대한민국의 수도 서울 듣기">🔊<\/button><\/div>/);
+  // 칸의 큰 글자는 수도 이름, 나라는 그 아래 '○○의 수도'(D29).
+  assert.match(css,/\.recap-item \.c \{[^}]*font-weight: 900; font-size: 1\.2rem/);
+  assert.match(res,/<div class="recap-item"><img src="flags\/kr\.svg" alt="대한민국 국기"><span class="c">서울<\/span><span class="n">대한민국의 수도<\/span><button class="btn btn-sm btn-ghost recap-listen" type="button" data-speak="서울" data-speak-extra="대한민국의 수도예요" data-label="🔊" aria-label="대한민국의 수도 서울 듣기">🔊<\/button><\/div>/);
   // 이어 듣기: 응원을 멈추고 네 문구를 차례로 읽는다(가짜 DOM 은 속성을 안 읽으니 직접 넣는다).
   const all=f.node('#capital-recap-all');all.setAttribute('data-speak-lines','서울|대한민국의 수도예요|도쿄|일본의 수도예요');all.setAttribute('data-label','🔊 이어 듣기');
   f.clickDelegated('[data-speak]',all);f.releases.at(-1)();
@@ -1231,7 +1236,9 @@ test('국기 보고 수도 말하기: 만나기 카드 뒤 국기·이름·🔊 
   assert.match(f.node('main').innerHTML,/meet-card capital-meet/);assert.ok(!f.c.listening,'만나기 카드 동안은 듣지 않는다');
   meetNext(f);
   const html=f.node('main').innerHTML;
-  assert.match(html,/<div class="flag-stage capital-say"><div class="q-label">🏙️ 이 나라의 수도를 말해 보세요<\/div><div class="map-who"><img class="map-question-flag" src="flags\/kr\.svg" alt="대한민국 국기"><div class="big-name">대한민국<\/div><\/div><button class="btn btn-listen" id="say-listen" data-speak="대한민국" type="button">🔊 들어보기<\/button><\/div>/);
+  // 무대: 국기·나라 이름 아래 물음표 명패(수도가 답이라 이름 자리는 '?', D29) → 🔊(나라 이름).
+  assert.match(html,/<div class="flag-stage capital-say"><div class="q-label">🏙️ 이 나라의 수도를 말해 보세요<\/div><div class="map-who"><img class="map-question-flag" src="flags\/kr\.svg" alt="대한민국 국기"><div class="big-name">대한민국<\/div><\/div><div class="capital-plate is-hidden" id="say-plate"><div class="capital-plate-text"><span class="capital-tag">🏙️ 수도<\/span><span class="capital-word" id="say-plate-word">\?<\/span><\/div><\/div><button class="btn btn-listen" id="say-listen" data-speak="대한민국" type="button">🔊 들어보기<\/button><\/div>/);
+  assert.doesNotMatch(html.slice(0,html.indexOf('id="answer-area"')),/서울/,'문제 무대에는 수도 이름이 없다');
   assert.match(html,/id="mic"/);assert.match(html,/placeholder="수도 이름을 써 보세요"/);assert.doesNotMatch(html,/timer-chip/);
   assert.equal(f.c.listening,true,'문제 풀어 볼게요 흐름에서 마이크를 연다');
   f.c.callbacks.start();assert.match(f.node('#listen-state').textContent,/수도 이름을 끝까지/);
@@ -1239,7 +1246,7 @@ test('국기 보고 수도 말하기: 만나기 카드 뒤 국기·이름·🔊 
   f.c.callbacks.interim('대한민국');assert.equal(a.state.answered,false);
   f.c.callbacks.interim('서울');assert.equal(a.state.answered,true);assert.equal(a.state.game.correct,1);
   assert.deepEqual([...a.state.lastSpeech.lines],['서울','대한민국의 수도예요']);
-  assert.match(f.node('#feedback-area').innerHTML,/🏙️ 서울 · 대한민국의 수도예요/);
+  assert.match(f.node('#feedback-area').innerHTML,/<span class="capital-word">서울<\/span>[\s\S]*<b>대한민국<\/b>의 수도예요/);
   assert.equal(f.c.FQ.storage.allAxisStats('capital').kr.correct,1);assert.deepEqual(Object.keys(f.c.FQ.storage.allCountryStats()),[]);
   // 다른 나라의 수도를 말하면 오답이다.
   const g=fixture();g.c.FQ.storage.updateSettings({mode:'capitalVoice'});g.c.FQ.app.startGame(['kr']);meetNext(g);g.c.callbacks.start();
@@ -1249,6 +1256,8 @@ test('국기 보고 수도 말하기: 만나기 카드 뒤 국기·이름·🔊 
   const h=fixture();h.c.FQ.storage.updateSettings({mode:'capitalVoice'});h.c.FQ.app.startGame(['kr']);meetNext(h);h.c.callbacks.start();
   const btn=h.node('#say-listen');h.node('#hint').click();
   assert.equal(h.c.FQ.test.state.revealed,true);assert.match(h.node('#hint-area').innerHTML,/🏙️ 서울 · 대한민국의 수도예요/);
+  // 물음표 명패에 수도 이름이 큰 글자로 뜬다(D29).
+  assert.equal(h.node('#say-plate-word').textContent,'서울');assert.equal(h.node('#say-plate-word').className,'capital-word');
   assert.equal(btn.getAttribute('data-speak'),'서울');assert.equal(btn.getAttribute('data-speak-extra'),'대한민국의 수도예요');
   assert.equal(h.node('#hint').disabled,true);
   assert.equal(h.c.listening,false,'읽는 동안 마이크를 놓는다');
@@ -1263,16 +1272,35 @@ test('국기 보고 수도 말하기: 만나기 카드 뒤 국기·이름·🔊 
   assert.match(i.node('main').innerHTML,/class="switch hidden" id="duel-switch"/,'수도 축이라 대결은 없다');
 });
 
+/* ---- 2026-09-19 수도 명패 (D29): 수도 놀이의 주인공은 수도 이름 ---- */
+test('수도 명패는 긴 수도 이름의 글자를 한 단계씩 줄여 폰 한 줄에 넣는다 — 6~7 글자 len-m, 8 글자부터 len-l',()=>{
+  const word=(code)=>{
+    const f=fixture();f.c.FQ.storage.recordAnswer(code,true,'capital');f.c.FQ.storage.updateSettings({mode:'capital'});f.c.FQ.app.startGame([code]);
+    return f.node('main').innerHTML.match(/<span class="(capital-word[^"]*)">([^<]+)<\/span>/).slice(1).join('|');
+  };
+  assert.equal(word('kr'),'capital-word|서울');
+  assert.equal(word('hu'),'capital-word|부다페스트','다섯 글자까지는 가장 큰 글자');
+  assert.equal(word('my'),'capital-word len-m|쿠알라룸푸르');
+  assert.equal(word('us'),'capital-word len-m|워싱턴 D.C.','빈칸은 세지 않는다');
+  assert.equal(word('ar'),'capital-word len-l|부에노스아이레스');
+  assert.equal(word('lk'),'capital-word len-l|스리자야와르데네푸라코테');
+  assert.match(css,/\.capital-word\.len-m \{ font-size: 2\.45rem; \}/);assert.match(css,/\.capital-word\.len-l \{ font-size: 1\.95rem; \}/);
+  // 다크 화면과 움직임 줄이기: 명패는 기존 노란 상자와 같은 어두운 바탕을 쓰고, 글자 튀어나오기는 전역 규칙이 끈다.
+  assert.match(css,/@media \(prefers-color-scheme: dark\) \{\s*\.capital-plate \{ background: #3a2f14;/);
+});
+
 console.log('앱 흐름 회귀 검사 '+passed+'건 통과');
 
 /* ---- 2026-09-17 수도 놀이 뒤집기 (시안 PhoneCapital · D17 채택 B: capital 축 분리 + 🏙️ 도장) ---- */
 
-test('수도 놀이는 처음 만나는 나라에 만나기 카드(국기·나라·수도, 기록 없음)를 먼저 내고 카드가 떠 있는 동안은 채점하지 않는다',()=>{
+test('수도 놀이는 처음 만나는 나라에 만나기 카드(수도 명패·국기·나라의 수도예요, 기록 없음)를 먼저 내고 카드가 떠 있는 동안은 채점하지 않는다',()=>{
   const f=fixture();f.c.FQ.storage.updateSettings({mode:'capital',timer:10});f.c.FQ.app.startGame(['mx']);
   const a=f.c.FQ.test,html=f.node('main').innerHTML;
-  assert.match(html,/<div class="flag-stage meet-card capital-meet"><div class="q-label">처음 만나는 나라예요 · 먼저 들어 볼까요\?<\/div>/);
-  assert.match(html,/<div class="meet-art"><img class="flag-img" src="flags\/mx\.svg" alt="멕시코 국기"><\/div>/);
-  assert.match(html,/<div class="big-name">멕시코<\/div><div class="meet-caption">🏙️ 멕시코시티<\/div>/);
+  assert.match(html,/<div class="flag-stage meet-card capital-meet"><div class="q-label">처음 만나는 수도예요 · 먼저 들어 볼까요\?<\/div>/);
+  // 주인공은 수도 이름이다(D29): 명패의 큰 글자가 먼저, 나라는 그 아래 '[국기] 멕시코의 수도예요' — 읽는 두 문구와 같은 순서.
+  assert.match(html,/<div class="meet-art"><div class="capital-plate"><div class="capital-plate-text"><span class="capital-tag">🏙️ 수도<\/span><span class="capital-word">멕시코시티<\/span><\/div><\/div><\/div>/);
+  assert.match(html,/<div class="meet-body"><div class="capital-of"><img class="capital-of-flag" src="flags\/mx\.svg" alt="멕시코 국기"><span class="capital-of-text"><b>멕시코<\/b>의 수도예요<\/span><\/div><button class="btn btn-listen btn-listen-soft" id="meet-speak"/);
+  assert.doesNotMatch(html,/big-name|meet-caption/,'큰 나라 이름과 작은 수도 알약은 없다');
   assert.match(html,/<button class="btn btn-listen btn-listen-soft" id="meet-speak" data-speak="멕시코시티" data-speak-extra="멕시코의 수도예요" data-label="🔊 다시 듣기" type="button">🔊 다시 듣기<\/button>/);
   assert.match(html,/<button class="btn btn-big btn-go btn-yellow" id="meet-next" type="button">문제 풀어 볼게요 →<\/button>/);
   assert.match(html,/<div id="answer-area" hidden>/);assert.doesNotMatch(html,/question-art|meet-quiz"[^>]*capital-question/);
@@ -1296,9 +1324,12 @@ test('수도 놀이는 처음 만나는 나라에 만나기 카드(국기·나�
 test('수도 문제는 큰 🔊 가 수도 이름을 자동으로 한 번 읽고, 보기는 국기 4장(나라 이름 작게)이며 답은 나라 code 로 채점한다',()=>{
   const f=fixture();f.c.FQ.storage.updateSettings({mode:'capital'});f.c.FQ.app.startGame(['mx']);meetNext(f);
   const a=f.c.FQ.test,q=a.state.game.current(),html=f.node('main').innerHTML,mx=f.c.FQ.quiz.byCode('mx');
-  // 무대(시안 PhoneCapital): 작은 지시문 → 88px 노란 🔊 '눌러서 들어보기'(CSS 규칙) → 보조 글자 수도 이름. 국기·나라 이름은 무대에 없다(답이 된다).
+  // 무대(시안 PhoneCapital + D29): 작은 지시문 → 수도 명패(수도 이름이 가장 큰 글자, 흐리지 않다) → 88px 노란 🔊 '눌러서 들어보기'(CSS 규칙). 국기·나라 이름은 무대에 없다(답이 된다).
   assert.match(css,/\.capital-question \.btn-listen \{ min-height: 88px; font-size: 1\.5rem; \}/);
-  assert.match(html,/<div class="flag-stage capital-question"><div class="q-label">🏙️ 어느 나라의 수도일까요\?<\/div><button class="btn btn-listen capital-listen" id="capital-listen" data-speak="멕시코시티" data-label="🔊 눌러서 들어보기" type="button">🔊 눌러서 들어보기<\/button><div class="big-name capital-name muted">멕시코시티<\/div><\/div>/);
+  assert.match(css,/\.capital-word \{\s*font-size: 3\.3rem; font-weight: 900/);
+  assert.match(css,/@media \(min-width: 744px\) \{[^@]*\.capital-word \{ font-size: 4\.6rem; \}/);
+  assert.match(html,/<div class="flag-stage capital-question"><div class="q-label">🏙️ 어느 나라의 수도일까요\?<\/div><div class="capital-plate"><div class="capital-plate-text"><span class="capital-tag">🏙️ 수도<\/span><span class="capital-word">멕시코시티<\/span><\/div><\/div><button class="btn btn-listen capital-listen" id="capital-listen" data-speak="멕시코시티" data-label="🔊 눌러서 들어보기" type="button">🔊 눌러서 들어보기<\/button><\/div>/);
+  assert.doesNotMatch(html,/capital-name|muted">멕시코시티/);
   const stage=html.match(/<div class="flag-stage capital-question">[\s\S]*?<div id="feedback-area">/)[0];
   assert.doesNotMatch(stage,/flags\/mx|>멕시코</);
   // 보기: 그림 놀이와 같은 국기 격자 부품, 4장, 나라 중복 없음, 정답 포함, 수도 이름은 보기에 없다.
@@ -1316,14 +1347,13 @@ test('수도 문제는 큰 🔊 가 수도 이름을 자동으로 한 번 읽고
   // 단추를 누르면 다시 읽고 라벨이 돌아온다.
   const btn=f.node('#capital-listen');btn.setAttribute('data-speak','멕시코시티');btn.setAttribute('data-label','🔊 눌러서 들어보기');
   f.clickDelegated('[data-speak]',btn);assert.equal(btn.textContent,'🔊 눌러서 들어보기');f.releases.at(-1)();assert.deepEqual(f.spoken.at(-1),['멕시코시티']);
-  // 채점은 나라 code. 정답 카드는 국기 + 나라 이름 + '🏙️ 수도 · 나라의 수도예요', 읽는 문구는 기존 [수도, 나라의 수도예요].
+  // 채점은 나라 code. 정답 카드는 수도 명패(큰 글자) + '[국기] 나라의 수도예요'(D29), 읽는 문구는 기존 [수도, 나라의 수도예요].
   const dailyBefore=JSON.stringify(f.c.FQ.storage.daily());
   const clicked=f.node('choice');clicked.setAttribute('data-code','mx');f.clickDelegated('.answer-btn',clicked);
   assert.equal(a.state.answered,true);assert.equal(a.state.game.correct,1);
   const fb=f.node('#feedback-area').innerHTML;
-  assert.match(fb,/<div class="name-row"><img class="fb-flag" src="flags\/mx\.svg" alt="멕시코 국기"><div class="kname">멕시코<\/div><\/div>/);
-  assert.match(fb,/<div class="remember-box"><div class="remember-hint"><span class="remember-body">🏙️ 멕시코시티 · 멕시코의 수도예요<\/span><\/div><\/div>/);
-  assert.doesNotMatch(fb,/remember-title|remember-art/);
+  assert.match(fb,/<div class="capital-plate"><div class="capital-plate-text"><span class="capital-tag">🏙️ 수도<\/span><span class="capital-word">멕시코시티<\/span><\/div><\/div><div class="capital-of"><img class="capital-of-flag" src="flags\/mx\.svg" alt="멕시코 국기"><span class="capital-of-text"><b>멕시코<\/b>의 수도예요<\/span><\/div>/);
+  assert.doesNotMatch(fb,/remember-title|remember-art|remember-box|kname/);
   assert.deepEqual([...a.state.lastSpeech.lines],['멕시코시티','멕시코의 수도예요']);
   f.releases.at(-1)();f.runDelay(120);f.finishMusic();assert.deepEqual(f.spoken.at(-1),['멕시코시티','멕시코의 수도예요']);
   // 기록은 axes.capital 에만: 194칸 국기 스티커·오늘의 도전·국기 기록은 그대로다.
@@ -1339,7 +1369,7 @@ test('수도 문제는 큰 🔊 가 수도 이름을 자동으로 한 번 읽고
   const wrong=g.c.FQ.test.state.game.current().options.find(c=>c.code!=='mx').code;
   g.c.FQ.test.submit({code:wrong});
   assert.equal(g.c.FQ.storage.allAxisStats('capital').mx.wrong,1);assert.deepEqual([...g.c.FQ.storage.wrongList()],[]);
-  assert.match(g.node('#feedback-area').innerHTML,/<div class="kname">멕시코<\/div>/);
+  assert.match(g.node('#feedback-area').innerHTML,/<span class="capital-word">멕시코시티<\/span>[\s\S]*<b>멕시코<\/b>의 수도예요/,'오답 카드도 같은 수도 명패');
 });
 
 test('수도 놀이는 새 축 규칙을 받는다 — 시간 초과는 지나감, 한 판 안 다시 만나기, 대결 숨김, 홈 안내, 결과의 수도 줄',()=>{

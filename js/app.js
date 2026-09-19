@@ -774,6 +774,35 @@
     return artFor(country.code, 'place');
   }
 
+  /** 긴 수도 이름은 폰 한 줄에 들어오게 명패 글자를 한 단계씩 줄인다(6~7 글자 len-m, 8 글자부터 len-l). 다섯 글자까지가 194개 중 178개다. */
+  function capitalWordSize(name) {
+    var n = String(name || '').replace(/\s/g, '').length;
+    return n >= 8 ? ' len-l' : n >= 6 ? ' len-m' : '';
+  }
+
+  /**
+   * 수도 명패(D29): 수도 놀이의 주인공은 수도 이름이다. '🏙️ 수도' 꼬리표 아래 수도 이름을 화면에서 가장 큰 글자로 둔다.
+   * 수도 안 명소 그림(D26)이 있으면 명패 안에 같이 둔다. opts.hidden 이면 이름 자리에 물음표를 둔다(수도 말하기 문제 — 수도가 답이다).
+   */
+  function capitalPlate(country, place, opts) {
+    opts = opts || {};
+    var size = opts.hidden ? '' : capitalWordSize(country.capital);
+    return '<div class="capital-plate' + (place ? ' has-art' : '') + (opts.hidden ? ' is-hidden' : '') + '"' + (opts.id ? ' id="' + opts.id + '"' : '') + '>' +
+      (place ? '<figure class="capital-place"><img src="' + esc(place.src) + '" alt="' + esc(place.alt) + '"><figcaption>' + esc(place.alt) + '</figcaption></figure>' : '') +
+      '<div class="capital-plate-text"><span class="capital-tag">🏙️ 수도</span>' +
+        '<span class="capital-word' + size + '"' + (opts.id ? ' id="' + opts.id + '-word"' : '') + '>' + (opts.hidden ? '?' : esc(country.capital)) + '</span>' +
+      '</div>' +
+    '</div>';
+  }
+
+  /** 명패 아래 한 줄(D29): 국기와 '○○의 수도예요'. 읽어 주는 두 번째 문구와 같은 글이라 소리와 글자가 같은 순서로 놓인다. */
+  function capitalOf(country) {
+    return '<div class="capital-of">' +
+      '<img class="capital-of-flag" src="' + ui.flagSrc(country.code) + '" alt="' + esc(country.ko) + ' 국기">' +
+      '<span class="capital-of-text"><b>' + esc(country.ko) + '</b>의 수도예요</span>' +
+    '</div>';
+  }
+
   /** 🔊 단추 하나로 이름을 읽는다. data-speak 문구 뒤에 data-speak-extra 문구가 있으면 이어서 읽고, data-speak-lines('|'로 나눔)면 그 전부를 읽는다. */
   function speakFromButton(t, after) {
     var lines;
@@ -893,20 +922,18 @@
         '</div>';
     } else if (capitalAxis(q.mode)) {
       // 수도 놀이를 뒤집었다(2026-09-17 시안 PhoneCapital, D17 채택 B): 글자를 못 읽는 아이가 수도 이름을 '듣고' 국기 4장에서 나라를 찾는다.
-      // 큰 🔊 (폰 88px 노란 단추)가 수도 이름 음원(voice-manifest 의 c.capital)을 읽고, 아래에 보조 글자로 수도 이름, 위에 작은 지시문.
+      // 수도 놀이의 주인공은 수도 이름이다(D29): 만나기 카드·문제·정답 카드 모두 수도 명패(capitalPlate)가 가장 큰 글자이고,
+      // 나라는 그 아래 '[국기] ○○의 수도예요' 한 줄(capitalOf)로 받친다 — 읽어 주는 [수도, '나라의 수도예요'] 와 같은 순서다.
       // 문제가 뜨면 수도 이름을 한 번 자동으로 읽는다(만나기 카드와 같은 speakLines — 실패하면 '다시 눌러서 듣기'로 바뀐다).
-      // 처음 만나는 나라는 국기·나라 이름·수도 이름을 먼저 보여 주고 [수도, '나라의 수도예요'] 를 읽는다 — 둘 다 기존 음원이다.
-      // 수도 안에 있는 명소 그림(D26)이 있으면 만나기 카드의 국기 옆에 둔다 — 소리에 그림 갈고리를 붙인다.
-      // 국기 보고 수도 말하기(D28)는 같은 만나기 카드를 쓰고, 문제 화면은 국기·나라 이름·🔊(나라 이름)이며 답은 마이크로 받는다.
+      // 처음 만나는 나라는 수도 명패·국기·'나라의 수도예요' 를 먼저 보여 주고 [수도, '나라의 수도예요'] 를 읽는다 — 둘 다 기존 음원이다.
+      // 수도 안에 있는 명소 그림(D26)이 있으면 만나기 카드의 명패 안에 둔다 — 소리에 그림 갈고리를 붙인다. 문제 화면의 명패에는 그림이 없다.
+      // 국기 보고 수도 말하기(D28)는 같은 만나기 카드를 쓰고, 문제 화면은 국기·나라 이름·물음표 명패·🔊(나라 이름)이며 답은 마이크로 받는다.
       var place = capitalPlace(q.country);
       stage = meet
-        ? '<div class="flag-stage meet-card capital-meet"><div class="q-label">처음 만나는 나라예요 · 먼저 들어 볼까요?</div>' +
-          '<div class="meet-art"><img class="flag-img" src="' + ui.flagSrc(q.country.code) + '" alt="' + esc(q.country.ko) + ' 국기">' +
-            (place ? '<figure class="capital-place"><img src="' + esc(place.src) + '" alt="' + esc(place.alt) + '"><figcaption>' + esc(place.alt) + '</figcaption></figure>' : '') +
-          '</div>' +
+        ? '<div class="flag-stage meet-card capital-meet"><div class="q-label">처음 만나는 수도예요 · 먼저 들어 볼까요?</div>' +
+          '<div class="meet-art">' + capitalPlate(q.country, place) + '</div>' +
           '<div class="meet-body">' +
-          '<div class="big-name">' + esc(q.country.ko) + '</div>' +
-          '<div class="meet-caption">🏙️ ' + esc(q.country.capital) + '</div>' +
+          capitalOf(q.country) +
           '<button class="btn btn-listen btn-listen-soft" id="meet-speak" data-speak="' + esc(q.country.capital) + '" data-speak-extra="' + esc(q.country.ko + '의 수도예요') + '" data-label="🔊 다시 듣기" type="button">🔊 다시 듣기</button>' +
           '<button class="btn btn-big btn-go btn-yellow" id="meet-next" type="button">문제 풀어 볼게요 →</button>' +
           '</div></div>'
@@ -917,13 +944,15 @@
               '<img class="map-question-flag" src="' + ui.flagSrc(q.country.code) + '" alt="' + esc(q.country.ko) + ' 국기">' +
               '<div class="big-name">' + esc(q.country.ko) + '</div>' +
             '</div>' +
+            // 답이 수도라 이름 자리는 물음표다. 힌트로 수도를 들려줄 때 이 자리에 이름이 뜬다(showHint).
+            capitalPlate(q.country, null, { hidden: true, id: 'say-plate' }) +
             listenButton(q.country.ko, null, 'say-listen') +
           '</div>'
           : '<div class="flag-stage capital-question">' +
             '<div class="q-label">🏙️ 어느 나라의 수도일까요?</div>' +
-            // 88px 는 이 단추만의 크기라 인라인으로 둔다(.btn-listen 은 폰 56px·아이패드 64px). 라벨은 speakLines 가 textContent 로 바꾸므로 글자 그대로.
+            capitalPlate(q.country, null) +
+            // 88px 는 이 단추만의 크기다(css .capital-question .btn-listen — .btn-listen 은 폰 56px·아이패드 64px). 라벨은 speakLines 가 textContent 로 바꾸므로 글자 그대로.
             '<button class="btn btn-listen capital-listen" id="capital-listen" data-speak="' + esc(q.country.capital) + '" data-label="🔊 눌러서 들어보기" type="button">🔊 눌러서 들어보기</button>' +
-            '<div class="big-name capital-name muted">' + esc(q.country.capital) + '</div>' +
           '</div>';
     } else {
       stage =
@@ -1377,6 +1406,14 @@
       // 기록에는 '아직'으로 남긴다(D24 힌트 2단계와 같은 규칙). 듣고 나면 마이크를 다시 연다.
       state.revealed = true;
       lines.push('🏙️ ' + esc(q.country.capital) + ' · ' + esc(q.country.ko) + '의 수도예요');
+      // 물음표 명패에 수도 이름을 띄운다(D29) — 들으면서 큰 글자도 같이 본다.
+      var sayPlate = ui.$('#say-plate');
+      var sayWord = ui.$('#say-plate-word');
+      if (sayPlate && sayWord) {
+        sayPlate.classList.remove('is-hidden');
+        sayWord.className = 'capital-word' + capitalWordSize(q.country.capital);
+        sayWord.textContent = q.country.capital;
+      }
       var sayBtn = ui.$('#say-listen');
       if (sayBtn) {
         sayBtn.setAttribute('data-speak', q.country.capital);
@@ -1610,32 +1647,35 @@
       });
     }
 
-    // 정답 카드(시안 PhoneAnswer): 정오답이 같은 카드다. 폰에서 국기 전폭, 이름 34px, 노란 상자(그림 이름·상식 / 국기 특징 / 수도 설명),
-    // 🔊 설명 다시 듣기 56px, '다음 나라 →' 64px. 수도 놀이는 kname 에 나라 이름, 상자에 '🏙️ 수도 · 나라의 수도예요'(읽는 문구는 [수도, 나라의 수도예요] 그대로).
-    // 수도 놀이의 정답 카드에는 수도 안 명소 그림(D26)을 같이 둔다 — 파리 옆에 에펠탑.
-    var feedbackArt = isArtQ ? artFor(c.code, q.mode) : isCapitalQ ? capitalPlace(c) : null;
+    // 정답 카드(시안 PhoneAnswer): 정오답이 같은 카드다. 폰에서 국기 전폭, 이름 34px, 노란 상자(그림 이름·상식 / 국기 특징),
+    // 🔊 설명 다시 듣기 56px, '다음 나라 →' 64px.
+    // 수도 놀이의 정답 카드는 수도가 주인공이다(D29): 수도 명패(가장 큰 글자, 수도 안 명소 그림(D26)이 있으면 함께 — 파리 옆에 에펠탑) 아래에
+    // '[국기] 나라의 수도예요' 한 줄. 읽는 문구 [수도, 나라의 수도예요] 와 같은 순서이고, 나라 이름·국기는 수도를 받치는 자리로 내려간다.
+    var feedbackArt = isArtQ ? artFor(c.code, q.mode) : null;
     var rememberTitle = isArtQ ? esc(artAlt(c.code, q.mode)) : isMapQ ? '🗺️ ' + esc(c.continent) + ' · ' + esc(c.region) : '';
-    var rememberBody = isCapitalQ ? '🏙️ ' + esc(c.capital) + ' · ' + esc(c.ko) + '의 수도예요' : isMapQ || isArtQ ? esc(c.fact) : '🚩 ' + esc(c.flagHint);
+    var rememberBody = isMapQ || isArtQ ? esc(c.fact) : '🚩 ' + esc(c.flagHint);
     var html =
-      '<div class="feedback learn discovery-card">' +
+      '<div class="feedback learn discovery-card' + (isCapitalQ ? ' capital-card' : '') + '">' +
         '<div class="fb-head"><div class="verdict">' + verdict + '</div>' + extra + '</div>' +
-        '<div class="name-row">' +
-          '<img class="fb-flag" src="' + ui.flagSrc(c.code) + '" alt="' + esc(c.ko) + ' 국기">' +
-          '<div class="kname">' + esc(c.ko) + '</div>' +
-        '</div>' +
-        '<div class="remember-box">' +
-          (feedbackArt ? '<img class="remember-art" src="' + esc(feedbackArt.src) + '" alt="">' : '') +
-          '<div class="remember-hint">' +
-            (rememberTitle ? '<b class="remember-title">' + rememberTitle + '</b>' : '') +
-            '<span class="remember-body">' + rememberBody + '</span>' +
-            // D1 후속: 명소 카드에 수도 한 줄을 병기한다. 읽기는 단추를 눌렀을 때만(기존 음원 두 문구).
-            (q.mode === 'place'
-              ? '<span class="remember-capital">🏙️ ' + esc(c.capital) + ' · ' + esc(c.ko) + '의 수도예요' +
-                  ' <button class="btn btn-sm btn-ghost cap-listen" type="button" data-speak="' + esc(c.capital) + '" data-speak-extra="' + esc(c.ko) + '의 수도예요" data-label="🔊" aria-label="수도 들어보기">🔊</button>' +
-                '</span>'
-              : '') +
-          '</div>' +
-        '</div>' +
+        (isCapitalQ
+          ? capitalPlate(c, capitalPlace(c)) + capitalOf(c)
+          : '<div class="name-row">' +
+              '<img class="fb-flag" src="' + ui.flagSrc(c.code) + '" alt="' + esc(c.ko) + ' 국기">' +
+              '<div class="kname">' + esc(c.ko) + '</div>' +
+            '</div>' +
+            '<div class="remember-box">' +
+              (feedbackArt ? '<img class="remember-art" src="' + esc(feedbackArt.src) + '" alt="">' : '') +
+              '<div class="remember-hint">' +
+                (rememberTitle ? '<b class="remember-title">' + rememberTitle + '</b>' : '') +
+                '<span class="remember-body">' + rememberBody + '</span>' +
+                // D1 후속: 명소 카드에 수도 한 줄을 병기한다. 읽기는 단추를 눌렀을 때만(기존 음원 두 문구).
+                (q.mode === 'place'
+                  ? '<span class="remember-capital">🏙️ ' + esc(c.capital) + ' · ' + esc(c.ko) + '의 수도예요' +
+                      ' <button class="btn btn-sm btn-ghost cap-listen" type="button" data-speak="' + esc(c.capital) + '" data-speak-extra="' + esc(c.ko) + '의 수도예요" data-label="🔊" aria-label="수도 들어보기">🔊</button>' +
+                    '</span>'
+                  : '') +
+              '</div>' +
+            '</div>') +
         (store.settings().speak
           ? '<button class="btn btn-listen btn-listen-soft" id="replay" type="button">🔊 설명 다시 듣기</button>'
           : '<button class="btn btn-listen btn-listen-soft" id="speak-on" type="button">🔇 읽어주기가 꺼져 있어요 · 켜고 듣기</button>') +
@@ -2094,7 +2134,8 @@
   }
 
   /**
-   * 수도 놀이의 결과에 '오늘 만난 수도 다시 듣기'(D26). 만난 나라마다 국기·이름·수도와 🔊, 위에는 전부 이어 듣는 단추.
+   * 수도 놀이의 결과에 '오늘 만난 수도 다시 듣기'(D26). 만난 나라마다 국기·수도·'○○의 수도'와 🔊, 위에는 전부 이어 듣는 단추.
+   * 칸의 큰 글자는 수도 이름이고 나라는 그 아래 '○○의 수도' 로 받친다(D29).
    * 아빠가 옆에서 같이 따라 하기 좋게 [수도, '○○의 수도예요'] 를 차례로 읽는다 — 새 문구 없음.
    */
   function capitalRecapBlock(summary) {
@@ -2109,8 +2150,8 @@
         var c2 = m2.country;
         return '<div class="recap-item' + (m2.correct ? '' : ' again') + '">' +
           '<img src="' + ui.flagSrc(c2.code) + '" alt="' + esc(c2.ko) + ' 국기">' +
-          '<span class="n">' + esc(c2.ko) + '</span>' +
-          '<span class="c">🏙️ ' + esc(c2.capital) + '</span>' +
+          '<span class="c">' + esc(c2.capital) + '</span>' +
+          '<span class="n">' + esc(c2.ko) + '의 수도</span>' +
           '<button class="btn btn-sm btn-ghost recap-listen" type="button" data-speak="' + esc(c2.capital) + '" data-speak-extra="' + esc(c2.ko) + '의 수도예요" data-label="🔊" aria-label="' + esc(c2.ko) + '의 수도 ' + esc(c2.capital) + ' 듣기">🔊</button>' +
         '</div>';
       }).join('') + '</div>' +
