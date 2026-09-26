@@ -75,7 +75,7 @@ test('가까운 유럽 나라만 있어도 세계 자료에서 겹치지 않는 
   assert.throws(() => FQ.map.chooseOptions(answer, [answer, answer, bad], 280), /네 개/);
 });
 
-test('육지 한 path와 한글 aria-label을 가진 HTML 버튼은 원자료 좌표를 그대로 렌더링한다', () => {
+test('육지와 대륙 안내 위의 번호 버튼은 정답 이름을 노출하지 않고 원자료 좌표를 그대로 렌더링한다', () => {
   const FQ = fixture(8);
   const options = FQ.map.chooseOptions(FQ.countries[0], FQ.countries, 280);
   const html = FQ.map.render(options);
@@ -90,12 +90,18 @@ test('육지 한 path와 한글 aria-label을 가진 HTML 버튼은 원자료 �
     const [lng, lat] = FQ.mapCoords[country.code];
     const button = html.match(new RegExp('<button[^>]+data-code="' + country.code + '"[^>]*>[\\s\\S]*?</button>'))?.[0];
     assert.ok(button);
-    assert.ok(button.includes('aria-label="' + country.ko + '"'));
+    assert.ok(button.includes('aria-label="위치 ' + (index + 1) + '"'));
+    assert.ok(!button.includes(country.ko), '접근성 이름으로 정답 나라를 알려 주지 않는다');
     const position = button.match(/style="left:([^%]+)%;top:([^%]+)%"/);
     assert.equal(Number(position[1]), (lng + 180) / 360 * 100);
     assert.equal(Number(position[2]), (90 - lat) / 180 * 100);
     assert.ok(button.endsWith('>' + (index + 1) + '</span></button>'));
+    assert.ok(button.includes('class="map-pin-point"'), '실제 위치 점은 번호 말풍선과 분리한다');
   }
+  for (const continent of ['아시아', '아프리카', '유럽', '북아메리카', '남아메리카', '오세아니아']) {
+    assert.match(html, new RegExp('class="map-continent-label"[^>]*>' + continent + '</span>'));
+  }
+  assert.match(html, /preserveAspectRatio="xMidYMid meet"/);
   assert.doesNotMatch(html, /is-correct|is-wrong|is-entering|<circle\b|<text\b|<image\b/);
   assert.throws(() => FQ.map.render([options[0], options[0], options[1], options[2]]), /네 개/);
 });
@@ -116,10 +122,8 @@ test('핀은 기본 상태부터 보이며 44px을 유지하고 별도 화면 �
   assert.match(css, /aspect-ratio:\s*2\s*\/\s*1/);
   assert.match(css, /padding:\s*22px/);
   assert.doesNotMatch(css, /@keyframes|animation\s*:|opacity:\s*0/);
-  // 실제 폭이 넓으면 문제와 지도판을 나란히 놓고 좁은 창은 한 칸으로 돌아간다.
-  const wide = css.slice(css.indexOf('@media (min-width: 900px)'));
-  assert.match(wide, /\.quiz-body\.map-quiz \{[^}]*display: grid;[^}]*grid-template-columns: minmax\(0, 5fr\) minmax\(0, 7fr\)/);
-  assert.match(css.slice(0, css.indexOf('@media')), /\.quiz-body\.map-quiz \{ display: block; \}/);
+  // 지도는 별도의 문제 카드 옆 작은 칸으로 줄이지 않는다.
+  assert.doesNotMatch(css, /grid-template-columns:\s*minmax\(0, 5fr\) minmax\(0, 7fr\)/);
   assert.match(read('index.html'), /href="css\/map.css"/);
   assert.match(read('index.html'), /src="js\/map.js"/);
   assert.match(read('sw.js'), /'\.\/css\/map.css'/);
@@ -138,20 +142,17 @@ test('지도·오프라인 승인 범위 검사에서 임의 스크립트와 기
   assert.match(failures(actual.filter((file) => file !== 'app.js')).join('\n'), /기존 파일/);
 });
 
-test('폰 세로에서는 지도판을 위아래로 늘리고 핀은 44px 기본을 지킨 채 넓은 화면에서만 52·56px 로 키운다', () => {
+test('폰과 태블릿 모두 지형 비율을 보존하고 44px 핀과 읽을 수 있는 HTML 라벨을 유지한다', () => {
   const css = read('css/map.css');
   // 첫 .map-board .map-pin 블록(기본 44px)은 그대로다 — chooseOptions 의 44px 분리 규칙과 같은 수다.
   const base = css.match(/\.map-board \.map-pin\s*\{([^}]+)\}/)[1];
   assert.match(base, /width:\s*44px/);
-  // 폰 세로: 342×250 비율(2:1 의 약 1.46배). 육지 svg 의 preserveAspectRatio="none" 은 app.js 가 렌더 뒤에 붙인다(map.js 는 그대로).
-  assert.match(css, /@media \(max-width: 599px\) \{\s*\.map-surface \{ aspect-ratio: 342 \/ 250; \}\s*\}/);
-  assert.doesNotMatch(read('js/map.js'), /preserveAspectRatio/);
-  assert.match(read('js/app.js'), /land\.setAttribute\('preserveAspectRatio', 'none'\)/);
-  // 핀 확대는 폭 조건 안에서만. 기본 상태(<360px)는 44px 그대로다.
-  assert.match(css, /@media \(min-width: 360px\) \{\s*\.map-board \.map-pin \{ width: 52px; min-width: 52px; max-width: 52px; height: 52px; min-height: 52px; max-height: 52px; \}/);
-  assert.match(css, /@media \(min-width: 744px\) \{\s*\.map-board \.map-pin \{ width: 56px; min-width: 56px; max-width: 56px; height: 56px; min-height: 56px; max-height: 56px; \}/);
+  assert.doesNotMatch(css, /aspect-ratio:\s*342\s*\/\s*250/);
+  assert.match(read('js/map.js'), /preserveAspectRatio="xMidYMid meet"/);
+  assert.doesNotMatch(read('js/app.js'), /setAttribute\('preserveAspectRatio', 'none'\)/);
+  assert.doesNotMatch(css, /\.map-board \.map-pin\s*\{[^}]*width:\s*(52|56)px/);
+  assert.match(css, /\.map-continent-label\s*\{/);
+  assert.match(css, /\.map-context-canvas--region\s*\{[^}]*aspect-ratio:\s*4\s*\/\s*3/);
   assert.doesNotMatch(css, /@keyframes|animation\s*:|opacity:\s*0/);
-  // 넓은 창의 두 칸 배치는 기기 방향에 의존하지 않는다.
-  assert.match(css, /@media \(min-width: 900px\) \{[^@]*grid-template-columns: minmax\(0, 5fr\) minmax\(0, 7fr\)/);
   assert.doesNotMatch(css, /orientation:/);
 });

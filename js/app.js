@@ -29,7 +29,7 @@
   var PLAY_TILES = [
     { id: 'flag', title: '국기 놀이', desc: '세계의 국기를 알아봐요' },
     { id: 'art', title: '그림 놀이', desc: '그림과 명소로 만나요' },
-    { id: 'map', emo: '🗺️', title: '지도 놀이', desc: '나라가 있는 자리를 찾아요' },
+    { id: 'map', emo: '🗺️', title: '지도 놀이', desc: '위치 공부 · 퀴즈 풀기' },
     { id: 'capital', emo: '🏙️', title: '수도 놀이', desc: '공부하기 · 문제 풀기' }
   ];
 
@@ -101,6 +101,8 @@
     game: null,
     study: null,
     studiedCapitals: {},
+    mapStudy: null,
+    studiedMap: {},
     answered: false,
     usedHint: false,
     hintLevel: 0,      // 수도 놀이 힌트 단계(D24): 1 오답 지우기 + 수도 다시 듣기, 2 나라 이름 듣기
@@ -163,7 +165,7 @@
     if (extras) extras.hidden = screen !== 'settings';
     ['home', 'dex', 'stats', 'settings'].forEach(function (name) {
       var link = doc.getElementById('nav-' + name);
-      if (link) link.setAttribute('aria-current', (name === screen || (name === 'home' && ['category', 'capital-menu', 'result'].indexOf(screen) >= 0)) ? 'page' : 'false');
+      if (link) link.setAttribute('aria-current', (name === screen || (name === 'home' && ['category', 'capital-menu', 'map-menu', 'result'].indexOf(screen) >= 0)) ? 'page' : 'false');
     });
     if (!FQ.music) return;
     var s = store.settings();
@@ -187,6 +189,7 @@
   function renderHome() {
     enterCapitalScreen('home');
     state.study = null;
+    state.mapStudy = null;
     var s = store.settings();
     if (s.mode !== quiz.availableMode(s.mode)) s = store.updateSettings({ mode: quiz.availableMode(s.mode) });
     var name = s.players[0] || '친구';
@@ -213,11 +216,12 @@
 
   function renderCategory(group) {
     if (group === 'capital') { renderCapitalMenu(); return; }
-    if (group === 'map') { startPlay(null, 'map'); return; }
+    if (group === 'map') { renderMapMenu(); return; }
     var tile = PLAY_TILES.filter(function (t) { return t.id === group; })[0];
     if (!tile || !tileModes(tile).length) return;
     enterCapitalScreen('category');
     state.study = null;
+    state.mapStudy = null;
     state.category = group;
     var s = store.updateSettings({ mode: tileMode(tile, store.settings()) });
     var descriptions = {
@@ -263,6 +267,7 @@
   function closeSettings() {
     if (state.settingsReturn === 'category') renderCategory(state.category);
     else if (state.settingsReturn === 'capital-menu') renderCapitalMenu();
+    else if (state.settingsReturn === 'map-menu') renderMapMenu();
     else if (state.settingsReturn === 'dex') FQ.screens.dex();
     else if (state.settingsReturn === 'stats') FQ.screens.stats();
     else renderHome();
@@ -272,6 +277,7 @@
     if (state.screen !== 'settings') state.settingsReturn = state.screen;
     enterCapitalScreen('settings');
     state.study = null;
+    state.mapStudy = null;
     var s = store.settings();
     var canDuel = duelAllowed(s.mode), duel = s.players.length > 1;
     var m = ui.setMain('<section class="screen settings-screen">' +
@@ -446,6 +452,7 @@
   /* =================== 게임 시작 =================== */
   function startGame(onlyCodes) {
     state.study = null;
+    state.mapStudy = null;
     cancelPendingFeedback();
     stopTimer();
     stopListening();
@@ -642,6 +649,7 @@
   function renderCapitalMenu() {
     enterCapitalScreen('capital-menu');
     state.study = null;
+    state.mapStudy = null;
     var remembered = tileMode(PLAY_TILES[3], store.settings());
     var s = store.updateSettings({ mode: remembered });
     var list = capitalStudyPool();
@@ -727,6 +735,105 @@
     ui.$('#study-more', m).addEventListener('click', startCapitalStudy);
     ui.$('#study-quiz', m).addEventListener('click', renderCapitalMenu);
     ui.$('#study-home', m).addEventListener('click', renderHome);
+  }
+
+  /* =================== 지도 공부 / 퀴즈 선택 =================== */
+  function mapStudyPool() {
+    var s = store.settings();
+    return quiz.pool({ level: s.level, continent: s.continent, axis: 'map' });
+  }
+
+  function mapBatchSize(list) {
+    var count = store.settings().count;
+    return count === 'all' ? list.length : Math.min(list.length, Math.max(1, Number(count) || 10));
+  }
+
+  function renderMapMenu() {
+    enterCapitalScreen('map-menu');
+    state.study = null;
+    state.mapStudy = null;
+    var s = store.updateSettings({ mode: 'map' });
+    var list = mapStudyPool();
+    var scope = (s.continent === 'all' ? '모든 대륙' : s.continent) + ' · ' +
+      (quiz.LEVEL_LABEL[s.level] || '모든 난이도') + ' · 한 번에 ' + mapBatchSize(list) + '개';
+    var m = ui.setMain('<section class="screen map-menu">' +
+      '<div class="map-nav"><button class="btn btn-sm btn-ghost" id="map-home" type="button">' + ui.icon('back') + ' 놀이</button><h2>지도 놀이</h2></div>' +
+      '<button class="category-settings btn btn-ghost" id="map-settings" type="button">' + ui.icon('settings') + esc(scope) + '</button>' +
+      '<div class="map-paths">' +
+        '<section class="card map-path"><span class="capital-path-icon">' + ui.icon('book') + '</span><h3>지도 공부</h3>' +
+          '<p>어느 대륙에 있는지 살펴보고,<br>나라 주변을 크게 봐요.</p>' +
+          '<button class="btn btn-big btn-primary" id="map-study-start" type="button"' + (list.length ? '' : ' disabled') + '>공부하기</button></section>' +
+        '<section class="card map-path"><span class="capital-path-icon">' + ui.icon('map') + '</span><h3>지도 퀴즈</h3>' +
+          '<p>세계지도에서 나라의 위치를<br>바로 찾아봐요.</p>' +
+          '<button class="btn btn-big btn-primary" id="map-quiz-start" type="button"' + (list.length ? '' : ' disabled') + '>퀴즈 풀기</button></section></div>' +
+      (!list.length ? '<p class="notice">지금 조건에 맞는 나라가 없어요. 설정에서 대륙이나 난이도를 바꿔 주세요.</p>' : '') +
+      '<p class="small muted map-menu-note">공부는 점수 없이 내 속도로, 퀴즈는 서로 다른 나라로 진행해요.</p></section>');
+    ui.$('#map-home', m).addEventListener('click', renderHome);
+    ui.$('#map-settings', m).addEventListener('click', function () { renderSettings(); });
+    ui.$('#map-study-start', m).addEventListener('click', function () { startMapStudy(); });
+    ui.$('#map-quiz-start', m).addEventListener('click', function () { startPlay(null, 'map'); });
+  }
+
+  /** 지도 공부는 정답·도장·경험치를 쓰지 않는다. 이미 본 나라는 다음 묶음의 뒤로 보낸다. */
+  function startMapStudy(onlyCodes) {
+    var list = mapStudyPool();
+    if (onlyCodes && onlyCodes.length) list = quiz.pool({ axis: 'map', only: onlyCodes });
+    var fresh = list.filter(function (c) { return !state.studiedMap[c.code]; });
+    var seen = list.filter(function (c) { return state.studiedMap[c.code]; });
+    state.study = null;
+    state.mapStudy = { countries: util.shuffle(fresh).concat(util.shuffle(seen)).slice(0, mapBatchSize(list)), index: 0 };
+    var s = store.settings();
+    audio.setEnabled(s.sound);
+    audio.setSpeakEnabled(s.speak);
+    audio.unlock();
+    renderMapStudy();
+  }
+
+  function renderMapStudy() {
+    enterCapitalScreen('map-study');
+    var study = state.mapStudy;
+    if (!study || !study.countries.length) { renderMapMenu(); return; }
+    if (study.index >= study.countries.length) { renderMapStudyDone(); return; }
+    var c = study.countries[study.index];
+    state.studiedMap[c.code] = true;
+    var m = ui.setMain('<section class="screen map-study">' +
+      '<div class="map-nav"><button class="btn btn-sm btn-ghost" id="map-study-back" type="button">' + ui.icon('back') + ' 지도 놀이</button>' +
+        '<h2>지도 공부</h2><span class="chip" id="map-study-count">' + (study.index + 1) + ' / ' + study.countries.length + '</span></div>' +
+      '<div class="map-study-card">' +
+        '<div class="map-study-heading"><img class="map-question-flag" src="' + ui.flagSrc(c.code) + '" alt="' + esc(c.ko) + ' 국기">' +
+          '<div><h3>' + esc(c.ko) + '</h3><p>' + esc(c.continent) + ' · ' + esc(c.region) + '</p></div>' +
+          '<button class="btn btn-listen btn-listen-soft" id="map-study-speak" type="button">🔊 나라 설명 듣기</button></div>' +
+        FQ.map.study(c) + '</div>' +
+      '<div class="study-actions"><button class="btn btn-big btn-ghost" id="map-study-prev" type="button"' + (study.index ? '' : ' disabled') + '>← 이전 나라</button>' +
+        '<button class="btn btn-big btn-primary" id="map-study-next" type="button">' + (study.index === study.countries.length - 1 ? '공부 마치기 ✓' : '다음 나라 →') + '</button></div></section>');
+    function listen() { speakLines(ui.$('#map-study-speak', m), [c.ko, c.fact], '🔊 나라 설명 듣기'); }
+    ui.$('#map-study-back', m).addEventListener('click', renderMapMenu);
+    ui.$('#map-study-speak', m).addEventListener('click', listen);
+    ui.$('#map-study-prev', m).addEventListener('click', function () {
+      if (state.mapStudy !== study || study.index <= 0) return;
+      study.index -= 1;
+      renderMapStudy();
+    });
+    ui.$('#map-study-next', m).addEventListener('click', function () {
+      if (state.mapStudy !== study) return;
+      study.index += 1;
+      renderMapStudy();
+    });
+    if (store.settings().speak) listen();
+  }
+
+  function renderMapStudyDone() {
+    musicScreen('map-study-done');
+    var count = state.mapStudy.countries.length;
+    var hasMore = mapStudyPool().some(function (c) { return !state.studiedMap[c.code]; });
+    var m = ui.setMain('<section class="screen card map-study-done"><h2>지도 공부를 마쳤어요</h2>' +
+      '<p>' + count + '개 나라가 어디에 있는지 살펴봤어요.</p>' +
+      '<button class="btn btn-big btn-primary" id="map-study-more" type="button">' + (hasMore ? '다른 나라 공부하기' : '한 번 더 보기') + '</button>' +
+      '<button class="btn btn-big" id="map-study-quiz" type="button">지도 놀이로</button>' +
+      '<button class="btn btn-big btn-ghost" id="map-study-home" type="button">홈으로</button></section>');
+    ui.$('#map-study-more', m).addEventListener('click', function () { startMapStudy(); });
+    ui.$('#map-study-quiz', m).addEventListener('click', renderMapMenu);
+    ui.$('#map-study-home', m).addEventListener('click', renderHome);
   }
 
   /** 🔊 단추 하나로 이름을 읽는다. data-speak 문구 뒤에 data-speak-extra 문구가 있으면 이어서 읽고, data-speak-lines('|'로 나눔)면 그 전부를 읽는다. */
@@ -839,7 +946,7 @@
     } else if (q.mode === 'map') {
       // 시안(PhoneMap): 국기 120×80 과 이름을 한 줄에, 아래에 🔊 전폭. 아이패드 세로에서는 국기·이름·🔊 가 한 줄 카드가 된다(css).
       stage = '<div class="flag-stage map-question">' +
-        '<div class="q-label">🗺️ 이 나라는 어디에 있을까요?</div>' +
+        '<div class="q-label">이 나라는 어디에 있을까요?</div>' +
         '<div class="map-who">' +
           '<img class="map-question-flag" src="' + ui.flagSrc(q.country.code) + '" alt="' + esc(q.country.ko) + ' 국기">' +
           '<div class="big-name">' + esc(q.country.ko) + '</div>' +
@@ -883,9 +990,9 @@
     var chest = FQ.progress.chestProgress(store.stats().asked);
 
     // 진행 점 대신 여행 카드 칸 다섯 개(홈과 같은 chestProgress)가 머리에 있다. 정답 카드는 무대 아래(첫 칸)에 그려
-    // 폰에서는 무대·보기를 접고 카드만 남기고, 아이패드 가로에서는 오른쪽 보기(지도 핀)를 남긴 채 왼쪽에 카드를 놓는다(css).
+    // 지도는 답을 고르면 위치 설명을 전체 폭으로 보여 준다. 다른 놀이는 기존 정답 카드 배치를 따른다.
     var html =
-      '<section class="screen quiz-screen">' +
+      '<section class="screen quiz-screen' + (q.mode === 'map' ? ' map-screen' : '') + '">' +
         quizHead(g, s, chest, lv) +
         '<div class="quiz-body' + (q.mode === 'map' ? ' map-quiz' : '') + (meet ? ' meet-quiz' : '') + '">' +
           '<div class="quiz-stage-col">' +
@@ -903,10 +1010,8 @@
       '</section>';
 
     var m = ui.setMain(html);
-    // 지도 판은 폰 세로에서 위아래로 늘려 그린다(css .map-surface). 육지 svg 가 판을 꽉 채우도록 비율 고정을 푼다 —
-    // 핀은 판의 % 좌표라 육지와 함께 늘어나므로 좌표 공식은 그대로다. 판이 2:1 인 곳에서는 아무 변화가 없다.
-    var land = ui.$('.map-land', m);
-    if (land && land.setAttribute) land.setAttribute('preserveAspectRatio', 'none');
+    var shell = doc.querySelector('.app');
+    if (shell) shell.setAttribute('data-mode', q.mode);
 
     // 🔊 를 듣고 나면 말하기 놀이는 마이크를 다시 연다(수도 말하기의 나라 이름 듣기·힌트).
     ui.on(m, '[data-speak]', 'click', function (e, t) { speakFromButton(t, resumeListening); });
@@ -948,6 +1053,19 @@
       submit({ text: '' }, true);
     });
 
+    if (q.mode === 'map') {
+      var zoom = ui.$('#map-zoom', m);
+      zoom.addEventListener('click', function () {
+        if (state.game !== g || g.current() !== q || state.answered) return;
+        var expanded = zoom.getAttribute('aria-pressed') !== 'true';
+        ui.$('.map-explorer', m).classList.toggle('is-zoomed', expanded);
+        zoom.setAttribute('aria-pressed', String(expanded));
+        zoom.textContent = expanded ? '세계 전체 보기' : '지도 확대';
+        ui.$('#map-view-help', m).textContent = expanded ? '좌우로 움직여 살펴보세요' : '점이 가리키는 위치를 골라요';
+        var mapScroll = ui.$('#map-scroll', m);
+        mapScroll.scrollLeft = expanded ? (mapScroll.scrollWidth - mapScroll.clientWidth) / 2 : 0;
+      });
+    }
     bindAnswerArea(m, q);
     if (q.mode === 'symbol' || q.mode === 'place') {
       var artNext = ui.$('#art-next', m);
@@ -1042,7 +1160,9 @@
   }
 
   function answerArea(q) {
-    if (q.mode === 'map') return FQ.map.render(q.options);
+    if (q.mode === 'map') return '<div class="map-explorer"><div class="map-view-tools">' +
+      '<span id="map-view-help">점이 가리키는 위치를 골라요</span><button class="btn btn-sm btn-ghost" id="map-zoom" type="button" aria-pressed="false" aria-controls="map-scroll">지도 확대</button></div>' +
+      '<div class="map-scroll" id="map-scroll" tabindex="0" aria-label="세계 지도. 확대하면 좌우로 움직일 수 있어요">' + FQ.map.render(q.options) + '</div></div>';
     if (q.mode === 'symbol' || q.mode === 'place' || q.mode === 'capital') {
       // 보기는 국기가 주인공이다(시안 IpadPlay·PortraitPlay·PhoneCapital): 2×2 격자, 국기 폭 폰 96px 이상·아이패드 200px 이상, 이름은 국기 아래 작게.
       // 수도 놀이도 같은 부품을 쓴다 — 수도 이름은 무대에서 듣고, 보기에는 국기와 나라 이름만 있다. 답은 나라 code 로 채점한다.
@@ -1613,7 +1733,7 @@
     var rememberTitle = isArtQ ? esc(artAlt(c.code, q.mode)) : isMapQ ? '🗺️ ' + esc(c.continent) + ' · ' + esc(c.region) : '';
     var rememberBody = isMapQ || isArtQ ? esc(c.fact) : '🚩 ' + esc(c.flagHint);
     var html =
-      '<div class="feedback learn discovery-card' + (isCapitalQ ? ' capital-card' : '') + '">' +
+      '<div class="feedback learn discovery-card' + (isCapitalQ ? ' capital-card' : '') + (isMapQ ? ' map-feedback' : '') + '">' +
         '<div class="fb-head"><div class="verdict">' + verdict + '</div>' + extra + '</div>' +
         (isCapitalQ
           ? capitalPlate(c, capitalPlace(c)) + capitalOf(c)
@@ -1634,6 +1754,7 @@
                   : '') +
               '</div>' +
             '</div>') +
+        (isMapQ ? FQ.map.study(c) : '') +
         (store.settings().speak
           ? '<button class="btn btn-listen btn-listen-soft" id="replay" type="button">🔊 설명 다시 듣기</button>'
           : '<button class="btn btn-listen btn-listen-soft" id="speak-on" type="button">🔇 읽어주기가 꺼져 있어요 · 켜고 듣기</button>') +
@@ -1675,9 +1796,16 @@
     }
     var next = ui.$('#next');
     next.addEventListener('click', goNext);
-    next.focus();
+    if (isMapQ) {
+      // 큰 위치 설명을 건너뛰지 않고 정답 카드의 시작부터 보여 준다.
+      area.setAttribute('tabindex', '-1');
+      area.focus({ preventScroll: true });
+      area.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    } else {
+      next.focus();
+      next.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
     beginFeedback(narrationRequest, false);
-    next.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }
 
   /**
@@ -1798,7 +1926,7 @@
       stopMusic();
       back.remove();
       var nextBtn = ui.$('#next');
-      if (nextBtn) { nextBtn.disabled = false; nextBtn.focus(); }
+      if (nextBtn) { nextBtn.disabled = false; nextBtn.focus({ preventScroll: true }); }
     }
     back.addEventListener('click', function (ev) {
       // 바깥을 눌러 닫는 것은 상자를 연 뒤에만. 고르기 전에 실수로 닫히면 아이가 선물을 못 본다.
@@ -2025,11 +2153,16 @@
           (summary.wrong.length
             ? '<button class="btn btn-big btn-mid" id="retry-wrong" type="button">📖 한 번 더 만나기</button>'
             : '') +
+          (summary.mode === 'map' ? '<button class="btn btn-big btn-mid" id="map-result-study" type="button">지도에서 다시 보기</button>' : '') +
           '<button class="btn btn-big btn-mid" id="home" type="button">' + ICONS.home + '<span>홈으로</span></button>' +
         '</div>' +
       '</section>';
 
     var m = ui.setMain(html);
+    var resultMapStudy = ui.$('#map-result-study', m);
+    if (resultMapStudy) resultMapStudy.addEventListener('click', function () {
+      startMapStudy((state.met || []).map(function (item) { return item.country.code; }));
+    });
     var resultGame = state.game;
     var resultReplay = ui.$('#result-replay', m);
     var resultRequest = 0;
@@ -2183,12 +2316,14 @@
       cancelPendingFeedback();
       stopTimer(); stopListening(); audio.stopSpeaking(); state.game = null;
       state.study = null;
+      state.mapStudy = null;
       FQ.screens.dex();
     });
     doc.getElementById('nav-stats').addEventListener('click', function () {
       cancelPendingFeedback();
       stopTimer(); stopListening(); audio.stopSpeaking(); state.game = null;
       state.study = null;
+      state.mapStudy = null;
       musicScreen('stats');
       FQ.screens.stats();
     });

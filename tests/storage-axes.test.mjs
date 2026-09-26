@@ -418,10 +418,10 @@ test('D24: 보기 거리는 익힌 정도로 정한다 — 처음은 다른 대�
   assert.ok(farAsia.every(c => c.continent === '아시아' && c.region !== '동아시아'));
 });
 
-test('그림·명소·지도는 공부·퀴즈 분리와 관계없이 기존 다시 만나기를 유지한다', () => {
+test('그림·명소는 기존 다시 만나기를 유지한다', () => {
   const { FQ } = fixture();
   FQ.map = { MIN_WIDTH: 0, chooseOptions: (answer, source) => [answer].concat(source.filter(c => c !== answer).slice(0, 3)) };
-  for (const mode of ['symbol', 'place', 'map']) {
+  for (const mode of ['symbol', 'place']) {
     const g = FQ.quiz.createGame({ mode, count: 10 });
     assert.ok(g.questions.every(q => q.options && q.options.length === 4 && !q.review), mode + ' 은 보기를 미리 만든다');
     assert.equal(g.againCount, 0);
@@ -433,7 +433,7 @@ test('그림·명소·지도는 공부·퀴즈 분리와 관계없이 기존 다
   }
 });
 
-test('지도 축도 자기 버킷의 가중치와 다시 만나기를 쓴다', () => {
+test('지도 축은 자기 기록의 가중치를 쓰되 같은 판에서 반복하지 않는다', () => {
   const { FQ } = fixture();
   FQ.map = { MIN_WIDTH: 0, chooseOptions: (answer, source) => [answer].concat(source.filter(c => c !== answer).slice(0, 3)) };
   FQ.storage.recordAnswer('kr', false, 'map');
@@ -445,6 +445,7 @@ test('지도 축도 자기 버킷의 가중치와 다시 만나기를 쓴다', (
   assert.ok(weights.length > 0 && weights.every(ws => ws.every(w => Number.isFinite(w) && w > 0)));
   const log = play(g, (q) => q.country.code);
   assert.equal(log.length, 5);
-  assert.ok(g.againCount >= 1, '지도에서도 처음 만난 쌍을 다시 만난다');
+  assert.equal(g.againCount, 0, '지도 퀴즈에는 강제 반복이 없다');
+  assert.equal(new Set(g.questions.map(q=>q.country.code)).size,5);
   assert.equal(Object.keys(FQ.storage.allCountryStats()).length, 0, '국기 기록은 그대로');
 });

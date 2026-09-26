@@ -22,7 +22,7 @@ function fixture() {
         addEventListener(type, fn){this.handlers[type] = fn;},
         click(){if (!this.disabled) this.handlers.click?.({target:this});},
         setAttribute(k,v){this.attrs[k]=String(v);}, getAttribute(k){return this.attrs[k]??'';}, removeAttribute(k){delete this.attrs[k];},
-        querySelector: node, querySelectorAll:()=>[], appendChild(){}, remove(){}, focus(){c.document.activeElement=this;}, scrollIntoView(){},
+        querySelector: node, querySelectorAll:()=>[], appendChild(){}, remove(){}, focus(options){this.focusOptions=options;c.document.activeElement=this;}, scrollIntoView(options){this.scrollOptions=options;},
         set innerHTML(html){
           this.html=html;this.renderCount++;
           for (const m of html.matchAll(/<([a-z]+)\b[^>]*\bid="([^"]+)"[^>]*>/g)) {
@@ -788,7 +788,7 @@ test('주제 선택 뒤 기존 아홉 퀴즈에 도달하고 최근 방식·저�
   }
   f.c.FQ.app.home();tapPlay(f,'flag');
   assert.match(f.node('main').innerHTML.match(/<button[^>]*data-mode="typing"[^>]*>[\s\S]*?<\/button>/)[0],/최근에 한 놀이/,'최근 방식이 표시된다');
-  f.c.FQ.app.home();tapPlay(f,'map');assert.equal(a.state.game.current().mode,'map');
+  f.c.FQ.app.home();tapPlay(f,'map');assert.equal(a.state.game,null);f.node('#map-quiz-start').click();assert.equal(a.state.game.current().mode,'map');
   for(const [button,mode] of [['#capital-choice-start','capital'],['#capital-voice-start','capitalVoice']]) {
     f.c.FQ.app.home();tapPlay(f,'capital');assert.equal(a.state.game,null);
     f.node(button).click();assert.equal(a.state.game.current().mode,mode);
@@ -880,6 +880,7 @@ test('국기 외 놀이에서는 대결의 적용 범위를 설명하고 저장�
     assert.deepEqual([...f.c.FQ.storage.settings().players],['민규','아빠'],mode+' 다른 설정 변경으로 이름을 잃지 않는다');
     f.c.FQ.app.home();tapPlay(f,mode==='map'||mode==='capital'?mode:'art');
     if(mode==='capital')f.node('#capital-choice-start').click();
+    else if(mode==='map')f.node('#map-quiz-start').click();
     else if(mode==='symbol'||mode==='place')tapPill(f,mode);
     meetNext(f);
     assert.deepEqual([...f.c.FQ.test.state.game.players],['민규'],mode);
@@ -1015,8 +1016,9 @@ test('문제 화면은 지시문을 작게, 🔊 들어보기를 크게 두고 �
   assert.match(html,/id="combo-title">여행 카드 0 \/ 5장</);
   assert.match(html,/class="travel-slot now"/,'다음에 채울 칸이 표시된다');
   assert.match(html,/id="xp-fill"/);assert.match(html,/id="xp-val"/);assert.match(html,/id="quit"/);
-  // 지도 svg 는 판을 꽉 채우도록 비율 고정을 푼다(폰 세로 확대의 전제). 핀 좌표는 map.js 그대로다.
-  assert.equal(f.node('.map-land').attrs.preserveAspectRatio,'none');
+  // 육지와 위치점의 비율을 함께 보존해 폰에서도 지형이 왜곡되지 않는다.
+  assert.match(html,/preserveAspectRatio="xMidYMid meet"/);
+  assert.equal(f.node('.map-land').attrs.preserveAspectRatio,undefined);
   assert.equal((html.match(/class="map-pin answer-btn"/g)||[]).length,4);
   // 새로 읽어 주는 문구는 없다 — 문제를 열 때 읽는 것은 없고, 단추 라벨은 화면 글자다.
   assert.equal(f.spoken.length,0);
@@ -1065,7 +1067,7 @@ test('정답 카드는 나라별 국기·설명·듣기·다음을 제공하고 
 test('지도 문제는 해당 나라의 국기·이름·듣기와 지도판을 함께 제공한다',()=>{
   const f=fixture();f.c.FQ.storage.updateSettings({mode:'map'});f.c.FQ.app.startGame(['kr']);
   const html=f.node('main').innerHTML;
-  assert.match(html,/<div class="flag-stage map-question"><div class="q-label">🗺️ 이 나라는 어디에 있을까요\?<\/div><div class="map-who"><img class="map-question-flag" src="flags\/kr\.svg" alt="대한민국 국기"><div class="big-name">대한민국<\/div><\/div><button class="btn btn-listen" data-speak="대한민국" type="button">🔊 들어보기<\/button><\/div>/);
+  assert.match(html,/<div class="flag-stage map-question"><div class="q-label">이 나라는 어디에 있을까요\?<\/div><div class="map-who"><img class="map-question-flag" src="flags\/kr\.svg" alt="대한민국 국기"><div class="big-name">대한민국<\/div><\/div><button class="btn btn-listen" data-speak="대한민국" type="button">🔊 들어보기<\/button><\/div>/);
   assert.match(html,/<div class="quiz-body map-quiz"><div class="quiz-stage-col">/);
 });
 
@@ -1524,4 +1526,101 @@ test('수도 퀴즈는 시간 제한과 반복 출제 없이 진행하고 수도
   for(const line of ['눌러서 들어보기','어느 나라의 수도일까요','수도 듣고 국기 찾기','에 있어요'])assert.ok(!manifest.includes('"'+line+'"'),line+' 는 화면 글자일 뿐이다');
 });
 
+
+/* 지도 공부는 채점 상태와 독립적이며, 퀴즈는 한 판에 같은 나라를 반복하지 않는다. */
+function startMapStudy(f,codes) {
+  f.c.FQ.app.home();
+  const pool=f.c.FQ.quiz.pool;
+  if(codes)f.c.FQ.quiz.pool=()=>codes.map(code=>f.c.FQ.quiz.byCode(code));
+  try { tapPlay(f,'map');f.node('#map-study-start').click(); }
+  finally { f.c.FQ.quiz.pool=pool; }
+  return f.c.FQ.test;
+}
+
+test('지도 메뉴와 공부는 무채점이며 앞뒤 탐색·완료 후 퀴즈를 별도로 선택한다',()=>{
+  const f=fixture();f.c.FQ.app.boot();f.c.FQ.storage.updateSettings({count:3,timer:10});
+  f.c.FQ.storage.recordAnswer('kr',true,'map');f.c.FQ.storage.recordAnswer('fr',false);
+  const before=progressSnapshot(f),a=startMapStudy(f,['kr','jp','cn']),first=a.state.mapStudy.countries[0];
+  assert.equal(a.state.game,null);assert.equal(a.state.timerId,null);assert.ok(!f.c.listening);
+  assert.equal(f.node('#map-study-prev').disabled,true);f.node('#map-study-prev').click();assert.equal(a.state.mapStudy.index,0);
+  const html=f.node('main').innerHTML;
+  assert.match(html,/map-world-context/);assert.match(html,/map-region-context/);assert.ok(html.includes(first.continent));
+  assert.doesNotMatch(html,/answer-area|id="hint"|id="skip"|timer-chip|travel-chip/);
+  assert.match(html,/id="map-study-count">1 \/ 3/);
+  f.releases.at(-1)();assert.deepEqual(f.spoken.at(-1),[first.ko,first.fact]);
+  f.node('#map-study-next').click();assert.equal(a.state.mapStudy.index,1);
+  f.node('#map-study-prev').click();assert.equal(a.state.mapStudy.index,0);
+  for(let n=0;n<3;n++)f.node('#map-study-next').click();
+  assert.match(f.node('main').innerHTML,/지도 공부를 마쳤어요/);assert.equal(a.state.game,null);
+  assert.deepEqual(progressSnapshot(f),before,'정답·점수·도장·상자·게임 기록을 보존한다');
+  f.node('#map-study-quiz').click();assert.match(f.node('main').innerHTML,/map-menu/);assert.equal(a.state.game,null);
+  f.node('#map-quiz-start').click();assert.equal(a.state.game.current().mode,'map');assert.equal(a.state.mapStudy,null);
+  assert.doesNotMatch(f.node('main').innerHTML,/map-study-card|meet-next/);
+});
+
+test('지도 공부는 대륙·난이도·개수를 따르고 다음 묶음은 새 나라부터 표시한다',()=>{
+  const f=fixture();f.c.FQ.storage.updateSettings({count:3,level:'1',continent:'아시아',speak:false});
+  const expected=f.c.FQ.quiz.pool({level:'1',continent:'아시아',axis:'map'}).map(c=>c.code);
+  const a=startMapStudy(f),first=[...a.state.mapStudy.countries].map(c=>c.code);
+  assert.equal(first.length,3);assert.equal(new Set(first).size,3);assert.ok(first.every(code=>expected.includes(code)));
+  for(let n=0;n<3;n++)f.node('#map-study-next').click();f.node('#map-study-more').click();
+  const second=[...a.state.mapStudy.countries].map(c=>c.code);
+  assert.equal(second.length,3);assert.ok(second.every(code=>!first.includes(code)));
+  f.c.FQ.storage.updateSettings({count:'all'});startMapStudy(f);
+  assert.equal(a.state.mapStudy.countries.length,expected.length);
+  const g=fixture();g.c.FQ.quiz.pool=()=>[];startMapStudy(g);
+  assert.match(g.node('main').innerHTML,/지금 조건에 맞는 나라가 없어요/);assert.equal(g.c.FQ.test.state.game,null);
+});
+
+test('지도 공부를 이동하거나 떠나면 이전 음성 콜백이 되살아나지 않는다',()=>{
+  for(const leave of ['next','menu','home','dex','stats','hidden']) {
+    const f=fixture();f.c.FQ.app.boot();const a=startMapStudy(f,['kr','jp']);
+    const release=f.releases.at(-1),before=progressSnapshot(f);
+    if(leave==='next')f.node('#map-study-next').click();
+    if(leave==='menu')f.node('#map-study-back').click();
+    if(leave==='home')f.c.FQ.app.home();
+    if(leave==='dex')f.node('#nav-dex').click();
+    if(leave==='stats')f.node('#nav-stats').click();
+    if(leave==='hidden'){f.c.document.hidden=true;f.events.visibilitychange.forEach(fn=>fn());}
+    const html=f.node('main').innerHTML;release();f.runDelay(900);f.runDelay(1800);
+    assert.equal(f.spoken.length,0,leave);assert.ok(!f.c.listening,leave);assert.equal(a.state.game,null,leave);
+    assert.equal(f.node('main').innerHTML,html,leave);assert.deepEqual(progressSnapshot(f),before,leave);
+  }
+});
+
+test('오프라인 지도 공부는 음원 실패에도 진행되고 퀴즈의 위치 설명과 다시 공부가 기록을 보존한다',()=>{
+  const f=fixture();f.c.navigator.onLine=false;f.c.FQ.app.boot();f.c.FQ.storage.updateSettings({speak:false});
+  const a=startMapStudy(f,['kr','jp']),before=progressSnapshot(f);
+  f.node('#map-study-speak').click();f.releases.at(-1)();f.playbackFailures.at(-1)();
+  assert.match(f.node('#map-study-speak').textContent,/다시 눌러서 듣기/);
+  f.events.offline.forEach(fn=>fn());f.node('#map-study-next').click();assert.equal(a.state.mapStudy.index,1);
+  assert.deepEqual(progressSnapshot(f),before);
+  f.c.FQ.storage.updateSettings({mode:'map',speak:false});f.c.FQ.app.startGame(['kr','jp']);
+  const order=[];
+  for(let n=0;n<2;n++) {
+    const q=a.state.game.current();order.push(q.country.code);a.submit({text:''},true);
+    assert.match(f.node('#feedback-area').innerHTML,/map-world-context/);
+    assert.match(f.node('#feedback-area').innerHTML,/map-region-context/);
+    assert.equal(f.c.document.activeElement,f.node('#feedback-area'));
+    assert.equal(f.node('#feedback-area').focusOptions.preventScroll,true);
+    assert.equal(f.node('#feedback-area').scrollOptions.block,'start');a.goNext();
+  }
+  assert.equal(new Set(order).size,2);assert.equal(a.state.game.againCount,0);
+  assert.match(f.node('main').innerHTML,/id="map-result-study"/);
+  const after=progressSnapshot(f);f.node('#map-result-study').click();
+  assert.deepEqual([...a.state.mapStudy.countries].map(c=>c.code).sort(),order.sort());
+  assert.deepEqual(progressSnapshot(f),after);assert.equal(a.state.game,null);
+});
+
+test('지도 확대는 채점·보기·좌표를 바꾸지 않고 세계 전체로 돌아온다',()=>{
+  const f=fixture();f.c.FQ.storage.updateSettings({mode:'map',speak:false});f.c.FQ.app.startGame(['kr','jp']);
+  const a=f.c.FQ.test,q=a.state.game.current(),before=progressSnapshot(f),area=f.node('#answer-area').innerHTML;
+  const viewport=f.node('#map-scroll');viewport.scrollWidth=600;viewport.clientWidth=300;
+  f.node('#map-zoom').click();
+  assert.equal(f.node('#map-zoom').attrs['aria-pressed'],'true');assert.equal(viewport.scrollLeft,150);
+  assert.ok(f.node('.map-explorer').classList.contains('is-zoomed'));assert.equal(a.state.game.current(),q);
+  assert.equal(f.node('#answer-area').innerHTML,area);assert.deepEqual(progressSnapshot(f),before);
+  f.node('#map-zoom').click();assert.equal(viewport.scrollLeft,0);assert.equal(f.node('#map-zoom').attrs['aria-pressed'],'false');
+  assert.equal(f.node('.map-explorer').classList.contains('is-zoomed'),false);
+});
 console.log('앱 흐름 회귀 검사 '+passed+'건 통과');

@@ -589,11 +589,11 @@
     });
 
     /* ---- 한 판 안에서 다시 만나기 (새 축 전용, D15) ----
-     * 그림·명소·지도는 아이가 처음 보는 쌍이 많다. 처음 만난 쌍과 틀린 쌍은 같은 판에서 3문제 뒤에
+     * 그림·명소는 아이가 처음 보는 쌍이 많다. 처음 만난 쌍과 틀린 쌍은 같은 판에서 3문제 뒤에
      * 한 번 더 낸다. 총 문제 수는 그대로다 — 아직 안 만난 원래 문제 하나를 뒤에서 빼고 그 자리를 쓴다.
-     * 국기·수도 축은 여기에 들어오지 않는다. 한 판에 같은 나라가 두 번 나오지 않는다.
+     * 국기·수도·지도 축은 여기에 들어오지 않는다. 한 판에 같은 나라가 두 번 나오지 않는다.
      */
-    var revisit = axis !== 'flag' && axis !== 'capital';
+    var revisit = axis === 'symbol' || axis === 'place';
     var firstMeet = {};
     if (revisit) {
       var records = axisRecords();
@@ -609,7 +609,7 @@
       questions: questions,
       fallback: fallback,   // null | 'only' (only 목록이 전부 자료 없음) | 'filters' (난이도·대륙 조건에 맞는 나라 없음)
       skipped: skipped,     // only 목록에서 자료가 없어 뺀 나라 코드
-      againCount: 0,       // 이 판에서 다시 만나기로 잡은 문제 수 (그림·명소·지도만)
+      againCount: 0,       // 이 판에서 다시 만나기로 잡은 문제 수 (그림·명소만)
       index: 0,
       streak: 0,
       bestStreak: 0,
@@ -716,8 +716,8 @@
       if (FQ.storage) FQ.storage.recordAnswer(q.country.code, learned, MODES[cfg.mode] && MODES[cfg.mode].axis);
       res.question = q;
       res.again = !!q.again;
-      // 처음 만난 쌍이거나 틀린 쌍이면 3문제 뒤에 한 번 더 (그림·명소·지도만).
-      // 수도는 틀리거나 힌트를 써도 같은 판에 다시 넣지 않고 결과의 복습 목록에만 남긴다.
+      // 처음 만난 쌍이거나 틀린 쌍이면 3문제 뒤에 한 번 더 (그림·명소만).
+      // 수도·지도는 틀리거나 힌트를 써도 같은 판에 다시 넣지 않고 결과의 복습 목록에만 남긴다.
       res.scheduledAgain = !q.again && (!res.correct || firstMeet[q.country.code]) ? scheduleAgain(q.country) : false;
       return res;
     };

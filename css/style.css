@@ -117,8 +117,8 @@ h3 { font-size: 1.1rem; }
 }
 .primary-nav button svg { width: 23px; height: 23px; }
 .primary-nav button[aria-current="page"] { color: var(--primary); background: var(--primary-soft); }
-.app:is([data-screen="quiz"], [data-screen="study"], [data-screen="capital-study"], [data-screen="study-done"], [data-screen="capital-study-done"]) { padding-bottom: max(28px, env(safe-area-inset-bottom)); }
-.app:is([data-screen="quiz"], [data-screen="study"], [data-screen="capital-study"], [data-screen="study-done"], [data-screen="capital-study-done"]) > :is(.topbar, .primary-nav) { display: none; }
+.app:is([data-screen="quiz"], [data-screen="study"], [data-screen="capital-study"], [data-screen="study-done"], [data-screen="capital-study-done"], [data-screen="map-study"], [data-screen="map-study-done"]) { padding-bottom: max(28px, env(safe-area-inset-bottom)); }
+.app:is([data-screen="quiz"], [data-screen="study"], [data-screen="capital-study"], [data-screen="study-done"], [data-screen="capital-study-done"], [data-screen="map-study"], [data-screen="map-study-done"]) > :is(.topbar, .primary-nav) { display: none; }
 .connection-note { margin: 0 0 16px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); color: var(--text-soft); }
 
 /* 공통 버튼과 입력 */
@@ -648,7 +648,7 @@ h3 { font-size: 1.1rem; }
   #nav-settings { position: fixed; left: max(28px, calc((100vw - 1240px) / 2 + 28px)); bottom: max(28px, env(safe-area-inset-bottom)); width: 170px; justify-content: flex-start; background: transparent; border-color: transparent; }
   .primary-nav { position: fixed; top: 132px; right: auto; bottom: auto; left: max(28px, calc((100vw - 1240px) / 2 + 28px)); display: flex; flex-direction: column; width: 170px; gap: 8px; padding: 0; border: 0; background: transparent; backdrop-filter: none; }
   .primary-nav button { flex-direction: row; justify-content: flex-start; gap: 13px; min-height: 52px; padding: 12px 16px; font-size: .95rem; }
-  .app:is([data-screen="quiz"], [data-screen="study"], [data-screen="capital-study"], [data-screen="study-done"], [data-screen="capital-study-done"]) { max-width: 1180px; padding-left: max(36px, env(safe-area-inset-left)); }
+  .app:is([data-screen="quiz"], [data-screen="study"], [data-screen="capital-study"], [data-screen="study-done"], [data-screen="capital-study-done"], [data-screen="map-study"], [data-screen="map-study-done"]) { max-width: 1180px; padding-left: max(36px, env(safe-area-inset-left)); }
   .home-intro { margin-bottom: 4px; }
   .home-intro h2 { margin-top: 20px; }
   .play-btn { min-height: 210px; }
