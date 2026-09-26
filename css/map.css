@@ -1,5 +1,6 @@
 /* 바깥 여백 22px이 경도 ±180 부근의 44px 터치 영역도 지도 안에 담는다. */
 .map-board {
+  box-shadow: inset 0 0 0 1px var(--line);
   width: 100%;
   min-width: 280px;
   padding: 22px;
@@ -39,7 +40,7 @@
   height: 20px;
   border-radius: 50%;
   background: var(--primary);
-  color: var(--card);
+  color: #fff;
   font-size: 12px;
   line-height: 1;
   font-weight: 900;
@@ -49,14 +50,13 @@
 .map-pin.is-correct .map-dot { background: var(--success); }
 .map-pin.is-wrong .map-dot { background: var(--danger); }
 .quiz-body.map-quiz { display: block; }
-.map-question { min-height: 0; padding: 14px; margin-bottom: 16px; }
+.map-question { min-height: 0; padding: 20px; margin-bottom: 0; }
 .map-question .big-name { font-size: 1.8rem; margin: 8px 0; }
 .map-question-flag { width: 80px; height: 54px; object-fit: contain; }
 
-/* 아이패드 가로(1024×768·1180×820): 국기·이름 무대를 왼쪽, 지도판을 오른쪽에 두어 한 화면에 넣는다.
-   한 칸으로 쌓으면 지도판(폭의 절반 높이)이 화면 아래로 잘려 남쪽 핀에 스크롤 없이 닿지 못한다.
-   지도판 폭은 최소 280px 이상이어야 핀 네 개가 겹치지 않는다 — 5:7 로 갈라도 1024px 에서 500px 이 넘는다. */
-@media (min-width: 760px) and (orientation: landscape) {
+/* 넓은 창에서는 문제와 지도를 나란히 둔다. 좁은 분할 창은 한 열로 돌아간다.
+   280px 최소 너비와 22px 여백은 지도 핀의 좌표·겹침 검사와 같은 기준이다. */
+@media (min-width: 900px) {
   .quiz-body.map-quiz {
     display: grid;
     grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
@@ -70,12 +70,12 @@
 /* 폰 세로(2026-09-17 시안 PhoneMap): 지도판을 위아래로 약 1.46배 늘려(342×250) 남쪽 핀에도 손가락이 닿게 한다.
    육지 svg 는 app.js 가 preserveAspectRatio="none" 을 붙여 판을 꽉 채우고, 핀은 판의 % 좌표라 육지와 함께 늘어난다 —
    좌표 공식과 chooseOptions 의 분리 규칙(280px 판·44px 사각)은 그대로다. 판이 2:1 인 아이패드에서는 아무 변화가 없다. */
-@media (max-width: 743px) and (orientation: portrait) {
+@media (max-width: 599px) {
   .map-surface { aspect-ratio: 342 / 250; }
 }
 .map-surface { background: var(--bg); border-radius: 12px; }
 /* 핀: 기본 44px 은 위 규칙 그대로. 폭이 넉넉하면 52·56px 로 키운다 — 280px 판에서 44px 이 안 겹치는 조합은 폭에 비례해 더 벌어진다. */
-.map-dot { width: 32px; height: 32px; font-size: 1rem; box-shadow: 0 0 0 3px var(--card), 0 6px 18px rgba(31, 41, 55, .28); }
+.map-dot { width: 32px; height: 32px; font-size: 1rem; box-shadow: 0 0 0 3px var(--card); }
 @media (min-width: 360px) {
   .map-board .map-pin { width: 52px; min-width: 52px; max-width: 52px; height: 52px; min-height: 52px; max-height: 52px; }
   .map-dot { width: 40px; height: 40px; font-size: 1.25rem; }
@@ -84,3 +84,5 @@
   .map-board .map-pin { width: 56px; min-width: 56px; max-width: 56px; height: 56px; min-height: 56px; max-height: 56px; }
   .map-dot { width: 48px; height: 48px; font-size: 1.5rem; }
 }
+
+@media (prefers-color-scheme: dark) { .map-dot { color: #152137; } }

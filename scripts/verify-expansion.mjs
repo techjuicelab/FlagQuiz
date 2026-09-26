@@ -890,20 +890,32 @@ await check({
 await check({
   id: 'export-screen-wiring',
   task: 'T1-export-button',
-  label: '🏅 내 기록 화면 배선과 금지 API 미사용',
+  label: '설정의 기록 내보내기 배선과 금지 API 미사용',
   severity: 'acceptance',
-  why: 'JSON 을 innerHTML 로 보간하면 문자열 안의 </textarea> 가 화면을 깨고, <a download>·Blob·clipboard 는 홈화면 사파리와 file:// 에서 조용히 실패한다.'
+  why: '설정 진입부터 공개 API까지 연결되어야 한다. JSON을 innerHTML로 보간하면 화면이 깨지고, 다운로드·클립보드 API는 홈 화면 Safari에서 조용히 실패할 수 있다.'
 }, (t) => {
-  const src = read('js/screens.js');
-  if (!src.includes('export')) t.skip("js/screens.js 에 'export' 문자열이 없다 — 화면 배선 미구현");
-  t.ok(src.includes('id="export"'), 'id="export" 버튼이 없다');
-  t.ok(src.includes('id="export-text"'), 'id="export-text" textarea 가 없다');
-  t.ok(/export-text[^]{0,200}readonly|readonly[^]{0,200}export-text/.test(src), 'export-text 에 readonly 가 없다');
-  t.ok(/\.value\s*=/.test(src), 'textarea 에 .value 로 넣는 대입이 없다 (innerHTML 보간이면 화면이 깨진다)');
+  const src = codeOnly(read('js/screens.js'));
+  const app = codeOnly(read('js/app.js'));
+  const html = read('index.html');
+  const settings = funcBody(app, 'function renderSettings(');
+  const exporter = funcBody(src, 'function exportRecords(');
+  t.ok(/<button[^>]*id="nav-settings"[^>]*>/.test(html), '설정 진입 버튼이 없다');
+  t.ok(/getElementById\('nav-settings'\)\.addEventListener\('click',\s*function\s*\(\)\s*\{\s*renderSettings\(\)/.test(app),
+    '설정 버튼의 일반 클릭이 renderSettings에 연결되지 않았다');
+  t.ok(settings && settings.includes('id="settings-export"'), '설정에 기록 내보내기 버튼이 없다');
+  t.ok(settings && settings.includes('id="export-out"'), '설정에 백업 출력 영역이 없다');
+  t.ok(settings && /ui\.\$\('\#settings-export', m\)\.addEventListener\('click',\s*function\s*\(\)\s*\{\s*FQ\.screens\.exportRecords\(\)/.test(settings),
+    '설정 내보내기 버튼이 공개 exportRecords API를 호출하지 않는다');
+  t.ok(/FQ\.screens\s*=\s*\{[^}]*exportRecords:\s*exportRecords/.test(src), 'exportRecords가 FQ.screens에 공개되지 않았다');
+  t.ok(exporter && exporter.includes('id="export-text"'), 'exportRecords에 export-text textarea가 없다');
+  t.ok(exporter && /<textarea[^>]*\breadonly\b/.test(exporter), 'export-text에 readonly가 없다');
+  t.ok(exporter && /\.value\s*=\s*FQ\.storage\.exportJson\(\)/.test(exporter),
+    'textarea.value에 exportJson 원문을 대입하지 않는다');
+  t.ok(exporter && /\.select\(\)/.test(exporter), '내보낸 본문 전체 선택이 없다');
   t.ok(!/\+\s*FQ\.storage\.exportJson\(\)/.test(src) && !/exportJson\(\)\s*\+/.test(src),
-    'exportJson() 결과를 문자열 연결로 HTML 에 넣고 있다');
+    'exportJson() 결과를 문자열 연결로 HTML에 넣고 있다');
   for (const banned of ['<a download', 'URL.createObjectURL', 'new Blob', 'navigator.clipboard']) {
-    t.ok(!src.includes(banned), '홈화면 사파리에서 조용히 실패하는 API 를 쓴다: ' + banned);
+    t.ok(!src.includes(banned) && !settings?.includes(banned), '홈 화면 Safari에서 조용히 실패할 수 있는 API를 쓴다: ' + banned);
   }
 });
 
@@ -1589,22 +1601,26 @@ await check({
     const lines = read(file).split('\n').length;
     t.ok(Number(a) <= lines && (!b || Number(b) <= lines), '인용한 줄 번호가 파일 줄 수를 넘는다', c + ' (' + lines + '줄)');
   }
+  // 문서에 적힌 인용 범위 자체를 확인한다. 코드 행 번호를 검사기에 중복 보관하지 않는다.
   const SPOT = [
-    ['design/SPEC.md', 37, '44px'],
-    ['css/style.css', null, 'prefers-reduced-motion'],   // 줄 번호 대신 규칙의 존재만 본다 — CSS 를 앞에 더해도 검사가 흔들리지 않게
-    ['js/effects.js', 7, 'reducedMotion'],
-    ['js/effects.js', 80, 'celebrate'],
-    ['index.html', 32, 'aria-live']
+    ['design/SPEC.md', '44px'],
+    ['css/style.css', 'prefers-reduced-motion'],
+    ['js/effects.js', 'reducedMotion'],
+    ['js/effects.js', 'document.body.appendChild(el)'],
+    ['js/ui.js', 'm.innerHTML = html'],
+    ['js/app.js', 'feedback-area'],
+    ['js/app.js', 'aria-live="polite"']
   ];
-  for (const [file, line, keyword] of SPOT) {
-    if (!exists(file) || !src.includes(file)) continue;
-    const all = read(file).split('\n');
-    if (line === null) { t.ok(all.some((l) => l.includes(keyword)), file + ' 에 ' + keyword + ' 규칙이 없다'); continue; }
-    const near = all.slice(Math.max(0, line - 4), line + 3).join('\n');
-    if (!near.includes(keyword)) {
-      const real = all.findIndex((l) => l.includes(keyword)) + 1;
-      t.ok(false, file + ':' + line + ' 근처에 ' + keyword + ' 가 없다', real ? '실제 ' + real + '행' : '파일에 없음');
-    }
+  for (const [file, keyword] of SPOT) {
+    const relevant = cites.filter((cite) => cite.startsWith(file + ':'));
+    t.ok(relevant.length > 0, '필수 근거 파일 인용이 없다', file);
+    if (!exists(file)) continue;
+    const lines = read(file).split('\n');
+    const citedText = relevant.map((cite) => {
+      const [, first, last] = /:(\d+)(?:-(\d+))?$/.exec(cite);
+      return lines.slice(Number(first) - 1, Number(last || first)).join('\n');
+    }).join('\n');
+    t.ok(citedText.includes(keyword), '문서가 인용한 범위에 근거가 없다', file + ' → ' + keyword);
   }
   const dec = 'docs/expansion/DECISIONS.md';
   if (exists(dec)) {
@@ -1616,28 +1632,46 @@ await check({
 await check({
   id: 'attr-footer',
   task: '지도 T8-attribution',
-  label: 'index.html 푸터의 Natural Earth 출처 한 줄',
+  label: '설정의 앱 정보에 자산 출처와 지도 방침 표시',
   severity: 'acceptance',
-  why: "이 저장소는 flag-icons·Typecast 를 푸터와 README 양쪽에 적는 관례가 있고, D3 항목 5 가 '땅만 그리고 국경선은 그리지 않는다' 의 화면 명문화를 요구한다."
+  why: '공통 푸터에서 설정으로 이동해도 flag-icons·Natural Earth·Typecast 출처와 국경선을 그리지 않는다는 방침에 접근할 수 있어야 한다.'
 }, (t) => {
   const html = read('index.html');
-  if (!html.includes('Natural Earth')) t.skip("index.html 에 'Natural Earth' 가 없다 — T8-attribution 미구현");
-  const footer = /<footer[\s\S]*?<\/footer>/.exec(html);
-  t.ok(footer, '<footer> 구간을 찾지 못했다');
-  if (!footer) return;
-  const f = footer[0];
+  const app = codeOnly(read('js/app.js'));
+  if (!html.includes('Natural Earth')) t.skip("index.html에 'Natural Earth'가 없다 — T8-attribution 미구현");
+  const info = /<section\b[^>]*class="[^"]*\bapp-info\b[^"]*"[^>]*>[\s\S]*?<\/section>/.exec(html);
+  t.ok(info, '앱 정보 section을 찾지 못했다');
+  if (!info) return;
+  const f = info[0];
+  t.ok(/<h3>앱 정보<\/h3>/.test(f), '설정 출처 영역의 제목이 없다');
+  const extras = /<div\b[^>]*id="settings-extras"[^>]*>/.exec(html);
+  let extrasEnd = -1, depth = 0;
+  if (extras) {
+    for (const tag of html.slice(extras.index).matchAll(/<\/?div\b[^>]*>/g)) {
+      depth += tag[0].startsWith('</') ? -1 : 1;
+      if (depth === 0) { extrasEnd = extras.index + tag.index; break; }
+    }
+  }
+  t.ok(extras && extras.index < info.index && info.index + f.length <= extrasEnd,
+    '앱 정보가 설정 부가 영역 안에 없다');
+  const screen = funcBody(app, 'function musicScreen(');
+  t.ok(screen && /getElementById\('settings-extras'\)/.test(screen) && /extras\.hidden\s*=\s*screen\s*!==\s*'settings'/.test(screen),
+    '설정 화면에서 앱 정보 영역을 표시하는 연결이 없다');
   const line = f.split('<br>').find((l) => l.includes('Natural Earth')) || '';
   t.ok(/href="https:\/\/www\.naturalearthdata\.com\/"/.test(line), 'naturalearthdata.com 링크가 없다');
-  t.ok(/target="_blank"/.test(line) && /rel="noopener"/.test(line), 'target="_blank" rel="noopener" 가 없다');
+  t.ok(/target="_blank"/.test(line) && /rel="noopener"/.test(line), 'target="_blank" rel="noopener"가 없다');
   t.ok(line.includes('퍼블릭 도메인'), "'퍼블릭 도메인' 문구가 없다");
-  t.ok(line.includes('국경선'), "'국경선을 그리지 않아요' 방침 문구가 없다");
+  t.ok(line.includes('땅만 그리고 국경선은 그리지 않아요'), '국경선을 그리지 않는다는 지도 방침 문구가 없다');
+  t.ok(/href="https:\/\/github\.com\/lipis\/flag-icons"/.test(f) && f.includes('(MIT)'), 'flag-icons 링크 또는 MIT 출처가 없다');
+  t.ok(/href="https:\/\/typecast\.ai"/.test(f) && f.includes('Sua(수아)'), 'Typecast 링크 또는 음성 이름이 없다');
+  t.ok(f.includes('TechJuiceLab · OpenAI AI 생성'), '상징물·명소 그림 출처가 없다');
   const parts = f.split('<br>');
   const ne = parts.findIndex((l) => l.includes('Natural Earth'));
   const fi = parts.findIndex((l) => l.includes('flag-icons'));
   const last = parts.findIndex((l) => l.includes('이 브라우저 안에만'));
   t.ok(fi !== -1 && ne > fi, 'Natural Earth 줄이 flag-icons 줄보다 앞이다');
   t.ok(last !== -1 && ne < last, 'Natural Earth 줄이 마지막 안내문보다 뒤다');
-  t.ok(countOf(f, /<br>/g) === 3, '푸터 <br> 개수가 3(=네 줄)이 아니다', countOf(f, /<br>/g) + '개');
+  t.ok(countOf(f, /<br>/g) === 3, '앱 정보 출처가 네 줄이 아니다', countOf(f, /<br>/g) + '개의 줄바꿈');
 });
 
 await check({
@@ -1914,7 +1948,7 @@ for (const line of [
   '② 내보낸 JSON 을 다른 브라우저에 붙여 실제로 복원되는가 (기계는 샌드박스까지만 본다).',
   '③ 육지 실루엣 육안 확인: 이탈리아 장화 · 한반도 · 플로리다 반도 · 스칸디나비아 · 일본 열도가',
   '   알아보이는가 / 나라를 가르는 선이 한 개도 없는가 / 서사하라·팔레스타인·레소토 자리에 흰 구멍이 없는가.',
-  '④ 푸터가 브라우저에서 네 줄로 보이고 Natural Earth 링크가 새 탭으로 열리는가.',
+  '④ 설정의 앱 정보에서 네 출처 줄이 보이고 Natural Earth 링크가 새 탭으로 열리는가.',
   '⑤ 새 버킷의 모든 읽기가 (r.x || 0) 으로 방어됐는가 · export 핸들러가 stats() 를 다시 부르지 않는가.'
 ]) console.log('  ' + line);
 

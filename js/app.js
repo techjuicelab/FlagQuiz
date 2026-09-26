@@ -14,10 +14,7 @@
 
   var DISCOVERIES = ['여행책에 한 장', '지도에 톡', '하나 더 만났어요', '깃발이 살랑'];
 
-  // 첫 화면은 큰 놀이 단추 네 개뿐이다(2026-09-17 아이 기준 시안). 단추를 누르면 저장된 조건 그대로 바로 시작한다.
-  // 순서는 늘 같다 — 글자를 못 읽는 아이는 자리로 단추를 기억하므로, 마지막에 고른 놀이를 앞으로 끌어오지 않는다.
-  // 국기·그림 단추에는 세부 놀이 알약이 붙는다. 알약을 누르면 그 놀이로, 큰 단추는 마지막에 쓴 세부 놀이로 시작한다.
-  // pill 은 아이패드(넓은 알약)의 이름, short 는 폰(좁은 알약)의 이름이다. 아이는 그림(emo)으로 고른다.
+  // 홈에서는 주제를 고르고, 다음 화면에서 놀이 방식을 고른다. 네 주제의 자리는 늘 같다.
   var MODE_CARDS = [
     { id: 'choice4', group: 'flag', emo: '👀', title: '국기 보고 나라 고르기', pill: '국기 보고 고르기', short: '보고' },
     { id: 'reverse', group: 'flag', emo: '🔎', title: '나라 보고 국기 찾기', pill: '듣고 국기 찾기', short: '찾기' },
@@ -30,8 +27,8 @@
     { id: 'capitalVoice', group: 'capital', emo: '🎤', title: '국기 보고 수도 말하기', pill: '수도 말하기', short: '말하기' }
   ];
   var PLAY_TILES = [
-    { id: 'flag', emo: '🚩', title: '국기 놀이', pills: true },
-    { id: 'art', emo: '🎨', title: '그림 놀이', pills: true },
+    { id: 'flag', title: '국기 놀이', desc: '세계의 국기를 알아봐요' },
+    { id: 'art', title: '그림 놀이', desc: '그림과 명소로 만나요' },
     { id: 'map', emo: '🗺️', title: '지도 놀이', desc: '나라가 있는 자리를 찾아요' },
     { id: 'capital', emo: '🏙️', title: '수도 놀이', desc: '공부하기 · 문제 풀기' }
   ];
@@ -73,31 +70,15 @@
   }
 
   function playGrid(s) {
-    var current = modeCard(s.mode);
-    return '<div class="play-grid">' +
-      PLAY_TILES.map(function (tile) {
-        var modes = tileModes(tile);
-        if (!modes.length) return '';
-        var start = tileMode(tile, s);
-        var pressed = !!current && current.group === tile.id;
-        var desc = tile.desc || (modeCard(start) || {}).title || '';
-        return '<div class="play-tile" data-play-tile="' + tile.id + '">' +
-          '<button class="play-btn" id="play-' + tile.id + '" type="button" data-play="' + tile.id + '" aria-pressed="' + (pressed ? 'true' : 'false') + '">' +
-            '<span class="play-emo" aria-hidden="true">' + tile.emo + '</span>' +
-            '<span class="play-t">' + esc(tile.title) + '</span>' +
-            '<span class="play-d">' + esc(desc) + '</span>' +
-            (pressed ? '<span class="play-check" aria-hidden="true">✓</span>' : '') +
-          '</button>' +
-          (tile.pills
-            ? '<div class="play-pills" data-tag="' + tile.emo + '">' + modes.map(function (m) {
-                return '<button class="pill play-pill" type="button" data-mode="' + m.id + '" aria-pressed="' + (s.mode === m.id ? 'true' : 'false') + '" aria-label="' + esc(m.title) + '">' +
-                  '<span aria-hidden="true">' + m.emo + '</span>' +
-                  '<span class="lbl-l">' + esc(m.pill) + '</span><span class="lbl-s">' + esc(m.short) + '</span></button>';
-              }).join('') + '</div>'
-            : '') +
-        '</div>';
-      }).join('') +
-    '</div>';
+    return '<div class="play-grid">' + PLAY_TILES.map(function (tile) {
+      if (!tileModes(tile).length) return '';
+      return '<div class="play-tile" data-play-tile="' + tile.id + '">' +
+        '<button class="play-btn" id="play-' + tile.id + '" type="button" data-play="' + tile.id + '">' +
+          '<span class="play-icon">' + ui.icon(tile.id) + '</span>' +
+          '<span class="play-t">' + esc(tile.title) + '</span>' +
+          '<span class="play-d">' + esc(tile.desc) + '</span>' +
+        '</button></div>';
+    }).join('') + '</div>';
   }
 
   function totalCountries() { return quiz.all().length; }
@@ -144,7 +125,8 @@
     newStickers: [],
     lastSummary: null,
     lastBadges: [],
-    dadOpen: false          // 아빠 설정 패널이 펼쳐져 있는지. 저장하지 않는 화면 상태 — 홈을 새로 그리면 닫힌다.
+    category: null,
+    settingsReturn: 'home'
   };
 
   /** 다른 문제나 화면으로 넘어간 뒤 이전 안내가 뒤늦게 나오지 않도록 한다. */
@@ -175,6 +157,14 @@
 
   function musicScreen(screen) {
     state.screen = screen;
+    var shell = doc.querySelector('.app');
+    if (shell) shell.setAttribute('data-screen', screen);
+    var extras = doc.getElementById('settings-extras');
+    if (extras) extras.hidden = screen !== 'settings';
+    ['home', 'dex', 'stats', 'settings'].forEach(function (name) {
+      var link = doc.getElementById('nav-' + name);
+      if (link) link.setAttribute('aria-current', (name === screen || (name === 'home' && ['category', 'capital-menu', 'result'].indexOf(screen) >= 0)) ? 'page' : 'false');
+    });
     if (!FQ.music) return;
     var s = store.settings();
     FQ.music.setEnabled(s.sound);
@@ -193,383 +183,181 @@
     } else stopMusic();
   }
 
-  /* =================== 홈 =================== */
-  /**
-   * 아이 화면: 레벨 링 · 오늘의 도전 · 큰 놀이 단추 4개(+알약) · 여행 카드 다섯 칸 · '아빠 설정' 한 줄.
-   * 어른 몫(이름·대결·난이도·대륙·문제 수·설정·제한 시간·대륙별 모으기·한 번 더 만나기)은 전부
-   * 아빠 설정 패널에 접는다. 패널은 길게 눌러야 열리고, 홈을 새로 그리면 닫힌다
-   * (opts.keepSettings 는 패널 안에서 조건을 바꿔 다시 그릴 때만 쓴다).
-   */
-  function renderHome(opts) {
-    if (state.artTimer) { global.clearTimeout(state.artTimer); state.artTimer = null; }
-    cancelPendingFeedback();
-    stopTimer();
-    stopListening();
-    audio.stopSpeaking();
-    state.game = null;
+  /* =================== 홈 · 주제 선택 · 설정 =================== */
+  function renderHome() {
+    enterCapitalScreen('home');
     state.study = null;
-    state.dadOpen = !!(opts && opts.keepSettings) && state.dadOpen;
     var s = store.settings();
     if (s.mode !== quiz.availableMode(s.mode)) s = store.updateSettings({ mode: quiz.availableMode(s.mode) });
-    musicScreen('home');
-    var wrongCount = store.wrongList().length;
-    var duel = s.players.length > 1;
-    // 그림·명소·지도·수도 놀이에서는 대결 스위치를 감춘다. 저장된 두 이름은 그대로 두어 국기 놀이로 돌아오면 다시 보인다.
-    var canDuel = duelAllowed(s.mode);
-    var showDuel = duel && canDuel;
-    var poolSize = quiz.pool({ level: s.level, continent: s.continent, axis: quiz.MODES[s.mode] && quiz.MODES[s.mode].axis }).length;
-
-    var html =
-      '<section class="screen home-kid">' +
-        playerCard(s) +
-        dailyCard() +
-        playGrid(s) +
-        travelRow() +
-
-        '<button class="dad-open" id="dad-open" type="button" aria-expanded="' + (state.dadOpen ? 'true' : 'false') + '" aria-controls="dad-panel">' +
-          GEAR_SVG +
-          '<span class="dad-t">아빠 설정</span>' +
-          '<span class="dad-d">이름 · 난이도 · 문제 수 · 소리</span>' +
-          '<span class="spacer"></span>' +
-          '<span class="dad-hint" id="dad-hint">길게 눌러 열어요</span>' +
-          LOCK_SVG +
-        '</button>' +
-
-        '<div class="dad-panel" id="dad-panel"' + (state.dadOpen ? '' : ' hidden') + '>' +
-
-        '<div class="card section">' +
-          '<h3>누가 하나요?</h3>' +
-          '<div class="field">' +
-            '<label for="p1">이름</label>' +
-            '<input class="text-input" id="p1" maxlength="10" value="' + esc(s.players[0] || '') + '" placeholder="민규">' +
-          '</div>' +
-          '<label class="switch' + (canDuel ? '' : ' hidden') + '" id="duel-switch"><input type="checkbox" id="duel"' + (duel ? ' checked' : '') + '> 둘이서 번갈아 대결하기</label>' +
-          (canDuel ? '' : '<p class="small muted" id="duel-off-note" style="margin:8px 0 0">둘이서 대결하기는 국기 놀이에서 할 수 있어요.</p>') +
-          '<p class="small muted' + (showDuel ? '' : ' hidden') + '" id="duel-note" style="margin:8px 0 0">' +
-            '점수는 각자 따로 매기지만, 스티커·경험치·레벨은 <b id="duel-owner">' +
-            esc(s.players[0] || '민규') + '</b> 것으로 쌓여요.</p>' +
-          '<div class="field' + (showDuel ? '' : ' hidden') + '" id="p2-field" style="margin-top:10px">' +
-            '<label for="p2">함께할 사람</label>' +
-            '<input class="text-input" id="p2" maxlength="10" value="' + esc(s.players[1] || '아빠') + '" placeholder="아빠">' +
-          '</div>' +
-        '</div>' +
-
-        '<div class="card section">' +
-          '<h3>난이도</h3>' +
-          '<div class="pill-grid">' +
-            levels().map(function (l) {
-              return '<button class="pill" type="button" data-level="' + l.id + '" aria-pressed="' + (String(s.level) === l.id ? 'true' : 'false') + '">' +
-                esc(l.label) + ' <span class="small">· ' + esc(l.desc) + '</span></button>';
-            }).join('') +
-          '</div>' +
-
-          '<h3 style="margin-top:18px">대륙</h3>' +
-          '<div class="pill-grid">' +
-            CONTINENTS.map(function (c) {
-              return '<button class="pill" type="button" data-continent="' + esc(c) + '" aria-pressed="' + (s.continent === c ? 'true' : 'false') + '">' +
-                (c === 'all' ? '전체' : esc(c)) + '</button>';
-            }).join('') +
-          '</div>' +
-
-          '<h3 style="margin-top:18px">몇 문제 풀까요?</h3>' +
-          '<div class="pill-grid">' +
-            COUNTS.map(function (n) {
-              return '<button class="pill" type="button" data-count="' + n + '" aria-pressed="' + (String(s.count) === String(n) ? 'true' : 'false') + '">' +
-                (n === 'all' ? '전부 (' + poolSize + '문제)' : n + '문제') + '</button>';
-            }).join('') +
-          '</div>' +
-          '<p class="small muted" style="margin:12px 0 0">지금 고른 조건에 맞는 나라는 <b>' + poolSize + '개</b>예요.</p>' +
-        '</div>' +
-
-        '<div class="card section">' +
-          '<h3>설정</h3>' +
-          '<div class="row" style="gap:18px">' +
-            '<label class="switch"><input type="checkbox" id="opt-sound"' + (s.sound ? ' checked' : '') + '> 🔔 효과음</label>' +
-            '<label class="switch"><input type="checkbox" id="opt-speak"' + (s.speak ? ' checked' : '') + '> 🔊 이름 읽어주기</label>' +
-            '<label class="switch"><input type="checkbox" id="opt-bgm"' + (s.homeMusic ? ' checked' : '') + '> 🎵 홈과 도감 배경음</label>' +
-            '<label class="switch"><input type="checkbox" id="opt-correct-music"' + (s.correctMusic ? ' checked' : '') + '> ✨ 정답에 다른 소리</label>' +
-            '<label class="switch"><input type="checkbox" id="opt-review"' + (s.reviewFirst ? ' checked' : '') + '> 🔁 한 번 더 만날 나라를 자주</label>' +
-          '</div>' +
-          // 제한 시간은 국기 놀이에만 있다(D23). 다른 놀이를 고른 채 열면 줄을 감춘다(알약은 남겨 두어 저장값은 유지).
-          '<div class="field" style="margin-top:12px' + (timedMode(s.mode) ? '' : ';display:none') + '">' +
-            '<label for="opt-timer">제한 시간</label>' +
-            '<div class="pill-grid">' +
-              [0, 10, 20].map(function (t) {
-                return '<button class="pill" type="button" data-timer="' + t + '" aria-pressed="' + (Number(s.timer) === t ? 'true' : 'false') + '">' +
-                  (t === 0 ? '없음' : t + '초') + '</button>';
-              }).join('') +
-            '</div>' +
-          '</div>' +
-          (speechMode(s.mode) ? voiceNotice(s.mode) : '') +
-        '</div>' +
-
-        continentCard() +
-
-        (wrongCount > 0
-          ? '<button class="btn btn-big" id="review" type="button" style="width:100%">📖 한 번 더 만나기 (' +
-              Math.min(wrongCount, 20) + '문제' + (wrongCount > 20 ? ' · 남은 ' + (wrongCount - 20) + '개는 다음에' : '') + ')</button>'
-          : '') +
-
-        '<button class="btn btn-ghost btn-big" id="dad-close" type="button" style="width:100%;margin-top:12px">✅ 설정 닫기</button>' +
-
-        '</div>' +
-      '</section>';
-
-    var m = ui.setMain(html);
-
-    // 아이 화면: 단추나 알약을 누르면 바로 시작한다. 별도 '시작하기'는 없다.
-    ui.on(m, '[data-play]', 'click', function (e, t) {
-      var tile = null;
-      for (var i = 0; i < PLAY_TILES.length; i++) if (PLAY_TILES[i].id === t.getAttribute('data-play')) tile = PLAY_TILES[i];
-      if (tile && tile.id === 'capital') { savePlayers(m); renderCapitalMenu(); return; }
-      var mode = tile && tileMode(tile, store.settings());
-      if (mode) startPlay(m, mode);
+    var name = s.players[0] || '친구';
+    var m = ui.setMain('<section class="screen home-kid">' +
+      '<div class="home-intro"><span class="home-avatar" aria-hidden="true">' + esc(name.slice(0, 1)) + '</span>' +
+        '<span class="eyebrow">' + esc(name) + '의 세계 여행</span><h2>무엇을 알아볼까요?</h2></div>' +
+      playGrid(s) + playerCard(s) + dailyCard() +
+      '<button class="home-offline" id="home-offline" type="button">' + ui.icon('download') +
+        '<span>인터넷 없이 놀기</span><span class="spacer"></span><span id="home-offline-summary">준비 확인</span>' + ui.icon('chevron') + '</button>' +
+      '</section>');
+    ui.on(m, '[data-play]', 'click', function (e, t) { renderCategory(t.getAttribute('data-play')); });
+    ui.$('#home-offline', m).addEventListener('click', function () { renderSettings('offline'); });
+    ui.$('#home-progress', m).addEventListener('click', function () { FQ.screens.stats(); });
+    var dailyGo = ui.$('#daily-go', m);
+    if (dailyGo) dailyGo.addEventListener('click', function () {
+      var d = FQ.progress.daily();
+      if (d.complete) { FQ.screens.dex(); return; }
+      store.updateSettings({ continent: d.continent });
+      keepFlagAxisMode();
+      renderCategory('flag');
     });
-    ui.on(m, '[data-mode]', 'click', function (e, t) {
-      startPlay(m, t.getAttribute('data-mode'));
-    });
+    if (FQ.offline && FQ.offline.render) FQ.offline.render();
+  }
 
-    // 아빠 설정: 600ms 이상 길게 눌러야 열린다. 짧게 누르면 안내 글자만 바뀐다(읽어 주지 않는다 — 수아 음원에 없는 문구).
-    longPress(ui.$('#dad-open', m), function () { openDadPanel(m); }, function () { nudgeDadHint(m); });
-    var dadClose = ui.$('#dad-close', m);
-    if (dadClose) dadClose.addEventListener('click', function () { savePlayers(m); renderHome(); });
+  function renderCategory(group) {
+    if (group === 'capital') { renderCapitalMenu(); return; }
+    if (group === 'map') { startPlay(null, 'map'); return; }
+    var tile = PLAY_TILES.filter(function (t) { return t.id === group; })[0];
+    if (!tile || !tileModes(tile).length) return;
+    enterCapitalScreen('category');
+    state.study = null;
+    state.category = group;
+    var s = store.updateSettings({ mode: tileMode(tile, store.settings()) });
+    var descriptions = {
+      choice4: '국기를 보고 나라 이름을 골라요', reverse: '나라 이름을 듣고 국기를 찾아요',
+      voice: '국기를 보고 나라 이름을 말해요', typing: '국기를 보고 나라 이름을 써요',
+      symbol: '나라를 떠올리는 그림을 만나요', place: '세계의 유명한 장소를 만나요',
+      map: '세계지도에서 나라의 자리를 찾아요'
+    };
+    var m = ui.setMain('<section class="screen category-menu">' +
+      '<div class="screen-heading"><button class="btn btn-sm btn-ghost" id="category-back" type="button">' + ui.icon('back') + ' 놀이</button>' +
+        '<h2>' + esc(tile.title) + '</h2></div><p class="muted">어떻게 놀아 볼까요?</p>' +
+      '<div class="mode-list">' + tileModes(tile).map(function (mode) {
+        return '<button class="mode-option" type="button" data-mode="' + mode.id + '"><span class="mode-icon">' + ui.icon(({choice4:'eye',reverse:'sound',voice:'mic',typing:'keyboard',symbol:'art',place:'map'})[mode.id] || group) + '</span>' +
+          '<span><strong>' + esc(mode.title) + '</strong><small>' + esc(descriptions[mode.id]) + '</small>' +
+          ((s.lastMode || {})[group] === mode.id ? '<span class="mode-recent">최근에 한 놀이</span>' : '') + '</span>' + ui.icon('chevron') + '</button>';
+      }).join('') + '</div>' +
+      '<button class="category-settings btn btn-ghost" id="category-settings" type="button">' + ui.icon('settings') +
+        esc(quiz.LEVEL_LABEL[s.level]) + ' · ' + esc(s.continent === 'all' ? '모든 대륙' : s.continent) + ' · ' + (s.count === 'all' ? '모든 문제' : s.count + '문제') + '</button>' +
+      (group === 'flag' && store.wrongList().length ? '<button class="btn btn-ghost" id="review" type="button">한 번 더 만나기 · ' + Math.min(store.wrongList().length, 20) + '문제</button>' : '') +
+      '</section>');
+    ui.$('#category-back', m).addEventListener('click', renderHome);
+    ui.$('#category-settings', m).addEventListener('click', function () { renderSettings(); });
+    ui.on(m, '[data-mode]', 'click', function (e, t) { startPlay(m, t.getAttribute('data-mode')); });
+    var review = ui.$('#review', m);
+    if (review) review.addEventListener('click', function () { keepFlagAxisMode(); startGame(store.wrongList()); });
+  }
 
-    // 패널 안에서 조건을 바꾸면 다시 그리되 패널은 열어 둔다 — 알약 하나 누를 때마다 다시 길게 누르게 하지 않는다.
-    ui.on(m, '[data-level]', 'click', function (e, t) {
-      store.updateSettings({ level: t.getAttribute('data-level') });
-      audio.play('click');
-      renderHome({ keepSettings: true });
-    });
-    ui.on(m, '[data-continent]', 'click', function (e, t) {
-      store.updateSettings({ continent: t.getAttribute('data-continent') });
-      audio.play('click');
-      renderHome({ keepSettings: true });
-    });
-    ui.on(m, '[data-count]', 'click', function (e, t) {
-      var v = t.getAttribute('data-count');
-      store.updateSettings({ count: v === 'all' ? 'all' : parseInt(v, 10) });
-      audio.play('click');
-      renderHome({ keepSettings: true });
-    });
-    ui.on(m, '[data-timer]', 'click', function (e, t) {
-      store.updateSettings({ timer: parseInt(t.getAttribute('data-timer'), 10) });
-      audio.play('click');
-      renderHome({ keepSettings: true });
-    });
+  function settingRow(id, title, control, description) {
+    return '<div class="setting-row"><label class="setting-copy" for="' + id + '"><span>' + title + '</span>' +
+      (description ? '<small>' + description + '</small>' : '') + '</label>' + control + '</div>';
+  }
 
-    ui.$('#duel', m).addEventListener('change', function (ev) {
-      ui.$('#p2-field', m).classList.toggle('hidden', !ev.target.checked);
-      var note = ui.$('#duel-note', m);
-      if (note) {
-        note.classList.toggle('hidden', !ev.target.checked);
-        var owner = ui.$('#duel-owner', m);
-        var p1box = ui.$('#p1', m);
-        if (owner && p1box) owner.textContent = (p1box.value || '').trim() || '민규';
-      }
+  function settingSelect(id, selected, options, disabled) {
+    return '<select id="' + id + '"' + (disabled ? ' disabled' : '') + '>' + options.map(function (option) {
+      return '<option value="' + esc(option[0]) + '"' + (String(selected) === String(option[0]) ? ' selected' : '') + '>' + esc(option[1]) + '</option>';
+    }).join('') + '</select>';
+  }
+
+  function settingSwitch(id, checked, disabled) {
+    return '<input class="setting-switch" type="checkbox" role="switch" id="' + id + '"' + (checked ? ' checked' : '') + (disabled ? ' disabled' : '') + '>';
+  }
+
+  function closeSettings() {
+    if (state.settingsReturn === 'category') renderCategory(state.category);
+    else if (state.settingsReturn === 'capital-menu') renderCapitalMenu();
+    else if (state.settingsReturn === 'dex') FQ.screens.dex();
+    else if (state.settingsReturn === 'stats') FQ.screens.stats();
+    else renderHome();
+  }
+
+  function renderSettings(section) {
+    if (state.screen !== 'settings') state.settingsReturn = state.screen;
+    enterCapitalScreen('settings');
+    state.study = null;
+    var s = store.settings();
+    var canDuel = duelAllowed(s.mode), duel = s.players.length > 1;
+    var m = ui.setMain('<section class="screen settings-screen">' +
+      '<div class="settings-header"><div><p class="eyebrow">내게 맞게</p><h2>설정</h2></div>' +
+        '<button class="btn btn-sm btn-ghost" id="settings-done" type="button">완료</button></div>' +
+      '<section class="settings-group"><h3>놀이 조건</h3>' +
+        '<p class="settings-caption">' + esc((modeCard(s.mode) || {}).title || '국기 놀이') + '에 사용할 조건이에요.</p>' +
+        settingRow('p1', '이름', '<input class="text-input" type="text" id="p1" maxlength="10" value="' + esc(s.players[0] || '') + '" placeholder="민규">') +
+        settingRow('duel', '둘이서 번갈아 대결', settingSwitch('duel', duel, !canDuel), canDuel ? '국기 놀이에서 함께 답해요' : '국기 놀이를 고르면 사용할 수 있어요') +
+        '<div id="p2-field"' + (duel && canDuel ? '' : ' hidden') + '>' + settingRow('p2', '함께할 사람', '<input class="text-input" type="text" id="p2" maxlength="10" value="' + esc(s.players[1] || '아빠') + '" placeholder="아빠">') +
+          '<p class="settings-caption" id="duel-note">스티커와 경험치는 <b id="duel-owner">' + esc(s.players[0]) + '</b>의 기록에 쌓여요.</p></div>' +
+        settingRow('setting-level', '난이도', settingSelect('setting-level', s.level, levels().map(function (l) { return [l.id, l.label]; }))) +
+        settingRow('setting-continent', '대륙', settingSelect('setting-continent', s.continent, CONTINENTS.map(function (c) { return [c, c === 'all' ? '전체' : c]; }))) +
+        settingRow('setting-count', '문제 수', settingSelect('setting-count', s.count, COUNTS.map(function (n) { return [n, n === 'all' ? '전부' : n + '문제']; }))) +
+        settingRow('setting-timer', '제한 시간', settingSelect('setting-timer', s.timer, [[0, '없음'], [10, '10초'], [20, '20초']], !timedMode(s.mode)), timedMode(s.mode) ? '' : '시간 제한은 국기 놀이에서 사용할 수 있어요') +
+        settingRow('opt-review', '한 번 더 만날 나라를 자주', settingSwitch('opt-review', s.reviewFirst)) +
+        '<p class="settings-caption" id="settings-pool" role="status"></p>' +
+      '</section><section class="settings-group"><h3>소리</h3>' +
+        settingRow('opt-sound', '효과음', settingSwitch('opt-sound', s.sound)) +
+        settingRow('opt-speak', '이름 읽어주기', settingSwitch('opt-speak', s.speak)) +
+        settingRow('opt-bgm', '홈과 도감 배경음', settingSwitch('opt-bgm', s.homeMusic), '효과음이 켜져 있을 때 재생해요') +
+        settingRow('opt-correct-music', '정답에 다른 소리', settingSwitch('opt-correct-music', s.correctMusic), '효과음이 켜져 있을 때 재생해요') +
+      '</section><section class="settings-group" id="settings-records"><h3>기록 관리</h3>' +
+        '<p class="settings-caption">기록은 이 기기의 브라우저에 저장돼요.</p>' +
+        '<div class="settings-actions"><button class="btn" id="settings-export" type="button">기록 내보내기</button>' +
+          '<button class="btn btn-ghost danger-text" id="settings-reset" type="button">기록 초기화</button></div><div id="export-out"></div>' +
+      '</section></section>');
+    ui.$('#settings-done', m).addEventListener('click', closeSettings);
+    function updatePool() {
+      var current = store.settings();
+      var count = quiz.pool({ level: current.level, continent: current.continent, axis: quiz.MODES[current.mode].axis }).length;
+      ui.$('#settings-pool', m).textContent = '지금 조건에 맞는 나라는 ' + count + '개예요.';
+    }
+    ['level', 'continent', 'count', 'timer'].forEach(function (key) {
+      ui.$('#setting-' + key, m).addEventListener('change', function (event) {
+        var value = event.target.value;
+        if (key === 'timer' || (key === 'count' && value !== 'all')) value = Number(value);
+        var patch = {}; patch[key] = value;
+        store.updateSettings(patch);
+        updatePool();
+      });
+    });
+    ui.$('#duel', m).addEventListener('change', function (event) {
+      ui.$('#p2-field', m).hidden = !event.target.checked;
       savePlayers(m);
     });
     ['#p1', '#p2'].forEach(function (sel) {
-      var input = ui.$(sel, m);
-      if (input) input.addEventListener('change', function () { savePlayers(m); });
+      ui.$(sel, m).addEventListener('change', function () { savePlayers(m); });
     });
-    ui.$('#opt-sound', m).addEventListener('change', function (ev) {
-      store.updateSettings({ sound: ev.target.checked });
-      audio.setEnabled(ev.target.checked);
-      musicScreen('home');
-    });
-    ui.$('#opt-speak', m).addEventListener('change', function (ev) {
-      store.updateSettings({ speak: ev.target.checked });
-      audio.setSpeakEnabled(ev.target.checked);
-    });
-    ui.$('#opt-bgm', m).addEventListener('change', function (ev) {
-      if (FQ.music) FQ.music.unlock();
-      store.updateSettings({ homeMusic: ev.target.checked });
-      musicScreen('home');
-    });
-    ui.$('#opt-correct-music', m).addEventListener('change', function (ev) {
-      store.updateSettings({ correctMusic: ev.target.checked });
-    });
-    ui.$('#opt-review', m).addEventListener('change', function (ev) {
-      store.updateSettings({ reviewFirst: ev.target.checked });
-    });
-
-    // 오늘의 도전 카드를 누르면 그 대륙으로 맞춰 준다 (여태 눌러도 아무 일이 없었다)
-    var dailyGo = ui.$('#daily-go', m);
-    if (dailyGo) {
-      dailyGo.addEventListener('click', function () {
-        var d = FQ.progress.daily();
-        if (d.complete) { FQ.screens.dex(); return; }
-        savePlayers(m);
-        store.updateSettings({ continent: d.continent });
-        keepFlagAxisMode();
-        renderHome();
+    [['sound', 'opt-sound'], ['speak', 'opt-speak'], ['homeMusic', 'opt-bgm'], ['correctMusic', 'opt-correct-music'], ['reviewFirst', 'opt-review']].forEach(function (pair) {
+      ui.$('#' + pair[1], m).addEventListener('change', function (event) {
+        var patch = {}; patch[pair[0]] = event.target.checked;
+        store.updateSettings(patch);
+        audio.setEnabled(store.settings().sound);
+        audio.setSpeakEnabled(store.settings().speak);
+        musicScreen('settings');
       });
-    }
-
-    // 대륙별 모으기 항목을 누르면 스티커 판의 그 대륙으로 간다
-    ui.on(m, '[data-cont-go]', 'click', function (e, t) {
-      FQ.screens.dex(t.getAttribute('data-cont-go'));
     });
-
-    var reviewBtn = ui.$('#review', m);
-    if (reviewBtn) {
-      reviewBtn.addEventListener('click', function () {
-        savePlayers(m);
-        keepFlagAxisMode();
-        startGame(store.wrongList());
-      });
+    ui.$('#settings-export', m).addEventListener('click', function () { FQ.screens.exportRecords(); });
+    ui.$('#settings-reset', m).addEventListener('click', function () { FQ.screens.resetRecords(); });
+    updatePool();
+    if (FQ.offline && FQ.offline.render) FQ.offline.render();
+    var target = section === 'offline' ? doc.getElementById('offline-panel') : section === 'records' ? ui.$('#settings-records', m) : null;
+    if (target) {
+      if (section === 'offline') target.open = true;
+      target.scrollIntoView({ block: 'start', behavior: 'auto' });
     }
   }
 
-  var GEAR_SVG = '<svg class="dad-ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>';
-  var LOCK_SVG = '<svg class="dad-ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
-  var LONG_PRESS_MS = 600;
-
-  /**
-   * 놀이 단추·알약 → 바로 시작. 고른 세부 놀이를 settings.mode 에, 단추별 마지막 세부 놀이를
-   * settings.lastMode 버킷({ flag: 'voice', art: 'place' })에 남겨 다음에 큰 단추만 눌러도 같은 놀이로 간다.
-   */
+  /** 고른 놀이를 다음에도 쓸 수 있게 기억하고 시작한다. */
   function startPlay(m, mode) {
     if (quiz.availableMode(mode) !== mode) return;
     var card = modeCard(mode);
     var last = Object.assign({}, store.settings().lastMode || {});
     if (card) last[card.group] = mode;
-    savePlayers(m);
     store.updateSettings({ mode: mode, lastMode: last });
     startGame(null);
   }
 
-  /**
-   * 길게 누르기. pointerdown(없으면 touchstart/mousedown)에서 시계를 걸고, 떼거나 움직이거나 취소되면 푼다.
-   * 시계가 다 되면 onLong, 그 전에 떼어 click 이 오면 onShort. 길게 눌러 열린 뒤 따라오는 click 은 무시한다.
-   */
-  function longPress(el, onLong, onShort) {
-    if (!el) return;
-    var timer = null, fired = false, startX = 0, startY = 0;
-    function clear() { if (timer) global.clearTimeout(timer); timer = null; }
-    function down(ev) {
-      if (ev && ev.button > 0) return;
-      var p = ev && ev.touches && ev.touches[0] ? ev.touches[0] : ev || {};
-      startX = p.clientX || 0; startY = p.clientY || 0;
-      fired = false;
-      clear();
-      timer = global.setTimeout(function () { timer = null; fired = true; onLong(); }, LONG_PRESS_MS);
-    }
-    function move(ev) {
-      if (!timer) return;
-      var p = ev && ev.touches && ev.touches[0] ? ev.touches[0] : ev || {};
-      if (Math.abs((p.clientX || 0) - startX) > 12 || Math.abs((p.clientY || 0) - startY) > 12) clear();
-    }
-    var hasPointer = !!global.PointerEvent;
-    el.addEventListener(hasPointer ? 'pointerdown' : 'touchstart', down, { passive: true });
-    el.addEventListener(hasPointer ? 'pointermove' : 'touchmove', move, { passive: true });
-    ['pointerup', 'pointercancel', 'pointerleave', 'touchend', 'touchcancel'].forEach(function (evt) {
-      el.addEventListener(evt, clear);
-    });
-    if (!hasPointer) el.addEventListener('mousedown', down);
-    el.addEventListener('contextmenu', function (ev) { ev.preventDefault(); });
-    el.addEventListener('click', function () {
-      clear();
-      if (fired) { fired = false; return; }
-      onShort();
-    });
-    // 자판으로 쓰는 어른을 위해 Enter/Space 를 1초 이상 누르면 열린다 (키를 누르고 있으면 keydown 이 반복된다).
-    el.addEventListener('keydown', function (ev) {
-      if ((ev.key === 'Enter' || ev.key === ' ') && !timer && !fired) { ev.preventDefault(); down(ev); }
-      else if (ev.key === 'Enter' || ev.key === ' ') ev.preventDefault();
-    });
-    el.addEventListener('keyup', function (ev) {
-      if (ev.key !== 'Enter' && ev.key !== ' ') return;
-      var was = !!timer;
-      clear();
-      if (fired) { fired = false; return; }
-      if (was) onShort();
-    });
-  }
-
-  function openDadPanel(m) {
-    state.dadOpen = true;
-    var panel = ui.$('#dad-panel', m);
-    var opener = ui.$('#dad-open', m);
-    if (panel) { panel.hidden = false; panel.classList.add('is-open'); }
-    if (opener) opener.setAttribute('aria-expanded', 'true');
-    var hint = ui.$('#dad-hint', m);
-    if (hint) hint.textContent = '열렸어요';
-    audio.play('click');
-    var first = ui.$('#p1', m);
-    if (first && first.scrollIntoView) first.scrollIntoView({ block: 'center', behavior: 'smooth' });
-  }
-
-  var nudgeTimer = null;
-  function nudgeDadHint(m) {
-    var hint = ui.$('#dad-hint', m);
-    var opener = ui.$('#dad-open', m);
-    if (!hint) return;
-    hint.textContent = '길게 눌러 주세요';
-    if (opener) opener.classList.add('nudge');
-    if (nudgeTimer) global.clearTimeout(nudgeTimer);
-    nudgeTimer = global.setTimeout(function () {
-      nudgeTimer = null;
-      if (opener) opener.classList.remove('nudge');
-      if (!state.dadOpen) hint.textContent = '길게 눌러 열어요';
-    }, 1400);
-  }
-
-  /** 홈 위쪽: 지금 레벨을 링 하나와 경험치 막대로 */
+  /** 보상은 작은 한 줄로 보여 주고 자세한 기록은 따로 연다. */
   function playerCard(s) {
-    var lv = FQ.progress.level();
-    return '<div class="player-card">' +
-      '<span class="level-ring" title="레벨 ' + lv.number + '">' +
-        '<span class="track" style="--p:' + lv.ratio.toFixed(3) + '"></span>' +
-        '<span class="hole">' + lv.emoji + '</span>' +
-      '</span>' +
-      '<span class="player-meta">' +
-        '<span class="player-top">' +
-          '<span class="player-name">' + esc(s.players[0] || '친구') + '</span>' +
-          '<span class="player-level">' + esc(lv.name) + '</span>' +
-          '<span class="player-xp">' + (lv.isMax ? '✨ ' + FQ.progress.xp() : lv.into + ' / ' + lv.need) + '</span>' +
-        '</span>' +
-        '<span class="player-bar"><i style="width:' + Math.round(lv.ratio * 100) + '%"></i></span>' +
-      '</span>' +
-    '</div>';
-  }
-
-  /** 홈: 여행 카드 다섯 칸. 퀴즈의 상자 진행(chestProgress)과 같은 수를 보여 준다 — 칸이 차면 🎁. */
-  function travelRow() {
+    var lv = FQ.progress.level(), stickers = FQ.progress.stickers();
     var chest = FQ.progress.chestProgress(store.stats().asked);
-    var slots = '';
-    for (var i = 0; i < chest.need; i++) {
-      slots += '<span class="travel-slot' + (i < chest.into ? ' filled' : '') + '">' + (i < chest.into ? '✓' : '') + '</span>';
-    }
-    return '<div class="travel-row" id="travel-row" aria-label="여행 카드 ' + chest.into + ' / ' + chest.need + '장">' +
-      '<span class="travel-ic" aria-hidden="true">📖</span>' +
-      '<span class="travel-slots" aria-hidden="true">' + slots + '</span>' +
-      '<span class="travel-num">' + chest.into + ' / ' + chest.need + '</span>' +
-      '<span class="travel-ic" aria-hidden="true">🎁</span>' +
-    '</div>';
-  }
-
-  /** 홈: 대륙별로 얼마나 모았는지 */
-  function continentCard() {
-    var st = FQ.progress.stickers();
-    var names = Object.keys(st.byContinent);
-    if (!names.length) return '';
-    return '<div class="card section cont-card">' +
-      '<h3>대륙별 모으기</h3>' +
-      '<div class="cont-grid">' +
-        names.map(function (name) {
-          var b = st.byContinent[name];
-          var pct = b.total ? Math.round((b.owned / b.total) * 100) : 0;
-          return '<button class="cont-item" type="button" data-cont-go="' + esc(name) + '">' +
-            '<span class="cont-top">' +
-              '<span class="cont-name">' + esc(name) + '</span>' +
-              '<span class="cont-num">' + b.owned + '/' + b.total + '</span>' +
-            '</span>' +
-            '<span class="cont-bar"><i style="width:' + pct + '%"></i></span>' +
-          '</button>';
-        }).join('') +
-      '</div>' +
-    '</div>';
+    return '<button class="home-progress" id="home-progress" type="button">' +
+      '<span aria-hidden="true">' + lv.emoji + '</span><span><strong>' + esc(lv.name) + ' · 스티커 ' + stickers.owned + '개</strong>' +
+      '<small>경험치 ' + FQ.progress.xp() + ' · 여행 카드 ' + chest.into + ' / ' + chest.need + '</small></span>' + ui.icon('chevron') + '</button>';
   }
 
   /**
@@ -640,7 +428,9 @@
   }
 
   function savePlayers(m) {
-    var p1 = (ui.$('#p1', m).value || '').trim() || '민규';
+    var input = ui.$('#p1', m);
+    if (!input) return;
+    var p1 = (input.value || '').trim() || '민규';
     var duel = ui.$('#duel', m).checked;
     var players = [p1];
     if (duel) {
@@ -649,6 +439,8 @@
       players.push(p2);
     }
     store.updateSettings({ players: players });
+    var owner = ui.$('#duel-owner', m);
+    if (owner) owner.textContent = p1;
   }
 
   /* =================== 게임 시작 =================== */
@@ -737,7 +529,8 @@
     var duel = g.players.length > 1;
     return '<div class="quiz-head kid-head">' +
       '<button class="btn btn-sm btn-ghost head-back" id="quit" type="button">' + ICONS.back + '<span>그만하기</span></button>' +
-      '<span class="chip q-count">' + (g.index + 1) + ' / ' + g.total + '</span>' +
+      '<span class="quiz-mode-title">' + esc(capitalAxis(g.config.mode) ? '수도 퀴즈' : (modeCard(g.config.mode) || {}).title || '나라 퀴즈') + '</span>' +
+      '<span class="chip q-count" aria-label="문제 진행">' + (g.index + 1) + ' / ' + g.total + '</span>' +
       (duel ? '<span class="chip turn">' + esc(g.currentPlayer()) + ' 차례</span>' : '') +
       (s.timer && timedMode(g.current().mode) ? '<span class="chip" id="timer-chip">⏱ ' + s.timer + '</span>' : '') +
       '<span class="spacer"></span>' +
@@ -849,23 +642,25 @@
   function renderCapitalMenu() {
     enterCapitalScreen('capital-menu');
     state.study = null;
-    var s = store.settings();
+    var remembered = tileMode(PLAY_TILES[3], store.settings());
+    var s = store.updateSettings({ mode: remembered });
     var list = capitalStudyPool();
     var scope = (s.continent === 'all' ? '모든 대륙' : s.continent) + ' · ' +
       (quiz.LEVEL_LABEL[s.level] || '모든 난이도') + ' · 한 번에 ' + capitalBatchSize(list) + '개';
     var m = ui.setMain('<section class="screen capital-menu">' +
       '<div class="capital-nav"><button class="btn btn-sm btn-ghost" id="capital-home" type="button">' + ICONS.home + ' 홈으로</button><h2>수도 놀이</h2></div>' +
-      '<p class="capital-scope small muted">' + esc(scope) + '</p>' +
+      '<button class="capital-scope category-settings btn btn-ghost" id="capital-settings" type="button">' + ui.icon('settings') + esc(scope) + '</button>' +
       '<div class="capital-paths">' +
-        '<section class="card capital-path"><span class="capital-path-icon" aria-hidden="true">📖</span><h3>수도 공부</h3>' +
+        '<section class="card capital-path"><span class="capital-path-icon" aria-hidden="true">' + ui.icon('book') + '</span><h3>수도 공부</h3>' +
           '<p>나라와 수도를 듣고,<br>내 속도로 넘겨요.</p>' +
-          '<button class="btn btn-big btn-yellow" id="capital-study-start" type="button">📖 공부하기</button></section>' +
-        '<section class="card capital-path"><span class="capital-path-icon" aria-hidden="true">🧩</span><h3>수도 퀴즈</h3>' +
+          '<button class="btn btn-big btn-yellow" id="capital-study-start" type="button">공부하기</button></section>' +
+        '<section class="card capital-path"><span class="capital-path-icon" aria-hidden="true">' + ui.icon('flag') + '</span><h3>수도 퀴즈</h3>' +
           '<p>서로 다른 수도를<br>바로 맞혀 봐요.</p>' +
-          '<button class="btn btn-big btn-primary" id="capital-choice-start" type="button">👆 듣고 국기 고르기</button>' +
-          '<button class="btn btn-big btn-ghost" id="capital-voice-start" type="button">🎤 말로 답하기</button></section>' +
+          '<button class="btn btn-big btn-primary" id="capital-choice-start" type="button">듣고 국기 고르기</button>' +
+          '<button class="btn btn-big btn-ghost" id="capital-voice-start" type="button">말로 답하기</button></section>' +
       '</div></section>');
     ui.$('#capital-home', m).addEventListener('click', renderHome);
+    ui.$('#capital-settings', m).addEventListener('click', function () { renderSettings(); });
     ui.$('#capital-study-start', m).addEventListener('click', startCapitalStudy);
     ui.$('#capital-choice-start', m).addEventListener('click', function () { startCapitalQuiz('capital'); });
     ui.$('#capital-voice-start', m).addEventListener('click', function () { startCapitalQuiz('capitalVoice'); });
@@ -889,7 +684,7 @@
     var study = state.study;
     if (!study || !study.countries.length) {
       var empty = ui.setMain('<section class="screen card capital-study-done"><h2>이 범위에는 수도가 없어요</h2>' +
-        '<p>홈의 아빠 설정에서 대륙이나 난이도를 바꿔 주세요.</p><button class="btn btn-big" id="study-home" type="button">홈으로</button></section>');
+        '<p>설정에서 대륙이나 난이도를 바꿔 주세요.</p><button class="btn btn-big" id="study-home" type="button">홈으로</button></section>');
       ui.$('#study-home', empty).addEventListener('click', renderHome);
       return;
     }
@@ -898,7 +693,7 @@
     state.studiedCapitals[c.code] = true;
     var m = ui.setMain('<section class="screen capital-study">' +
       '<div class="capital-nav"><button class="btn btn-sm btn-ghost" id="study-back" type="button">' + ICONS.back + ' 수도 놀이</button>' +
-        '<h2>📖 수도 공부</h2><span class="chip" id="study-count">' + (study.index + 1) + ' / ' + study.countries.length + '</span></div>' +
+        '<h2>수도 공부</h2><span class="chip" id="study-count">' + (study.index + 1) + ' / ' + study.countries.length + '</span></div>' +
       '<div class="card capital-study-card">' + capitalPlate(c, capitalPlace(c)) + capitalOf(c) +
         '<button class="btn btn-listen btn-listen-soft" id="study-speak" type="button">🔊 다시 듣기</button></div>' +
       '<div class="study-actions"><button class="btn btn-big btn-ghost" id="study-prev" type="button"' + (study.index ? '' : ' disabled') + '>← 이전 수도</button>' +
@@ -921,6 +716,7 @@
   }
 
   function renderCapitalStudyDone() {
+    musicScreen('capital-study-done');
     var count = state.study.countries.length;
     var hasMore = capitalStudyPool().some(function (c) { return !state.studiedCapitals[c.code]; });
     var m = ui.setMain('<section class="screen card capital-study-done"><span class="capital-path-icon" aria-hidden="true">📖</span>' +
@@ -1094,7 +890,7 @@
         '<div class="quiz-body' + (q.mode === 'map' ? ' map-quiz' : '') + (meet ? ' meet-quiz' : '') + '">' +
           '<div class="quiz-stage-col">' +
             (q.touchFallback ? '<div class="notice" role="status">👆 이름을 듣고 국기를 눌러요</div>' : '') +
-            stage + '<div id="feedback-area"></div></div>' +
+            stage + '<div id="feedback-area" role="status" aria-live="polite"></div></div>' +
           '<div class="quiz-answer-col">' +
             '<div id="answer-area"' + (meet ? ' hidden' : '') + '>' + answerArea(q) + '</div>' +
             '<div class="row tool-row"' + (meet ? ' style="display:none"' : '') + '>' +
@@ -1742,6 +1538,8 @@
     var chestNow = FQ.progress.chestProgress(store.stats().asked);
     var cTitle = ui.$('#combo-title');
     if (cTitle) cTitle.textContent = res.chest ? '깜짝 상자를 찾았어요!' : '여행 카드 ' + chestNow.into + ' / ' + chestNow.need + '장';
+    var travelChip = ui.$('.travel-chip');
+    if (travelChip && cTitle) travelChip.setAttribute('aria-label', cTitle.textContent);
     var slots = ui.$('.travel-slots');
     if (slots) slots.innerHTML = travelSlots(chestNow, false);
 
@@ -2379,6 +2177,8 @@
     audio.setEnabled(s.sound);
     audio.setSpeakEnabled(s.speak);
 
+    doc.getElementById('nav-home').addEventListener('click', renderHome);
+    doc.getElementById('nav-settings').addEventListener('click', function () { renderSettings(); });
     doc.getElementById('nav-dex').addEventListener('click', function () {
       cancelPendingFeedback();
       stopTimer(); stopListening(); audio.stopSpeaking(); state.game = null;
@@ -2443,7 +2243,7 @@
     global.navigator.serviceWorker.register('sw.js').catch(function () { /* 없어도 그만 */ });
   }
 
-  FQ.app = { home: renderHome, boot: boot, startGame: startGame, musicScreen: musicScreen };
+  FQ.app = { home: renderHome, settings: renderSettings, category: renderCategory, boot: boot, startGame: startGame, musicScreen: musicScreen };
 
   if (doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', boot);
   else boot();

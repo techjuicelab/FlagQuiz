@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>세계 국기 퀴즈 🌍</title>
+<title>세계 국기 퀴즈</title>
 <meta name="description" content="아이와 함께 세계 국기와 나라를 배우는 한국어 국기 맞히기 게임. 사지선다, 말하기, 쓰기, 수도 듣고 국기 찾기, 국기 보고 수도 말하기에 세계지도·상징물·명소 그림 놀이까지 아홉 가지 모드를 지원합니다.">
-<meta name="theme-color" content="#4f7cff">
+<meta name="theme-color" content="#F5F6F8">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" sizes="180x180" href="assets/icon-180.png">
@@ -19,40 +19,44 @@
 <link rel="stylesheet" href="css/map.css">
 </head>
 <body>
-<div class="app">
+<div class="app" data-screen="home">
+  <a class="skip-link" href="#main">본문으로 이동</a>
   <header class="topbar">
-    <div class="brand">
-      <span class="globe" aria-hidden="true">🌍</span>
-      <h1>세계 국기 퀴즈</h1>
-    </div>
-    <span class="spacer"></span>
-    <button class="btn btn-sm btn-ghost" id="nav-dex" type="button">📖 스티커<span class="lbl-long"> 판</span></button>
-    <button class="btn btn-sm btn-ghost" id="nav-stats" type="button">🏅 <span class="lbl-long">내 </span>기록</button>
+    <div class="brand"><span class="brand-mark" aria-hidden="true"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="4" ry="9"/><path d="M3 12h18"/></svg></span><h1>세계 국기 퀴즈</h1></div>
+    <button class="btn btn-sm btn-ghost" id="nav-settings" type="button"><svg class="ui-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m10 3-.6 2.2-2 .9-2-.6-2 3.5 1.5 1.6v2.8L3.4 15l2 3.5 2-.6 2 .9L10 21h4l.6-2.2 2-.9 2 .6 2-3.5-1.5-1.6v-2.8L20.6 9l-2-3.5-2 .6-2-.9L14 3Z"/><circle cx="12" cy="12" r="3"/></svg><span>설정</span></button>
   </header>
+  <nav class="primary-nav" aria-label="주요 화면">
+    <button id="nav-home" type="button" aria-current="page"><svg class="ui-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 10 9-7 9 7v10H3Z"/><path d="M9 20v-7h6v7"/></svg><span>놀이</span></button>
+    <button id="nav-dex" type="button"><svg class="ui-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5C9 3 5 3 2 4v16c3-1 7-1 10 1 3-2 7-2 10-1V4c-3-1-7-1-10 1Zm0 0v16"/></svg><span>도감</span></button>
+    <button id="nav-stats" type="button"><svg class="ui-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h17M7 16v-5m5 5V4m5 12V8"/></svg><span>기록</span></button>
+  </nav>
 
   <p id="connection-note" class="connection-note small" role="status" hidden></p>
 
-  <main id="main" aria-live="polite">
+  <main id="main" tabindex="-1">
     <div id="boot" class="card">국기 자료를 불러오는 중이에요…</div>
   </main>
 
-  <details id="offline-panel" class="offline-panel">
-    <summary>📥 인터넷 없이 놀기 <span id="offline-summary" class="small muted">준비 확인</span></summary>
+  <div id="settings-extras" hidden>
+  <details id="offline-panel" open class="offline-panel">
+    <summary>오프라인 저장 <span id="offline-summary" class="small muted">준비 확인</span></summary>
     <div class="offline-body">
       <p id="offline-status" role="status" aria-live="polite">저장한 놀이를 확인하고 있어요.</p>
       <progress id="offline-progress" max="1" value="0" aria-label="오프라인 자료 저장 진행률" hidden></progress>
       <button id="offline-download" class="btn btn-sm btn-primary" type="button" disabled>전체 저장하기</button>
       <p id="offline-help" class="small muted">국기·그림·읽어주기·음악을 한 번 저장하면 인터넷 없이도 놀 수 있어요. 약 155MB이며, Wi-Fi에서 저장하는 것을 권해요. 완료될 때까지 앱을 열어 두세요.</p>
+      <p class="small muted">iPhone·iPad에서는 Safari의 공유 메뉴에서 ‘홈 화면에 추가’를 누르면 앱처럼 열 수 있어요. 저장 완료 후 같은 앱에서 인터넷 없이 이용하세요. 브라우저 데이터를 지우거나 기기의 저장 공간이 부족하면 다시 저장해야 할 수 있어요.</p>
       <p class="small muted">인터넷이 끊기면 말하기 놀이는 국기를 눌러 답하는 놀이로 이어져요. 기록은 이 기기에 그대로 남아요.</p>
     </div>
   </details>
 
-  <footer class="small muted" style="text-align:center;margin-top:28px;line-height:1.7">
+  <section class="settings-group app-info"><h3>앱 정보</h3><div class="small muted">
     국기 이미지는 <a href="https://github.com/lipis/flag-icons" target="_blank" rel="noopener">flag-icons</a> (MIT) 를 사용합니다. 상징물·명소 그림: TechJuiceLab · OpenAI AI 생성.<br>
     세계지도는 <a href="https://www.naturalearthdata.com/" target="_blank" rel="noopener">Natural Earth</a> (퍼블릭 도메인) 자료로 만들었습니다. 땅만 그리고 국경선은 그리지 않아요.<br>
     음성은 AI 가상 연기자 서비스 <a href="https://typecast.ai" target="_blank" rel="noopener">Typecast</a>로 제작했습니다. 사용한 목소리: Sua(수아).<br>
     기록은 이 브라우저 안에만 저장돼요.
-  </footer>
+  </div></section>
+  </div>
 </div>
 
 <script src="js/util.js"></script>

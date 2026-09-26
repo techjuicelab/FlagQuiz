@@ -17,15 +17,27 @@ function fixture() {
     if (!nodes.has(sel)) {
       const classes = new Set();
       nodes.set(sel, {
-        value: '', checked: false, disabled: false, textContent: '', style: {}, tagName: 'BUTTON', attrs: {}, handlers: {},
-        classList: {add:(c)=>classes.add(c), remove:(c)=>classes.delete(c), toggle:(c)=>classes.has(c)?classes.delete(c):classes.add(c), contains:(c)=>classes.has(c)},
+        value: '', checked: false, disabled: false, textContent: '', style: {}, dataset: {}, tagName: 'BUTTON', attrs: {}, handlers: {}, renderCount: 0,
+        classList: {add:(c)=>classes.add(c), remove:(c)=>classes.delete(c), toggle(c,force){const add=force===undefined?!classes.has(c):force;if(add)classes.add(c);else classes.delete(c);return add;}, contains:(c)=>classes.has(c)},
         addEventListener(type, fn){this.handlers[type] = fn;},
         click(){if (!this.disabled) this.handlers.click?.({target:this});},
-        setAttribute(k,v){this.attrs[k]=v;}, getAttribute(k){return this.attrs[k]??'';},
-        querySelector: node, querySelectorAll:()=>[], appendChild(){}, remove(){}, focus(){}, scrollIntoView(){},
+        setAttribute(k,v){this.attrs[k]=String(v);}, getAttribute(k){return this.attrs[k]??'';}, removeAttribute(k){delete this.attrs[k];},
+        querySelector: node, querySelectorAll:()=>[], appendChild(){}, remove(){}, focus(){c.document.activeElement=this;}, scrollIntoView(){},
         set innerHTML(html){
-          this.html=html;
-          for (const m of html.matchAll(/<[^>]*\bid="([^"]+)"[^>]*>/g)) node('#'+m[1]).disabled=/\sdisabled(?:[\s>]|$)/.test(m[0]);
+          this.html=html;this.renderCount++;
+          for (const m of html.matchAll(/<([a-z]+)\b[^>]*\bid="([^"]+)"[^>]*>/g)) {
+            const el=node('#'+m[2]);
+            el.tagName=m[1].toUpperCase();
+            el.disabled=/\sdisabled(?:[\s>]|$)/.test(m[0]);
+            el.checked=/\schecked(?:[\s>]|$)/.test(m[0]);
+            el.hidden=/\shidden(?:[\s>]|$)/.test(m[0]);
+            for(const attr of m[0].matchAll(/([\w-]+)="([^"]*)"/g))el.setAttribute(attr[1],attr[2]);
+            if(el.tagName==='INPUT')el.value=el.attrs.value||'';
+          }
+          for(const select of html.matchAll(/<select\b[^>]*id="([^"]+)"[^>]*>([\s\S]*?)<\/select>/g)) {
+            const choices=[...select[2].matchAll(/<option\b[^>]*value="([^"]+)"[^>]*>/g)];
+            node('#'+select[1]).value=(choices.find(choice=>/\sselected(?:[\s>]|$)/.test(choice[0]))||choices[0])?.[1]||'';
+          }
         },
         get innerHTML(){return this.html??'';}
       });
@@ -36,11 +48,11 @@ function fixture() {
     setTimeout(fn,delay){const id=++timerId;timers.set(id,{fn,delay});return id;}, clearTimeout:(id)=>timers.delete(id),
     setInterval(fn,delay){const id=++timerId;timers.set(id,{fn,delay,interval:true});return id;}, clearInterval:(id)=>timers.delete(id),
     localStorage:{getItem:k=>local.get(k)??null,setItem:(k,v)=>local.set(k,String(v)),removeItem:k=>local.delete(k)},
-    document:{hidden:false,readyState:'loading',addEventListener(type,fn){(events[type]??=[]).push(fn);},querySelector:()=>null,body:node('body'),createElement:()=>node('created'),getElementById:(id)=>node('#'+id)},
+    document:{hidden:false,readyState:'loading',addEventListener(type,fn){(events[type]??=[]).push(fn);},querySelector:sel=>sel==='.app'?node('.app'):null,body:node('body'),createElement:()=>node('created'),getElementById:(id)=>node('#'+id)},
     navigator:{}, location:{protocol:'http:',hostname:'localhost'},confirm:()=>true,
     addEventListener(type,fn){(events[type]??=[]).push(fn);},
-    requestAnimationFrame(){},cancelAnimationFrame(){},matchMedia:()=>({matches:false}),scrollTo(){},
-    FQ:{ui:{$:node,$$:()=>[],esc:String,setMain(html){node('main').innerHTML=html;return node('main');},
+    requestAnimationFrame(){},cancelAnimationFrame(){},matchMedia:()=>({matches:false}),scrollY:0,scrollTo(opts){c.scrollY=opts.top||0;},
+    FQ:{ui:{$:node,$$:()=>[],esc:String,setMain(html){node('main').innerHTML=html;c.scrollTo({top:0});node('main').focus();return node('main');},
       on(root,selector,event,fn){delegated.push({selector,event,fn});},countryModal(country){modals.push(country);},flagSrc:code=>'flags/'+code+'.svg'},
       audio:{setEnabled(){},setSpeakEnabled(){},unlock(){},stopSpeaking(){},play(){},
         say(lines,opts,onFail){spoken.push([...lines]);playbackFailures.push(onFail);voiceOptions.push(opts);}},
@@ -532,7 +544,7 @@ test('그림 모드는 스위치가 꺼지면 저장된 선택도 국기 모드�
 test('두 그림 퀴즈는 실제 그림 경로·4개 보기·별도 기록·기존 fact 음원을 사용한다',()=>{
   for(const mode of ['symbol','place']) {
     const f=fixture();f.c.FQ.storage.updateSettings({mode,dev:{art:true}});f.c.FQ.app.home();
-    assert.match(f.node('main').innerHTML,new RegExp('data-mode="'+mode+'"'));
+    tapPlay(f,'art');assert.match(f.node('main').innerHTML,new RegExp('data-mode="'+mode+'"'));
     f.c.FQ.app.startGame(['kr']);meetNext(f);const a=f.c.FQ.test,q=a.state.game.current();
     assert.match(f.node('main').innerHTML,new RegExp('images/'+(mode==='place'?'places':'symbols')+'/kr.webp'));
     assert.equal((f.node('main').innerHTML.match(/class="answer-btn art-choice"/g)||[]).length,4);
@@ -681,13 +693,13 @@ test('오늘의 도전은 국기 축 놀이를 그대로 두고 축이 다른 �
 
 test('한 번 더 만나기도 골라 둔 국기 놀이를 유지하고 축이 다를 때만 되돌린다',()=>{
   const f=fixture();f.c.FQ.storage.recordAnswer('jp',false);
-  f.c.FQ.storage.updateSettings({mode:'typing'});f.c.FQ.app.home();
+  f.c.FQ.storage.updateSettings({mode:'typing'});f.c.FQ.app.home();tapPlay(f,'flag');
   f.node('#review').click();
   assert.equal(f.c.FQ.storage.settings().mode,'typing');
   assert.equal(f.c.FQ.test.state.game.current().mode,'typing');
 
   const g=fixture();g.c.FQ.storage.recordAnswer('jp',false);
-  g.c.FQ.storage.updateSettings({mode:'map'});g.c.FQ.app.home();
+  g.c.FQ.storage.updateSettings({mode:'map'});g.c.FQ.app.home();tapPlay(g,'flag');
   g.node('#review').click();
   assert.equal(g.c.FQ.storage.settings().mode,'choice4');
   assert.equal(g.c.FQ.test.state.game.current().mode,'choice4');
@@ -736,135 +748,148 @@ test('옛 js/ui.js 가 캐시에 섞여도 그림 문제가 죽지 않는다',()
 });
 
 /* ---- 2026-09-17 화면·놀이 흐름 교정 ---- */
-const css = fs.readFileSync(path.join(root,'css/style.css'),'utf8');
 
-/** 홈의 놀이 단추·알약은 ui.on 위임이라 delegated 로 누른다. 가짜 요소에 data-* 만 실어 보낸다. */
+/** 주제·방식 선택은 ui.on 위임이라 delegated 로 누른다. 가짜 요소에 data-* 만 실어 보낸다. */
 function tapPlay(f,tile){const t=f.node('play:'+tile);t.setAttribute('data-play',tile);f.clickDelegated('[data-play]',t);}
 function tapPill(f,mode){const t=f.node('pill:'+mode);t.setAttribute('data-mode',mode);f.clickDelegated('[data-mode]',t);}
 function playOrder(html){return [...html.matchAll(/data-play="([a-z]+)"/g)].map(m=>m[1]);}
 function modeOrder(html){return [...html.matchAll(/data-mode="([A-Za-z0-9]+)"/g)].map(m=>m[1]);}
 
-test('첫 화면은 큰 놀이 단추 4개와 세부 알약 6개이며 수도는 공부·퀴즈 선택 화면으로 이어진다',()=>{
+test('홈은 고정 순서의 주제 네 개만 보여 주고 세부 방식과 설정은 다음 화면으로 나눈다',()=>{
   const f=fixture();f.c.FQ.storage.updateSettings({mode:'choice4',dev:{art:true}});f.c.FQ.app.home();
   const html=f.node('main').innerHTML;
   assert.deepEqual(playOrder(html),['flag','art','map','capital']);
-  assert.deepEqual(modeOrder(html),['choice4','reverse','voice','typing','symbol','place']);
-  assert.match(html,/id="play-capital"[\s\S]*?class="play-d">공부하기 · 문제 풀기</);
+  assert.deepEqual(modeOrder(html),[]);
   for(const id of ['play-flag','play-art','play-map','play-capital'])assert.match(html,new RegExp('id="'+id+'"'));
-  // 별도 '시작하기'는 없다. 이름·난이도·설정은 아빠 설정 패널 안에 접혀(hidden) 있다.
-  assert.doesNotMatch(html,/id="start"|어떻게 맞힐까요|mode-group/);
-  assert.match(html,/<div class="dad-panel" id="dad-panel" hidden>/);
-  const panel=html.slice(html.indexOf('id="dad-panel"'));
-  for(const id of ['p1','duel','opt-sound','opt-speak','opt-bgm','opt-correct-music','opt-review'])assert.match(panel,new RegExp('id="'+id+'"'),id);
-  for(const attr of ['data-level','data-continent','data-count','data-timer','data-cont-go'])assert.match(panel,new RegExp(attr),attr);
-  assert.ok(html.indexOf('id="play-flag"')<html.indexOf('id="dad-open"'),'놀이 단추가 아빠 설정보다 위');
-  assert.ok(html.indexOf('id="travel-row"')>html.indexOf('id="play-capital"')&&html.indexOf('id="travel-row"')<html.indexOf('id="dad-open"'),'여행 카드 줄은 단추 아래·설정 위');
-  assert.equal((html.match(/class="travel-slot(?: filled)?"/g)||[]).length,5);
-  // 마지막에 고른 놀이는 선택 표시만 — 자리는 그대로다.
-  assert.match(html,/id="play-flag"[^>]*aria-pressed="true"/);assert.match(html,/data-mode="choice4" aria-pressed="true"/);
+  assert.doesNotMatch(html,/id="p1"|id="duel"|dad-open|dad-panel|길게 눌러|data-level|data-count/);
+  assert.match(html,/id="play-capital"[\s\S]*?공부하기 · 문제 풀기/);
+  assert.match(html,/id="daily-go"/,'오늘의 도전은 보조 항목으로 유지한다');
   f.c.FQ.storage.updateSettings({mode:'place'});f.c.FQ.app.home();
   const html2=f.node('main').innerHTML;
-  assert.deepEqual(playOrder(html2),['flag','art','map','capital']);assert.deepEqual(modeOrder(html2),modeOrder(html));
-  assert.match(html2,/id="play-art"[^>]*aria-pressed="true"/);assert.match(html2,/id="play-flag"[^>]*aria-pressed="false"/);
-  assert.match(html2,/data-mode="place" aria-pressed="true"/);
-  assert.match(html2,/id="play-art"[\s\S]*?class="play-d">명소 보고 나라 고르기</,'그림 단추 설명은 지금 고른 세부 놀이');
-  // 그림 기능을 끄면 그림 단추가 통째로 빠져 3개만 남는다.
+  assert.deepEqual(playOrder(html2),['flag','art','map','capital']);assert.deepEqual(modeOrder(html2),[]);
   const g=fixture();g.c.FQ.storage.updateSettings({mode:'map',dev:{art:false}});g.c.FQ.app.home();
   assert.deepEqual(playOrder(g.node('main').innerHTML),['flag','map','capital']);
   assert.doesNotMatch(g.node('main').innerHTML,/data-mode="symbol"|data-mode="place"|play-art/);
-  // 크기: 폰 단추 120px 이상, 아이패드 220px 이상, 알약 44px 이상.
-  assert.match(css,/\.home-kid \{[^}]*--play-min: 120px/);assert.match(css,/\.play-btn \{[^}]*min-height: var\(--play-min\)/);
-  assert.match(css,/@media \(min-width: 744px\) \{\s*\.home-kid \{[^}]*--play-min: 220px/);
-  assert.match(css,/\.play-pill \{[^}]*min-height: 44px/);assert.match(css,/\.dad-open \{[^}]*min-height: 48px/);
-  assert.match(css,/\.dad-panel\[hidden\] \{ display: none; \}/);
-  assert.match(css,/@media \(min-width: 1000px\) and \(orientation: landscape\) \{\s*\.home-kid \{[^}]*grid-template-columns: minmax\(0, 2fr\) minmax\(0, 1fr\)/);
 });
 
-test('국기·그림·지도는 바로 시작하고 수도는 공부·퀴즈를 고른 뒤 시작한다',()=>{
-  const f=fixture(),a=f.c.FQ.test;f.c.FQ.storage.updateSettings({dev:{art:true}});f.c.FQ.app.home();
-  tapPlay(f,'flag');
-  assert.ok(a.state.game,'큰 단추만 눌러도 놀이가 시작된다');assert.equal(a.state.game.current().mode,'choice4');
-  assert.equal(f.c.FQ.storage.settings().mode,'choice4');assert.equal(f.c.FQ.storage.settings().lastMode.flag,'choice4');
-  f.c.FQ.app.home();tapPill(f,'voice');
-  assert.equal(a.state.game.current().mode,'voice');assert.equal(f.c.FQ.storage.settings().mode,'voice');
-  assert.equal(f.c.FQ.storage.settings().lastMode.flag,'voice');
-  // 다른 놀이를 하고 돌아와도 국기 단추는 마지막 국기 세부 놀이(말하기)로 간다.
-  f.c.FQ.app.home();tapPill(f,'place');meetNext(f);
-  assert.equal(a.state.game.current().mode,'place');assert.deepEqual({...f.c.FQ.storage.settings().lastMode},{flag:'voice',art:'place'});
-  f.c.FQ.app.home();
-  assert.match(f.node('main').innerHTML,/id="play-flag"[\s\S]*?class="play-d">말로 답하기</);
-  tapPlay(f,'flag');assert.equal(a.state.game.current().mode,'voice');
-  f.c.FQ.app.home();tapPlay(f,'art');meetNext(f);assert.equal(a.state.game.current().mode,'place');
-  f.c.FQ.app.home();tapPlay(f,'map');meetNext(f);assert.equal(a.state.game.current().mode,'map');
-  f.c.FQ.app.home();tapPlay(f,'capital');assert.equal(a.state.game,null);
-  assert.match(f.node('main').innerHTML,/capital-menu/);
-  f.node('#capital-choice-start').click();assert.equal(a.state.game.current().mode,'capital');
-  // 저장된 조건(난이도·대륙·문제 수·제한 시간)은 그대로 쓴다.
-  f.c.FQ.app.home();f.c.FQ.storage.updateSettings({count:5,timer:10,continent:'아시아'});f.c.FQ.app.home();
-  tapPill(f,'choice4');assert.equal(a.state.game.total,5);assert.ok(a.state.timerId,'제한 시간이 돈다');
-  assert.ok(a.state.game.questions.every(q=>q.country.continent==='아시아'));
-  // 그림 기능이 꺼져 있으면 그림 알약을 눌러도 시작하지 않는다.
+test('주제 선택 뒤 기존 아홉 퀴즈에 도달하고 최근 방식·저장된 출제 조건을 보존한다',()=>{
+  const f=fixture(),a=f.c.FQ.test;f.c.FQ.storage.updateSettings({dev:{art:true},count:5,timer:10,continent:'아시아'});
+  for(const [tile,modes] of [['flag',['choice4','reverse','voice','typing']],['art',['symbol','place']]]) {
+    for(const mode of modes) {
+      f.c.FQ.app.home();tapPlay(f,tile);
+      assert.equal(a.state.game,null,'주제를 고르기만 하면 문제가 시작되지 않는다');
+      assert.deepEqual(modeOrder(f.node('main').innerHTML),modes,'방식 순서는 최근 사용과 관계없이 고정한다');
+      tapPill(f,mode);meetNext(f);
+      assert.equal(a.state.game.current().mode,mode);assert.equal(f.c.FQ.storage.settings().mode,mode);
+      assert.equal(f.c.FQ.storage.settings().lastMode[tile],mode);
+      assert.equal(a.state.game.total,5);assert.ok(a.state.game.questions.every(q=>q.country.continent==='아시아'));
+      if(mode==='choice4')assert.ok(a.state.timerId,'국기 놀이의 저장된 제한 시간이 작동한다');
+    }
+  }
+  f.c.FQ.app.home();tapPlay(f,'flag');
+  assert.match(f.node('main').innerHTML.match(/<button[^>]*data-mode="typing"[^>]*>[\s\S]*?<\/button>/)[0],/최근에 한 놀이/,'최근 방식이 표시된다');
+  f.c.FQ.app.home();tapPlay(f,'map');assert.equal(a.state.game.current().mode,'map');
+  for(const [button,mode] of [['#capital-choice-start','capital'],['#capital-voice-start','capitalVoice']]) {
+    f.c.FQ.app.home();tapPlay(f,'capital');assert.equal(a.state.game,null);
+    f.node(button).click();assert.equal(a.state.game.current().mode,mode);
+    assert.doesNotMatch(f.node('main').innerHTML,/capital-study-card|meet-next/);
+  }
   const g=fixture();g.c.FQ.storage.updateSettings({dev:{art:false}});g.c.FQ.app.home();
-  tapPill(g,'symbol');assert.equal(g.c.FQ.test.state.game,null);tapPlay(g,'art');assert.equal(g.c.FQ.test.state.game,null);
+  tapPlay(g,'art');assert.equal(g.c.FQ.test.state.game,null,'꺼 둔 그림 주제는 시작되지 않는다');
 });
 
-test('아빠 설정은 600ms 길게 눌러야 열리고, 짧게 누르면 안내만 바뀌며, 홈을 다시 그리면 닫힌다',()=>{
-  const f=fixture(),a=f.c.FQ.test;f.c.FQ.app.home();
-  const opener=f.node('#dad-open'),panel=f.node('#dad-panel');
-  assert.equal(a.state.dadOpen,false);assert.notEqual(panel.hidden,false);
-  // 짧게 누르기(click 만): 열리지 않고 글자 안내만. 읽어 주지 않는다 — 수아 음원에 없는 문구다.
-  opener.handlers.click();
-  assert.equal(a.state.dadOpen,false);assert.notEqual(panel.hidden,false);
-  assert.equal(f.node('#dad-hint').textContent,'길게 눌러 주세요');assert.equal(f.spoken.length,0);
-  f.runDelay(1400);assert.equal(f.node('#dad-hint').textContent,'길게 눌러 열어요');
-  // 누르다 600ms 전에 떼면 열리지 않는다.
-  opener.handlers.touchstart({touches:[{clientX:10,clientY:10}]});opener.handlers.touchend();f.runDelay(600);
-  assert.equal(a.state.dadOpen,false);
-  // 손가락이 12px 넘게 움직여도(스크롤) 열리지 않는다.
-  opener.handlers.touchstart({touches:[{clientX:10,clientY:10}]});opener.handlers.touchmove({touches:[{clientX:10,clientY:40}]});f.runDelay(600);
-  assert.equal(a.state.dadOpen,false);
-  // 600ms 를 채우면 열린다. 뒤따르는 click 은 안내를 바꾸지 않는다.
-  opener.handlers.touchstart({touches:[{clientX:10,clientY:10}]});f.runDelay(600);
-  assert.equal(a.state.dadOpen,true);assert.equal(panel.hidden,false);assert.equal(opener.attrs['aria-expanded'],'true');
-  opener.handlers.click();assert.equal(f.node('#dad-hint').textContent,'열렸어요');
-  // 패널 안에서 조건을 바꾸면 다시 그려도 열린 채다.
-  const lv=f.node('lv2');lv.setAttribute('data-level','2');f.clickDelegated('[data-level]',lv);
-  assert.equal(f.c.FQ.storage.settings().level,'2');assert.equal(a.state.dadOpen,true);
-  assert.match(f.node('main').innerHTML,/<div class="dad-panel" id="dad-panel">/);
-  // 홈을 새로 그리면(놀이 뒤 돌아오기 등) 닫힌다. 열림은 저장하지 않는다.
-  f.c.FQ.app.home();
-  assert.equal(a.state.dadOpen,false);assert.match(f.node('main').innerHTML,/id="dad-panel" hidden>/);
+test('설정은 한 번 탭으로 열리고 조건·이름·소리를 바꿔도 화면·포커스·기록을 보존한다',()=>{
+  const f=fixture();f.c.FQ.app.boot();
+  f.c.FQ.storage.recordAnswer('kr',true);f.c.FQ.storage.recordAnswer('jp',false,'capital');f.c.FQ.storage.addXp(23);
+  const before=progressSnapshot(f);f.node('#nav-settings').click();
+  assert.equal(f.c.FQ.test.state.screen,'settings');
+  const main=f.node('main'),html=main.innerHTML,renders=main.renderCount;
+  assert.doesNotMatch(html,/아빠 설정|길게 눌러|dad-panel/);
+  for(const id of ['p1','duel','opt-sound','opt-speak','opt-bgm','opt-correct-music','opt-review','setting-level','setting-continent','setting-count','setting-timer'])assert.match(html,new RegExp('id="'+id+'"'),id);
+  for(const [id,key,value,saved] of [
+    ['setting-level','level','2','2'],['setting-continent','continent','유럽','유럽'],
+    ['setting-count','count','all','all'],['setting-count','count','5',5],['setting-timer','timer','20',20]
+  ]) {
+    const control=f.node('#'+id);control.value=value;control.focus();f.c.scrollY=340;
+    control.handlers.change({target:control});
+    assert.equal(f.c.FQ.storage.settings()[key],saved,key);
+    assert.equal(main.renderCount,renders,'선택마다 홈이나 설정 전체를 다시 그리지 않는다');
+    assert.equal(f.c.document.activeElement,control,'키보드 포커스를 유지한다');
+    assert.equal(control.value,value,'선택한 값을 유지한다');assert.equal(f.c.scrollY,340,'설정을 바꿀 때 스크롤 위치를 유지한다');
+  }
+  const name=f.node('#p1');name.value='새 이름';name.handlers.change({target:name});
+  assert.equal(f.c.FQ.storage.settings().players[0],'새 이름');
+  for(const [id,key] of [['opt-sound','sound'],['opt-speak','speak'],['opt-bgm','homeMusic'],['opt-correct-music','correctMusic'],['opt-review','reviewFirst']]) {
+    const control=f.node('#'+id);control.checked=!f.c.FQ.storage.settings()[key];control.handlers.change({target:control});
+    assert.equal(f.c.FQ.storage.settings()[key],control.checked,key);
+  }
+  assert.equal(main.renderCount,renders);assert.deepEqual(progressSnapshot(f),before,'설정 변경은 학습·보상 기록을 바꾸지 않는다');
+  f.c.FQ.app.home();assert.equal(f.c.FQ.test.state.screen,'home');
+  f.node('#nav-settings').click();assert.equal(f.node('#setting-continent').value,'유럽');assert.equal(f.node('#p1').value,'새 이름');
   assert.equal(JSON.stringify(f.c.FQ.storage.settings()).includes('dadOpen'),false);
-  // 설정 닫기 단추도 닫는다.
-  f.node('#dad-open').handlers.touchstart();f.runDelay(600);assert.equal(a.state.dadOpen,true);
-  f.node('#dad-close').click();assert.equal(a.state.dadOpen,false);
 });
 
-test('둘이서 대결은 국기 놀이에서만 — 그림·명소·지도·수도에서는 스위치를 감추고 켜져 있어도 혼자 논다',()=>{
+test('설정 완료는 원래 주제로 돌아가고 오프라인 저장 노드는 화면 이동 중에도 유지한다',()=>{
+  const f=fixture();f.c.FQ.app.boot();
+  const progress=f.node('#offline-progress'),download=f.node('#offline-download'),extras=f.node('#settings-extras');
+  progress.value=37;progress.max=100;const handler=()=>{};download.addEventListener('click',handler);
+  assert.equal(extras.hidden,true);
+  for(const tile of ['flag','art','capital']) {
+    f.c.FQ.app.home();tapPlay(f,tile);
+    const expected=tile==='capital'?'capital-menu':'category';
+    f.node('#nav-settings').click();assert.equal(extras.hidden,false);
+    assert.equal(f.node('.app').attrs['data-screen'],'settings');
+    assert.equal(f.node('#nav-settings').attrs['aria-current'],'page');
+    f.node('#settings-done').click();assert.equal(f.c.FQ.test.state.screen,expected);
+    assert.equal(extras.hidden,true);assert.equal(f.node('#offline-progress'),progress);
+    assert.equal(progress.value,37);assert.equal(progress.max,100);assert.equal(download.handlers.click,handler);
+  }
+  f.node('#nav-home').click();f.node('#home-offline').click();
+  assert.equal(f.c.FQ.test.state.screen,'settings');assert.equal(f.node('#offline-panel').open,true);
+  const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
+  assert.ok(html.indexOf('id="settings-extras"')>html.indexOf('</main>'),'저장 패널은 매번 교체되는 본문 밖에 둔다');
+  for(const id of ['offline-progress','offline-download','nav-home','nav-dex','nav-stats','nav-settings'])assert.equal((html.match(new RegExp('id="'+id+'"','g'))||[]).length,1,id+'를 중복 생성하지 않는다');
+  assert.match(html,/<button[^>]*id="nav-settings"[^>]*type="button"/,'Enter·Space 기본 조작이 되는 일반 버튼이다');
+});
+
+test('문제 진행을 정확히 표시하고 기본 화면으로 나가면 예약 음성과 자동 다음을 정리한다',()=>{
+  const f=fixture();f.c.FQ.app.boot();f.c.FQ.storage.updateSettings({mode:'capital',speak:false});f.c.FQ.app.startGame(['kr','jp','fr']);
+  assert.equal(f.node('.app').attrs['data-screen'],'quiz');
+  assert.match(f.node('main').innerHTML,/aria-label="문제 진행">1 \/ 3</);
+  f.c.FQ.test.submit({code:f.c.FQ.test.state.game.current().country.code});f.c.FQ.test.goNext();
+  assert.match(f.node('main').innerHTML,/aria-label="문제 진행">2 \/ 3</);
+  for(const target of ['home','dex','stats','settings']) {
+    const g=fixture();g.c.FQ.app.boot();
+    g.c.FQ.screens.dex=()=>g.c.FQ.app.musicScreen('dex');g.c.FQ.screens.stats=()=>g.c.FQ.app.musicScreen('stats');
+    const a=g.startVoice(['kr','jp']);a.submit({code:a.state.game.current().country.code});
+    const pending=g.releases.at(-1);g.node('#nav-'+target).click();const before=progressSnapshot(g);
+    pending();g.finishMusic();g.finishVoice();g.runDelay(900);g.runDelay(1800);
+    assert.equal(a.state.game,null,target);assert.equal(a.state.autoNextTimer,null,target);assert.equal(g.spoken.length,0,target);
+    assert.equal(g.node('.app').attrs['data-screen'],target);assert.deepEqual(progressSnapshot(g),before,target);
+  }
+});
+
+test('국기 외 놀이에서는 대결의 적용 범위를 설명하고 저장된 두 이름을 보존한다',()=>{
   for(const mode of ['symbol','place','map','capital']){
-    const f=fixture();f.c.FQ.storage.updateSettings({mode,players:['민규','아빠'],dev:{art:true}});f.c.FQ.app.home();
+    const f=fixture();f.c.FQ.storage.updateSettings({mode,players:['민규','아빠'],dev:{art:true}});f.c.FQ.app.settings();
     const html=f.node('main').innerHTML;
-    assert.match(html,/class="switch hidden" id="duel-switch"/,mode);
-    assert.match(html,/id="duel-off-note"/,mode);
-    assert.match(html,/id="p2-field" style/,mode);assert.match(html,/class="field hidden" id="p2-field"/,mode);
-    // 가짜 DOM 은 checked 를 HTML 에서 읽지 않는다. 실제 화면처럼 스위치가 켜진 채 숨겨진 상태를 만든다.
-    f.node('#duel').checked=true;f.node('#p1').value='민규';f.node('#p2').value='아빠';
-    tapPlay(f,mode==='map'||mode==='capital'?mode:'art');
+    assert.match(html,/둘이서.*국기 놀이/,'적용되지 않는 이유를 설명한다');
+    assert.equal(f.node('#duel').checked,true,mode+' 대결 선택을 지우지 않는다');
+    assert.equal(f.node('#duel').disabled,true,mode+' 지금 놀이에서는 대결을 바꿀 수 없다');
+    const count=f.node('#setting-count');count.value='5';count.handlers.change({target:count});
+    assert.deepEqual([...f.c.FQ.storage.settings().players],['민규','아빠'],mode+' 다른 설정 변경으로 이름을 잃지 않는다');
+    f.c.FQ.app.home();tapPlay(f,mode==='map'||mode==='capital'?mode:'art');
     if(mode==='capital')f.node('#capital-choice-start').click();
+    else if(mode==='symbol'||mode==='place')tapPill(f,mode);
     meetNext(f);
-    const a=f.c.FQ.test;
-    assert.deepEqual([...a.state.game.players],['민규'],mode);
+    assert.deepEqual([...f.c.FQ.test.state.game.players],['민규'],mode);
     assert.doesNotMatch(f.node('main').innerHTML,/chip turn/,mode);
-    // 저장된 두 이름은 그대로라, 국기 놀이로 돌아오면 대결이 다시 켜져 있다.
     assert.deepEqual([...f.c.FQ.storage.settings().players],['민규','아빠'],mode);
   }
-  const g=fixture();g.c.FQ.storage.updateSettings({mode:'choice4',players:['민규','아빠']});g.c.FQ.app.home();
-  assert.match(g.node('main').innerHTML,/class="switch" id="duel-switch"/);
-  assert.doesNotMatch(g.node('main').innerHTML,/duel-off-note/);
-  g.node('#duel').checked=true;g.node('#p1').value='민규';g.node('#p2').value='아빠';
-  tapPlay(g,'flag');
-  assert.deepEqual([...g.c.FQ.test.state.game.players],['민규','아빠']);
-  assert.match(g.node('main').innerHTML,/chip turn/);
+  const g=fixture();g.c.FQ.storage.updateSettings({mode:'choice4',players:['민규','아빠']});g.c.FQ.app.settings();
+  assert.equal(g.node('#duel').disabled,false);assert.equal(g.node('#duel').checked,true);
+  g.c.FQ.app.home();tapPlay(g,'flag');tapPill(g,'choice4');
+  assert.deepEqual([...g.c.FQ.test.state.game.players],['민규','아빠']);assert.match(g.node('main').innerHTML,/chip turn/);
 });
 
 test('그림을 못 받아 지나간 문제는 총 문항·정답률·기록·나라 수 어디에도 세지 않는다',()=>{
@@ -920,7 +945,6 @@ test('그림 로딩 실패 화면은 큰 그림과 큰 단추로 알리고, 읽�
   const target=f.node('err-speak');target.setAttribute('data-speak',artName);
   f.clickDelegated('[data-speak]',target);f.releases.at(-1)();
   assert.deepEqual(f.spoken.at(-1),[artName]);
-  assert.match(css,/\.art-error-emoji \{[^}]*font-size:\s*4/);
 });
 
 test('힌트는 정답을 노출하지 않고, 수도 힌트는 첫 글자 대신 국기·대륙 단서를 준다',()=>{
@@ -967,17 +991,7 @@ test('새 축에서 한 번 더 만나기로 잡힌 나라는 결과 카드에 �
   assert.equal(f.spoken.length,0);
 });
 
-test('만나기 카드와 그림 보기는 아이패드 가로·세로에서 한 화면에 들어오는 css 를 갖는다',()=>{
-  const landscape=css.slice(css.indexOf('@media (min-width: 760px) and (orientation: landscape) {\n  .quiz-body.meet-quiz'));
-  assert.match(landscape,/\.quiz-body\.meet-quiz \{ display: block; \}/);
-  assert.match(landscape,/\.quiz-body \.meet-card \{[^}]*grid-template-columns: minmax\(0, 1fr\) minmax\(0, 1fr\)/);
-  assert.match(landscape,/\.quiz-body \.meet-card \.q-label \{[^}]*grid-column: 1 \/ -1/);
-  assert.match(css,/img#question-art \{[^}]*max-height:\s*34vh/);
-  assert.match(css,/\.art-question img#question-art\[hidden\] \{ display: none; \}/);
-  assert.match(css,/\.country-art img\[hidden\] \{ display: none; \}/);
-  assert.match(css,/\.btn-sm \{[^}]*min-height:\s*44px/);
-  assert.match(css,/\.art-choice img \{[^}]*width:\s*100%; max-width: 200px; min-width: 96px;[^}]*border:\s*1px solid var\(--line\)/);
-  assert.match(css,/\.stat \.k \{[^}]*word-break:\s*keep-all/);
+test('만나기 카드는 그림과 내용을 구분하고 시작하면 같은 나라 문제로 이어진다',()=>{
   // 만나기 카드의 그림은 감싸는 칸 안에 있고 이름·단추는 따로 묶인다(가로 두 칸 배치의 전제).
   const f=fixture();f.c.FQ.storage.updateSettings({mode:'place',dev:{art:true}});f.c.FQ.app.startGame(['kr']);
   const html=f.node('main').innerHTML;
@@ -989,7 +1003,6 @@ test('만나기 카드와 그림 보기는 아이패드 가로·세로에서 한
 });
 
 /* ---- 2026-09-17 문제 화면·정답 카드·지도·결과 시안 ---- */
-const mapCss=fs.readFileSync(path.join(root,'css/map.css'),'utf8');
 
 test('문제 화면은 지시문을 작게, 🔊 들어보기를 크게 두고 힌트·몰라요는 선 그림 한 낱말이며 진행 점 대신 여행 카드 칸 다섯 개다',()=>{
   const f=fixture();f.c.FQ.storage.updateSettings({mode:'map'});f.c.FQ.app.startGame(['kr']);
@@ -1007,23 +1020,9 @@ test('문제 화면은 지시문을 작게, 🔊 들어보기를 크게 두고 �
   assert.equal((html.match(/class="map-pin answer-btn"/g)||[]).length,4);
   // 새로 읽어 주는 문구는 없다 — 문제를 열 때 읽는 것은 없고, 단추 라벨은 화면 글자다.
   assert.equal(f.spoken.length,0);
-  // css: 지시문 흐린 작은 글자, 🔊 폰 56px·아이패드 64px 노란 바탕 진한 글자, 힌트·몰라요 56px·아이패드 60px
-  assert.match(css,/\.flag-stage \.q-label \{ font-size: \.88rem;[^}]*color: var\(--text-soft\)/);
-  assert.match(css,/\.btn-listen \{[^}]*min-height: 56px;[^}]*background: var\(--accent\); color: #1f2937/);
-  assert.match(css,/@media \(min-width: 744px\) \{[^@]*\.btn-listen \{ min-height: 64px/);
-  assert.match(css,/\.btn-tool \{[^}]*min-height: 56px/);
-  assert.match(css,/@media \(min-width: 744px\) \{[^@]*\.btn-tool \{ min-height: 60px/);
-  assert.match(css,/\.tool-row \{[^}]*grid-template-columns: 1fr 1fr/);
-  assert.match(css,/\.kid-head \.head-back \{[^}]*min-height: 44px/);
-  assert.match(css,/\.kid-head \.chip \{ min-height: 44px/);
-  assert.match(css,/\.kid-head \.lv-chip \{ display: none; \}/);assert.match(css,/@media \(min-width: 744px\) \{[^@]*\.kid-head \.lv-chip \{ display: inline-flex; \}/);
-  // 폰에서는 카드 수 글자와 🎁 를 눈에서만 감춘다(한 줄에 들어가야 한다). 읽어 주는 기계와 검사는 #combo-title 글자를 그대로 본다.
-  assert.match(css,/\.kid-head \.travel-chip \.combo-title \{ position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect\(0 0 0 0\)/);
-  assert.match(css,/\.kid-head \.travel-gift \{ display: none; \}/);
-  assert.match(css,/@media \(min-width: 744px\) \{[^@]*\.kid-head \.travel-chip \.combo-title \{ position: static/);
 });
 
-test('그림·명소 보기는 국기가 주인공인 2×2 격자이고 만나기 카드도 같은 어휘(🔊 56px·노란 64px)를 쓴다',()=>{
+test('그림·명소는 국기 보기 네 개와 그림 이름 듣기를 제공하고 만나기 다음에 퀴즈를 연다',()=>{
   const f=fixture();f.c.FQ.storage.updateSettings({mode:'symbol',dev:{art:true}});f.c.FQ.app.startGame(['kr']);
   let html=f.node('main').innerHTML;
   assert.match(html,/<button class="btn btn-listen btn-listen-soft" id="meet-speak" data-speak="대한민국"/);
@@ -1033,18 +1032,9 @@ test('그림·명소 보기는 국기가 주인공인 2×2 격자이고 만나�
   assert.match(html,/<div class="answer-grid art-grid">/);
   assert.equal((html.match(/<button class="answer-btn art-choice" type="button" data-code="[a-z]+"><img src="flags\/[a-z]+\.svg" alt="" width="160" height="120"><span class="art-choice-name">[^<]+<\/span><\/button>/g)||[]).length,4);
   assert.match(html,new RegExp('<button class="btn btn-listen" data-speak="'+rx(f.c.FQ.subjects.kr.symbol.ko)+'" type="button">🔊 들어보기</button>'));
-  assert.match(css,/\.answer-grid\.art-grid \{ grid-template-columns: 1fr 1fr/);
-  assert.match(css,/\.art-choice \{ display: flex; flex-direction: column/);
-  assert.match(css,/@media \(min-width: 744px\) \{[^@]*\.art-choice img \{ max-width: 300px; min-width: 200px/);
-  assert.match(css,/\.btn-go \{[^}]*min-height: 64px/);
-  assert.match(css,/\.btn-yellow \{ background: var\(--accent\); color: #1f2937/);
-  assert.match(css,/\.btn-listen-soft \{[^}]*border: 2px solid var\(--accent\)/);
-  assert.match(css,/\.meet-card \.meet-caption \{[^}]*min-height: 44px/);
-  // 그림 오류 상자가 보이는 동안 큰 🔊 는 감춘다(이름 듣기 하나만 남긴다).
-  assert.match(css,/\.art-question:has\(> \.art-error:not\(\[hidden\]\)\) > \.btn-listen \{ display: none; \}/);
 });
 
-test('정답 카드는 국기 전폭·큰 이름·노란 상자·🔊 56px·다음 64px 이고 폰에서는 무대와 보기를 접는다',()=>{
+test('정답 카드는 나라별 국기·설명·듣기·다음을 제공하고 여행 카드와 보상을 보존한다',()=>{
   const f=fixture();f.c.FQ.storage.updateSettings({mode:'symbol',dev:{art:true}});f.c.FQ.app.startGame(['kr','jp']);meetNext(f);
   const a=f.c.FQ.test,c=a.state.game.current().country;f.node('#question-art').handlers.load();a.submit({code:c.code});
   const html=f.node('#feedback-area').innerHTML,artName=f.c.FQ.subjects[c.code].symbol.ko,kr=f.c.FQ.quiz.byCode('kr');
@@ -1070,33 +1060,16 @@ test('정답 카드는 국기 전폭·큰 이름·노란 상자·🔊 56px·다�
   const i=fixture();i.c.FQ.storage.updateSettings({mode:'choice4'});i.c.FQ.app.startGame(['kr']);i.c.FQ.test.submit({text:''},true);
   assert.match(i.node('#feedback-area').innerHTML,new RegExp('<div class="remember-hint"><span class="remember-body">🚩 '+rx(kr.flagHint)+'</span></div>'));
   assert.equal(JSON.stringify(i.c.FQ.test.state.met.map(m=>[m.country.code,m.correct])),'[["kr",false]]');
-  // css: 폰은 무대·보기를 접고, 아이패드 세로·가로는 보기(지도 핀)를 남긴다. 국기 전폭, 이름 34px(2.1rem) 900.
-  assert.match(css,/@media \(max-width: 743px\) \{\s*\.quiz-screen\.answered \.quiz-stage-col > \.flag-stage \{ display: none; \}\s*\.quiz-screen\.answered \.quiz-answer-col \{ display: none; \}/);
-  assert.match(css,/@media \(min-width: 744px\) and \(orientation: portrait\) \{[^@]*\.quiz-screen\.answered #feedback-area \{ order: 3; \}/,'아이패드 세로는 무대·지도·보기 아래에 카드가 붙는다');
-  assert.match(css,/@media \(min-width: 760px\) and \(orientation: landscape\) \{[^@]*\.quiz-screen\.answered \.quiz-stage-col > \.flag-stage \{ display: none; \}/,'아이패드 가로는 무대만 접고 보기(지도 핀)는 남긴다');
-  assert.doesNotMatch(css.slice(css.indexOf('@media (min-width: 744px) and (orientation: portrait) {\n  .quiz-screen.answered')),/\.quiz-screen\.answered \.quiz-answer-col \{ display: none/);
-  assert.match(css,/\.discovery-card \.name-row img\.fb-flag \{ width: 100%/);
-  assert.match(css,/\.discovery-card \.kname \{ font-size: 2\.1rem; font-weight: 900/);
-  assert.match(css,/\.discovery-card \.remember-box \{[^}]*border-left: 6px solid var\(--accent\)/);
-  assert.match(css,/@media \(prefers-color-scheme: dark\) \{ \.discovery-card \.remember-title \{ color: #ffd97a; \} \}/);
-  assert.match(css,/@media \(prefers-color-scheme: dark\) \{ \.btn-listen-soft \{ background: #3a2f14; color: var\(--text\); \} \}/);
 });
 
-test('지도판은 폰 세로에서 위아래로 늘고 핀은 44px 기본에 넓은 화면에서 52·56px 이며 아이패드 세로는 한 줄 무대다',()=>{
-  assert.match(mapCss,/@media \(max-width: 743px\) and \(orientation: portrait\) \{\s*\.map-surface \{ aspect-ratio: 342 \/ 250; \}/);
-  assert.match(mapCss,/@media \(min-width: 360px\) \{\s*\.map-board \.map-pin \{ width: 52px; min-width: 52px; max-width: 52px; height: 52px; min-height: 52px; max-height: 52px; \}/);
-  assert.match(mapCss,/@media \(min-width: 744px\) \{\s*\.map-board \.map-pin \{ width: 56px; min-width: 56px/);
-  assert.doesNotMatch(mapCss,/@keyframes|animation\s*:|opacity:\s*0/);
-  assert.match(css,/@media \(min-width: 744px\) and \(orientation: portrait\) \{[^@]*\.map-question \{\s*display: grid; grid-template-columns: 200px minmax\(0, 1fr\) 240px;\s*grid-template-areas: "flag label listen" "flag name listen"/);
-  assert.match(css,/\.map-who \.map-question-flag \{ width: 120px; height: 80px/);
-  assert.match(css,/@media \(min-width: 744px\) \{[^@]*\.map-who \.map-question-flag \{ width: 200px; height: 134px; \}/);
+test('지도 문제는 해당 나라의 국기·이름·듣기와 지도판을 함께 제공한다',()=>{
   const f=fixture();f.c.FQ.storage.updateSettings({mode:'map'});f.c.FQ.app.startGame(['kr']);
   const html=f.node('main').innerHTML;
   assert.match(html,/<div class="flag-stage map-question"><div class="q-label">🗺️ 이 나라는 어디에 있을까요\?<\/div><div class="map-who"><img class="map-question-flag" src="flags\/kr\.svg" alt="대한민국 국기"><div class="big-name">대한민국<\/div><\/div><button class="btn btn-listen" data-speak="대한민국" type="button">🔊 들어보기<\/button><\/div>/);
   assert.match(html,/<div class="quiz-body map-quiz"><div class="quiz-stage-col">/);
 });
 
-test('결과 화면은 큰 제목·큰 숫자 두 칸·여행 카드·레벨 링·상자·새 스티커·한 번 더 64px·홈으로 56px 이다',()=>{
+test('결과 화면은 정확한 나라 수·여행 카드·레벨·상자·새 스티커와 다시 하기 경로를 유지한다',()=>{
   const f=fixture();f.c.FQ.storage.updateSettings({mode:'choice4',count:5,speak:false});f.c.FQ.app.startGame(['kr','jp','fr','de','it']);
   const a=f.c.FQ.test,order=[];
   a.state.rng=()=>f.c.FQ.storage.chestState().since>=4?0:0.99;a.state.rngKind=()=>0.5;
@@ -1122,11 +1095,6 @@ test('결과 화면은 큰 제목·큰 숫자 두 칸·여행 카드·레벨 링
   assert.deepEqual(f.spoken,[]);  // 읽어주기 꺼짐 — 결과 화면이 새 문구를 읽지 않는다.
   // 여행 카드를 누르면 나라 설명이 열린다.
   const t=f.node('tc');t.setAttribute('data-code','kr');f.clickDelegated('.travel-card',t);assert.deepEqual(f.modals.map(c=>c.code),['kr']);
-  assert.match(css,/\.btn-yellow \{ background: var\(--accent\)/);assert.match(css,/\.btn-mid \{ min-height: 56px/);
-  assert.match(css,/\.big-stats \{ display: grid; grid-template-columns: 1fr 1fr/);
-  assert.match(css,/\.big-stat \.v \{ font-size: 2\.75rem; font-weight: 900/);
-  assert.match(css,/\.tc-grid \{ display: grid; grid-template-columns: repeat\(5, minmax\(0, 1fr\)\)/);
-  assert.match(css,/\.result-replay \{[^}]*min-height: 44px/);
   // 상자가 안 열린 판은 다음 상자까지 남은 칸을 보여 주고, 새 스티커·한 번 더 만나기가 없으면 그 카드도 없다.
   const g=fixture();g.c.FQ.storage.recordAnswer('kr',true);g.c.FQ.storage.updateSettings({mode:'choice4',speak:false});g.c.FQ.app.startGame(['kr']);
   g.c.FQ.test.submit({code:'kr'});g.c.FQ.test.goNext();
@@ -1171,12 +1139,13 @@ test('깜짝 상자는 대륙 모양 셋 중 하나를 골라 열고, 흔들기�
   assert.equal(g.node('#chest-open').hidden,false);assert.equal(b.state.game.bonusScore,10);assert.equal(b.state.xpGained,70);
 });
 
-test('아빠 설정의 제한 시간 줄은 국기 놀이에서만 보이고 다른 놀이에서는 감춘다(알약과 저장값은 남는다)',()=>{
-  for(const [mode,shown] of [['choice4',true],['voice',true],['capital',false],['map',false],['symbol',false]]){
-    const f=fixture();f.c.FQ.storage.updateSettings({mode,timer:10,dev:{art:true}});f.c.FQ.app.home();
-    const html=f.node('main').innerHTML;
-    const hidden=/<div class="field" style="margin-top:12px;display:none">\s*<label for="opt-timer">/.test(html);
-    assert.equal(!hidden,shown,mode);assert.match(html,/data-timer="10" aria-pressed="true"/,mode+' 알약과 저장값은 남는다');
+test('설정은 제한 시간 적용 범위를 설명하고 다른 놀이에서도 저장된 선택은 지우지 않는다',()=>{
+  for(const [mode,enabled] of [['choice4',true],['voice',true],['capital',false],['map',false],['symbol',false]]){
+    const f=fixture();f.c.FQ.storage.updateSettings({mode,timer:10,dev:{art:true}});f.c.FQ.app.settings();
+    assert.equal(f.node('#setting-timer').value,'10',mode+' 저장한 10초를 표시한다');
+    assert.equal(f.node('#setting-timer').disabled,!enabled,mode);
+    assert.equal(f.c.FQ.storage.settings().timer,10,mode+' 다른 놀이를 골랐다고 제한 시간 설정을 지우지 않는다');
+    if(!enabled)assert.match(f.node('main').innerHTML,/국기 놀이.*시간 제한|시간 제한.*국기 놀이/,mode);
   }
 });
 
@@ -1286,7 +1255,6 @@ test('수도 놀이의 결과에는 오늘 만난 수도 다시 듣기가 있어
   const recapLines=a.state.met.flatMap(m=>[m.country.capital,m.country.ko+'의 수도예요']);
   assert.ok(res.includes('id="capital-recap-all" type="button" data-speak-lines="'+recapLines.join('|')+'"'));
   // 칸의 큰 글자는 수도 이름, 나라는 그 아래 '○○의 수도'(D29).
-  assert.match(css,/\.recap-item \.c \{[^}]*font-weight: 900; font-size: 1\.2rem/);
   assert.match(res,/<div class="recap-item"><img src="flags\/kr\.svg" alt="대한민국 국기"><span class="c">서울<\/span><span class="n">대한민국의 수도<\/span><button class="btn btn-sm btn-ghost recap-listen" type="button" data-speak="서울" data-speak-extra="대한민국의 수도예요" data-label="🔊" aria-label="대한민국의 수도 서울 듣기">🔊<\/button><\/div>/);
   // 이어 듣기: 응원을 멈추고 네 문구를 차례로 읽는다(가짜 DOM 은 속성을 안 읽으니 직접 넣는다).
   const all=f.node('#capital-recap-all');all.setAttribute('data-speak-lines','서울|대한민국의 수도예요|도쿄|일본의 수도예요');all.setAttribute('data-label','🔊 이어 듣기');
@@ -1337,11 +1305,11 @@ test('국기 보고 수도 말하기는 공부 카드 없이 바로 시작하고
   // 홈: 마지막 세부 모드에 관계없이 공부와 퀴즈를 선택할 수 있다.
   const i=fixture();i.c.FQ.storage.updateSettings({mode:'capitalVoice'});i.c.FQ.app.home();
   assert.doesNotMatch(i.node('main').innerHTML,/data-mode="capitalVoice"/);assert.match(i.node('main').innerHTML,/class="play-d">공부하기 · 문제 풀기</);
-  assert.match(i.node('main').innerHTML,/class="switch hidden" id="duel-switch"/,'수도 축이라 대결은 없다');
+  i.c.FQ.app.settings();assert.equal(i.node('#duel').disabled,true,'수도 축이라 대결은 없다');
 });
 
 /* ---- 2026-09-19 수도 명패 (D29): 수도 놀이의 주인공은 수도 이름 ---- */
-test('수도 명패는 긴 수도 이름의 글자를 한 단계씩 줄여 폰 한 줄에 넣는다 — 6~7 글자 len-m, 8 글자부터 len-l',()=>{
+test('긴 수도 이름은 잘리지 않게 길이별 명패 스타일을 선택한다',()=>{
   const word=(code)=>{
     const f=fixture();f.c.FQ.storage.recordAnswer(code,true,'capital');f.c.FQ.storage.updateSettings({mode:'capital'});f.c.FQ.app.startGame([code]);
     return f.node('main').innerHTML.match(/<span class="(capital-word[^"]*)">([^<]+)<\/span>/).slice(1).join('|');
@@ -1352,9 +1320,6 @@ test('수도 명패는 긴 수도 이름의 글자를 한 단계씩 줄여 폰 �
   assert.equal(word('us'),'capital-word len-m|워싱턴 D.C.','빈칸은 세지 않는다');
   assert.equal(word('ar'),'capital-word len-l|부에노스아이레스');
   assert.equal(word('lk'),'capital-word len-l|스리자야와르데네푸라코테');
-  assert.match(css,/\.capital-word\.len-m \{ font-size: 2\.45rem; \}/);assert.match(css,/\.capital-word\.len-l \{ font-size: 1\.95rem; \}/);
-  // 다크 화면과 움직임 줄이기: 명패는 기존 노란 상자와 같은 어두운 바탕을 쓰고, 글자 튀어나오기는 전역 규칙이 끈다.
-  assert.match(css,/@media \(prefers-color-scheme: dark\) \{\s*\.capital-plate \{ background: #3a2f14;/);
 });
 
 
@@ -1475,13 +1440,10 @@ test('오프라인 공부는 연결 상태나 음원 실패와 관계없이 다�
 test('수도 문제는 큰 🔊 가 수도 이름을 자동으로 한 번 읽고, 보기는 국기 4장(나라 이름 작게)이며 답은 나라 code 로 채점한다',()=>{
   const f=fixture();f.c.FQ.storage.updateSettings({mode:'capital'});f.c.FQ.app.startGame(['mx']);meetNext(f);
   const a=f.c.FQ.test,q=a.state.game.current(),html=f.node('main').innerHTML,mx=f.c.FQ.quiz.byCode('mx');
-  // 무대(시안 PhoneCapital + D29): 작은 지시문 → 수도 명패(수도 이름이 가장 큰 글자, 흐리지 않다) → 88px 노란 🔊 '눌러서 들어보기'(CSS 규칙). 국기·나라 이름은 무대에 없다(답이 된다).
-  assert.match(css,/\.capital-question \.btn-listen \{ min-height: 88px; font-size: 1\.5rem; \}/);
-  assert.match(css,/\.capital-word \{\s*font-size: 3\.3rem; font-weight: 900/);
-  assert.match(css,/@media \(min-width: 744px\) \{[^@]*\.capital-word \{ font-size: 4\.6rem; \}/);
+  // 무대는 수도 명패와 듣기를 제공하며 정답인 국기·나라 이름은 노출하지 않는다.
   assert.match(html,/<div class="flag-stage capital-question"><div class="q-label">🏙️ 어느 나라의 수도일까요\?<\/div><div class="capital-plate"><div class="capital-plate-text"><span class="capital-tag">🏙️ 수도<\/span><span class="capital-word">멕시코시티<\/span><\/div><\/div><button class="btn btn-listen capital-listen" id="capital-listen" data-speak="멕시코시티" data-label="🔊 눌러서 들어보기" type="button">🔊 눌러서 들어보기<\/button><\/div>/);
   assert.doesNotMatch(html,/capital-name|muted">멕시코시티/);
-  const stage=html.match(/<div class="flag-stage capital-question">[\s\S]*?<div id="feedback-area">/)[0];
+  const stage=html.match(/<div class="flag-stage capital-question">[\s\S]*?<div id="feedback-area"[^>]*>/)[0];
   assert.doesNotMatch(stage,/flags\/mx|>멕시코</);
   // 보기: 그림 놀이와 같은 국기 격자 부품, 4장, 나라 중복 없음, 정답 포함, 수도 이름은 보기에 없다.
   assert.match(html,/<div class="answer-grid art-grid">/);
@@ -1551,10 +1513,10 @@ test('수도 퀴즈는 시간 제한과 반복 출제 없이 진행하고 수도
   // 홈: 수도 놀이에서 공부와 퀴즈를 고르며 오늘의 도전 안내와 대결 숨김은 유지한다.
   const i=fixture();i.c.FQ.storage.updateSettings({mode:'capital',players:['민규','아빠']});i.c.FQ.app.home();
   const home=i.node('main').innerHTML;
-  assert.match(home,/id="play-capital"[^>]*aria-pressed="true"/);assert.match(home,/class="play-d">공부하기 · 문제 풀기</);
+  assert.match(home,/id="play-capital"/);assert.match(home,/class="play-d">공부하기 · 문제 풀기</);
   assert.doesNotMatch(home,/data-mode="capital"|data-mode="capitalVoice"/);
   assert.match(home,/지금 놀이로는 칸이 안 올라가요 · 눌러서 국기 놀이로 바꾸기/);
-  assert.match(home,/class="switch hidden" id="duel-switch"/);
+  assert.doesNotMatch(home,/id="duel"/,'대결 설정은 별도 설정 화면에 있다');
   assert.equal(i.c.FQ.quiz.MODES.capital.label,'수도 듣고 국기 찾기');assert.equal(i.spoken.length,0);
   // 읽어 주는 문구는 전부 수아 음원에 있다: 수도 이름·'나라의 수도예요'. 새 화면 글자는 읽지 않는다.
   const manifest=fs.readFileSync(path.join(root,'js/voice-manifest.js'),'utf8');

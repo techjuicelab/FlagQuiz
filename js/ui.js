@@ -10,6 +10,30 @@
       .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
 
+  /** 작은 화면에서도 같은 모양으로 보이는 공통 선 아이콘. */
+  function icon(name) {
+    var paths = {
+      home: '<path d="m3 10 9-7 9 7v10H3Z"/><path d="M9 20v-7h6v7"/>',
+      flag: '<path d="M5 21V3m0 1c5-4 9 4 15 0v10c-6 4-10-4-15 0"/>',
+      art: '<rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8" cy="8" r="1.5"/><path d="m3 17 6-6 4 4 3-3 5 5"/>',
+      map: '<path d="m3 5 6-2 6 2 6-2v16l-6 2-6-2-6 2Zm6-2v16m6-14v16"/>',
+      capital: '<path d="M3 21h18M5 21V9h6v12m0-16h8v16M7 12h2m-2 4h2m4-8h4m-4 4h4m-4 4h4"/>',
+      book: '<path d="M12 5C9 3 5 3 2 4v16c3-1 7-1 10 1 3-2 7-2 10-1V4c-3-1-7-1-10 1Zm0 0v16"/>',
+      chart: '<path d="M4 20h17M7 16v-5m5 5V4m5 12V8"/>',
+      settings: '<path d="m10 3-.6 2.2-2 .9-2-.6-2 3.5 1.5 1.6v2.8L3.4 15l2 3.5 2-.6 2 .9L10 21h4l.6-2.2 2-.9 2 .6 2-3.5-1.5-1.6v-2.8L20.6 9l-2-3.5-2 .6-2-.9L14 3Z"/><circle cx="12" cy="12" r="3"/>',
+      eye: '<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/>',
+      mic: '<rect x="9" y="2" width="6" height="13" rx="3"/><path d="M5 10v2a7 7 0 0 0 14 0v-2m-7 9v3m-4 0h8"/>',
+      keyboard: '<rect x="2" y="5" width="20" height="14" rx="3"/><path d="M6 9h.1m4 0h.1m4 0h.1m4 0h.1M6 12h.1m4 0h.1m4 0h.1m4 0h.1M7 16h10"/>',
+      chevron: '<path d="m9 5 7 7-7 7"/>',
+      back: '<path d="m14 5-7 7 7 7"/>',
+      sound: '<path d="m11 4-6 5H2v6h3l6 5Zm5 4a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"/>',
+      check: '<path d="m5 12 4 4L19 6"/>',
+      download: '<path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5"/>',
+      user: '<circle cx="12" cy="8" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/>'
+    };
+    return '<svg class="ui-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (paths[name] || paths.flag) + '</svg>';
+  }
+
   function flagSrc(code) { return 'flags/' + code + '.svg'; }
 
   function artFor(code, axis) {
@@ -53,6 +77,7 @@
     var m = main();
     m.innerHTML = html;
     global.scrollTo({ top: 0, behavior: 'auto' });
+    if (m.focus) m.focus({ preventScroll: true });
     return m;
   }
 
@@ -139,6 +164,7 @@
 
   FQ.ui = {
     esc: esc,
+    icon: icon,
     flagSrc: flagSrc,
     artFor: artFor,
     artAlt: artAlt,

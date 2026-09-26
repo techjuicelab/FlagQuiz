@@ -64,6 +64,27 @@ test('준비 완료는 워커의 실제 검사 응답 뒤에만 표시하고, �
   assert.equal(f.node('offline-download').hidden, true);
 });
 
+test('홈 요약을 새로 그려도 진행 중인 저장 요청과 진행률을 유지하고 실제 준비 상태를 표시한다', async () => {
+  const f = fixture(); await settle();
+  let home = null;
+  f.c.document.getElementById = id => id === 'home-offline-summary' ? home : f.node(id);
+  f.reply('partial', { cached: 10 });
+  f.node('offline-download').click();
+  const request = f.latest(), requestCount = f.requests.length;
+  f.reply('downloading', { cached: 37 });
+  assert.equal(f.node('offline-progress').value, 37);
+  home = { textContent: '' }; // 설정을 닫고 홈으로 돌아와 생긴 새 요약
+  f.c.FQ.offline.render();
+  assert.equal(home.textContent, '저장 중');
+  assert.equal(f.latest(), request);assert.equal(f.requests.length, requestCount,'화면을 그리기 위해 저장 요청을 다시 시작하지 않는다');
+  assert.equal(f.node('offline-progress').value, 37);
+  home = null;f.c.FQ.offline.render(); // 저장 패널이 아닌 화면에서도 동작한다
+  f.reply('ready', { cached: 100 }, request);
+  home = { textContent: '' };f.c.FQ.offline.render();
+  assert.equal(home.textContent, '준비 완료');
+  assert.equal(f.node('offline-download').hidden, true);
+});
+
 test('다운로드 중 연결이 끊기면 받은 분량을 유지하고 재연결 시 자동으로 이어받는다', async () => {
   const f = fixture(); await settle();
   f.reply('partial', { cached: 10 });

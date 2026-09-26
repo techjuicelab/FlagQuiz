@@ -8,11 +8,11 @@
   var dexFilter = { continent: 'all', query: '', onlyWrong: false, onlyLocked: false };
   // 칸 안 도장은 넷이다(2026-09-17 D17 채택 B): 🎨 그림 · 🏞️ 명소 · 📍 위치 · 🏙️ 수도. 국기 스티커(194칸)는 국기 축만 채운다.
   var AXES = [
-    { id: 'flag', label: '국기', icon: '🚩' },
-    { id: 'symbol', label: '그림', icon: '🎨' },
-    { id: 'place', label: '명소', icon: '🏞️' },
-    { id: 'map', label: '위치', icon: '📍' },
-    { id: 'capital', label: '수도', icon: '🏙️' }
+    { id: 'flag', label: '국기', icon: '🚩', uiIcon: 'flag' },
+    { id: 'symbol', label: '그림', icon: '🎨', uiIcon: 'art' },
+    { id: 'place', label: '명소', icon: '🏞️', uiIcon: 'art' },
+    { id: 'map', label: '위치', icon: '📍', uiIcon: 'map' },
+    { id: 'capital', label: '수도', icon: '🏙️', uiIcon: 'capital' }
   ];
 
   /** 화면을 보는 것만으로 저장 기록이나 스티커 수를 바꾸지 않는다. */
@@ -43,10 +43,26 @@
           correct += r.correct || 0;
           if ((r.seen || 0) > 0) countries++;
         });
-        return '<div class="axis-stat" data-axis="' + axis.id + '"><b>' + axis.icon + ' ' + axis.label + '</b>' +
+        return '<div class="axis-stat" data-axis="' + axis.id + '"><b class="axis-label">' + ui.icon(axis.uiIcon) + '<span>' + axis.label + '</span></b>' +
           '<div>' + countries + '개국 · ' + seen + '문제</div>' +
           '<div class="small muted">정답 ' + correct + '개 · ' + (seen ? Math.round(correct / seen * 100) : 0) + '%</div></div>';
       }).join('') + '</div></div>';
+  }
+
+  /** 대륙별 수집 현황은 기존 스티커 집계를 읽기만 한다. */
+  function continentCollection() {
+    var continents = FQ.progress.stickers().byContinent;
+    return '<details class="card section continent-collection"><summary>대륙별 수집</summary><div class="cont-grid">' +
+      CONTINENTS.slice(1).map(function (name) {
+        var count = continents[name];
+        if (!count) return '';
+        var ratio = count.total ? Math.round(count.owned / count.total * 100) : 0;
+        return '<button class="cont-item" type="button" data-collection-cont="' + esc(name) + '" aria-label="' +
+          esc(name) + ' · 스티커 ' + count.owned + ' / ' + count.total + ' · 도감 열기">' +
+          '<span class="cont-top"><span class="cont-name">' + esc(name) + '</span>' +
+          '<span class="cont-num">' + count.owned + ' / ' + count.total + '</span></span>' +
+          '<span class="cont-bar" aria-hidden="true"><i style="width:' + ratio + '%"></i></span></button>';
+      }).join('') + '</div></details>';
   }
 
   /**
@@ -74,7 +90,7 @@
     return count;
   }
 
-  /** 스티커 판 위쪽: 큰 숫자와 굵은 진행바(2026-09-17 시안 PhoneStickers). 남은 수는 읽어 주는 기계용 한 문장에 넣는다. */
+  /** 수집 요약. 남은 수는 읽어 주는 기계용 한 문장에 넣는다. */
   function stickerHeader() {
     var st = FQ.progress.stickers();
     var stamps = stampsEarned();
@@ -157,16 +173,14 @@
       dexFilter.onlyWrong = false;
       dexFilter.onlyLocked = false;
     }
-    // 시안(PhoneStickers·IpadStickers): 검색과 두 필터는 오른쪽 위 돋보기·체크 원형 단추(48px)로 접었다 편다.
+    // 검색과 두 필터는 제목 옆 단추로 접었다 편다.
     // 쓰던 검색어나 켜 둔 필터가 있으면 펼친 채로 그린다 — 접힌 채 걸러지면 왜 나라가 줄었는지 알 수 없다.
     var searchOpen = !!dexFilter.query;
     var filterOpen = !!(dexFilter.onlyWrong || dexFilter.onlyLocked);
     var html =
       '<section class="screen dex-screen">' +
-        '<div class="dex-head">' +
-          '<button class="dex-back" id="back" type="button" aria-label="홈으로">' + ICON_BACK + '</button>' +
-          '<span class="dex-ic" aria-hidden="true">📖</span>' +
-          '<h2>스티커 판</h2>' +
+        '<div class="dex-head screen-title">' +
+          '<div><h2>도감</h2><p class="screen-subtitle">나라를 둘러보고 스티커를 모아요.</p></div>' +
           '<span class="spacer"></span>' +
           '<button class="dex-toggle" id="dex-search-toggle" type="button" aria-label="나라 이름으로 찾기" aria-expanded="' + searchOpen + '" aria-controls="dex-tools">' + ICON_SEARCH + '</button>' +
           '<button class="dex-toggle" id="dex-filter-toggle" type="button" aria-label="한 번 더 만날 나라·새로 만날 스티커만 보기" aria-expanded="' + filterOpen + '" aria-controls="dex-filters">' + ICON_CHECK + '</button>' +
@@ -174,7 +188,7 @@
         stickerHeader() +
         '<div class="dex-tools" id="dex-tools"' + (searchOpen ? '' : ' hidden') + '>' +
           '<div class="field">' +
-            '<input class="text-input" id="dex-q" placeholder="나라 이름으로 찾기 (예: 브라질)" value="' + esc(dexFilter.query) + '" autocomplete="off">' +
+            '<input class="text-input" id="dex-q" type="search" aria-label="나라 이름으로 찾기" placeholder="나라 이름으로 찾기 (예: 브라질)" value="' + esc(dexFilter.query) + '" autocomplete="off">' +
           '</div>' +
         '</div>' +
         '<div class="dex-filters" id="dex-filters"' + (filterOpen ? '' : ' hidden') + '>' +
@@ -191,7 +205,6 @@
       '</section>';
 
     var m = ui.setMain(html);
-    ui.$('#back', m).addEventListener('click', function () { FQ.app.home(); });
     bindToggle(ui.$('#dex-search-toggle', m), ui.$('#dex-tools', m), searchOpen, function (open) {
       var box = ui.$('#dex-q', m);
       if (open && box && box.focus) box.focus();
@@ -232,12 +245,11 @@
     });
   }
 
-  /* 자물쇠·돋보기·체크·뒤로는 이모지 대신 선으로 그린다. 읽어 주는 글이 아니라 눈으로 보는 표시다. */
+  /* 자물쇠·돋보기·체크는 이모지 대신 선으로 그린다. 읽어 주는 글이 아니라 눈으로 보는 표시다. */
   var LOCK_SVG = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
     'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
     '<rect x="4" y="10" width="16" height="11" rx="2"></rect>' +
     '<path d="M8 10V7a4 4 0 0 1 8 0v3"></path></svg>';
-  var ICON_BACK = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"></path><path d="m11 18-6-6 6-6"></path></svg>';
   var ICON_SEARCH = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>';
   var ICON_CHECK = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12 5 5L20 6"></path></svg>';
   /* 못 모은 칸의 회색 깃발 실루엣 — 진짜 국기를 흐리게 보여 주면 답을 미리 알려 주는 셈이다 */
@@ -328,8 +340,6 @@
     var countryStats = FQ.storage.allCountryStats();
     var badges = FQ.storage.badges();
     var history = FQ.storage.history();
-    var util = FQ.util;
-
     var total = (FQ.countries || []).length;
     var seenCount = Object.keys(countryStats).filter(function (k) { return countryStats[k].seen > 0; }).length;
     var learnedCount = Object.keys(countryStats).filter(function (k) { return countryStats[k].correct > 0 && countryStats[k].streak >= 2; }).length;
@@ -348,11 +358,8 @@
     };
 
     var html =
-      '<section class="screen">' +
-        '<div class="row" style="align-items:center;margin-bottom:12px">' +
-          '<button class="btn btn-sm btn-ghost" id="back" type="button">← 돌아가기</button>' +
-          '<h2 style="margin:0;font-size:1.4rem">🏅 내 기록</h2>' +
-        '</div>' +
+      '<section class="screen stats-screen">' +
+        '<div class="screen-title"><h2>기록</h2><p class="screen-subtitle">조금씩 알아 가는 세계, 차곡차곡 쌓인 기록.</p></div>' +
 
         '<div class="card section">' +
           '<div class="stat-grid" style="margin:0">' +
@@ -364,17 +371,29 @@
             '<div class="stat"><div class="v">' + learnedCount + '</div><div class="k">익숙한 국기</div></div>' +
           '</div>' +
           // 위 세 칸은 국기·그림·명소·위치·수도를 모두 더한 수이고, '국기로 만난 나라' 부터는 국기 놀이만 센다.
-          // 어느 쪽인지 적어 두지 않으면 국기 판만 보는 아빠가 문제 수와 나라 수가 안 맞는다고 헷갈린다.
+          // 모든 놀이와 국기 놀이의 집계 범위를 분명히 표시한다.
           '<p class="small muted" style="margin:12px 0 0">‘모든 놀이’는 국기·그림·명소·위치·수도 놀이를 모두 더한 수예요. ' +
             '국기 놀이에서는 전체 ' + total + '개국 중 ' + seenCount + '개국을 만났어요. ' +
-            (seenCount >= total ? '온 세계를 한 바퀴 돌았네요! 🌐' : '아직 ' + (total - seenCount) + '개국이 남았어요.') + '</p>' +
+            (seenCount >= total ? '온 세계를 한 바퀴 돌았네요!' : '아직 ' + (total - seenCount) + '개국이 남았어요.') + '</p>' +
         '</div>' +
 
-        axisSummary() +
+        continentCollection() + axisSummary() +
+
+        (history.length
+          ? '<div class="card section">' +
+              '<h3>최근 놀이</h3>' +
+              '<ul class="history-list">' + history.slice(0, 10).map(function (h) {
+                return '<li><span class="muted small">' + esc(h.date) + '</span>' +
+                  '<span>' + esc(modeLabel(h.mode)) + '</span>' +
+                  '<span class="spacer"></span>' +
+                  '<b>' + h.correct + ' / ' + h.total + '</b></li>';
+              }).join('') + '</ul>' +
+            '</div>'
+          : '<div class="card section"><h3>최근 놀이</h3><p class="muted">놀이를 마치면 여기에 기록이 쌓여요.</p></div>') +
 
         (tough.length
           ? '<div class="card section">' +
-              '<h3>자주 틀리는 국기</h3>' +
+              '<h3>한 번 더 만나 볼 국기</h3>' +
               '<div class="wrong-grid">' + tough.map(function (x) {
                 return '<button class="wrong-item" type="button" data-code="' + x.c.code + '">' +
                   '<img src="' + ui.flagSrc(x.c.code) + '" alt="' + esc(x.c.ko) + ' 국기" loading="lazy">' +
@@ -397,50 +416,41 @@
           }).join('') + '</div>' +
         '</div>' +
 
-        (history.length
-          ? '<div class="card section">' +
-              '<h3>최근 놀이</h3>' +
-              '<ul class="history-list">' + history.slice(0, 10).map(function (h) {
-                return '<li><span class="muted small">' + esc(h.date) + '</span>' +
-                  '<span>' + esc(modeLabel(h.mode)) + '</span>' +
-                  '<span class="spacer"></span>' +
-                  '<b>' + h.correct + ' / ' + h.total + '</b></li>';
-              }).join('') + '</ul>' +
-            '</div>'
-          : '') +
-
-        '<div class="card section">' +
-          '<h3>기록 백업</h3>' +
-          '<p class="small muted">아래 글자를 통째로 복사해 두면 기록을 되살릴 수 있어요. 저장된 곳: <code>flagquiz.v1</code></p>' +
-          '<button class="btn btn-sm" id="export" type="button">💾 기록 내보내기</button>' +
-          '<div id="export-out"></div>' +
-        '</div>' +
-
-        '<div class="card section">' +
-          '<h3>정리하기</h3>' +
-          '<p class="small muted">기록은 이 브라우저에만 저장돼요. 지우면 되돌릴 수 없어요.</p>' +
-          '<button class="btn btn-sm" id="reset" type="button">🗑 기록 모두 지우기</button>' +
-        '</div>' +
+        '<p class="records-note small muted">기록은 이 기기에 저장돼요. ' +
+          '<button class="btn btn-sm btn-ghost records-link" id="records-settings" type="button">기록 관리</button></p>' +
       '</section>';
 
     var m = ui.setMain(html);
-    ui.$('#back', m).addEventListener('click', function () { FQ.app.home(); });
+    ui.on(m, '[data-collection-cont]', 'click', function (e, t) {
+      dex(t.getAttribute('data-collection-cont'));
+    });
     ui.on(m, '.wrong-item', 'click', function (e, t) {
       ui.countryModal(FQ.quiz.byCode(t.getAttribute('data-code')));
     });
-    ui.$('#export', m).addEventListener('click', function () {
-      ui.$('#export-out', m).innerHTML = '<textarea class="text-input" id="export-text" aria-label="기록 백업 JSON" readonly rows="8" style="width:100%;font-family:monospace;font-size:.8rem"></textarea>';
-      var output = ui.$('#export-text', m);
-      output.value = FQ.storage.exportJson();
-      output.select();
-    });
-    ui.$('#reset', m).addEventListener('click', function () {
-      if (global.confirm('스티커 판, 레벨과 경험치, 배지, 오답노트, 놀이 기록을 모두 지울까요?\n되돌릴 수 없어요.')) {
-        FQ.storage.resetProgress();
-        stats();
-      }
+    ui.$('#records-settings', m).addEventListener('click', function () {
+      FQ.app.settings('records');
     });
   }
 
-  FQ.screens = { dex: dex, stats: stats, stampStage: stampStage };
+  /** 기록 본문은 HTML에 넣지 않고 value로 전달한다. 설정에서도 기존 저장 형식을 유지한다. */
+  function exportRecords(host) {
+    init();
+    var output = host || ui.$('#export-out');
+    if (!output) return false;
+    output.innerHTML = '<textarea class="text-input export-text" id="export-text" aria-label="기록 백업 JSON" readonly rows="8"></textarea>';
+    var textarea = ui.$('#export-text', output);
+    textarea.value = FQ.storage.exportJson();
+    textarea.select();
+    return true;
+  }
+
+  /** 설정으로 옮겨도 삭제 확인을 생략하지 않는다. 삭제 후에는 홈으로 돌아간다. */
+  function resetRecords() {
+    if (!global.confirm('스티커 판, 레벨과 경험치, 배지, 오답노트, 놀이 기록을 모두 지울까요?\n되돌릴 수 없어요.')) return false;
+    FQ.storage.resetProgress();
+    FQ.app.home();
+    return true;
+  }
+
+  FQ.screens = { dex: dex, stats: stats, stampStage: stampStage, exportRecords: exportRecords, resetRecords: resetRecords };
 })(window);

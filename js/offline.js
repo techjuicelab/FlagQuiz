@@ -50,6 +50,8 @@
     else if (!online() && !ready && !busy()) message = '지금은 저장한 자료로 놀 수 있어요. 인터넷에 연결한 뒤 전체 저장을 마쳐 주세요.';
     status.textContent = message;
     node('offline-summary').textContent = summary;
+    var homeSummary = node('home-offline-summary');
+    if (homeSummary) homeSummary.textContent = summary;
     var progress = node('offline-progress');
     progress.hidden = !state.total || ready;
     progress.max = state.total || 1;
@@ -248,5 +250,5 @@
     register(false);
   }
 
-  FQ.offline = { init: init };
+  FQ.offline = { init: init, render: render };
 })(window);

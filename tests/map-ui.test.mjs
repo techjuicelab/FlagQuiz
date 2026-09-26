@@ -116,9 +116,9 @@ test('핀은 기본 상태부터 보이며 44px을 유지하고 별도 화면 �
   assert.match(css, /aspect-ratio:\s*2\s*\/\s*1/);
   assert.match(css, /padding:\s*22px/);
   assert.doesNotMatch(css, /@keyframes|animation\s*:|opacity:\s*0/);
-  // 아이패드 가로에서는 무대와 지도판을 나란히 놓아 남쪽 핀까지 스크롤 없이 닿는다. 세로·폰은 한 칸 그대로다.
-  const landscape = css.slice(css.indexOf('@media (min-width: 760px) and (orientation: landscape)'));
-  assert.match(landscape, /\.quiz-body\.map-quiz \{[^}]*display: grid;[^}]*grid-template-columns: minmax\(0, 5fr\) minmax\(0, 7fr\)/);
+  // 실제 폭이 넓으면 문제와 지도판을 나란히 놓고 좁은 창은 한 칸으로 돌아간다.
+  const wide = css.slice(css.indexOf('@media (min-width: 900px)'));
+  assert.match(wide, /\.quiz-body\.map-quiz \{[^}]*display: grid;[^}]*grid-template-columns: minmax\(0, 5fr\) minmax\(0, 7fr\)/);
   assert.match(css.slice(0, css.indexOf('@media')), /\.quiz-body\.map-quiz \{ display: block; \}/);
   assert.match(read('index.html'), /href="css\/map.css"/);
   assert.match(read('index.html'), /src="js\/map.js"/);
@@ -144,13 +144,14 @@ test('폰 세로에서는 지도판을 위아래로 늘리고 핀은 44px 기본
   const base = css.match(/\.map-board \.map-pin\s*\{([^}]+)\}/)[1];
   assert.match(base, /width:\s*44px/);
   // 폰 세로: 342×250 비율(2:1 의 약 1.46배). 육지 svg 의 preserveAspectRatio="none" 은 app.js 가 렌더 뒤에 붙인다(map.js 는 그대로).
-  assert.match(css, /@media \(max-width: 743px\) and \(orientation: portrait\) \{\s*\.map-surface \{ aspect-ratio: 342 \/ 250; \}\s*\}/);
+  assert.match(css, /@media \(max-width: 599px\) \{\s*\.map-surface \{ aspect-ratio: 342 \/ 250; \}\s*\}/);
   assert.doesNotMatch(read('js/map.js'), /preserveAspectRatio/);
   assert.match(read('js/app.js'), /land\.setAttribute\('preserveAspectRatio', 'none'\)/);
   // 핀 확대는 폭 조건 안에서만. 기본 상태(<360px)는 44px 그대로다.
   assert.match(css, /@media \(min-width: 360px\) \{\s*\.map-board \.map-pin \{ width: 52px; min-width: 52px; max-width: 52px; height: 52px; min-height: 52px; max-height: 52px; \}/);
   assert.match(css, /@media \(min-width: 744px\) \{\s*\.map-board \.map-pin \{ width: 56px; min-width: 56px; max-width: 56px; height: 56px; min-height: 56px; max-height: 56px; \}/);
   assert.doesNotMatch(css, /@keyframes|animation\s*:|opacity:\s*0/);
-  // 아이패드 가로 두 칸 배치는 그대로다.
-  assert.match(css, /@media \(min-width: 760px\) and \(orientation: landscape\) \{[^@]*grid-template-columns: minmax\(0, 5fr\) minmax\(0, 7fr\)/);
+  // 넓은 창의 두 칸 배치는 기기 방향에 의존하지 않는다.
+  assert.match(css, /@media \(min-width: 900px\) \{[^@]*grid-template-columns: minmax\(0, 5fr\) minmax\(0, 7fr\)/);
+  assert.doesNotMatch(css, /orientation:/);
 });

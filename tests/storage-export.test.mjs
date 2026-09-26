@@ -1,4 +1,4 @@
-/* 기록 백업의 저장·복원 계약과 실제 내 기록 화면의 클릭 동작을 검사한다.
+/* 기록 백업의 저장·복원 계약과 도감·기록 및 설정용 공개 동작을 검사한다.
  * 최소 DOM은 값 대입과 이벤트만 흉내 내므로 Safari의 선택·복사 동작은 기기에서 확인한다.
  */
 import assert from 'node:assert/strict';
@@ -134,9 +134,15 @@ function screenFixture(options) {
     addEventListener() {}
   };
   f.c.scrollTo = () => {};
-  f.c.FQ.app = { home() {} };
+  const visits = [];
+  f.c.FQ.app = { home() { visits.push('home'); }, settings(section) { visits.push('settings:' + section); } };
   f.load('data/countries.js', 'data/subjects.js', 'js/features.js', 'js/progress.js', 'js/quiz.js', 'js/badges.js', 'js/ui.js', 'js/screens.js');
-  return { ...f, main, node: selector => main.querySelector(selector) };
+  return { ...f, main, visits, node: selector => main.querySelector(selector) };
+}
+
+// 실제 설정은 app.js가 렌더링한다. 이 테스트에서는 공개 기록 관리 API의 출력 호스트만 제공한다.
+function recordSettings(f) {
+  f.main.innerHTML = '<div id="export-out"></div>';
 }
 
 test('194개 국기 스티커 안의 새 도장은 학습 축별 정답만 읽고 기존 기록을 변경하지 않는다', () => {
@@ -180,20 +186,18 @@ test('놀이별 기록은 국기·그림·명소·위치·수도를 따로 집�
   assert.match(f.main.innerHTML, /data-axis="map"[\s\S]*?1개국 · 1문제[\s\S]*?정답 0개 · 0%/);
   assert.match(f.main.innerHTML, /data-axis="place"[\s\S]*?0개국 · 0문제/);
   assert.match(f.main.innerHTML, /data-axis="flag"[\s\S]*?1개국 · 1문제/);
-  assert.match(f.main.innerHTML, /data-axis="capital"><b>🏙️ 수도<\/b><div>1개국 · 3문제<\/div><div class="small muted">정답 2개 · 67%/);
+  assert.match(f.main.innerHTML, /data-axis="capital"><b class="axis-label"><svg[\s\S]*?<span>수도<\/span><\/b><div>1개국 · 3문제<\/div><div class="small muted">정답 2개 · 67%/);
   assert.doesNotMatch(f.main.innerHTML, /NaN|undefined/);
   assert.equal(f.storage.exportJson(), before);
 });
 
-test('내 기록에서 백업 버튼을 누르면 읽기 전용 textarea에 원문을 넣고 전체 선택한다', () => {
+test('설정용 백업 API는 읽기 전용 textarea에 원문을 넣고 전체 선택한다', () => {
   const f = screenFixture();
   const literal = '</textarea><img id="injected" src=x onerror="alert(1)"> & <기록>';
   f.storage.updateSettings({ players: [literal] });
-  f.c.FQ.screens.stats();
-  assert.ok(f.main.innerHTML.indexOf('기록 백업') < f.main.innerHTML.indexOf('정리하기'));
-  assert.ok(f.node('#export'));
+  recordSettings(f);
   assert.equal(f.node('#export-text'), null);
-  f.node('#export').click();
+  assert.equal(f.c.FQ.screens.exportRecords(), true);
   const output = f.node('#export-out');
   const textarea = f.node('#export-text');
   assert.match(output.innerHTML, /<textarea\b[^>]*\breadonly\b/);
@@ -206,23 +210,93 @@ test('내 기록에서 백업 버튼을 누르면 읽기 전용 textarea에 원�
   assert.equal(f.node('#injected'), null);
 });
 
-test('백업 버튼을 다시 누르면 최신 기록을 표시하고 출력 화면을 지우지 않는다', () => {
+test('다시 내보내면 최신 기록을 표시하고 출력 화면을 지우지 않는다', () => {
   const f = screenFixture();
-  f.c.FQ.screens.stats();
-  f.node('#export').click();
+  recordSettings(f);
+  assert.equal(f.c.FQ.screens.exportRecords(), true);
   assert.equal(JSON.parse(f.node('#export-text').value).stats.asked, 0);
   f.storage.recordAnswer('kr', true);
-  f.node('#export').click();
+  assert.equal(f.c.FQ.screens.exportRecords(), true);
   assert.equal(JSON.parse(f.node('#export-text').value).countries.kr.correct, 1);
   assert.equal(f.node('#export-text').selectCalls, 1);
 });
 
-test('저장소가 차단된 내 기록 화면에서도 백업 버튼은 기본값 JSON을 표시한다', () => {
+test('저장소가 차단된 설정에서도 백업 API는 기본값 JSON을 표시한다', () => {
   const f = screenFixture({ getterBlocked: true });
-  assert.doesNotThrow(() => f.c.FQ.screens.stats());
-  assert.doesNotThrow(() => f.node('#export').click());
+  recordSettings(f);
+  assert.doesNotThrow(() => f.c.FQ.screens.exportRecords());
   assert.deepEqual(Object.keys(JSON.parse(f.node('#export-text').value)), KEYS);
   assert.equal(JSON.parse(f.node('#export-text').value).stats.asked, 0);
+});
+
+test('기록 관리는 설정으로 연결되고 화면 이동만으로 기존 기록이 바뀌지 않는다', () => {
+  const f = screenFixture();
+  recordProgress(f.storage);
+  const before = f.storage.exportJson();
+  f.c.FQ.screens.stats();
+  assert.equal(f.node('#export'), null);
+  assert.equal(f.node('#reset'), null);
+  assert.equal(f.node('#back'), null);
+  assert.ok(f.main.innerHTML.indexOf('최근 놀이') < f.main.innerHTML.indexOf('배지 '));
+  f.node('#records-settings').click();
+  assert.deepEqual(f.visits, ['settings:records']);
+  assert.equal(f.storage.exportJson(), before);
+});
+
+test('기록의 접힌 대륙별 수집은 국기 스티커만 읽고 해당 대륙 도감으로 연결한다', () => {
+  const f = screenFixture();
+  f.storage.recordAnswer('kr', true);
+  f.storage.recordAnswer('fr', true);
+  f.storage.recordAnswer('jp', true, 'capital');
+  const before = f.storage.exportJson();
+  const continents = f.c.FQ.progress.stickers().byContinent;
+  const handlers = new Map();
+  f.c.FQ.ui.on = (root, selector, event, handler) => handlers.set(selector, handler);
+  f.c.FQ.screens.stats();
+  const html = f.main.innerHTML;
+  assert.match(html, /<details class="card section continent-collection"><summary>대륙별 수집<\/summary>/);
+  for (const name of ['아시아', '유럽', '아프리카', '북아메리카', '남아메리카', '오세아니아']) {
+    const count = continents[name];
+    const button = html.match(new RegExp('<button[^>]*data-collection-cont="' + name + '"[\\s\\S]*?<\\/button>'))?.[0];
+    assert.ok(button, name + ' 수집 단추');
+    assert.ok(button.includes('스티커 ' + count.owned + ' / ' + count.total + ' · 도감 열기'));
+  }
+  assert.equal(continents['아시아'].owned, 1, '수도 정답은 국기 수집 수에 더하지 않는다');
+  handlers.get('[data-collection-cont]')({}, { getAttribute: name => name === 'data-collection-cont' ? '유럽' : null });
+  assert.match(f.main.innerHTML, /data-cont="유럽" aria-pressed="true"/);
+  const cells = f.node('#dex-list').innerHTML;
+  assert.match(cells, /data-code="fr"/);
+  assert.doesNotMatch(cells, /data-code="kr"/);
+  assert.equal(f.storage.exportJson(), before);
+});
+
+test('기록 삭제를 취소하면 여덟 버킷 전체와 현재 화면을 보존한다', () => {
+  const f = screenFixture();
+  recordProgress(f.storage);
+  const before = f.storage.exportJson();
+  let prompt = '';
+  f.c.confirm = message => { prompt = message; return false; };
+  assert.equal(f.c.FQ.screens.resetRecords(), false);
+  assert.match(prompt, /스티커 판, 레벨과 경험치, 배지, 오답노트, 놀이 기록을 모두 지울까요/);
+  assert.match(prompt, /되돌릴 수 없어요/);
+  assert.equal(f.storage.exportJson(), before);
+  assert.deepEqual(f.visits, []);
+});
+
+test('기록 삭제를 확인하면 설정은 유지하고 학습 기록을 지운 뒤 홈으로 돌아간다', () => {
+  const f = screenFixture();
+  recordProgress(f.storage);
+  const settings = JSON.stringify(f.storage.settings());
+  f.c.confirm = () => true;
+  assert.equal(f.c.FQ.screens.resetRecords(), true);
+  const after = JSON.parse(f.storage.exportJson());
+  assert.equal(JSON.stringify(after.settings), settings);
+  assert.equal(after.stats.asked, 0);
+  assert.deepEqual(after.countries, {});
+  assert.deepEqual(after.badges, {});
+  assert.deepEqual(after.history, []);
+  for (const records of Object.values(after.axes)) assert.deepEqual(records, {});
+  assert.deepEqual(f.visits, ['home']);
 });
 
 test('딸 수 없는 도장은 도감에 아예 그리지 않는다', () => {
@@ -339,8 +413,7 @@ test('그림을 끄면 놀이별 기록도 홈·도감처럼 그림·명소 축�
   assert.match(html, /data-axis="place"/);
 });
 
-test('스티커 판은 큰 숫자·굵은 진행바·대륙 알약 한 줄이고 검색·필터는 원형 단추로 접었다 편다', () => {
-  const css = fs.readFileSync(new URL('../css/style.css', import.meta.url), 'utf8');
+test('도감은 수집 요약과 대륙 선택을 표시하고 검색·필터를 접었다 편다', () => {
   const f = screenFixture();
   f.storage.updateSettings({ dev: { art: true } });
   f.storage.recordAnswer('kr', true);
@@ -352,7 +425,9 @@ test('스티커 판은 큰 숫자·굵은 진행바·대륙 알약 한 줄이고
   assert.match(html, /<div class="card dex-count-card" role="group" aria-label="모은 스티커 1 \/ 194 · 193개 남았어요">/);
   assert.match(html, /<span class="v">1 <small>\/ 194<\/small><\/span><span class="stamps">도장 1개<\/span>/);
   assert.match(html, /<span class="dex-bar" aria-hidden="true"><i style="width:1%"><\/i><\/span>/);
-  assert.match(html, /<button class="dex-back" id="back" type="button" aria-label="홈으로"><svg/);
+  assert.match(html, /<h2>도감<\/h2>/);
+  assert.doesNotMatch(html, /id="back"|class="dex-back"/);
+  assert.match(html, /id="dex-q" type="search" aria-label="나라 이름으로 찾기"/);
   assert.match(html, /<button class="dex-toggle" id="dex-search-toggle" type="button" aria-label="나라 이름으로 찾기" aria-expanded="false" aria-controls="dex-tools"><svg/);
   assert.match(html, /<button class="dex-toggle" id="dex-filter-toggle" type="button" aria-label="한 번 더 만날 나라·새로 만날 스티커만 보기" aria-expanded="false" aria-controls="dex-filters"><svg/);
   assert.match(html, /<div class="dex-tools" id="dex-tools" hidden>[\s\S]*id="dex-q"/);
@@ -388,18 +463,7 @@ test('스티커 판은 큰 숫자·굵은 진행바·대륙 알약 한 줄이고
   assert.match(f.main.innerHTML, /<div class="dex-filters" id="dex-filters">/);
   assert.match(f.main.innerHTML, /<div class="dex-tools" id="dex-tools" hidden>/);
   assert.equal((f.node('#dex-list').innerHTML.match(/class="sticker-cell /g) || []).length, 193);
-  // css: 폰 3열(칸 124px 이상) · 아이패드 가로 8열 · 알약 44px · 원형 단추 48px · 대륙 줄 가로 스크롤
-  assert.match(css, /\.sticker-grid \{ grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/);
-  assert.match(css, /\.sticker-cell \{ min-height: 124px/);
-  assert.match(css, /\.dex-toggle \{ width: 48px; height: 48px; min-height: 48px/);
-  assert.match(css, /\.dex-back \{ width: 44px; height: 44px; min-height: 44px/);
-  assert.match(css, /\.dex-conts \{ display: flex; gap: 8px; overflow-x: auto/);
-  assert.match(css, /\.dex-conts \.pill \{[^}]*min-height: 44px/);
-  assert.match(css, /\.dex-bar \{[^}]*height: 14px/);
-  assert.match(css, /\.dex-tools\[hidden\] \{ display: none; \}/);
-  assert.match(css, /\.dex-filters\[hidden\] \{ display: none; \}/);
-  assert.match(css, /@media \(min-width: 760px\) and \(orientation: landscape\) \{[^@]*\.sticker-grid \{ grid-template-columns: repeat\(8, minmax\(0, 1fr\)\); \}/);
-  assert.match(css, /\.sticker-cell\.got \{ border-color: var\(--success\)/);
+
 });
 
 test('도장은 세 단계로 진해진다 — 한 번 맞힘 s1, 다른 날에도 맞힘 s2, 다른 날에도 맞혔고 세 번 연속 s3, 옛 기록은 s1 (D26)', () => {
