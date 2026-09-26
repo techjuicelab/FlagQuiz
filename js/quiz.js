@@ -561,7 +561,7 @@
     }
 
     // 출제 순서 정하기: 오답 우선이면 가중치로, 아니면 골고루 섞어서.
-    // 각 축은 자기 기록만 읽는다. 수도도 전체 후보에서 중복 없이 뽑아 공부·반복 문제를 섞지 않는다.
+    // 각 축은 자기 기록만 읽고, 모든 퀴즈는 한 판에서 같은 나라를 한 번만 낸다.
     var weightFor = null;
     if (cfg.reviewFirst && FQ.storage) {
       if (axis === 'flag' && FQ.storage.weightOf) {
@@ -588,28 +588,13 @@
       return learn ? { mode: cfg.mode, country: c, options: null } : makeQuestion(c, cfg.mode, source, { axis: axis });
     });
 
-    /* ---- 한 판 안에서 다시 만나기 (새 축 전용, D15) ----
-     * 그림·명소는 아이가 처음 보는 쌍이 많다. 처음 만난 쌍과 틀린 쌍은 같은 판에서 3문제 뒤에
-     * 한 번 더 낸다. 총 문제 수는 그대로다 — 아직 안 만난 원래 문제 하나를 뒤에서 빼고 그 자리를 쓴다.
-     * 국기·수도·지도 축은 여기에 들어오지 않는다. 한 판에 같은 나라가 두 번 나오지 않는다.
-     */
-    var revisit = axis === 'symbol' || axis === 'place';
-    var firstMeet = {};
-    if (revisit) {
-      var records = axisRecords();
-      order.forEach(function (c) {
-        var r = records[c.code];
-        firstMeet[c.code] = !(r && (r.seen || 0) > 0);
-      });
-    }
-
     var game = {
       config: cfg,
       source: source,
       questions: questions,
       fallback: fallback,   // null | 'only' (only 목록이 전부 자료 없음) | 'filters' (난이도·대륙 조건에 맞는 나라 없음)
       skipped: skipped,     // only 목록에서 자료가 없어 뺀 나라 코드
-      againCount: 0,       // 이 판에서 다시 만나기로 잡은 문제 수 (그림·명소만)
+      againCount: 0,       // 기존 결과 화면과의 호환용. 같은 판의 강제 반복은 없다.
       index: 0,
       streak: 0,
       bestStreak: 0,
@@ -638,32 +623,6 @@
     game.currentPlayerIndex = function () { return game.turn % game.players.length; };
     game.isLast = function () { return game.index >= game.questions.length - 1; };
     game.isOver = function () { return game.index >= game.questions.length; };
-
-    var AGAIN_GAP = 3;
-    var againDone = {};
-    /**
-     * 지금 문제의 나라를 3문제 뒤에 한 번 더 낸다. 판이 그보다 짧으면 마지막 자리에, 바로 다음 자리뿐이면 내지 않는다.
-     * 쌍마다 한 판에 한 번만. 이미 잡아 둔 다시 만나기는 자리를 내주지 않는다.
-     */
-    function scheduleAgain(country) {
-      if (!revisit || againDone[country.code]) return false;
-      var i = game.index;
-      var len = game.questions.length;
-      var at = Math.min(i + AGAIN_GAP, len - 1);
-      if (at - i < 2) return false;
-      var drop = -1;
-      for (var k = len - 1; k > i; k--) {
-        if (!game.questions[k].again) { drop = k; break; }
-      }
-      if (drop === -1) return false;
-      game.questions.splice(drop, 1);
-      var q = makeQuestion(country, cfg.mode, source, { axis: axis });
-      q.again = true;
-      game.questions.splice(Math.min(at, game.questions.length), 0, q);
-      againDone[country.code] = true;
-      game.againCount += 1;
-      return true;
-    }
 
     /**
      * 답을 채점하고 게임 상태를 갱신한다.
@@ -710,15 +669,13 @@
         game.streak = 0;
         res.gained = 0;
       }
-      // 다시 만난 문제를 또 틀려도 '한 번 더 만날 나라' 에는 한 번만 싣는다
+      // 틀리거나 이름 힌트를 쓴 나라는 결과의 복습 목록에 한 번만 싣는다.
       if (!learned && !game.wrong.some(function (c) { return c.code === q.country.code; })) game.wrong.push(q.country);
       if (usedHint) game.hintsUsed += 1;
       if (FQ.storage) FQ.storage.recordAnswer(q.country.code, learned, MODES[cfg.mode] && MODES[cfg.mode].axis);
       res.question = q;
-      res.again = !!q.again;
-      // 처음 만난 쌍이거나 틀린 쌍이면 3문제 뒤에 한 번 더 (그림·명소만).
-      // 수도·지도는 틀리거나 힌트를 써도 같은 판에 다시 넣지 않고 결과의 복습 목록에만 남긴다.
-      res.scheduledAgain = !q.again && (!res.correct || firstMeet[q.country.code]) ? scheduleAgain(q.country) : false;
+      res.again = false;
+      res.scheduledAgain = false;
       return res;
     };
 

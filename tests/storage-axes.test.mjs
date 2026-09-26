@@ -158,7 +158,7 @@ test('새 축 게임은 axisWeightOf 로, 국기 게임은 weightOf 로 순서�
   assert.equal(seen.length, 0, '오답 우선을 끄면 가중치를 읽지 않는다');
 });
 
-/* ---------------- 한 판 안에서 다시 만나기 ---------------- */
+/* ---------------- 한 판에서 나라 중복 없이 풀기 ---------------- */
 
 function play(game, answerOf) {
   const log = [];
@@ -172,76 +172,52 @@ function play(game, answerOf) {
   return log;
 }
 
-test('새 축에서 처음 만난 쌍은 3문제 뒤에 한 번 더 나오고 총 문제 수는 그대로다', () => {
-  const { FQ } = fixture();
-  const g = FQ.quiz.createGame({ mode: 'symbol', count: 10 });
-  assert.equal(g.total, 10);
-  const first = g.current().country.code;
-  const r = g.submit({ code: first });
-  assert.equal(r.correct, true);
-  assert.equal(r.scheduledAgain, true, '처음 만난 쌍은 맞혀도 다시 만난다');
-  assert.equal(g.questions.length, 10, '총 문제 수는 늘지 않는다');
-  assert.equal(g.total, 10);
-  assert.equal(g.questions[3].country.code, first, '3문제 뒤에 같은 쌍');
-  assert.equal(g.questions[3].again, true);
-  assert.equal(g.questions[3].options.length, 4, '다시 만난 문제도 보기 4개');
-  assert.ok(g.questions[3].options.some(c => c.code === first));
-  g.next();
-  const log = play(g, (q) => q.country.code);
-  const codes = new Set(log.map(l => l.code));
-  assert.equal(log.length, 9);
-  for (const l of log.filter(l => l.again)) assert.equal(l.scheduled, false, '다시 만난 문제는 또 잡지 않는다');
-  // 전부 처음 만나는 10문제 판: 새 나라 5개를 각각 두 번 만난다 (0·1·2 → 3·4·5, 6·7 → 8·9)
-  assert.equal(g.againCount, 5, '다시 만나기 수 ' + g.againCount);
-  assert.equal(codes.size, 5, '다시 만난 만큼 새 나라가 줄어든다');
-  // 기록: 각 쌍이 만난 횟수만큼 seen 에 쌓인다
-  const recs = FQ.storage.allAxisStats('symbol');
-  assert.equal(Object.values(recs).reduce((n, r) => n + r.seen, 0), 10);
+test('그림·명소 퀴즈는 처음 보는 나라도 한 판에 한 번씩 내고 정답·오답을 해당 축에만 기록한다', () => {
+  for (const mode of ['symbol', 'place']) {
+    const { FQ } = fixture();
+    const game = FQ.quiz.createGame({ mode, count: 10 });
+    const original = Array.from(game.questions, q => q.country.code);
+    assert.equal(game.total, 10);
+    assert.equal(new Set(original).size, 10, mode + ': 시작부터 서로 다른 나라 10개');
+    const log = play(game, (q, i) => {
+      assert.equal(q.options.length, 4);
+      assert.equal(new Set(q.options.map(c => c.code)).size, 4);
+      return i % 2 ? q.options.find(c => c.code !== q.country.code).code : q.country.code;
+    });
+    assert.equal(log.length, 10);
+    assert.ok(log.every(entry => !entry.again && !entry.scheduled));
+    assert.equal(game.againCount, 0);
+    assert.deepEqual(Array.from(game.questions, q => q.country.code), original, '답 뒤에도 나라가 교체되지 않는다');
+    assert.deepEqual(Array.from(game.summary().wrong, c => c.code), original.filter((_, i) => i % 2));
+    for (const code of original) assert.equal(FQ.storage.allAxisStats(mode)[code].seen, 1);
+    assert.deepEqual(Object.keys(FQ.storage.allCountryStats()), [], '국기 기록은 건드리지 않는다');
+    assert.deepEqual(Object.keys(FQ.storage.allAxisStats(mode === 'symbol' ? 'place' : 'symbol')), [], '다른 그림 축은 건드리지 않는다');
+  }
 });
 
-test('이미 만난 쌍은 맞히면 다시 안 나오고, 틀리면 3문제 뒤에 한 번만 더 나온다', () => {
-  const { FQ } = fixture();
-  const withArt = FQ.countries.filter(c => FQ.subjects[c.code]?.symbol && !FQ.subjects[c.code].symbol.noArt).slice(0, 10).map(c => c.code);
-  for (const code of withArt) FQ.storage.recordAnswer(code, true, 'symbol');
-  const g = FQ.quiz.createGame({ mode: 'symbol', only: withArt, count: 10 });
-  const order = g.questions.map(q => q.country.code);
-  const target = order[1];
-  const log = play(g, (q, i) => (q.country.code === target ? (q.options.find(c => c.code !== target) || q.country).code : q.country.code));
-  assert.equal(log[0].scheduled, false, '이미 만났고 맞혔으면 다시 안 잡는다');
-  assert.equal(log[1].code, target);
-  assert.equal(log[1].correct, false);
-  assert.equal(log[1].scheduled, true, '틀리면 다시 잡는다');
-  assert.equal(log[4].code, target, '3문제 뒤에 다시');
-  assert.equal(log[4].again, true);
-  assert.equal(log[4].correct, false);
-  assert.equal(log[4].scheduled, false, '다시 만난 문제를 또 틀려도 세 번째는 없다');
-  assert.equal(log.filter(l => l.code === target).length, 2);
-  assert.equal(log.length, 10);
-  assert.equal(g.againCount, 1);
-  assert.equal(g.summary().wrong.length, 1, '두 번 틀려도 한 번 더 만날 나라에는 한 번');
-  assert.equal(g.summary().total, 10);
-  assert.equal(new Set(order.filter(c => log.some(l => l.code === c))).size, 9, '원래 마지막 문제 하나가 자리를 내준다');
-});
-
-test('짧은 판의 규칙: 2문제는 다시 만나기 없음, 3문제는 마지막 자리에, 마지막 두 문제는 잡지 않는다', () => {
-  const { FQ } = fixture();
-  const g2 = FQ.quiz.createGame({ mode: 'place', count: 2 });
-  const log2 = play(g2, (q) => q.country.code);
-  assert.deepEqual(log2.map(l => l.scheduled), [false, false]);
-  assert.equal(g2.againCount, 0);
-  assert.equal(new Set(log2.map(l => l.code)).size, 2);
-
-  const g3 = FQ.quiz.createGame({ mode: 'place', count: 3 });
-  const first = g3.current().country.code;
-  const log3 = play(g3, (q) => q.country.code);
-  assert.deepEqual(log3.map(l => l.scheduled), [true, false, false]);
-  assert.equal(log3[2].code, first, '판이 짧으면 마지막 자리에');
-  assert.equal(log3[2].again, true);
-  assert.equal(log3.length, 3);
-
-  const g1 = FQ.quiz.createGame({ mode: 'symbol', count: 1 });
-  assert.equal(play(g1, (q) => q.country.code)[0].scheduled, false);
-  assert.equal(g1.total, 1);
+test('그림·명소 퀴즈는 이미 배운 나라를 틀려도 반복하지 않고 짧은 판도 고른 수만큼 낸다', () => {
+  for (const mode of ['symbol', 'place']) {
+    const { FQ } = fixture();
+    const withArt = FQ.quiz.pool({ axis: mode }).slice(0, 10).map(c => c.code);
+    for (const code of withArt) FQ.storage.recordAnswer(code, true, mode);
+    const game = FQ.quiz.createGame({ mode, only: withArt, count: 10 });
+    const original = Array.from(game.questions, q => q.country.code);
+    const target = original[1];
+    const log = play(game, q => q.country.code === target ? q.options.find(c => c.code !== target).code : q.country.code);
+    assert.equal(log.filter(entry => entry.code === target).length, 1);
+    assert.equal(log.find(entry => entry.code === target).correct, false);
+    assert.ok(log.every(entry => !entry.scheduled));
+    assert.equal(game.againCount, 0);
+    assert.deepEqual(Array.from(game.questions, q => q.country.code), original);
+    assert.deepEqual(Array.from(game.summary().wrong, c => c.code), [target]);
+    assert.equal(FQ.storage.allAxisStats(mode)[target].seen, 2);
+    assert.equal(FQ.storage.allAxisStats(mode)[target].wrong, 1);
+    for (const count of [1, 2, 3]) {
+      const short = FQ.quiz.createGame({ mode, only: withArt, count });
+      assert.equal(short.total, count);
+      assert.equal(new Set(short.questions.map(q => q.country.code)).size, count);
+    }
+  }
 });
 
 test('국기 축은 다시 만나기를 하지 않아 한 판에 같은 나라가 두 번 나오지 않는다', () => {
@@ -418,18 +394,18 @@ test('D24: 보기 거리는 익힌 정도로 정한다 — 처음은 다른 대�
   assert.ok(farAsia.every(c => c.continent === '아시아' && c.region !== '동아시아'));
 });
 
-test('그림·명소는 기존 다시 만나기를 유지한다', () => {
+test('그림·명소는 사용 가능한 그림이 있는 나라만 문제와 보기로 낸다', () => {
   const { FQ } = fixture();
-  FQ.map = { MIN_WIDTH: 0, chooseOptions: (answer, source) => [answer].concat(source.filter(c => c !== answer).slice(0, 3)) };
   for (const mode of ['symbol', 'place']) {
-    const g = FQ.quiz.createGame({ mode, count: 10 });
-    assert.ok(g.questions.every(q => q.options && q.options.length === 4 && !q.review), mode + ' 은 보기를 미리 만든다');
-    assert.equal(g.againCount, 0);
-    const first = g.current().country.code;
-    const result = g.submit({ code: first });
-    assert.equal(result.scheduledAgain, true, mode + ' 은 처음 만난 쌍을 다시 낸다');
-    assert.equal(g.questions[3].country.code, first);
-    assert.equal(g.againCount, 1);
+    const blocked = FQ.quiz.pool({ axis: mode })[0].code;
+    FQ.subjects[blocked][mode].noArt = true;
+    const available = new Set(FQ.quiz.pool({ axis: mode }).map(c => c.code));
+    assert.ok(!available.has(blocked), mode + ': 보류한 그림은 후보에서 빠진다');
+    const game = FQ.quiz.createGame({ mode, only: [blocked], count: 10 });
+    assert.deepEqual(Array.from(game.skipped), [blocked]);
+    assert.equal(game.fallback, 'only');
+    assert.ok(game.questions.every(q => q.options && q.options.length === 4 && !q.review));
+    assert.ok(game.questions.every(q => available.has(q.country.code) && q.options.every(c => available.has(c.code))));
   }
 });
 

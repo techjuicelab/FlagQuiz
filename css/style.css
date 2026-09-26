@@ -117,8 +117,8 @@ h3 { font-size: 1.1rem; }
 }
 .primary-nav button svg { width: 23px; height: 23px; }
 .primary-nav button[aria-current="page"] { color: var(--primary); background: var(--primary-soft); }
-.app:is([data-screen="quiz"], [data-screen="study"], [data-screen="capital-study"], [data-screen="study-done"], [data-screen="capital-study-done"], [data-screen="map-study"], [data-screen="map-study-done"]) { padding-bottom: max(28px, env(safe-area-inset-bottom)); }
-.app:is([data-screen="quiz"], [data-screen="study"], [data-screen="capital-study"], [data-screen="study-done"], [data-screen="capital-study-done"], [data-screen="map-study"], [data-screen="map-study-done"]) > :is(.topbar, .primary-nav) { display: none; }
+.app:is([data-screen="quiz"], [data-screen="study"], [data-screen="capital-study"], [data-screen="study-done"], [data-screen="capital-study-done"], [data-screen="map-study"], [data-screen="map-study-done"], [data-screen="art-study"], [data-screen="art-study-done"]) { padding-bottom: max(28px, env(safe-area-inset-bottom)); }
+.app:is([data-screen="quiz"], [data-screen="study"], [data-screen="capital-study"], [data-screen="study-done"], [data-screen="capital-study-done"], [data-screen="map-study"], [data-screen="map-study-done"], [data-screen="art-study"], [data-screen="art-study-done"]) > :is(.topbar, .primary-nav) { display: none; }
 .connection-note { margin: 0 0 16px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); color: var(--text-soft); }
 
 /* 공통 버튼과 입력 */
@@ -234,6 +234,33 @@ h3 { font-size: 1.1rem; }
 .capital-path #capital-study-start { margin-top: auto; }
 .capital-path .btn { white-space: normal; }
 
+/* 그림과 명소는 각각 공부와 퀴즈를 고른다. 공부 그림은 기기의 가용 폭을 쓴다. */
+.art-menu { max-width: 800px; margin: 0 auto; }
+.art-paths { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.art-path { display: flex; flex-direction: column; align-items: stretch; gap: 12px; }
+.art-path h3 { margin: 2px 0 0; font-size: 1.4rem; }
+.art-path p { margin: 0 0 10px; color: var(--text-soft); line-height: 1.65; font-size: .95rem; }
+.art-path .btn { margin-top: auto; white-space: normal; }
+.art-menu-note { margin-top: 18px; }
+.art-study { max-width: 900px; margin: 0 auto; }
+.art-study-card { display: grid; justify-items: center; gap: 18px; padding: clamp(18px, 3vw, 28px); }
+.art-study-figure { display: grid; justify-items: center; gap: 10px; width: 100%; margin: 0; }
+.art-study-figure img { display: block; width: min(100%, 680px); max-height: 52vh; height: auto; aspect-ratio: 4 / 3; object-fit: contain; border-radius: 16px; background: #f1f5fb; }
+.art-study-figure figcaption { display: grid; gap: 3px; text-align: center; font-size: 1.3rem; font-weight: 650; }
+.art-study-figure figcaption small { color: var(--text-soft); font-size: .85rem; font-weight: 400; }
+.art-study-error { display: grid; justify-items: center; gap: 10px; width: min(100%, 680px); padding: 26px 16px; border: 1px dashed var(--line); border-radius: 16px; background: var(--card-2); text-align: center; }
+.art-study-error > span { font-size: 2.5rem; }
+.art-study-error p { margin: 0; color: var(--text-soft); }
+.art-study-info { display: flex; align-items: center; justify-content: center; gap: 14px; width: 100%; }
+.art-study-info img { flex: 0 0 78px; width: 78px; height: 58px; object-fit: contain; border: 1px solid var(--line); border-radius: 8px; }
+.art-study-info > div { min-width: 0; }
+.art-study-info h3 { margin: 0; font-size: 1.45rem; }
+.art-study-info p { margin: 3px 0 0; color: var(--text-soft); font-size: .9rem; }
+.art-study-fact { max-width: 680px; margin: 0; color: var(--text-soft); text-align: center; }
+.art-study-card .btn-listen { width: min(100%, 680px); margin: 0; }
+.art-study-done { max-width: 560px; margin: 0 auto; padding: 32px 24px; text-align: center; }
+.art-study-done .btn { display: flex; width: 100%; margin-top: 12px; }
+
 /* 설정을 다시 그리지 않고, 각 행의 기존 입력과 저장 상태를 유지한다. */
 .settings-screen, #settings-extras { max-width: 740px; margin: 0 auto; }
 .settings-header { margin-bottom: 26px; }
@@ -335,10 +362,6 @@ h3 { font-size: 1.1rem; }
 .art-error .btn { width: 100%; max-width: 360px; }
 .art-error-emoji { font-size: 3rem; }
 .art-question:has(> .art-error:not([hidden])) > .btn-listen { display: none; }
-.meet-card .big-name { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 16px 0 10px; }
-.meet-card .big-name .map-question-flag { width: 64px; height: 48px; object-fit: contain; border: 1px solid var(--line); border-radius: 7px; }
-.meet-caption { display: inline-block; margin: 0 0 12px; padding: 5px 12px; border-radius: 9px; background: var(--primary-soft); color: var(--primary-dark); font-size: 1.05rem; }
-.meet-card #meet-speak { margin-top: 0; }
 .capital-plate { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 14px; padding: 14px 4px; background: transparent; border-radius: 16px; }
 .capital-plate-text { display: flex; flex-direction: column; align-items: center; gap: 8px; min-width: 0; max-width: 100%; }
 .capital-tag { color: var(--text-soft); font-size: .8rem; font-weight: 500; }
@@ -592,6 +615,12 @@ h3 { font-size: 1.1rem; }
   .setting-row select, .setting-row input[type="text"] { flex-basis: 48%; width: 48%; }
 }
 @media (max-width: 599px) {
+  .art-paths { grid-template-columns: minmax(0, 1fr); }
+  .art-path { padding: 20px; }
+  .art-path p br { display: none; }
+  .art-study-figure img { max-height: 44vh; }
+  .art-study-figure figcaption { font-size: 1.15rem; }
+  .art-study-info h3 { font-size: 1.25rem; }
   .capital-paths { grid-template-columns: minmax(0, 1fr); }
   .capital-path { padding: 20px; }
   .capital-path p br { display: none; }
@@ -630,14 +659,12 @@ h3 { font-size: 1.1rem; }
   .quiz-screen.answered .quiz-body { align-items: start; }
   .feedback .name-row { flex-direction: row; text-align: left; }
   .feedback .name-row img { width: 112px; }
-  .quiz-body.meet-quiz { display: block; }
-  .quiz-body .meet-card { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px 28px; align-items: center; }
-  .quiz-body .meet-card .q-label { grid-column: 1 / -1; }
-  .quiz-body .meet-card .meet-art { min-width: 0; }
-  .quiz-body .meet-card img#question-art { max-height: 48vh; }
-  .quiz-body .meet-card .big-name { margin-top: 0; }
   .result-screen { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 18px; }
   .result-screen .result-head, .result-screen .big-stats, .result-screen .result-actions { grid-column: 1 / -1; }
+}
+@media (min-width: 700px) and (max-height: 900px) {
+  .art-study-card { gap: 12px; padding: 20px 24px; }
+  .art-study-figure img { max-height: min(40vh, 340px); }
 }
 @media (min-width: 1000px) {
   .app { max-width: 1240px; min-height: 100vh; padding-top: max(40px, env(safe-area-inset-top)); padding-left: 238px; padding-right: max(36px, env(safe-area-inset-right)); padding-bottom: 48px; }
@@ -648,7 +675,7 @@ h3 { font-size: 1.1rem; }
   #nav-settings { position: fixed; left: max(28px, calc((100vw - 1240px) / 2 + 28px)); bottom: max(28px, env(safe-area-inset-bottom)); width: 170px; justify-content: flex-start; background: transparent; border-color: transparent; }
   .primary-nav { position: fixed; top: 132px; right: auto; bottom: auto; left: max(28px, calc((100vw - 1240px) / 2 + 28px)); display: flex; flex-direction: column; width: 170px; gap: 8px; padding: 0; border: 0; background: transparent; backdrop-filter: none; }
   .primary-nav button { flex-direction: row; justify-content: flex-start; gap: 13px; min-height: 52px; padding: 12px 16px; font-size: .95rem; }
-  .app:is([data-screen="quiz"], [data-screen="study"], [data-screen="capital-study"], [data-screen="study-done"], [data-screen="capital-study-done"], [data-screen="map-study"], [data-screen="map-study-done"]) { max-width: 1180px; padding-left: max(36px, env(safe-area-inset-left)); }
+  .app:is([data-screen="quiz"], [data-screen="study"], [data-screen="capital-study"], [data-screen="study-done"], [data-screen="capital-study-done"], [data-screen="map-study"], [data-screen="map-study-done"], [data-screen="art-study"], [data-screen="art-study-done"]) { max-width: 1180px; padding-left: max(36px, env(safe-area-inset-left)); }
   .home-intro { margin-bottom: 4px; }
   .home-intro h2 { margin-top: 20px; }
   .play-btn { min-height: 210px; }

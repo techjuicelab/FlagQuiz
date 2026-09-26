@@ -1,5 +1,5 @@
 /* 국기 퀴즈 - 화면 흐름과 게임 진행
- * 홈 → 퀴즈 → 결과. 도감과 기록 화면은 screens.js 가 그린다.
+ * 홈에서 주제를 골라 공부하거나 퀴즈를 푼다. 도감과 기록 화면은 screens.js 가 그린다.
  */
 (function (global) {
   'use strict';
@@ -28,7 +28,7 @@
   ];
   var PLAY_TILES = [
     { id: 'flag', title: '국기 놀이', desc: '세계의 국기를 알아봐요' },
-    { id: 'art', title: '그림 놀이', desc: '그림과 명소로 만나요' },
+    { id: 'art', title: '그림 놀이', desc: '그림·명소 공부와 퀴즈' },
     { id: 'map', emo: '🗺️', title: '지도 놀이', desc: '위치 공부 · 퀴즈 풀기' },
     { id: 'capital', emo: '🏙️', title: '수도 놀이', desc: '공부하기 · 문제 풀기' }
   ];
@@ -103,6 +103,9 @@
     studiedCapitals: {},
     mapStudy: null,
     studiedMap: {},
+    artStudy: null,
+    artMode: null,
+    studiedArt: { symbol: {}, place: {} },
     answered: false,
     usedHint: false,
     hintLevel: 0,      // 수도 놀이 힌트 단계(D24): 1 오답 지우기 + 수도 다시 듣기, 2 나라 이름 듣기
@@ -165,7 +168,7 @@
     if (extras) extras.hidden = screen !== 'settings';
     ['home', 'dex', 'stats', 'settings'].forEach(function (name) {
       var link = doc.getElementById('nav-' + name);
-      if (link) link.setAttribute('aria-current', (name === screen || (name === 'home' && ['category', 'capital-menu', 'map-menu', 'result'].indexOf(screen) >= 0)) ? 'page' : 'false');
+      if (link) link.setAttribute('aria-current', (name === screen || (name === 'home' && ['category', 'art-menu', 'capital-menu', 'map-menu', 'result'].indexOf(screen) >= 0)) ? 'page' : 'false');
     });
     if (!FQ.music) return;
     var s = store.settings();
@@ -190,6 +193,7 @@
     enterCapitalScreen('home');
     state.study = null;
     state.mapStudy = null;
+    state.artStudy = null;
     var s = store.settings();
     if (s.mode !== quiz.availableMode(s.mode)) s = store.updateSettings({ mode: quiz.availableMode(s.mode) });
     var name = s.players[0] || '친구';
@@ -222,20 +226,21 @@
     enterCapitalScreen('category');
     state.study = null;
     state.mapStudy = null;
+    state.artStudy = null;
     state.category = group;
     var s = store.updateSettings({ mode: tileMode(tile, store.settings()) });
     var descriptions = {
       choice4: '국기를 보고 나라 이름을 골라요', reverse: '나라 이름을 듣고 국기를 찾아요',
       voice: '국기를 보고 나라 이름을 말해요', typing: '국기를 보고 나라 이름을 써요',
-      symbol: '나라를 떠올리는 그림을 만나요', place: '세계의 유명한 장소를 만나요',
+      symbol: '그림을 보고 배우거나 퀴즈를 풀어요', place: '명소를 보고 배우거나 퀴즈를 풀어요',
       map: '세계지도에서 나라의 자리를 찾아요'
     };
     var m = ui.setMain('<section class="screen category-menu">' +
       '<div class="screen-heading"><button class="btn btn-sm btn-ghost" id="category-back" type="button">' + ui.icon('back') + ' 놀이</button>' +
-        '<h2>' + esc(tile.title) + '</h2></div><p class="muted">어떻게 놀아 볼까요?</p>' +
+        '<h2>' + esc(tile.title) + '</h2></div><p class="muted">' + (group === 'art' ? '무엇을 알아볼까요?' : '어떻게 놀아 볼까요?') + '</p>' +
       '<div class="mode-list">' + tileModes(tile).map(function (mode) {
         return '<button class="mode-option" type="button" data-mode="' + mode.id + '"><span class="mode-icon">' + ui.icon(({choice4:'eye',reverse:'sound',voice:'mic',typing:'keyboard',symbol:'art',place:'map'})[mode.id] || group) + '</span>' +
-          '<span><strong>' + esc(mode.title) + '</strong><small>' + esc(descriptions[mode.id]) + '</small>' +
+          '<span><strong>' + esc(group === 'art' ? (mode.id === 'place' ? '세계의 명소' : '나라를 떠올리는 그림') : mode.title) + '</strong><small>' + esc(descriptions[mode.id]) + '</small>' +
           ((s.lastMode || {})[group] === mode.id ? '<span class="mode-recent">최근에 한 놀이</span>' : '') + '</span>' + ui.icon('chevron') + '</button>';
       }).join('') + '</div>' +
       '<button class="category-settings btn btn-ghost" id="category-settings" type="button">' + ui.icon('settings') +
@@ -244,7 +249,11 @@
       '</section>');
     ui.$('#category-back', m).addEventListener('click', renderHome);
     ui.$('#category-settings', m).addEventListener('click', function () { renderSettings(); });
-    ui.on(m, '[data-mode]', 'click', function (e, t) { startPlay(m, t.getAttribute('data-mode')); });
+    ui.on(m, '[data-mode]', 'click', function (e, t) {
+      var mode = t.getAttribute('data-mode');
+      if (group === 'art') renderArtMenu(mode);
+      else startPlay(m, mode);
+    });
     var review = ui.$('#review', m);
     if (review) review.addEventListener('click', function () { keepFlagAxisMode(); startGame(store.wrongList()); });
   }
@@ -266,6 +275,7 @@
 
   function closeSettings() {
     if (state.settingsReturn === 'category') renderCategory(state.category);
+    else if (state.settingsReturn === 'art-menu') renderArtMenu(state.artMode);
     else if (state.settingsReturn === 'capital-menu') renderCapitalMenu();
     else if (state.settingsReturn === 'map-menu') renderMapMenu();
     else if (state.settingsReturn === 'dex') FQ.screens.dex();
@@ -278,6 +288,7 @@
     enterCapitalScreen('settings');
     state.study = null;
     state.mapStudy = null;
+    state.artStudy = null;
     var s = store.settings();
     var canDuel = duelAllowed(s.mode), duel = s.players.length > 1;
     var m = ui.setMain('<section class="screen settings-screen">' +
@@ -453,6 +464,7 @@
   function startGame(onlyCodes) {
     state.study = null;
     state.mapStudy = null;
+    state.artStudy = null;
     cancelPendingFeedback();
     stopTimer();
     stopListening();
@@ -562,21 +574,6 @@
       (extra ? ' data-speak-extra="' + esc(extra) + '"' : '') + ' type="button">🔊 들어보기</button>';
   }
 
-  /** 그 축으로 한 번도 만나지 않은 나라인지 읽기만 한다. 그림이 있어야 만나기 카드를 낸다. */
-  function needsMeet(q) {
-    var axis = quiz.MODES[q.mode] && quiz.MODES[q.mode].axis;
-    if (!artFor(q.country.code, q.mode)) return false;
-    var records = store.allAxisStats ? store.allAxisStats(axis) : {};
-    var r = records && records[q.country.code];
-    return !r || !(r.seen > 0);
-  }
-
-  /** 그림·명소만 만나기 카드를 쓴다. 수도 공부는 퀴즈와 별도 화면에서 한다. */
-  function meetMode(mode) {
-    var m = quiz.MODES[mode];
-    return !!m && (m.axis === 'symbol' || m.axis === 'place');
-  }
-
   /** 수도 안에 있는 명소 그림(D26): 명소 도시가 수도와 같은 나라만. 수도 이름 소리에 그림 갈고리를 붙인다(파리=에펠탑, 런던=빅벤, 서울=광화문). */
   function capitalPlace(country) {
     if (!country || !FQ.features || !FQ.features.on('art')) return null;
@@ -624,8 +621,152 @@
     stopListening();
     audio.stopSpeaking();
     state.game = null;
-    state.meeting = false;
     musicScreen(screen);
+  }
+
+  /* =================== 그림·명소 공부 / 퀴즈 선택 =================== */
+  function artTitle(mode) { return mode === 'place' ? '명소' : '그림'; }
+
+  function artStudyPool(mode) {
+    var s = store.settings();
+    return quiz.pool({ level: s.level, continent: s.continent, axis: mode });
+  }
+
+  function artBatchSize(list) {
+    var count = store.settings().count;
+    return count === 'all' ? list.length : Math.min(list.length, Math.max(1, Number(count) || 10));
+  }
+
+  function renderArtMenu(mode) {
+    if (mode !== 'symbol' && mode !== 'place') mode = state.artMode || 'symbol';
+    if (quiz.availableMode(mode) !== mode) { renderHome(); return; }
+    enterCapitalScreen('art-menu');
+    state.artStudy = null;
+    state.artMode = mode;
+    state.category = 'art';
+    var last = Object.assign({}, store.settings().lastMode || {});
+    last.art = mode;
+    var s = store.updateSettings({ mode: mode, lastMode: last });
+    var list = artStudyPool(mode);
+    var title = artTitle(mode);
+    var scope = (s.continent === 'all' ? '모든 대륙' : s.continent) + ' · ' +
+      (quiz.LEVEL_LABEL[s.level] || '모든 난이도') + ' · 한 번에 ' + artBatchSize(list) + '개';
+    var m = ui.setMain('<section class="screen art-menu">' +
+      '<div class="screen-heading"><button class="btn btn-sm btn-ghost" id="art-category" type="button">' + ui.icon('back') + ' 그림 놀이</button>' +
+        '<h2>' + title + ' 놀이</h2></div>' +
+      '<button class="category-settings btn btn-ghost" id="art-settings" type="button">' + ui.icon('settings') + esc(scope) + '</button>' +
+      '<div class="art-paths">' +
+        '<section class="card art-path"><span class="capital-path-icon" aria-hidden="true">' + ui.icon('book') + '</span><h3>' + title + ' 공부</h3>' +
+          '<p>' + title + '과 나라 이름을 함께 보고 듣고,<br>내 속도로 넘겨요.</p>' +
+          '<button class="btn btn-big btn-primary" id="art-study-start" type="button"' + (list.length ? '' : ' disabled') + '>공부하기</button></section>' +
+        '<section class="card art-path"><span class="capital-path-icon" aria-hidden="true">' + ui.icon('flag') + '</span><h3>' + title + ' 퀴즈</h3>' +
+          '<p>' + title + '을 보고 어느 나라인지<br>바로 맞혀 봐요.</p>' +
+          '<button class="btn btn-big btn-primary" id="art-quiz-start" type="button"' + (list.length ? '' : ' disabled') + '>퀴즈 풀기</button></section>' +
+      '</div>' +
+      (!list.length ? '<p class="notice">지금 조건에 맞는 ' + title + '이 없어요. 설정에서 대륙이나 난이도를 바꿔 주세요.</p>' : '') +
+      '<p class="small muted art-menu-note">공부에는 점수가 없어요. 퀴즈는 바로 문제를 풀어요.</p></section>');
+    ui.$('#art-category', m).addEventListener('click', function () { renderCategory('art'); });
+    ui.$('#art-settings', m).addEventListener('click', function () { renderSettings(); });
+    ui.$('#art-study-start', m).addEventListener('click', function () { startArtStudy(mode); });
+    ui.$('#art-quiz-start', m).addEventListener('click', function () { startPlay(null, mode); });
+  }
+
+  /** 공부 화면에서는 채점·여행 카드·도장을 갱신하지 않는다. 다음 묶음은 아직 안 본 소재부터 펼친다. */
+  function startArtStudy(mode, onlyCodes) {
+    if (mode !== 'symbol' && mode !== 'place') return;
+    var list = onlyCodes && onlyCodes.length ? quiz.pool({ axis: mode, only: onlyCodes }) : artStudyPool(mode);
+    var seenCodes = state.studiedArt[mode];
+    var fresh = list.filter(function (c) { return !seenCodes[c.code]; });
+    var seen = list.filter(function (c) { return seenCodes[c.code]; });
+    state.artMode = mode;
+    state.study = null;
+    state.mapStudy = null;
+    state.artStudy = { mode: mode, countries: util.shuffle(fresh).concat(util.shuffle(seen)).slice(0, artBatchSize(list)), index: 0 };
+    var s = store.settings();
+    audio.setEnabled(s.sound);
+    audio.setSpeakEnabled(s.speak);
+    audio.unlock();
+    renderArtStudy();
+  }
+
+  function renderArtStudy() {
+    enterCapitalScreen('art-study');
+    var study = state.artStudy;
+    if (!study || !study.countries.length) {
+      var empty = ui.setMain('<section class="screen card art-study-done"><h2>이 범위에는 볼 그림이 없어요</h2>' +
+        '<p>설정에서 대륙이나 난이도를 바꿔 주세요.</p><button class="btn btn-big" id="art-study-home" type="button">그림 놀이로</button></section>');
+      ui.$('#art-study-home', empty).addEventListener('click', function () { renderArtMenu(state.artMode); });
+      return;
+    }
+    if (study.index >= study.countries.length) { renderArtStudyDone(); return; }
+    var c = study.countries[study.index];
+    var mode = study.mode;
+    var title = artTitle(mode);
+    var art = artFor(c.code, mode);
+    var subject = artSubject(c.code, mode) || {};
+    state.studiedArt[mode][c.code] = true;
+    var detail = mode === 'place' ? subject.city : subject.cat;
+    var m = ui.setMain('<section class="screen art-study">' +
+      '<div class="screen-heading"><button class="btn btn-sm btn-ghost" id="art-study-back" type="button">' + ui.icon('back') + ' ' + title + ' 놀이</button>' +
+        '<h2>' + title + ' 공부</h2><span class="chip" id="art-study-count">' + (study.index + 1) + ' / ' + study.countries.length + '</span></div>' +
+      '<div class="card art-study-card">' +
+        '<figure class="art-study-figure">' +
+          (art ? '<img id="art-study-image" src="' + esc(art.src) + '" alt="' + esc(art.alt) + '" width="1024" height="768">' : '') +
+          '<div id="art-study-error" class="art-study-error" role="status"' + (art ? ' hidden' : '') + '><span aria-hidden="true">🖼️</span>' +
+            '<p>그림을 불러오지 못했어요. 다음 ' + title + '으로 계속할 수 있어요.</p>' +
+            '<button class="btn btn-sm btn-ghost" id="art-study-retry" type="button"' + (art ? '' : ' disabled') + '>다시 불러오기</button></div>' +
+          '<figcaption>' + esc(art ? art.alt : artAlt(c.code, mode)) +
+            (detail ? '<small>' + esc(detail) + '</small>' : '') + '</figcaption></figure>' +
+        '<div class="art-study-info"><img src="' + ui.flagSrc(c.code) + '" alt="' + esc(c.ko) + ' 국기">' +
+          '<div><h3>' + esc(c.ko) + '</h3><p>' + esc(c.continent) + ' · ' + esc(c.region) + '</p></div></div>' +
+        '<p class="art-study-fact">' + esc(c.fact) + '</p>' +
+        '<button class="btn btn-listen btn-listen-soft" id="art-study-speak" type="button">🔊 다시 듣기</button></div>' +
+      '<div class="study-actions"><button class="btn btn-big btn-ghost" id="art-study-prev" type="button"' + (study.index ? '' : ' disabled') + '>← 이전 ' + title + '</button>' +
+        '<button class="btn btn-big btn-primary" id="art-study-next" type="button">' + (study.index === study.countries.length - 1 ? '공부 마치기 ✓' : '다음 ' + title + ' →') + '</button></div></section>');
+    function listen() { speakLines(ui.$('#art-study-speak', m), [c.ko, artAlt(c.code, mode), c.fact].filter(Boolean), '🔊 다시 듣기'); }
+    ui.$('#art-study-back', m).addEventListener('click', function () { renderArtMenu(mode); });
+    ui.$('#art-study-speak', m).addEventListener('click', listen);
+    ui.$('#art-study-prev', m).addEventListener('click', function () {
+      if (state.artStudy !== study || study.index <= 0) return;
+      study.index -= 1;
+      renderArtStudy();
+    });
+    ui.$('#art-study-next', m).addEventListener('click', function () {
+      if (state.artStudy !== study) return;
+      study.index += 1;
+      renderArtStudy();
+    });
+    var studyImage = ui.$('#art-study-image', m);
+    if (studyImage && art) {
+      function imageState(failed) {
+        if (state.artStudy !== study || state.screen !== 'art-study' || study.countries[study.index] !== c) return;
+        studyImage.hidden = failed;
+        ui.$('#art-study-error', m).hidden = !failed;
+      }
+      studyImage.addEventListener('error', function () { imageState(true); });
+      studyImage.addEventListener('load', function () { imageState(false); });
+      ui.$('#art-study-retry', m).addEventListener('click', function () {
+        imageState(false);
+        studyImage.src = art.src;
+      });
+      if (studyImage.complete && !studyImage.naturalWidth) imageState(true);
+    }
+    if (store.settings().speak) listen();
+  }
+
+  function renderArtStudyDone() {
+    musicScreen('art-study-done');
+    var study = state.artStudy;
+    var title = artTitle(study.mode);
+    var hasMore = artStudyPool(study.mode).some(function (c) { return !state.studiedArt[study.mode][c.code]; });
+    var m = ui.setMain('<section class="screen card art-study-done"><h2>' + title + ' 공부를 마쳤어요</h2>' +
+      '<p>' + study.countries.length + '개 나라의 ' + title + '을 만나봤어요.</p>' +
+      '<button class="btn btn-big btn-primary" id="art-study-more" type="button">' + (hasMore ? '다른 ' + title + ' 공부하기' : '한 번 더 보기') + '</button>' +
+      '<button class="btn btn-big" id="art-study-quiz" type="button">' + title + ' 놀이로</button>' +
+      '<button class="btn btn-big btn-ghost" id="art-study-home" type="button">홈으로</button></section>');
+    ui.$('#art-study-more', m).addEventListener('click', function () { startArtStudy(study.mode); });
+    ui.$('#art-study-quiz', m).addEventListener('click', function () { renderArtMenu(study.mode); });
+    ui.$('#art-study-home', m).addEventListener('click', renderHome);
   }
 
   function capitalStudyPool() {
@@ -904,9 +1045,6 @@
     var s = store.settings();
     if (speechMode(q.mode) && (global.navigator.onLine === false || state.speechNeedsConnection)) touchQuestion(q);
     var duel = g.players.length > 1;
-    // 처음 만나는 그림·명소만 채점 전에 먼저 알려 준다. 수도는 별도의 공부 화면에서 익힌다.
-    var meet = meetMode(q.mode) && state.metQuestion !== q && needsMeet(q);
-
     var stage;
     if (q.mode === 'symbol' || q.mode === 'place') {
       var art = artFor(q.country.code, q.mode);
@@ -914,35 +1052,24 @@
       // 여기에 닿을 수 있다 — 그때 죽으면 아이가 시작을 눌러도 화면이 멈춘 채 아무 일도 안 난다.
       // 기다릴 그림이 아예 없으면 잠그지 않는다. 아이가 건너뛸 수 있어야 한다.
       state.artUnavailable = !!art;
-      // 그림 이름은 수아 음원으로 읽어 준다(2026-09-17 추가). 글자를 못 읽는 아이가 이름을 듣고 고른다.
+      // 소재 이름에 나라 이름이 들어 있으면 정답이므로 문제의 글·음성·대체 텍스트에서 감춘다.
       var stageArtName = artAlt(q.country.code, q.mode);
+      var quizArtName = stageArtName && !revealsCountry(stageArtName, q.country) ? stageArtName : '';
       // 그림을 못 받았을 때의 화면은 글자를 못 읽는 아이가 봐도 알 수 있어야 한다 — 큰 그림 하나, 큰 단추 하나.
-      // 읽어 주는 것은 수아 음원에 이미 있는 그림 이름뿐이다(만나기 카드에서는 그 이름이 이미 아래에 있으니 빼지 않아도 된다).
+      // 문제에서 읽어 주는 것은 정답을 드러내지 않는 기존 수아 음원뿐이다.
       var artErrorBody = '<div class="art-error-emoji" aria-hidden="true">🖼️</div><p>그림을 불러오지 못했어요.</p>';
-      var artImage = art ? '<img id="question-art" src="' + esc(art.src) + '" alt="' + esc(art.alt) + '" width="1024" height="768">' +
+      var artImage = art ? '<img id="question-art" src="' + esc(art.src) + '" alt="' + esc(quizArtName || (q.mode === 'place' ? '나라를 맞힐 명소 그림' : '나라를 맞힐 상징 그림')) + '" width="1024" height="768">' +
           '<p id="art-loading" role="status">그림을 불러오고 있어요…</p>' +
           '<div id="art-error" class="art-error" hidden>' + artErrorBody +
             '<button class="btn btn-primary btn-big" id="art-retry" type="button">🔄 다시 불러오기</button>' +
             '<button class="btn btn-big btn-yellow" id="art-next" type="button">⏭ 다음 그림</button>' +
-            (stageArtName && !meet ? '<button class="btn btn-big" data-speak="' + esc(stageArtName) + '" type="button">🔊 그림 이름 듣기</button>' : '') +
+            (quizArtName ? '<button class="btn btn-big" data-speak="' + esc(quizArtName) + '" type="button">🔊 그림 이름 듣기</button>' : '') +
           '</div>'
           : '<div id="art-error" class="art-error">' + artErrorBody + '<button class="btn btn-big btn-yellow" id="art-next" type="button">⏭ 다음 그림</button></div>';
-      stage = meet
-        // 처음 만나는 그림은 문제보다 먼저 알려 준다. 나라 이름과 그림 이름을 함께 듣고 나서 같은 나라를 문제로 만난다.
-        // 그림과 이름·단추를 따로 감싼다 — 아이패드 가로에서는 둘을 나란히 놓아야 단추가 한 화면에 들어온다.
-        // 시안(PhonePlay): 국기 74×56 + 이름 36px, 그림 이름은 파란 알약, 🔊 다시 듣기 56px, '문제 풀어 볼게요' 64px 노란 단추.
-        ? '<div class="flag-stage art-question meet-card"><div class="q-label">처음 만나는 나라예요 · 먼저 들어 볼까요?</div>' +
-          '<div class="meet-art">' + artImage + '</div>' +
-          '<div class="meet-body">' +
-          '<div class="big-name"><img class="map-question-flag" src="' + ui.flagSrc(q.country.code) + '" alt="' + esc(q.country.ko) + ' 국기"> ' + esc(q.country.ko) + '</div>' +
-          '<div class="meet-caption">' + esc(stageArtName) + '</div>' +
-          '<button class="btn btn-listen btn-listen-soft" id="meet-speak" data-speak="' + esc(q.country.ko) + '" data-speak-extra="' + esc(stageArtName) + '" data-label="🔊 다시 듣기" type="button">🔊 다시 듣기</button>' +
-          '<button class="btn btn-big btn-go btn-yellow" id="meet-next" type="button">문제 풀어 볼게요 →</button>' +
-          '</div></div>'
-        : '<div class="flag-stage art-question"><div class="q-label">' +
+      stage = '<div class="flag-stage art-question"><div class="q-label">' +
           (q.mode === 'place' ? '이 명소가 있는 나라는 어디일까요?' : '이 그림은 어느 나라를 떠올리게 하나요?') + '</div>' +
           artImage +
-          (stageArtName ? listenButton(stageArtName) : '') + '</div>';
+          (quizArtName ? listenButton(quizArtName) : '') + '</div>';
     } else if (q.mode === 'map') {
       // 시안(PhoneMap): 국기 120×80 과 이름을 한 줄에, 아래에 🔊 전폭. 아이패드 세로에서는 국기·이름·🔊 가 한 줄 카드가 된다(css).
       stage = '<div class="flag-stage map-question">' +
@@ -994,13 +1121,13 @@
     var html =
       '<section class="screen quiz-screen' + (q.mode === 'map' ? ' map-screen' : '') + '">' +
         quizHead(g, s, chest, lv) +
-        '<div class="quiz-body' + (q.mode === 'map' ? ' map-quiz' : '') + (meet ? ' meet-quiz' : '') + '">' +
+        '<div class="quiz-body' + (q.mode === 'map' ? ' map-quiz' : '') + '">' +
           '<div class="quiz-stage-col">' +
             (q.touchFallback ? '<div class="notice" role="status">👆 이름을 듣고 국기를 눌러요</div>' : '') +
             stage + '<div id="feedback-area" role="status" aria-live="polite"></div></div>' +
           '<div class="quiz-answer-col">' +
-            '<div id="answer-area"' + (meet ? ' hidden' : '') + '>' + answerArea(q) + '</div>' +
-            '<div class="row tool-row"' + (meet ? ' style="display:none"' : '') + '>' +
+            '<div id="answer-area">' + answerArea(q) + '</div>' +
+            '<div class="row tool-row">' +
               '<button class="btn btn-sm btn-tool" id="hint" type="button">' + ICONS.bulb + '<span>힌트</span></button>' +
               '<button class="btn btn-sm btn-tool btn-tool-soft" id="skip" type="button">' + ICONS.hand + '<span>몰라요</span></button>' +
             '</div>' +
@@ -1016,25 +1143,9 @@
     // 🔊 를 듣고 나면 말하기 놀이는 마이크를 다시 연다(수도 말하기의 나라 이름 듣기·힌트).
     ui.on(m, '[data-speak]', 'click', function (e, t) { speakFromButton(t, resumeListening); });
 
-    if (meet) {
-      // 만나기 카드: 채점 없이 나라 이름과 그림 이름을 들려주고, 아이가 누르면 같은 나라를 문제로 낸다.
-      state.meeting = true;
-      ui.$('#meet-next', m).addEventListener('click', function () {
-        if (state.game !== g || g.current() !== q) return;
-        state.metQuestion = q;
-        state.meeting = false;
-        audio.stopSpeaking();
-        renderQuiz();
-      });
-      speakLines(ui.$('#meet-speak', m),
-        [q.country.ko, artAlt(q.country.code, q.mode)],
-        '🔊 다시 듣기');
-    } else {
-      state.meeting = false;
-      // 수도 문제는 글자가 아니라 소리가 문제다. 뜨자마자 수도 이름을 한 번 읽어 준다(실패하면 단추가 '다시 눌러서 듣기'로 바뀐다).
-      if (q.mode === 'capital') speakLines(ui.$('#capital-listen', m), [q.country.capital], '🔊 눌러서 들어보기');
-      if (q.mode === 'reverse' && q.touchFallback) speakLines(ui.$('#touch-listen', m), [q.country.ko], '🔊 들어보기');
-    }
+    // 수도 문제는 글자가 아니라 소리가 문제다. 뜨자마자 수도 이름을 한 번 읽어 준다.
+    if (q.mode === 'capital') speakLines(ui.$('#capital-listen', m), [q.country.capital], '🔊 눌러서 들어보기');
+    if (q.mode === 'reverse' && q.touchFallback) speakLines(ui.$('#touch-listen', m), [q.country.ko], '🔊 들어보기');
     ui.$('#quit', m).addEventListener('click', function () {
       var g2 = state.game;
       var played = g2 ? g2.index : 0;
@@ -1095,7 +1206,7 @@
         ui.$('#skip', m).disabled = false;
         ui.$('#hint', m).disabled = state.usedHint;
         if (unavailable) stopTimer();
-        else if (s.timer && !state.timerId && !meet) startTimer();
+        else if (s.timer && !state.timerId) startTimer();
       }
       questionArt.addEventListener('error', function () { artState('error'); });
       questionArt.addEventListener('load', function () { artState('ready'); });
@@ -1103,14 +1214,13 @@
       artState(questionArt.complete ? (questionArt.naturalWidth > 0 ? 'ready' : 'error') : 'loading');
     }
     preloadNext();
-    if (!meet && !state.artUnavailable && !state.timerId) startTimer(keep ? keep.timeLeft : undefined);
+    if (!state.artUnavailable && !state.timerId) startTimer(keep ? keep.timeLeft : undefined);
 
-    if (speechMode(q.mode) && !meet) {
+    if (speechMode(q.mode)) {
       state.listenOn = true;
       audio.stopSpeaking();
       // 단추를 누른 그 흐름 안에서 시작해야 사파리가 마이크 권한을 다시 묻지 않는다.
       // 늦게(setTimeout) 시작하면 사용자가 누른 동작과 끊겨 매번 허용을 물어본다.
-      // 만나기 카드가 떠 있는 동안은 듣지 않는다 — '문제 풀어 볼게요'를 누르는 그 흐름에서 연다.
       startListening();
     }
   }
@@ -1406,7 +1516,7 @@
   function resumeListening() {
     var g = state.game;
     var q = g && g.current();
-    if (!q || !speechMode(q.mode) || state.answered || state.meeting || doc.hidden) return;
+    if (!q || !speechMode(q.mode) || state.answered || doc.hidden) return;
     state.listenOn = true;
     startListening();
   }
@@ -1553,8 +1663,7 @@
 
   /* --------- 제출 --------- */
   function submit(payload, gaveUp) {
-    // 만나기 카드가 떠 있는 동안은 채점하지 않는다(숫자 키 등 우회 입력 포함).
-    if (state.answered || state.artUnavailable || state.meeting) return;
+    if (state.answered || state.artUnavailable) return;
     state.answered = true;
     stopTimer();
     // 마이크는 showFeedback 에서 놓는다. 놓인 것을 확인한 뒤에 읽어 줘야
@@ -1647,7 +1756,6 @@
     if (res.newSticker) wins.push('새 스티커가 여행책에 들어왔어요');
     if (res.levelUp) wins.push('새 길이 열렸어요 · ' + esc(res.levelUp.name));
     // 새 축에서 처음 만나거나 틀린 나라는 조금 뒤에 한 번 더 나온다. 화면 글자로만 알리고 읽어 주지는 않는다(음원 없음).
-    if (res.scheduledAgain) wins.push('조금 뒤에 한 번 더 만나요');
     if (wins.length) extra = '<div class="small muted">' + wins.join(' · ') + '</div>';
 
     var lvNow = FQ.progress.level();
@@ -2052,9 +2160,9 @@
         '</div>';
     }
 
-    // 새 축은 한 판에 같은 나라를 두 번 만나므로 문제 수가 아니라 나라 수를 센다.
+    // 여행 카드는 실제 채점한 나라 수를 보여 준다.
     var metCount = summary.countries === undefined ? summary.total : summary.countries;
-    // '맞힌 나라'도 나라 수다. 새 축은 같은 나라를 두 번 만나므로 문제 수(summary.correct)로 세면 만난 나라보다 커진다.
+    // 다시 보기에서도 나라별 마지막 채점 결과를 센다.
     var correctCount = state.met && state.met.length
       ? state.met.filter(function (m2) { return m2.correct; }).length
       : summary.correct;
@@ -2154,6 +2262,8 @@
             ? '<button class="btn btn-big btn-mid" id="retry-wrong" type="button">📖 한 번 더 만나기</button>'
             : '') +
           (summary.mode === 'map' ? '<button class="btn btn-big btn-mid" id="map-result-study" type="button">지도에서 다시 보기</button>' : '') +
+          ((summary.mode === 'symbol' || summary.mode === 'place') && state.met && state.met.length
+            ? '<button class="btn btn-big btn-mid" id="art-result-study" type="button">' + artTitle(summary.mode) + ' 다시 공부하기</button>' : '') +
           '<button class="btn btn-big btn-mid" id="home" type="button">' + ICONS.home + '<span>홈으로</span></button>' +
         '</div>' +
       '</section>';
@@ -2162,6 +2272,10 @@
     var resultMapStudy = ui.$('#map-result-study', m);
     if (resultMapStudy) resultMapStudy.addEventListener('click', function () {
       startMapStudy((state.met || []).map(function (item) { return item.country.code; }));
+    });
+    var resultArtStudy = ui.$('#art-result-study', m);
+    if (resultArtStudy) resultArtStudy.addEventListener('click', function () {
+      startArtStudy(summary.mode, (state.met || []).map(function (item) { return item.country.code; }));
     });
     var resultGame = state.game;
     var resultReplay = ui.$('#result-replay', m);
@@ -2317,6 +2431,7 @@
       stopTimer(); stopListening(); audio.stopSpeaking(); state.game = null;
       state.study = null;
       state.mapStudy = null;
+      state.artStudy = null;
       FQ.screens.dex();
     });
     doc.getElementById('nav-stats').addEventListener('click', function () {
@@ -2324,6 +2439,7 @@
       stopTimer(); stopListening(); audio.stopSpeaking(); state.game = null;
       state.study = null;
       state.mapStudy = null;
+      state.artStudy = null;
       musicScreen('stats');
       FQ.screens.stats();
     });
