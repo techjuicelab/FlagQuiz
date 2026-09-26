@@ -11,9 +11,9 @@
     choice4: { label: '국기 보고 나라 고르기', kind: 'choice', hasOptions: true, axis: 'flag' },
     reverse: { label: '나라 보고 국기 찾기', kind: 'choice', hasOptions: true, axis: 'flag' },
     // 수도 놀이(2026-09-17 D17 채택 B): 수도 이름을 듣고 국기 4장 중 그 나라를 찾는다. 기록은 axes.capital 에 따로 쌓여
-    // 새 축 규칙(시간 초과 지나감·대결 없음·오늘의 도전 미집계)을 받되, 출제는 D15 대신 LEARN.capital(D24) 규칙을 탄다.
+    // 새 축 규칙(시간 초과 지나감·대결 없음·오늘의 도전 미집계)을 받으며, 한 판에는 각 나라가 한 번만 나온다.
     capital: { label: '수도 듣고 국기 찾기', kind: 'choice', hasOptions: true, axis: 'capital' },
-    // 국기 보고 수도 말하기(D28): 국기와 나라 이름을 보고 수도를 말한다. 기록·계획(D24)·도장은 수도 축과 같고 답은 수도 이름으로 채점한다(answer).
+    // 국기 보고 수도 말하기(D28): 국기와 나라 이름을 보고 수도를 말한다. 기록·도장은 수도 축과 같고 답은 수도 이름으로 채점한다(answer).
     // speech 는 마이크·중간 결과 채점·맞히면 저절로 다음(D25)을 같이 쓰는 표시다.
     capitalVoice: { label: '국기 보고 수도 말하기', kind: 'text', hasOptions: false, axis: 'capital', answer: 'capital', speech: true },
     typing:  { label: '이름 써서 맞히기', kind: 'text', hasOptions: false, axis: 'flag' },
@@ -509,117 +509,19 @@
     return result;
   }
 
-  /* ---------------- 수도 놀이 학습 규칙 (D24) ----------------
-   * 그림·명소·지도는 D15(가중치 + 3문제 뒤 한 번 다시 만나기) 그대로다. 수도 축만 이 규칙을 탄다.
-   *   newPerGame   한 판에 처음 만나는 나라 수의 한도 — 한 번에 외울 양을 줄인다
-   *   gaps         처음 만난 나라를 같은 판에서 다시 내는 간격(사이에 낀 문제 수) — 1문제 뒤, 3문제 뒤, 그리고 판 끝
-   *   maxAsks      한 나라를 한 판에 내는 횟수 상한 (계획 4 + 틀렸을 때 1)
-   *   spreadFor    보기(오답 국기)의 거리 — 그 축 기록의 연속 정답 수로 정한다(distractors 의 opts.spread)
-   *   reviewWeight 복습 순서 가중치 — 틀렸거나 한 번밖에 못 맞힌 나라가 먼저 흔들린다
+  /* ---------------- 수도 퀴즈 보기 난이도 ----------------
+   * 공부는 별도 화면에서 진행한다. 퀴즈에서는 익힌 정도에 맞춰 보기 국기의 거리만 조절한다.
    */
   var LEARN = {
     capital: {
-      newPerGame: function (total) { return total <= 5 ? 2 : total <= 15 ? 3 : total <= 30 ? 4 : 5; },
-      gaps: [1, 3],
-      maxAsks: 5,
       spreadFor: function (record) {
         var streak = record ? (record.streak || 0) : 0;
         if (streak >= 5) return 'near';
         if (streak >= 2) return 'mid';
         return 'far';
-      },
-      reviewWeight: function (record) {
-        var r = record || {};
-        var streak = r.streak || 0, wrong = r.wrong || 0;
-        if (wrong > 0 && streak < 2) return 3.0;   // 틀렸고 아직 안 굳었다
-        if (streak <= 1) return 2.0;                // 한 번 맞힌 것이 가장 먼저 흔들린다
-        if (streak <= 4) return 1.4;
-        return 0.6;                                 // 잘 아는 나라도 가끔은
-      },
-      // 소개 순서(D27): 아이가 들어 봤을 법한 짧고 유명한 수도부터. 그다음은 짧은 이름 → 보통 이름 → 나라 이름과 같은 수도 → 긴 이름.
-      // 나라 이름과 같은 수도(싱가포르·멕시코시티)는 쉽지만 '수도가 뭔지'를 흐릴 수 있어 중간 이후로, 반다르스리브가완 같은 긴 이름은 맨 뒤로.
-      firstCapitals: ['kr', 'jp', 'cn', 'us', 'gb', 'fr', 'it', 'de', 'es', 'ru', 'th', 'vn', 'ph', 'in', 'eg', 'gr', 'pt', 'no', 'ie', 'at'],
-      freshTier: function (c) {
-        var cap = String(c.capital || '').replace(/\s/g, '');
-        var sameName = cap === c.ko || cap.indexOf(c.ko) !== -1 || c.ko.indexOf(cap) !== -1;
-        if (cap.length >= 7) return 4;
-        if (sameName) return 3;
-        if (cap.length <= 4) return 1;
-        return 2;
       }
     }
   };
-
-  /** 처음 만나는 나라의 소개 순서(D27). 첫 묶음은 정한 순서대로, 나머지 묶음은 묶음 안에서 섞는다. */
-  function orderFresh(rule, fresh) {
-    var rank = {};
-    (rule.firstCapitals || []).forEach(function (code, i) { rank[code] = i; });
-    var groups = {};
-    fresh.forEach(function (c) {
-      var key = rank[c.code] !== undefined ? 0 : (rule.freshTier ? rule.freshTier(c) : 1);
-      (groups[key] = groups[key] || []).push(c);
-    });
-    var out = [];
-    if (groups[0]) out = out.concat(groups[0].sort(function (a, b) { return rank[a.code] - rank[b.code]; }));
-    [1, 2, 3, 4].forEach(function (t) { if (groups[t]) out = out.concat(util.shuffle(groups[t])); });
-    return out;
-  }
-
-  /**
-   * 수도 놀이 한 판의 문제 순서(D24). 새 나라는 '소개 → 1문제 뒤 → 3문제 뒤 → 판 끝' 리듬으로 여러 번 내고,
-   * 남는 자리는 복습(이미 만난 나라)으로 채운다. 총 문제 수는 target 을 넘지 않고, 낼 것이 없으면 짧아진다.
-   * 같은 나라가 연달아 나오지는 않는다. 자리마다 { country, kind: 'intro' | 'again' | 'review' } 를 돌려준다.
-   */
-  function planSession(rule, freshList, reviewList, target) {
-    var slots = [];
-    var fresh = freshList.slice(), review = reviewList.slice();
-    var pending = [];   // 다시 내기를 기다리는 새 나라 { country, due, step, last }
-    var endQueue = [];  // 간격 계단을 다 오른 새 나라 — 판 끝에 한 번 더
-    function notAdjacent(country) {
-      return !slots.length || slots[slots.length - 1].country.code !== country.code;
-    }
-    function byDue(a, b) { return a.due - b.due; }
-    function byLast(a, b) { return a.last - b.last; }
-    function placeAgain(p) {
-      var i = slots.length;
-      slots.push({ country: p.country, kind: 'again' });
-      p.step += 1;
-      p.last = i;
-      if (p.step < rule.gaps.length) {
-        p.due = i + 1 + rule.gaps[p.step];
-      } else {
-        pending.splice(pending.indexOf(p), 1);
-        endQueue.push(p);
-      }
-    }
-    function placeEnd(p) {
-      slots.push({ country: p.country, kind: 'again' });
-      endQueue.splice(endQueue.indexOf(p), 1);
-    }
-    while (slots.length < target) {
-      var i = slots.length;
-      // 1) 때가 된 다시 만나기 — 먼저 때가 된 것부터
-      var due = pending.filter(function (p) { return p.due <= i && notAdjacent(p.country); }).sort(byDue)[0];
-      if (due) { placeAgain(due); continue; }
-      // 2) 새 나라 소개 — 첫 다시 만나기는 gaps[0] 문제 뒤
-      if (fresh.length) {
-        var c = fresh.shift();
-        slots.push({ country: c, kind: 'intro' });
-        pending.push({ country: c, due: i + 1 + rule.gaps[0], step: 0, last: i });
-        continue;
-      }
-      // 3) 복습 — 판 끝 다시 만나기보다 먼저다. 어제 만난 나라를 오늘 흔드는 쪽이 오래 남는다.
-      if (review.length) { slots.push({ country: review.shift(), kind: 'review' }); continue; }
-      // 4) 채울 것이 없으면 아직 때가 안 된 다시 만나기를 당겨서라도 낸다 (연달아는 안 됨)
-      var early = pending.filter(function (p) { return notAdjacent(p.country); }).sort(byDue)[0];
-      if (early) { placeAgain(early); continue; }
-      // 5) 간격 계단을 다 오른 새 나라를 판 끝에 한 번 더 — 가장 오래전에 만난 나라부터
-      var endReady = endQueue.filter(function (p) { return notAdjacent(p.country); }).sort(byLast);
-      if (endReady.length) { placeEnd(endReady[0]); continue; }
-      break;   // 더 낼 것이 없다 — 판이 짧아진다
-    }
-    return slots;
-  }
 
   /* ---------------- 한 판(게임) ---------------- */
   function createGame(config) {
@@ -658,76 +560,40 @@
       return (FQ.storage && FQ.storage.allAxisStats) ? (FQ.storage.allAxisStats(axis) || {}) : {};
     }
 
-    var order, questions, plannedAgain = 0;
-    if (learn) {
-      /* ---- 수도 놀이(D24) ----
-       * 처음 만나는 나라는 한 판에 한도(10문제 3개)만큼만 뽑고, 각각 '소개 → 1문제 뒤 → 3문제 뒤 → 판 끝' 리듬으로 낸다.
-       * 남는 자리는 이미 만난 나라의 복습이다 — 틀렸거나 한 번밖에 못 맞힌 나라부터. 새 나라 고르기는 무작위다.
-       * 보기는 문제가 화면에 오를 때 만든다(current) — 그 순간의 기록으로 보기 거리(far·mid·near)를 정하기 위해서다.
-       */
-      var recs = axisRecords();
-      var fresh = [], met = [];
-      source.forEach(function (c) {
-        var r = recs[c.code];
-        (r && (r.seen || 0) > 0 ? met : fresh).push(c);
-      });
-      var target = cfg.count === 'all' ? source.length : Math.max(1, parseInt(cfg.count, 10) || 1);
-      var cap = learn.newPerGame(target);
-      // 복습이 밀리면 새 나라를 하나 줄인다 — 안 굳은 나라(복습 가중치 2 이상)가 한도의 두 배(10문제 6개) 이상일 때.
-      var fragile = met.filter(function (c) { return learn.reviewWeight(recs[c.code]) >= 2; }).length;
-      if (cap > 1 && fragile >= cap * 2) cap -= 1;
-      var picked = orderFresh(learn, fresh).slice(0, Math.min(fresh.length, cap));
-      var reviewOrder = [];
-      if (cfg.reviewFirst) {
-        var left = met.slice();
-        while (left.length) {
-          var ws = left.map(function (c) { return learn.reviewWeight(recs[c.code]); });
-          var pick = util.weightedPick(left, ws);
-          reviewOrder.push(pick);
-          left = left.filter(function (c) { return c.code !== pick.code; });
-        }
-      } else {
-        reviewOrder = util.shuffle(met);
+    // 출제 순서 정하기: 오답 우선이면 가중치로, 아니면 골고루 섞어서.
+    // 각 축은 자기 기록만 읽는다. 수도도 전체 후보에서 중복 없이 뽑아 공부·반복 문제를 섞지 않는다.
+    var weightFor = null;
+    if (cfg.reviewFirst && FQ.storage) {
+      if (axis === 'flag' && FQ.storage.weightOf) {
+        weightFor = function (c) { return FQ.storage.weightOf(c.code); };
+      } else if (axis !== 'flag' && FQ.storage.axisWeightOf) {
+        weightFor = function (c) { return FQ.storage.axisWeightOf(axis, c.code); };
       }
-      var plan = planSession(learn, picked, reviewOrder, target);
-      order = plan.map(function (slot) { return slot.country; });
-      questions = plan.map(function (slot) {
-        return { mode: cfg.mode, country: slot.country, options: null, again: slot.kind === 'again', review: slot.kind === 'review' };
-      });
-      plannedAgain = questions.filter(function (q) { return q.again; }).length;
-    } else {
-      // 출제 순서 정하기: 오답 우선이면 가중치로, 아니면 골고루 섞어서.
-      // 국기 축은 countries 의 weightOf, 새 축(그림·명소·지도)은 자기 axes 버킷만 읽는 axisWeightOf 를 쓴다 (D6: 축을 섞지 않는다).
-      var weightFor = null;
-      if (cfg.reviewFirst && FQ.storage) {
-        if (axis === 'flag' && FQ.storage.weightOf) {
-          weightFor = function (c) { return FQ.storage.weightOf(c.code); };
-        } else if (axis !== 'flag' && FQ.storage.axisWeightOf) {
-          weightFor = function (c) { return FQ.storage.axisWeightOf(axis, c.code); };
-        }
-      }
-      if (weightFor && source.length > total) {
-        var remaining = source.slice();
-        order = [];
-        while (order.length < total && remaining.length) {
-          var weights = remaining.map(weightFor);
-          var chosen = util.weightedPick(remaining, weights);
-          order.push(chosen);
-          remaining = remaining.filter(function (c) { return c.code !== chosen.code; });
-        }
-      } else {
-        order = util.sample(source, total);
-      }
-      questions = order.map(function (c) { return makeQuestion(c, cfg.mode, source, { axis: axis }); });
     }
+    var order;
+    if (weightFor && source.length > total) {
+      var remaining = source.slice();
+      order = [];
+      while (order.length < total && remaining.length) {
+        var weights = remaining.map(weightFor);
+        var chosen = util.weightedPick(remaining, weights);
+        order.push(chosen);
+        remaining = remaining.filter(function (c) { return c.code !== chosen.code; });
+      }
+    } else {
+      order = util.sample(source, total);
+    }
+    var questions = order.map(function (c) {
+      // 수도 보기의 거리는 화면에 올라올 때의 기록으로 정한다.
+      return learn ? { mode: cfg.mode, country: c, options: null } : makeQuestion(c, cfg.mode, source, { axis: axis });
+    });
 
     /* ---- 한 판 안에서 다시 만나기 (새 축 전용, D15) ----
      * 그림·명소·지도는 아이가 처음 보는 쌍이 많다. 처음 만난 쌍과 틀린 쌍은 같은 판에서 3문제 뒤에
      * 한 번 더 낸다. 총 문제 수는 그대로다 — 아직 안 만난 원래 문제 하나를 뒤에서 빼고 그 자리를 쓴다.
-     * 국기 축은 여기에 들어오지 않는다. 국기 한 판은 "같은 나라가 두 번 안 나온다" 가 약속이다.
-     * 수도 축은 위의 계획(D24)이 다시 만나기를 미리 깔아 두므로 여기서는 틀린 문제만 다룬다(scheduleSoon).
+     * 국기·수도 축은 여기에 들어오지 않는다. 한 판에 같은 나라가 두 번 나오지 않는다.
      */
-    var revisit = axis !== 'flag' && !learn;
+    var revisit = axis !== 'flag' && axis !== 'capital';
     var firstMeet = {};
     if (revisit) {
       var records = axisRecords();
@@ -743,7 +609,7 @@
       questions: questions,
       fallback: fallback,   // null | 'only' (only 목록이 전부 자료 없음) | 'filters' (난이도·대륙 조건에 맞는 나라 없음)
       skipped: skipped,     // only 목록에서 자료가 없어 뺀 나라 코드
-      againCount: plannedAgain,  // 이 판에서 다시 만나기로 잡은 문제 수 (수도 놀이는 계획된 것부터 센다)
+      againCount: 0,       // 이 판에서 다시 만나기로 잡은 문제 수 (그림·명소·지도만)
       index: 0,
       streak: 0,
       bestStreak: 0,
@@ -800,31 +666,6 @@
     }
 
     /**
-     * 수도 놀이(D24): 틀렸거나 나라 이름까지 듣고서야 맞힌 문제는 1문제 뒤에 한 번 더 낸다.
-     * 복습 자리 하나를 뒤에서 빼서 쓰므로 총 문제 수는 그대로다. 복습 자리가 없거나(새 나라만 있는 판),
-     * 곧 그 나라가 어차피 나오거나, 한 판 상한(maxAsks)에 닿았거나, 사이에 낄 문제가 없으면 내지 않는다.
-     */
-    function scheduleSoon(country) {
-      if (!learn) return false;
-      var asks = game.questions.filter(function (q) { return q.country.code === country.code; }).length;
-      if (asks >= learn.maxAsks) return false;
-      var i = game.index;
-      var len = game.questions.length;
-      var at = i + 2;
-      if (at > len - 1) return false;
-      for (var k = i + 1; k <= at; k++) if (game.questions[k].country.code === country.code) return false;
-      var drop = -1;
-      for (var d = len - 1; d > i; d--) {
-        if (game.questions[d].review) { drop = d; break; }
-      }
-      if (drop === -1) return false;
-      game.questions.splice(drop, 1);
-      game.questions.splice(at, 0, { mode: cfg.mode, country: country, options: null, again: true, review: false });
-      game.againCount += 1;
-      return true;
-    }
-
-    /**
      * 답을 채점하고 게임 상태를 갱신한다.
      * payload: {code: '선택한 나라 코드'} 또는 {text: '말하거나 쓴 답'}
      * opts.revealed: 힌트 2단계로 나라 이름('○○의 수도예요')까지 듣고 답했다(수도 놀이). 점수는 주되 기록은 '아직'이다.
@@ -875,13 +716,9 @@
       if (FQ.storage) FQ.storage.recordAnswer(q.country.code, learned, MODES[cfg.mode] && MODES[cfg.mode].axis);
       res.question = q;
       res.again = !!q.again;
-      if (learn) {
-        // 수도 놀이: 계획된 다시 만나기 위에, 틀렸거나 나라 이름까지 들은 문제만 1문제 뒤에 한 번 더.
-        res.scheduledAgain = !learned ? scheduleSoon(q.country) : false;
-      } else {
-        // 처음 만난 쌍이거나 틀린 쌍이면 3문제 뒤에 한 번 더 (새 축만). 다시 만난 문제 자체는 또 잡지 않는다.
-        res.scheduledAgain = !q.again && (!res.correct || firstMeet[q.country.code]) ? scheduleAgain(q.country) : false;
-      }
+      // 처음 만난 쌍이거나 틀린 쌍이면 3문제 뒤에 한 번 더 (그림·명소·지도만).
+      // 수도는 틀리거나 힌트를 써도 같은 판에 다시 넣지 않고 결과의 복습 목록에만 남긴다.
+      res.scheduledAgain = !q.again && (!res.correct || firstMeet[q.country.code]) ? scheduleAgain(q.country) : false;
       return res;
     };
 
@@ -922,7 +759,6 @@
   FQ.quiz = {
     MODES: MODES,
     LEARN: LEARN,
-    planSession: planSession,
     availableMode: availableMode,
     LEVEL_LABEL: LEVEL_LABEL,
     all: all,
@@ -937,7 +773,6 @@
     prefixRisky: prefixRisky,
     entryFor: entryFor,
     CAPITAL_ALIASES: CAPITAL_ALIASES,
-    orderFresh: orderFresh,
     findCountry: findCountry,
     isGiveUp: isGiveUp,
     createGame: createGame

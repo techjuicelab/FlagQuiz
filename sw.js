@@ -2,10 +2,11 @@
  * 한 번 열어 두면 인터넷 없이도 놀 수 있게 파일을 담아 둔다.
  * 셸·국기·그림·음원을 따로 담아 업데이트 때 기존 음원을 보존한다.
  */
-var SHELL_CACHE = 'flagquiz-shell-v1';
+// 배포 빌드는 셸 콘텐츠 해시로 치환한다. 설치가 모두 끝난 버전만 활성화한다.
+var SHELL_CACHE = 'flagquiz-shell-v2';
 var FLAG_CACHE = 'flagquiz-flags-v1';
 var ART_CACHE = 'flagquiz-art-v1';
-// 아이패드에 받아 둔 음원 114MB를 그대로 쓴다. 이 이름은 바꾸지 않는다.
+// 아이패드에 이미 받아 둔 음원을 그대로 쓴다. 이 이름은 바꾸지 않는다.
 var AUDIO_CACHE = 'flagquiz-v4';
 var KEEP = [SHELL_CACHE, FLAG_CACHE, ART_CACHE, AUDIO_CACHE];
 var SHELL = [
@@ -21,6 +22,7 @@ var SHELL = [
   './data/map-shapes.js',
   './js/util.js',
   './js/storage.js',
+  './js/offline.js',
   './js/features.js',
   './js/audio.js',
   './js/recorded-audio.js',
@@ -45,7 +47,11 @@ var SHELL = [
 self.addEventListener('install', function (event) {
   event.waitUntil(
     caches.open(SHELL_CACHE)
-      .then(function (cache) { return cache.addAll(SHELL); })
+      .then(function (cache) {
+        return cache.addAll(SHELL.map(function (url) {
+          return new Request(new URL(url, self.location.href).href, { cache: 'reload' });
+        }));
+      })
       .then(function () { return self.skipWaiting(); })
   );
 });
@@ -56,23 +62,22 @@ self.addEventListener('install', function (event) {
  * 설치를 붙잡지 않도록 활성화 뒤에 조금씩 담고, 실패해도 그냥 넘어간다.
  */
 function warmFlags() {
-  return fetch('./data/countries.js')
-    .then(function (res) { return res.ok ? res.text() : ''; })
+  return manifestText('./data/countries.js')
     .then(function (src) {
       var codes = [];
       var re = /"code"\s*:\s*"([a-z]{2})"/g;
       var m;
       while ((m = re.exec(src))) codes.push(m[1]);
-      if (!codes.length) return;
+      if (!codes.length) return false;
       return caches.open(FLAG_CACHE).then(function (cache) {
-        var i = 0;
+        var i = 0, failed = false;
         function nextChunk() {
-          if (i >= codes.length) return;
+          if (i >= codes.length) return !failed;
           var chunk = codes.slice(i, i + 20).map(function (c) { return './flags/' + c + '.svg'; });
           i += 20;
           return Promise.all(chunk.map(function (u) {
             return cache.match(u).then(function (hit) {
-              return hit ? null : cache.add(u)['catch'](function () { return null; });
+              return hit && hit.ok ? null : saveAsset(cache, { url: u })['catch'](function () { failed = true; });
             });
           })).then(nextChunk);
         }
@@ -88,7 +93,7 @@ function warmFlags() {
  * 342장 8.5MB 라 설치·활성화를 붙잡으면 안 되고, 실패해도 그냥 넘어간다.
  *
  * 워커는 30초쯤 한가하면 브라우저가 꺼 버린다. 예열이 중간에 끊기면 다음 온라인 신호
- * (셸 파일을 네트워크에서 받은 순간)에 resumeArtWarm 이 남은 것을 이어받는다.
+ * (앱을 열거나 연결이 복구된 순간)에 resumeArtWarm 이 남은 것을 이어받는다.
  * 다 채운 목록은 그림 버킷 안의 기록(ART_WARM_MARK)으로 남겨, 워커가 다시 뜰 때마다
  * 342번 조회를 되풀이하지 않는다. 목록이나 그림 크기가 바뀐 배포에서는 기록이 어긋나
  * 다시 훑고, 크기가 다른 옛 그림은 새로 받는다.
@@ -140,13 +145,12 @@ function artState(hit, bytes) {
   var length = Number(hit.headers.get('content-length'));
   if (length > 0) return Promise.resolve(length === bytes ? 'fresh' : 'stale');
   return hit.arrayBuffer().then(function (buffer) { return buffer.byteLength === bytes ? 'fresh' : 'stale'; })
-    ['catch'](function () { return 'fresh'; });
+    ['catch'](function () { return 'missing'; });
 }
 
 /** 한 바퀴 돈다. 전부 담겼으면 true, 하나라도 못 받았으면 false. 절대 거부하지 않는다. */
 function warmArt() {
-  return fetch('./data/subjects.js')
-    .then(function (res) { return res.ok ? res.text() : ''; })
+  return manifestText('./data/subjects.js')
     .then(function (src) {
       var items = artItemsFrom(src);
       if (!items.length) return false;
@@ -166,7 +170,7 @@ function warmArt() {
                   // 크기가 다른 옛 그림은 브라우저 HTTP 캐시도 건너뛰고 서버에서 새로 받는다. 못 받으면 옛 것이 남는다.
                   // Request 는 상대 경로를 못 받으므로 워커 주소 기준으로 절대 경로를 만든다.
                   var req = state === 'stale' ? new Request(new URL(it.url, self.location.href).href, { cache: 'reload' }) : it.url;
-                  return cache.add(req)['catch'](function () { failed += 1; });
+                  return saveAsset(cache, { url: it.url, bytes: it.bytes }, req)['catch'](function () { failed += 1; });
                 });
             }
             function nextChunk() {
@@ -178,7 +182,7 @@ function warmArt() {
             return Promise.resolve(nextChunk()).then(function () {
               if (failed) return false;
               return cache.put(ART_WARM_MARK, new Response(stamp))
-                .then(function () { return true; }, function () { return true; });
+                .then(function () { return true; }, function () { return false; });
             });
           });
       });
@@ -241,12 +245,11 @@ self.addEventListener('activate', function (event) {
         });
       })
       .then(function () { return self.clients.claim(); })
-      .then(function () { return warmFlags(); })
-      // 그림 8.5MB 는 활성화를 붙잡지 않는다. waitUntil 이 끝나야 상태가 activated 가 되고
-      // 그때까지 fetch 가 대기하는데, 국기 1.3MB 와 달리 그림까지 기다리면 갱신 직후 아이
-      // 화면이 눈에 띄게 밀린다. 끊기면 다음 온라인 신호에서 resumeArtWarm 이 이어받는다.
-      // warmArtDone 은 검사에서 그 끝을 기다리기 위한 것이다.
-      .then(function () { self.warmArtDone = resumeArtWarm(); })
+      // 예열은 활성화를 붙잡지 않는다. 앱의 WARM 메시지가 중단된 작은 자료를 이어받는다.
+      .then(function () {
+        self.warmFlagsDone = resumeFlagsWarm();
+        self.warmArtDone = resumeArtWarm();
+      })
   );
 });
 
@@ -347,29 +350,281 @@ self.addEventListener('fetch', function (event) {
     return;
   }
 
-  // 그 밖의 파일은 새 버전을 먼저 시도하고, 안 되면 담아 둔 것을 쓴다
-  event.respondWith(
-    fetch(req)
-      .then(function (res) {
-        if (res && res.ok) {
-          var copy = res.clone();
-          // 네트워크가 살아 있다는 신호다. 워커가 꺼져 멈췄던 그림 예열이 있으면 여기서 이어받는다.
-          extend(event, resumeArtWarm());
-          return putCache(SHELL_CACHE, req, copy).then(function () { return res; });
+  // 설치를 마친 셸을 즉시 쓴다. 느린 연결을 기다리거나 배포 중 신·구 코드를 섞지 않는다.
+  extend(event, resumeArtWarm());
+  extend(event, resumeFlagsWarm());
+  event.respondWith(shellResponse(req));
+});
+
+/** 저장된 셸의 원장부터 읽어 현재 앱과 같은 자료 목록을 사용한다. */
+function manifestText(url) {
+  return matchCache(SHELL_CACHE, url).then(function (hit) {
+    if (hit && hit.ok) return hit.text();
+    return boundedFetch(url).then(function (res) {
+      if (!res || !res.ok) throw new Error('network');
+      return res.text();
+    });
+  });
+}
+
+/** 응답이 오지 않는 연결도 종료한다. 다운로드 버튼은 나중에 누락분부터 다시 시작할 수 있다. */
+function withDeadline(work, controller) {
+  var timer;
+  return Promise.race([
+    Promise.resolve().then(work),
+    new Promise(function (_, reject) {
+      timer = setTimeout(function () {
+        if (controller) controller.abort();
+        var error = new Error('network');
+        error.offlineCode = 'network';
+        reject(error);
+      }, 12000);
+    })
+  ]).then(function (value) { clearTimeout(timer); return value; }, function (error) { clearTimeout(timer); throw error; });
+}
+
+function boundedFetch(url) {
+  var controller = new AbortController();
+  return withDeadline(function () { return fetch(url, { signal: controller.signal }); }, controller);
+}
+
+/** 저장 성공 뒤 실제 캐시를 확인한다. 재생용 putCache와 달리 실패를 숨기지 않는다. */
+function saveAsset(cache, item, request) {
+  var controller = new AbortController();
+  return withDeadline(function () {
+    return fetch(request || item.url, { signal: controller.signal }).then(function (res) {
+      if (!res || res.status !== 200) {
+        var error = new Error('network');
+        error.offlineCode = 'network';
+        throw error;
+      }
+      return res.arrayBuffer().then(function (body) {
+        if (!body.byteLength || (item.bytes && body.byteLength !== item.bytes)) {
+          var error = new Error('network');
+          error.offlineCode = 'network';
+          throw error;
         }
-        // 404·503 은 fetch 가 '성공'으로 돌려준다. 배포 전환이나 CDN 퍼지 구간이 바로
-        // 아이가 새 코드를 받는 구간이라, 여기서 오류 응답을 그대로 넘기면 흰 화면이 된다.
-        // 담아 둔 온전한 사본이 있으면 그것을 쓴다.
-        return matchCache(SHELL_CACHE, req).then(function (hit) {
-          return hit || res;
-        })['catch'](function () { return res; });
-      })
-      .catch(function () {
-        return matchCache(SHELL_CACHE, req).then(function (hit) {
-          if (hit) return hit;
-          if (req.mode === 'navigate') return matchCache(SHELL_CACHE, './index.html');
-          return Response.error();
-        })['catch'](function () { return Response.error(); });
-      })
-  );
+        var headers = new Headers(res.headers);
+        headers.delete('content-encoding');
+        headers.set('content-length', String(body.byteLength));
+        return cache.put(item.url, new Response(body, { status: 200, headers: headers }))
+          ['catch'](function (error) {
+            error.offlineCode = error.name === 'QuotaExceededError' || /quota/i.test(error.message) ? 'quota' : 'storage';
+            throw error;
+          });
+      });
+    }).then(function () { return cache.match(item.url); })
+      .then(function (hit) { return artState(hit, item.bytes || 0); })
+      .then(function (state) {
+        if (state !== 'fresh') {
+          var error = new Error('storage');
+          error.offlineCode = 'storage';
+          throw error;
+        }
+      });
+  }, controller);
+}
+
+var flagWarm = null;
+var flagWarmRetryAt = 0;
+function resumeFlagsWarm() {
+  if (flagWarm) return flagWarm;
+  if (Date.now() < flagWarmRetryAt) return Promise.resolve(false);
+  flagWarm = warmFlags().then(function (done) {
+    if (!done) { flagWarm = null; flagWarmRetryAt = Date.now() + 5 * 60 * 1000; }
+    return done;
+  });
+  return flagWarm;
+}
+
+function shellResponse(req) {
+  var clean = new URL(req.url);
+  clean.search = '';
+  return matchCache(SHELL_CACHE, clean.href)['catch'](function () { return null; }).then(function (hit) {
+    if (hit && hit.ok) return hit;
+    if (req.mode === 'navigate') {
+      return matchCache(SHELL_CACHE, './index.html').then(function (index) {
+        return index || fetchShell(req);
+      });
+    }
+    return fetchShell(req);
+  })['catch'](function () { return Response.error(); });
+}
+
+function fetchShell(req) {
+  return boundedFetch(req).then(function (res) {
+    if (res && res.ok) return putCache(SHELL_CACHE, req, res.clone()).then(function () { return res; });
+    return res;
+  });
+}
+
+function manifestObject(src, name) {
+  var assign = new RegExp('(?:window\\.)?FQ\\.' + name + '\\s*=\\s*\\{').exec(src);
+  if (!assign) throw new Error('manifest');
+  var literal = sliceObjectLiteral(src, assign.index + assign[0].length - 1);
+  if (!literal) throw new Error('manifest');
+  return JSON.parse(literal);
+}
+
+var offlinePlan = null;
+function offlineItems() {
+  if (offlinePlan) return offlinePlan;
+  offlinePlan = Promise.all([
+    manifestText('./data/countries.js'), manifestText('./data/subjects.js'),
+    manifestText('./js/voice-manifest.js'), manifestText('./js/music-manifest.js')
+  ]).then(function (sources) {
+    var items = SHELL.map(function (url) { return { url: url, cache: SHELL_CACHE, group: 'shell' }; });
+    var re = /"code"\s*:\s*"([a-z]{2})"/g, found, flags = 0;
+    while ((found = re.exec(sources[0]))) {
+      items.push({ url: './flags/' + found[1] + '.svg', cache: FLAG_CACHE, group: 'flags' });
+      flags += 1;
+    }
+    if (!flags) throw new Error('manifest');
+    artItemsFrom(sources[1]).forEach(function (item) { item.cache = ART_CACHE; item.group = 'art'; items.push(item); });
+    // 문법이 어긋난 원장을 빈 그림 목록으로 오인하지 않는다.
+    manifestObject(sources[1], 'subjects');
+    ['voiceManifest', 'musicManifest'].forEach(function (name, index) {
+      var manifest = manifestObject(sources[index + 2], name);
+      if (!manifest.ready || !manifest.clips || !Object.keys(manifest.clips).length) throw new Error('manifest');
+      Object.keys(manifest.clips).forEach(function (key) {
+        var clip = manifest.clips[key];
+        if (!clip || !/^audio\/(sua|music)\/[a-zA-Z0-9_.-]+\.mp3$/.test(clip.src)) throw new Error('manifest');
+        items.push({ url: './' + clip.src, cache: AUDIO_CACHE, group: 'audio' });
+      });
+    });
+    var seen = {};
+    return items.filter(function (item) {
+      if (seen[item.url]) return false;
+      seen[item.url] = true;
+      return true;
+    });
+  })['catch'](function (error) { offlinePlan = null; throw error; });
+  return offlinePlan;
+}
+
+function emptyProgress(items, status) {
+  var progress = { status: status, total: items.length, cached: 0, failed: 0, groups: {} };
+  ['shell', 'flags', 'art', 'audio'].forEach(function (name) { progress.groups[name] = { cached: 0, total: 0 }; });
+  items.forEach(function (item) { progress.groups[item.group].total += 1; });
+  return progress;
+}
+
+/** 완료 기록 대신 파일을 직접 확인한다. 브라우저가 일부 캐시를 지운 경우도 알아낸다. */
+function inspectOffline(items, onProgress) {
+  var progress = emptyProgress(items, 'checking');
+  var missing = [], i = 0;
+  function nextChunk() {
+    var chunk = items.slice(i, i + 30);
+    i += chunk.length;
+    return Promise.all(chunk.map(function (item) {
+      return matchCache(item.cache, item.url)['catch'](function (error) {
+        error.offlineCode = 'storage';
+        throw error;
+      }).then(function (hit) {
+        if (item.group === 'audio' && hit && hit.status !== 200) return 'missing';
+        return artState(hit, item.bytes || 0);
+      }).then(function (state) {
+        if (state === 'fresh') { progress.cached += 1; progress.groups[item.group].cached += 1; }
+        else missing.push(item);
+      });
+    })).then(function () {
+      if (onProgress) onProgress(progress);
+      return i < items.length ? nextChunk() : { progress: progress, missing: missing };
+    });
+  }
+  return nextChunk();
+}
+
+function offlineError(error) {
+  if (error && error.offlineCode) return error.offlineCode;
+  if (error && (error.name === 'QuotaExceededError' || /quota/i.test(error.message))) return 'quota';
+  if (error && error.message === 'manifest') return 'manifest';
+  return 'network';
+}
+
+var offlineDownload = null;
+var offlineListeners = [];
+var offlineLastProgress = null;
+function broadcastOffline(progress) {
+  offlineLastProgress = progress;
+  offlineListeners.forEach(function (reply) { reply(progress); });
+}
+
+function downloadOffline() {
+  return offlineItems().then(function (items) {
+    return inspectOffline(items, broadcastOffline).then(function (initial) {
+      var progress = initial.progress, missing = initial.missing, i = 0, stopped = false, errorCode;
+      progress.status = 'downloading';
+      broadcastOffline(progress);
+      function nextChunk() {
+        if (stopped || i >= missing.length) return;
+        var chunk = missing.slice(i, i + 4);
+        i += chunk.length;
+        return Promise.all(chunk.map(function (item) {
+          return caches.open(item.cache).then(function (cache) { return saveAsset(cache, item); })
+            .then(function () { progress.cached += 1; progress.groups[item.group].cached += 1; })
+            ['catch'](function (error) {
+              progress.failed += 1;
+              stopped = true;
+              var code = offlineError(error);
+              if (!errorCode || code === 'quota' || code === 'storage') errorCode = code;
+            }).then(function () { broadcastOffline(progress); });
+        })).then(nextChunk);
+      }
+      return Promise.resolve(nextChunk()).then(function () {
+        // Cache.put 성공을 세는 것만으로는 부족하다. 마지막에 모든 항목을 다시 확인한다.
+        return inspectOffline(items, broadcastOffline).then(function (checked) {
+          var result = checked.progress;
+          result.status = checked.missing.length ? 'partial' : 'ready';
+          result.failed = progress.failed;
+          if (errorCode) result.error = errorCode;
+          broadcastOffline(result);
+        });
+      });
+    });
+  })['catch'](function (error) {
+    broadcastOffline({ status: 'error', total: 0, cached: 0, failed: 0, error: offlineError(error) });
+  });
+}
+
+self.addEventListener('message', function (event) {
+  var data = event.data || {};
+  if (['OFFLINE_STATUS', 'OFFLINE_DOWNLOAD', 'OFFLINE_WARM'].indexOf(data.type) === -1) return;
+  var target = event.ports && event.ports[0] || event.source;
+  function reply(progress) {
+    if (!target || typeof target.postMessage !== 'function') return;
+    var message = { type: 'OFFLINE_PROGRESS', requestId: data.requestId };
+    Object.keys(progress).forEach(function (key) { message[key] = progress[key]; });
+    try { target.postMessage(message); } catch (e) { /* 닫힌 화면은 다음에 실제 캐시를 다시 확인한다. */ }
+  }
+  if (data.type === 'OFFLINE_WARM') {
+    // 재연결 신호에서는 이전 실패의 5분 대기를 건너뛴다. 전체 음원은 버튼으로만 받는다.
+    artWarmRetryAt = 0;
+    flagWarmRetryAt = 0;
+    extend(event, Promise.all([resumeFlagsWarm(), resumeArtWarm()]));
+    return;
+  }
+  if (data.type === 'OFFLINE_DOWNLOAD') {
+    offlineListeners.push(reply);
+    if (offlineLastProgress && offlineDownload) reply(offlineLastProgress);
+    if (!offlineDownload) {
+      reply({ status: 'checking', total: 0, cached: 0, failed: 0 });
+      offlineDownload = downloadOffline().then(function () {
+        offlineDownload = null;
+        offlineListeners = [];
+        offlineLastProgress = null;
+      });
+    }
+    extend(event, offlineDownload);
+    return;
+  }
+  reply({ status: 'checking', total: 0, cached: 0, failed: 0 });
+  extend(event, offlineItems().then(function (items) {
+    return inspectOffline(items, reply).then(function (checked) {
+      checked.progress.status = checked.missing.length ? 'partial' : 'ready';
+      reply(checked.progress);
+    });
+  })['catch'](function (error) {
+    reply({ status: 'error', total: 0, cached: 0, failed: 0, error: offlineError(error) });
+  }));
 });

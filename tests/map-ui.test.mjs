@@ -126,7 +126,7 @@ test('핀은 기본 상태부터 보이며 44px을 유지하고 별도 화면 �
   assert.match(read('sw.js'), /'\.\/js\/map.js'/);
 });
 
-test('지도 승인 범위 검사는 map.js만 허용하고 임의 스크립트나 기존 파일 삭제를 거부한다', () => {
+test('지도·오프라인 승인 범위 검사에서 임의 스크립트와 기존 파일 삭제를 거부한다', () => {
   const actual = fs.readdirSync(new URL('../js', import.meta.url)).filter((file) => file.endsWith('.js'));
   function failures(files) {
     const result = [];

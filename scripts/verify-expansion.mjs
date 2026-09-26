@@ -528,7 +528,8 @@ const BASE_JS_FILES = [
 
 export function verifyMapScriptScope(t, actual) {
   const extra = actual.filter((file) => !BASE_JS_FILES.includes(file));
-  const allowed = ['features.js', 'map.js'];
+  // 지도 확장 이후 승인된 오프라인 전체 저장 UI도 명시적으로 허용한다.
+  const allowed = ['features.js', 'map.js', 'offline.js'];
   const unexpected = extra.filter((file) => !allowed.includes(file));
   t.ok(unexpected.length === 0, 'js/ 에 승인 범위 밖의 새 파일이 들어왔다', unexpected.join(', '));
   const missing = BASE_JS_FILES.filter((file) => !actual.includes(file));
@@ -1499,9 +1500,9 @@ await check({
 await check({
   id: 'no-new-js-files',
   task: '지도 T5-register',
-  label: '지도 화면은 승인된 map.js만 추가하고 기존 스크립트를 보존한다',
+  label: '지도·오프라인 기능의 승인된 스크립트만 추가하고 기존 파일을 보존한다',
   severity: 'acceptance',
-  why: '사용자가 나라 위치 핀 퀴즈 구현을 승인했다. MAP-RENDER-CONSTRAINTS를 따르는 map.js만 추가 허용하며 다른 새 스크립트를 포괄 허용하지 않는다.'
+  why: '나라 위치 핀 퀴즈와 오프라인 진행 개선 범위의 map.js·offline.js를 명시적으로 허용하며 다른 새 스크립트를 포괄 허용하지 않는다.'
 }, (t) => {
   const actual = fs.readdirSync(p('js')).filter((f) => f.endsWith('.js')).sort();
   verifyMapScriptScope(t, actual);

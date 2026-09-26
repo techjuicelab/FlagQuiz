@@ -7,13 +7,14 @@ import vm from 'node:vm';
 const legacySource = fs.readFileSync(new URL('../js/audio.js', import.meta.url), 'utf8');
 const source = fs.readFileSync(new URL('../js/recorded-audio.js', import.meta.url), 'utf8');
 
-function setup({ ready = true, legacy = false } = {}) {
+function setup({ ready = true, legacy = false, online = true } = {}) {
   let now = 0;
   let nextTimer = 1;
   const timers = new Map();
   const players = [];
   const fetches = [];
   const utterances = [];
+  const events = {};
   class FakeAudio {
     constructor() {
       this.src = '';
@@ -36,6 +37,8 @@ function setup({ ready = true, legacy = false } = {}) {
   }
   const sandbox = {
     Audio: FakeAudio,
+    navigator: { onLine: online },
+    addEventListener(name, callback) { (events[name] ||= []).push(callback); },
     Date: class extends Date { constructor(...args) { super(...(args.length ? args : [now])); } static now() { return now; } },
     setTimeout(fn, delay = 0) { const id = nextTimer++; timers.set(id, { fn, time: now + delay }); return id; },
     clearTimeout(id) { timers.delete(id); },
@@ -66,6 +69,10 @@ function setup({ ready = true, legacy = false } = {}) {
   return {
     audio: sandbox.FQ.audio, originalAudio, sandbox, players, timers, fetches, utterances,
     get player() { return players[0]; },
+    network(online) {
+      sandbox.navigator.onLine = online;
+      for (const callback of events[online ? 'online' : 'offline'] || []) callback();
+    },
     advance(ms) {
       const target = now + ms;
       while (true) {
@@ -186,6 +193,66 @@ test('시작 이벤트와 play 결과가 모두 없으면 제한 시간 후 실�
   env.advance(12000);
   assert.deepEqual(failures, ['start-timeout']);
   assert.equal(env.audio.isSpeaking(), false);
+  assert.equal(env.timers.size, 0);
+});
+
+test('오프라인에서 응답 없는 음원은 1.5초 안에 실패하고 다시 듣기는 바로 재시도한다', async () => {
+  const env = setup({ online: false });
+  const failures = [];
+  env.audio.say(['정답'], {}, error => failures.push(error.code));
+  const old = env.player.calls[0];
+  env.advance(1499);
+  assert.deepEqual(failures, []);
+  env.advance(1);
+  assert.deepEqual(failures, ['offline-audio-unavailable']);
+  assert.equal(env.audio.isSpeaking(), false);
+  old.resolve(); old.ended(); old.error(); await flush();
+  env.audio.say(['대한민국']);
+  env.player.calls[1].resolve(); await flush();
+  env.player.onended(); env.advance(200000);
+  assert.deepEqual(failures, ['offline-audio-unavailable']);
+  assert.equal(env.timers.size, 0);
+});
+
+test('오프라인 저장 음원과 잠깐 버퍼링 후 이어지는 음원은 끝까지 재생한다', async () => {
+  const env = setup({ online: false });
+  let ended = 0; const failures = [];
+  env.audio.say(['설명'], { onEnd: () => ended++ }, error => failures.push(error.code));
+  env.player.calls[0].resolve(); await flush();
+  env.advance(1600);
+  assert.equal(env.audio.isSpeaking(), true);
+  env.player.onwaiting(); env.advance(1000);
+  env.player.onplaying(); env.advance(1600);
+  assert.deepEqual(failures, []);
+  env.player.onended();
+  assert.equal(ended, 1);
+  assert.equal(env.timers.size, 0);
+});
+
+test('온라인 재생 대기는 유지하고 연결 중단과 재연결에 맞춰 오프라인 대기를 조정한다', async () => {
+  const env = setup(); const failures = [];
+  env.audio.say(['설명'], {}, error => failures.push(error.code));
+  env.advance(2000);
+  assert.equal(env.audio.isSpeaking(), true);
+  env.network(false); env.advance(1000); env.network(true); env.advance(1600);
+  assert.deepEqual(failures, []);
+  env.player.calls[0].resolve(); await flush();
+  env.player.readyState = 4;
+  env.network(false); env.advance(1600);
+  assert.equal(env.audio.isSpeaking(), true, '이미 준비된 음원은 연결이 끊겨도 이어진다');
+  env.player.onstalled(); env.advance(1600);
+  assert.equal(env.audio.isSpeaking(), true, '버퍼가 충분하면 네트워크 이벤트만으로 중단하지 않는다');
+  env.player.readyState = 2;
+  env.player.onstalled(); env.advance(1500);
+  assert.deepEqual(failures, ['offline-audio-unavailable']);
+  assert.equal(env.timers.size, 0);
+});
+
+test('온라인으로 시작한 읽어주기가 연결 중단 뒤 준비되지 않으면 빠르게 끝난다', () => {
+  const env = setup(); const failures = [];
+  env.audio.say(['설명'], {}, error => failures.push(error.code));
+  env.network(false); env.advance(1500);
+  assert.deepEqual(failures, ['offline-audio-unavailable']);
   assert.equal(env.timers.size, 0);
 });
 

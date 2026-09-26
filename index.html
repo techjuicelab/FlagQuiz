@@ -30,9 +30,22 @@
     <button class="btn btn-sm btn-ghost" id="nav-stats" type="button">🏅 <span class="lbl-long">내 </span>기록</button>
   </header>
 
+  <p id="connection-note" class="connection-note small" role="status" hidden></p>
+
   <main id="main" aria-live="polite">
     <div id="boot" class="card">국기 자료를 불러오는 중이에요…</div>
   </main>
+
+  <details id="offline-panel" class="offline-panel">
+    <summary>📥 인터넷 없이 놀기 <span id="offline-summary" class="small muted">준비 확인</span></summary>
+    <div class="offline-body">
+      <p id="offline-status" role="status" aria-live="polite">저장한 놀이를 확인하고 있어요.</p>
+      <progress id="offline-progress" max="1" value="0" aria-label="오프라인 자료 저장 진행률" hidden></progress>
+      <button id="offline-download" class="btn btn-sm btn-primary" type="button" disabled>전체 저장하기</button>
+      <p id="offline-help" class="small muted">국기·그림·읽어주기·음악을 한 번 저장하면 인터넷 없이도 놀 수 있어요. 약 155MB이며, Wi-Fi에서 저장하는 것을 권해요. 완료될 때까지 앱을 열어 두세요.</p>
+      <p class="small muted">인터넷이 끊기면 말하기 놀이는 국기를 눌러 답하는 놀이로 이어져요. 기록은 이 기기에 그대로 남아요.</p>
+    </div>
+  </details>
 
   <footer class="small muted" style="text-align:center;margin-top:28px;line-height:1.7">
     국기 이미지는 <a href="https://github.com/lipis/flag-icons" target="_blank" rel="noopener">flag-icons</a> (MIT) 를 사용합니다. 상징물·명소 그림: TechJuiceLab · OpenAI AI 생성.<br>
@@ -63,6 +76,7 @@
 <script src="js/quiz.js"></script>
 <script src="js/badges.js"></script>
 <script src="js/screens.js"></script>
+<script src="js/offline.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

@@ -33,7 +33,7 @@
     { id: 'flag', emo: '🚩', title: '국기 놀이', pills: true },
     { id: 'art', emo: '🎨', title: '그림 놀이', pills: true },
     { id: 'map', emo: '🗺️', title: '지도 놀이', desc: '나라가 있는 자리를 찾아요' },
-    { id: 'capital', emo: '🏙️', title: '수도 놀이', pills: true }
+    { id: 'capital', emo: '🏙️', title: '수도 놀이', desc: '공부하기 · 문제 풀기' }
   ];
 
   /** 둘이서 대결은 국기 축에서만 연다. 그림·명소·지도·수도는 어른이 압도적이라 아이가 매번 진다. */
@@ -47,7 +47,7 @@
   /** 무엇을 말하면 답인가: 'country'(나라 이름) 또는 'capital'(수도 이름, D28) */
   function answerKind(mode) { var m = quiz.MODES[mode]; return (m && m.answer) || 'country'; }
   function answerWhat(mode) { return answerKind(mode) === 'capital' ? '수도 이름' : '나라 이름'; }
-  /** 수도 축 놀이(수도 듣고 국기 찾기·국기 보고 수도 말하기) — 만나기 카드·정답 카드·결과의 수도 줄을 같이 쓴다. */
+  /** 수도 축 퀴즈(수도 듣고 국기 찾기·국기 보고 수도 말하기) — 정답 카드·결과의 수도 줄을 같이 쓴다. */
   function capitalAxis(mode) { var m = quiz.MODES[mode]; return !!(m && m.axis === 'capital'); }
 
   function modeCard(id) {
@@ -118,6 +118,8 @@
 
   var state = {
     game: null,
+    study: null,
+    studiedCapitals: {},
     answered: false,
     usedHint: false,
     hintLevel: 0,      // 수도 놀이 힌트 단계(D24): 1 오답 지우기 + 수도 다시 듣기, 2 나라 이름 듣기
@@ -128,6 +130,9 @@
     listenOn: false,
     listenTimer: null,
     listenFailures: 0,
+    speechNeedsConnection: false,
+    artTimer: null,
+    questionGeneration: 0,
     autoNextTimer: null,   // 말로 맞힌 뒤 저절로 다음으로 가는 예약(D25)
     feedbackGeneration: 0,
     screen: 'home',
@@ -196,11 +201,13 @@
    * (opts.keepSettings 는 패널 안에서 조건을 바꿔 다시 그릴 때만 쓴다).
    */
   function renderHome(opts) {
+    if (state.artTimer) { global.clearTimeout(state.artTimer); state.artTimer = null; }
     cancelPendingFeedback();
     stopTimer();
     stopListening();
     audio.stopSpeaking();
     state.game = null;
+    state.study = null;
     state.dadOpen = !!(opts && opts.keepSettings) && state.dadOpen;
     var s = store.settings();
     if (s.mode !== quiz.availableMode(s.mode)) s = store.updateSettings({ mode: quiz.availableMode(s.mode) });
@@ -314,6 +321,7 @@
     ui.on(m, '[data-play]', 'click', function (e, t) {
       var tile = null;
       for (var i = 0; i < PLAY_TILES.length; i++) if (PLAY_TILES[i].id === t.getAttribute('data-play')) tile = PLAY_TILES[i];
+      if (tile && tile.id === 'capital') { savePlayers(m); renderCapitalMenu(); return; }
       var mode = tile && tileMode(tile, store.settings());
       if (mode) startPlay(m, mode);
     });
@@ -612,6 +620,9 @@
   }
 
   function voiceNotice(mode) {
+    if (global.navigator.onLine === false || state.speechNeedsConnection) {
+      return '<div class="notice">📴 인터넷 없이도 놀 수 있어요. 이름을 듣고 국기를 누르는 놀이로 이어져요.</div>';
+    }
     var reason = FQ.speech.unavailableReason();
     if (!reason) return '<div class="notice">🎤 “듣고 있어요”가 나오면 <b>' + answerWhat(mode) + '을 끝까지 말해 주세요.</b> 마이크 사용을 물어보면 “허용”을 눌러 주세요. 음성 인식에는 인터넷 연결이 필요할 수 있어요.</div>';
     return '<div class="notice">⚠️ ' + esc(reason) +
@@ -642,10 +653,13 @@
 
   /* =================== 게임 시작 =================== */
   function startGame(onlyCodes) {
+    state.study = null;
     cancelPendingFeedback();
     stopTimer();
     stopListening();
     audio.stopSpeaking();
+    // 음성 서버만 잠깐 끊겼던 경우, 새 판에서는 연결 상태에 맞춰 다시 시도한다.
+    state.speechNeedsConnection = global.navigator.onLine === false;
     var s = store.settings();
     if (s.mode !== quiz.availableMode(s.mode)) s = store.updateSettings({ mode: quiz.availableMode(s.mode) });
     var reviewing = !!(onlyCodes && onlyCodes.length && quiz.MODES[s.mode].axis === 'flag');
@@ -748,20 +762,19 @@
       (extra ? ' data-speak-extra="' + esc(extra) + '"' : '') + ' type="button">🔊 들어보기</button>';
   }
 
-  /** 그 축으로 한 번도 만나지 않은 나라인지 읽기만 한다. 조회로 빈 기록을 만들지 않는다(도감 원칙과 같다).
-   * 그림·명소는 그림이 있어야 만나기 카드를 낼 수 있고, 수도는 194개국 모두 자료가 있다. */
+  /** 그 축으로 한 번도 만나지 않은 나라인지 읽기만 한다. 그림이 있어야 만나기 카드를 낸다. */
   function needsMeet(q) {
     var axis = quiz.MODES[q.mode] && quiz.MODES[q.mode].axis;
-    if (axis !== 'capital' && !artFor(q.country.code, q.mode)) return false;
+    if (!artFor(q.country.code, q.mode)) return false;
     var records = store.allAxisStats ? store.allAxisStats(axis) : {};
     var r = records && records[q.country.code];
     return !r || !(r.seen > 0);
   }
 
-  /** 만나기 카드가 있는 놀이: 그림·명소·수도 축(수도 듣기·수도 말하기). */
+  /** 그림·명소만 만나기 카드를 쓴다. 수도 공부는 퀴즈와 별도 화면에서 한다. */
   function meetMode(mode) {
     var m = quiz.MODES[mode];
-    return !!m && (m.axis === 'symbol' || m.axis === 'place' || m.axis === 'capital');
+    return !!m && (m.axis === 'symbol' || m.axis === 'place');
   }
 
   /** 수도 안에 있는 명소 그림(D26): 명소 도시가 수도와 같은 나라만. 수도 이름 소리에 그림 갈고리를 붙인다(파리=에펠탑, 런던=빅벤, 서울=광화문). */
@@ -801,6 +814,123 @@
       '<img class="capital-of-flag" src="' + ui.flagSrc(country.code) + '" alt="' + esc(country.ko) + ' 국기">' +
       '<span class="capital-of-text"><b>' + esc(country.ko) + '</b>의 수도예요</span>' +
     '</div>';
+  }
+
+  /* =================== 수도 공부 / 퀴즈 선택 =================== */
+  function enterCapitalScreen(screen) {
+    if (state.artTimer) { global.clearTimeout(state.artTimer); state.artTimer = null; }
+    cancelPendingFeedback();
+    stopTimer();
+    stopListening();
+    audio.stopSpeaking();
+    state.game = null;
+    state.meeting = false;
+    musicScreen(screen);
+  }
+
+  function capitalStudyPool() {
+    var s = store.settings();
+    return quiz.pool({ level: s.level, continent: s.continent, axis: 'capital' });
+  }
+
+  function capitalBatchSize(list) {
+    var count = store.settings().count;
+    return count === 'all' ? list.length : Math.min(list.length, Math.max(1, Number(count) || 10));
+  }
+
+  function startCapitalQuiz(mode) {
+    if (mode !== 'capital' && mode !== 'capitalVoice') return;
+    var last = Object.assign({}, store.settings().lastMode || {});
+    last.capital = mode;
+    store.updateSettings({ mode: mode, lastMode: last });
+    startGame(null);
+  }
+
+  function renderCapitalMenu() {
+    enterCapitalScreen('capital-menu');
+    state.study = null;
+    var s = store.settings();
+    var list = capitalStudyPool();
+    var scope = (s.continent === 'all' ? '모든 대륙' : s.continent) + ' · ' +
+      (quiz.LEVEL_LABEL[s.level] || '모든 난이도') + ' · 한 번에 ' + capitalBatchSize(list) + '개';
+    var m = ui.setMain('<section class="screen capital-menu">' +
+      '<div class="capital-nav"><button class="btn btn-sm btn-ghost" id="capital-home" type="button">' + ICONS.home + ' 홈으로</button><h2>수도 놀이</h2></div>' +
+      '<p class="capital-scope small muted">' + esc(scope) + '</p>' +
+      '<div class="capital-paths">' +
+        '<section class="card capital-path"><span class="capital-path-icon" aria-hidden="true">📖</span><h3>수도 공부</h3>' +
+          '<p>나라와 수도를 듣고,<br>내 속도로 넘겨요.</p>' +
+          '<button class="btn btn-big btn-yellow" id="capital-study-start" type="button">📖 공부하기</button></section>' +
+        '<section class="card capital-path"><span class="capital-path-icon" aria-hidden="true">🧩</span><h3>수도 퀴즈</h3>' +
+          '<p>서로 다른 수도를<br>바로 맞혀 봐요.</p>' +
+          '<button class="btn btn-big btn-primary" id="capital-choice-start" type="button">👆 듣고 국기 고르기</button>' +
+          '<button class="btn btn-big btn-ghost" id="capital-voice-start" type="button">🎤 말로 답하기</button></section>' +
+      '</div></section>');
+    ui.$('#capital-home', m).addEventListener('click', renderHome);
+    ui.$('#capital-study-start', m).addEventListener('click', startCapitalStudy);
+    ui.$('#capital-choice-start', m).addEventListener('click', function () { startCapitalQuiz('capital'); });
+    ui.$('#capital-voice-start', m).addEventListener('click', function () { startCapitalQuiz('capitalVoice'); });
+  }
+
+  /** 공부는 정답 기록·점수와 분리한다. 이 앱에서 이미 본 수도는 다음 묶음의 뒤로 보낸다. */
+  function startCapitalStudy() {
+    var list = capitalStudyPool();
+    var fresh = list.filter(function (c) { return !state.studiedCapitals[c.code]; });
+    var seen = list.filter(function (c) { return state.studiedCapitals[c.code]; });
+    state.study = { countries: util.shuffle(fresh).concat(util.shuffle(seen)).slice(0, capitalBatchSize(list)), index: 0 };
+    var s = store.settings();
+    audio.setEnabled(s.sound);
+    audio.setSpeakEnabled(s.speak);
+    audio.unlock();
+    renderCapitalStudy();
+  }
+
+  function renderCapitalStudy() {
+    enterCapitalScreen('capital-study');
+    var study = state.study;
+    if (!study || !study.countries.length) {
+      var empty = ui.setMain('<section class="screen card capital-study-done"><h2>이 범위에는 수도가 없어요</h2>' +
+        '<p>홈의 아빠 설정에서 대륙이나 난이도를 바꿔 주세요.</p><button class="btn btn-big" id="study-home" type="button">홈으로</button></section>');
+      ui.$('#study-home', empty).addEventListener('click', renderHome);
+      return;
+    }
+    if (study.index >= study.countries.length) { renderCapitalStudyDone(); return; }
+    var c = study.countries[study.index];
+    state.studiedCapitals[c.code] = true;
+    var m = ui.setMain('<section class="screen capital-study">' +
+      '<div class="capital-nav"><button class="btn btn-sm btn-ghost" id="study-back" type="button">' + ICONS.back + ' 수도 놀이</button>' +
+        '<h2>📖 수도 공부</h2><span class="chip" id="study-count">' + (study.index + 1) + ' / ' + study.countries.length + '</span></div>' +
+      '<div class="card capital-study-card">' + capitalPlate(c, capitalPlace(c)) + capitalOf(c) +
+        '<button class="btn btn-listen btn-listen-soft" id="study-speak" type="button">🔊 다시 듣기</button></div>' +
+      '<div class="study-actions"><button class="btn btn-big btn-ghost" id="study-prev" type="button"' + (study.index ? '' : ' disabled') + '>← 이전 수도</button>' +
+        '<button class="btn btn-big btn-yellow" id="study-next" type="button">' +
+          (study.index === study.countries.length - 1 ? '공부 마치기 ✓' : '다음 수도 →') + '</button></div></section>');
+    function listen() { speakLines(ui.$('#study-speak', m), [c.capital, c.ko + '의 수도예요'], '🔊 다시 듣기'); }
+    ui.$('#study-back', m).addEventListener('click', renderCapitalMenu);
+    ui.$('#study-speak', m).addEventListener('click', listen);
+    ui.$('#study-prev', m).addEventListener('click', function () {
+      if (state.study !== study || study.index <= 0) return;
+      study.index -= 1;
+      renderCapitalStudy();
+    });
+    ui.$('#study-next', m).addEventListener('click', function () {
+      if (state.study !== study) return;
+      study.index += 1;
+      renderCapitalStudy();
+    });
+    if (store.settings().speak) listen();
+  }
+
+  function renderCapitalStudyDone() {
+    var count = state.study.countries.length;
+    var hasMore = capitalStudyPool().some(function (c) { return !state.studiedCapitals[c.code]; });
+    var m = ui.setMain('<section class="screen card capital-study-done"><span class="capital-path-icon" aria-hidden="true">📖</span>' +
+      '<h2>수도 공부를 마쳤어요</h2><p>' + count + '개 나라의 수도를 만나봤어요.</p>' +
+      '<button class="btn btn-big btn-yellow" id="study-more" type="button">' + (hasMore ? '다른 수도 공부하기' : '한 번 더 보기') + '</button>' +
+      '<button class="btn btn-big btn-primary" id="study-quiz" type="button">🧩 퀴즈 고르기</button>' +
+      '<button class="btn btn-big btn-ghost" id="study-home" type="button">홈으로</button></section>');
+    ui.$('#study-more', m).addEventListener('click', startCapitalStudy);
+    ui.$('#study-quiz', m).addEventListener('click', renderCapitalMenu);
+    ui.$('#study-home', m).addEventListener('click', renderHome);
   }
 
   /** 🔊 단추 하나로 이름을 읽는다. data-speak 문구 뒤에 data-speak-extra 문구가 있으면 이어서 읽고, data-speak-lines('|'로 나눔)면 그 전부를 읽는다. */
@@ -849,24 +979,29 @@
   }
 
   /* =================== 퀴즈 화면 =================== */
-  function renderQuiz() {
+  function renderQuiz(keep) {
+    if (state.artTimer) { global.clearTimeout(state.artTimer); state.artTimer = null; }
+    state.questionGeneration += 1;
     cancelPendingFeedback();
     var g = state.game;
     if (!g || g.isOver()) return finishGame();
     state.answered = false;
     state.artUnavailable = false;
-    state.usedHint = false;
-    state.hintLevel = 0;
-    state.revealed = false;
-    state.removed = [];
+    if (!keep) {
+      state.usedHint = false;
+      state.hintLevel = 0;
+      state.revealed = false;
+      state.removed = [];
+    }
     state.timedOut = false;
     state.timerPaused = false;
     state.listenFailures = 0;
 
     var q = g.current();
     var s = store.settings();
+    if (speechMode(q.mode) && (global.navigator.onLine === false || state.speechNeedsConnection)) touchQuestion(q);
     var duel = g.players.length > 1;
-    // 처음 만나는 그림·명소·수도는 채점 전에 먼저 알려 준다(2026-09-17). 그 축의 기록이 없는 나라만, 문제마다 한 번.
+    // 처음 만나는 그림·명소만 채점 전에 먼저 알려 준다. 수도는 별도의 공부 화면에서 익힌다.
     var meet = meetMode(q.mode) && state.metQuestion !== q && needsMeet(q);
 
     var stage;
@@ -885,9 +1020,10 @@
           '<p id="art-loading" role="status">그림을 불러오고 있어요…</p>' +
           '<div id="art-error" class="art-error" hidden>' + artErrorBody +
             '<button class="btn btn-primary btn-big" id="art-retry" type="button">🔄 다시 불러오기</button>' +
+            '<button class="btn btn-big btn-yellow" id="art-next" type="button">⏭ 다음 그림</button>' +
             (stageArtName && !meet ? '<button class="btn btn-big" data-speak="' + esc(stageArtName) + '" type="button">🔊 그림 이름 듣기</button>' : '') +
           '</div>'
-          : '<div id="art-error" class="art-error">' + artErrorBody + '</div>';
+          : '<div id="art-error" class="art-error">' + artErrorBody + '<button class="btn btn-big btn-yellow" id="art-next" type="button">⏭ 다음 그림</button></div>';
       stage = meet
         // 처음 만나는 그림은 문제보다 먼저 알려 준다. 나라 이름과 그림 이름을 함께 듣고 나서 같은 나라를 문제로 만난다.
         // 그림과 이름·단추를 따로 감싼다 — 아이패드 가로에서는 둘을 나란히 놓아야 단추가 한 화면에 들어온다.
@@ -918,26 +1054,11 @@
         '<div class="flag-stage">' +
           '<div class="q-label">이 나라의 국기를 찾아보세요</div>' +
           '<div class="big-name">' + esc(q.country.ko) + '</div>' +
-          listenButton(q.country.ko) +
+          listenButton(q.country.ko, null, q.touchFallback ? 'touch-listen' : null) +
         '</div>';
     } else if (capitalAxis(q.mode)) {
-      // 수도 놀이를 뒤집었다(2026-09-17 시안 PhoneCapital, D17 채택 B): 글자를 못 읽는 아이가 수도 이름을 '듣고' 국기 4장에서 나라를 찾는다.
-      // 수도 놀이의 주인공은 수도 이름이다(D29): 만나기 카드·문제·정답 카드 모두 수도 명패(capitalPlate)가 가장 큰 글자이고,
-      // 나라는 그 아래 '[국기] ○○의 수도예요' 한 줄(capitalOf)로 받친다 — 읽어 주는 [수도, '나라의 수도예요'] 와 같은 순서다.
-      // 문제가 뜨면 수도 이름을 한 번 자동으로 읽는다(만나기 카드와 같은 speakLines — 실패하면 '다시 눌러서 듣기'로 바뀐다).
-      // 처음 만나는 나라는 수도 명패·국기·'나라의 수도예요' 를 먼저 보여 주고 [수도, '나라의 수도예요'] 를 읽는다 — 둘 다 기존 음원이다.
-      // 수도 안에 있는 명소 그림(D26)이 있으면 만나기 카드의 명패 안에 둔다 — 소리에 그림 갈고리를 붙인다. 문제 화면의 명패에는 그림이 없다.
-      // 국기 보고 수도 말하기(D28)는 같은 만나기 카드를 쓰고, 문제 화면은 국기·나라 이름·물음표 명패·🔊(나라 이름)이며 답은 마이크로 받는다.
-      var place = capitalPlace(q.country);
-      stage = meet
-        ? '<div class="flag-stage meet-card capital-meet"><div class="q-label">처음 만나는 수도예요 · 먼저 들어 볼까요?</div>' +
-          '<div class="meet-art">' + capitalPlate(q.country, place) + '</div>' +
-          '<div class="meet-body">' +
-          capitalOf(q.country) +
-          '<button class="btn btn-listen btn-listen-soft" id="meet-speak" data-speak="' + esc(q.country.capital) + '" data-speak-extra="' + esc(q.country.ko + '의 수도예요') + '" data-label="🔊 다시 듣기" type="button">🔊 다시 듣기</button>' +
-          '<button class="btn btn-big btn-go btn-yellow" id="meet-next" type="button">문제 풀어 볼게요 →</button>' +
-          '</div></div>'
-        : q.mode === 'capitalVoice'
+      // 수도 퀴즈는 소개 카드 없이 시작한다. 듣기는 수도 이름, 말하기는 국기와 나라 이름을 문제로 낸다.
+      stage = q.mode === 'capitalVoice'
           ? '<div class="flag-stage capital-say">' +
             '<div class="q-label">🏙️ 이 나라의 수도를 말해 보세요</div>' +
             '<div class="map-who">' +
@@ -971,7 +1092,9 @@
       '<section class="screen quiz-screen">' +
         quizHead(g, s, chest, lv) +
         '<div class="quiz-body' + (q.mode === 'map' ? ' map-quiz' : '') + (meet ? ' meet-quiz' : '') + '">' +
-          '<div class="quiz-stage-col">' + stage + '<div id="feedback-area"></div></div>' +
+          '<div class="quiz-stage-col">' +
+            (q.touchFallback ? '<div class="notice" role="status">👆 이름을 듣고 국기를 눌러요</div>' : '') +
+            stage + '<div id="feedback-area"></div></div>' +
           '<div class="quiz-answer-col">' +
             '<div id="answer-area"' + (meet ? ' hidden' : '') + '>' + answerArea(q) + '</div>' +
             '<div class="row tool-row"' + (meet ? ' style="display:none"' : '') + '>' +
@@ -1003,12 +1126,13 @@
         renderQuiz();
       });
       speakLines(ui.$('#meet-speak', m),
-        capitalAxis(q.mode) ? [q.country.capital, q.country.ko + '의 수도예요'] : [q.country.ko, artAlt(q.country.code, q.mode)],
+        [q.country.ko, artAlt(q.country.code, q.mode)],
         '🔊 다시 듣기');
     } else {
       state.meeting = false;
       // 수도 문제는 글자가 아니라 소리가 문제다. 뜨자마자 수도 이름을 한 번 읽어 준다(실패하면 단추가 '다시 눌러서 듣기'로 바뀐다).
       if (q.mode === 'capital') speakLines(ui.$('#capital-listen', m), [q.country.capital], '🔊 눌러서 들어보기');
+      if (q.mode === 'reverse' && q.touchFallback) speakLines(ui.$('#touch-listen', m), [q.country.ko], '🔊 들어보기');
     }
     ui.$('#quit', m).addEventListener('click', function () {
       var g2 = state.game;
@@ -1029,10 +1153,21 @@
     });
 
     bindAnswerArea(m, q);
+    if (q.mode === 'symbol' || q.mode === 'place') {
+      var artNext = ui.$('#art-next', m);
+      if (artNext) artNext.addEventListener('click', skipUnscored);
+    }
+    if (keep && state.usedHint) {
+      ui.$('#hint-area', m).innerHTML = keep.hint;
+      ui.$('#hint', m).disabled = true;
+    }
     var questionArt = ui.$('#question-art', m);
     if ((q.mode === 'symbol' || q.mode === 'place') && questionArt) {
+      var artGeneration = state.questionGeneration;
       function artState(status) {
-        if (state.game !== g || g.current() !== q || state.answered) return;
+        if (state.game !== g || g.current() !== q || state.answered || artGeneration !== state.questionGeneration) return;
+        if (state.artTimer) { global.clearTimeout(state.artTimer); state.artTimer = null; }
+        if (status === 'loading') state.artTimer = global.setTimeout(function () { artState('error'); }, 8000);
         var unavailable = status !== 'ready';
         state.artUnavailable = unavailable;
         ui.$('#art-error', m).hidden = status !== 'error';
@@ -1054,7 +1189,7 @@
       artState(questionArt.complete ? (questionArt.naturalWidth > 0 ? 'ready' : 'error') : 'loading');
     }
     preloadNext();
-    if (!meet && !state.artUnavailable && !state.timerId) startTimer();
+    if (!meet && !state.artUnavailable && !state.timerId) startTimer(keep ? keep.timeLeft : undefined);
 
     if (speechMode(q.mode) && !meet) {
       state.listenOn = true;
@@ -1064,6 +1199,27 @@
       // 만나기 카드가 떠 있는 동안은 듣지 않는다 — '문제 풀어 볼게요'를 누르는 그 흐름에서 연다.
       startListening();
     }
+  }
+
+  /** 말하기 연결이 끊겨도 같은 나라·차례·기록으로, 소리를 듣고 국기를 고르는 놀이를 이어 간다. */
+  function touchQuestion(q) {
+    var mode = q.mode === 'capitalVoice' ? 'capital' : 'reverse';
+    var s = store.settings();
+    var axis = quiz.MODES[mode].axis;
+    q.touchFallback = true;
+    q.mode = mode;
+    q.options = quiz.makeQuestion(q.country, mode, quiz.pool({ level: s.level, continent: s.continent, axis: axis }),
+      { axis: axis, spread: mode === 'capital' ? 'far' : undefined }).options;
+  }
+
+  function continueWithTouch() {
+    var q = state.game && state.game.current();
+    if (!q || !speechMode(q.mode) || state.answered) return;
+    var keep = { timeLeft: state.timerId || state.timerPaused ? state.timeLeft : 0, hint: ui.$('#hint-area').innerHTML };
+    stopListening();
+    stopTimer();
+    touchQuestion(q);
+    renderQuiz(keep);
   }
 
   /** 그림 소재를 읽는다. 옛 js/ui.js 가 캐시에 섞여도 죽지 않도록 여기서 한 번 더 막는다.
@@ -1216,6 +1372,7 @@
     var game = state.game;
     var question = game.current();
     if (!question || !speechMode(question.mode)) return;
+    if (global.navigator.onLine === false || state.speechNeedsConnection) { continueWithTouch(); return; }
     if (FQ.speech.isListening && FQ.speech.isListening()) return;
     var kind = answerKind(question.mode);
     var what = answerWhat(question.mode);
@@ -1285,6 +1442,11 @@
       },
       error: function (code, message) {
         if (!current()) return;
+        if (code === 'network' || global.navigator.onLine === false) {
+          state.speechNeedsConnection = true;
+          continueWithTouch();
+          return;
+        }
         if (code === 'no-speech' || code === 'aborted') return;   // 조용하면 그냥 계속 기다린다
         mic.classList.remove('listening');
         mic.setAttribute('aria-pressed', 'false');
@@ -1304,13 +1466,11 @@
           mic.disabled = code === 'unsupported';
           setListenState(code === 'start-timeout'
             ? '마이크 준비가 오래 걸려요. 권한 허용을 확인한 뒤 마이크를 눌러 주세요.'
-            : code === 'network'
-              ? '연결이 불안정해요. 인터넷을 확인한 뒤 마이크를 눌러 주세요.'
-              : '마이크가 멈췄어요. 마이크를 눌러 다시 시도하거나 글자로 답해 주세요.', 'off');
+            : '마이크가 멈췄어요. 마이크를 눌러 다시 시도하거나 글자로 답해 주세요.', 'off');
           openTypeFallback(message || '아래에 나라 이름을 써서 답해도 좋아요.');
           return;
         }
-        setListenState(code === 'network' ? '연결을 다시 확인하고 있어요…' : '마이크가 잠깐 멈췄어요. 다시 들을게요.', 'off');
+        setListenState('마이크가 잠깐 멈췄어요. 다시 들을게요.', 'off');
         // 이전 세션이 끝난 뒤 예약된 시작이 실패한 경우에는 start() 반환값을 받을 수 없다.
         if (code === 'start-failed') retryListening();
       },
@@ -2222,11 +2382,13 @@
     doc.getElementById('nav-dex').addEventListener('click', function () {
       cancelPendingFeedback();
       stopTimer(); stopListening(); audio.stopSpeaking(); state.game = null;
+      state.study = null;
       FQ.screens.dex();
     });
     doc.getElementById('nav-stats').addEventListener('click', function () {
       cancelPendingFeedback();
       stopTimer(); stopListening(); audio.stopSpeaking(); state.game = null;
+      state.study = null;
       musicScreen('stats');
       FQ.screens.stats();
     });
@@ -2251,6 +2413,14 @@
         }
       }
     });
+    global.addEventListener('offline', function () {
+      state.speechNeedsConnection = true;
+      continueWithTouch();
+    });
+    global.addEventListener('online', function () {
+      // 풀던 문제는 그대로 둔다. 다음 말하기 문제부터 마이크를 다시 사용한다.
+      state.speechNeedsConnection = false;
+    });
     // 아이폰·아이패드는 사용자가 화면을 처음 만질 때만 소리를 열어 준다
     ['pointerdown', 'touchend', 'click', 'keydown'].forEach(function (evt) {
       doc.addEventListener(evt, function () {
@@ -2265,6 +2435,7 @@
 
   /* 한 번 열어 두면 인터넷 없이도 놀 수 있게 한다. file:// 로 연 경우에는 건너뛴다. */
   function registerServiceWorker() {
+    if (FQ.offline) { FQ.offline.init(); return; }
     if (!('serviceWorker' in global.navigator)) return;
     var proto = global.location.protocol;
     var host = global.location.hostname;

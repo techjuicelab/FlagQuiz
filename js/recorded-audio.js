@@ -18,6 +18,7 @@
   var pending = [];
   var clip = null;
   var START_TIMEOUT = 12000;
+  var OFFLINE_TIMEOUT = 1500;
   var MAX_CLIP_TIMEOUT = 120000;
   // 짧은 PCM 무음. 외부 파일을 기다리지 않고 손가락 조작 안에서 재생 허가를 연다.
   var SILENCE = 'data:audio/wav;base64,UklGRiYAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQIAAAAAAA==';
@@ -225,12 +226,15 @@
     if (!clip) return;
     global.clearTimeout(clip.startTimer);
     global.clearTimeout(clip.endTimer);
+    global.clearTimeout(clip.offlineTimer);
     clip = null;
     if (voicePlayer) {
       voicePlayer.onplaying = null;
       voicePlayer.onended = null;
       voicePlayer.onerror = null;
       voicePlayer.onloadedmetadata = null;
+      voicePlayer.onwaiting = null;
+      voicePlayer.onstalled = null;
     }
   }
 
@@ -300,10 +304,20 @@
     var text = run.lines[run.index];
     var asset = voiceClip(text);
     var player = getPlayer();
-    var item = { startTimer: null, endTimer: null, started: false, startedAt: 0 };
+    var item = { startTimer: null, endTimer: null, offlineTimer: null, started: false, startedAt: 0 };
     clip = item;
     if (!player) { fail(run, item, 'audio-unsupported'); return; }
     if (!asset || !asset.src) { fail(run, item, 'missing-clip'); return; }
+
+    // 저장된 음원은 오프라인에서도 재생하되, 없는 파일을 오래 기다리지 않는다.
+    function waitForData() {
+      if (!stillCurrent(run, item) || item.offlineTimer !== null ||
+          !global.navigator || global.navigator.onLine !== false) return;
+      item.offlineTimer = global.setTimeout(function () {
+        fail(run, item, 'offline-audio-unavailable');
+      }, OFFLINE_TIMEOUT);
+    }
+    item.waitForData = waitForData;
 
     function watchEnd() {
       if (!stillCurrent(run, item) || !item.started) return;
@@ -316,7 +330,10 @@
       item.endTimer = global.setTimeout(function () { fail(run, item, 'playback-timeout'); }, remaining);
     }
     function began() {
-      if (!stillCurrent(run, item) || item.started) return;
+      if (!stillCurrent(run, item)) return;
+      global.clearTimeout(item.offlineTimer);
+      item.offlineTimer = null;
+      if (item.started) return;
       item.started = true;
       item.startedAt = +new Date();
       mediaPrimed = true;
@@ -328,6 +345,10 @@
       }
     }
     player.onplaying = began;
+    player.onwaiting = waitForData;
+    player.onstalled = function () {
+      if (!item.started || player.readyState < 3) waitForData();
+    };
     player.onloadedmetadata = watchEnd;
     player.onended = function () {
       if (!stillCurrent(run, item)) return;
@@ -337,6 +358,7 @@
     };
     player.onerror = function () { fail(run, item, 'audio-file-error'); };
     item.startTimer = global.setTimeout(function () { fail(run, item, 'start-timeout'); }, START_TIMEOUT);
+    waitForData();
     try {
       player.src = asset.src;
       // 생성된 원음의 말투와 높이를 그대로 살린다. 이전 합성음 rate/pitch는 사용하지 않는다.
@@ -390,6 +412,17 @@
 
   function setEnabled(v) { enabled = !!v; }
   function setSpeakEnabled(v) { speakEnabled = !!v; if (!v) stopSpeaking(); }
+
+  if (global.addEventListener) {
+    global.addEventListener('offline', function () {
+      if (clip && (!clip.started || (voicePlayer && voicePlayer.readyState < 3))) clip.waitForData();
+    });
+    global.addEventListener('online', function () {
+      if (!clip) return;
+      global.clearTimeout(clip.offlineTimer);
+      clip.offlineTimer = null;
+    });
+  }
 
   FQ.audio = {
     play: play,

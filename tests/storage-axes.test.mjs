@@ -256,7 +256,7 @@ test('국기 축은 다시 만나기를 하지 않아 한 판에 같은 나라�
   }
 });
 
-test('수도 축은 자기 버킷의 가중치와 다시 만나기를 쓰고 보기는 나라 중복만 막는다', () => {
+test('수도 축은 자기 버킷의 가중치를 쓰며 문제와 보기의 나라가 중복되지 않는다', () => {
   const { FQ } = fixture();
   FQ.storage.recordAnswer('kr', false, 'capital');
   const weights = [];
@@ -275,156 +275,116 @@ test('수도 축은 자기 버킷의 가중치와 다시 만나기를 쓰고 보
     return q.country.code;
   });
   assert.equal(log.length, 6);
-  assert.ok(g.againCount >= 1, '수도에서도 처음 만난 쌍을 다시 만난다');
+  assert.equal(g.againCount, 0, '수도 퀴즈에는 같은 나라를 다시 넣지 않는다');
+  assert.equal(new Set(log.map(l => l.code)).size, 6);
   assert.equal(Object.keys(FQ.storage.allCountryStats()).length, 0, '국기 기록은 그대로');
   assert.equal(FQ.progress.hasSticker(g.questions[0].country.code), false, '194칸 국기 스티커는 국기 축만');
   assert.ok(Object.keys(FQ.storage.allAxisStats('capital')).length >= 1);
   assert.deepEqual(Object.keys(JSON.parse(FQ.storage.exportJson()).axes), ['capital'], '내보내기 JSON 에 capital 버킷');
 });
 
-/* ---------------- 수도 놀이 학습 규칙 (D24) ---------------- */
+/* ---------------- 공부와 분리한 수도 퀴즈 ---------------- */
 
 function metCodes(FQ, n, times = 1) {
   const codes = FQ.countries.slice(0, n).map(c => c.code);
   for (const code of codes) for (let i = 0; i < times; i++) FQ.storage.recordAnswer(code, true, 'capital');
   return codes;
 }
-// vm 안에서 만든 배열은 이쪽 Array 와 프로토타입이 달라 deepEqual 이 실패한다 — 늘 이쪽 배열로 옮겨 비교한다.
-const positions = (codes, code) => Array.from(codes).map((c, i) => (c === code ? i : -1)).filter(i => i >= 0);
 
-test('D24: 수도 놀이는 새 나라를 한 판에 3개까지만 소개하고 소개→1문제 뒤→3문제 뒤 리듬으로 다시 내며 남는 자리는 복습이다', () => {
-  const { FQ } = fixture();
-  const met = new Set(metCodes(FQ, 12, 5));   // 다섯 번 연속 맞힌 굳은 나라 12개
-  const g = FQ.quiz.createGame({ mode: 'capital', count: 10, level: 'all' });
-  const codes = g.questions.map(q => q.country.code);
-  assert.equal(g.total, 10);
-  assert.equal(g.questions.length, 10, '총 문제 수는 count 그대로');
-  const fresh = [...new Set(codes.filter(c => !met.has(c)))];
-  assert.equal(fresh.length, 3, '처음 만나는 나라는 3개: ' + codes.join(' '));
-  assert.equal(codes.filter(c => met.has(c)).length, 2, '남는 자리 둘은 복습 — 판 끝 다시 만나기보다 먼저다');
-  for (let i = 1; i < codes.length; i++) assert.notEqual(codes[i], codes[i - 1], '같은 나라가 연달아 나오지 않는다');
-  assert.deepEqual(positions(codes, codes[0]), [0, 2, 6], '첫 나라: 소개 → 1문제 뒤 → 3문제 뒤');
-  assert.deepEqual(positions(codes, codes[1]), [1, 3, 8]);
-  assert.deepEqual(positions(codes, codes[4]), [4, 7]);
-  assert.equal(g.questions[0].again, false);
-  assert.equal(g.questions[2].again, true);
-  assert.equal(g.questions[5].review, true);
-  assert.equal(g.questions[9].review, true);
-  assert.equal(g.againCount, 5, '계획된 다시 만나기부터 센다');
-  assert.equal(g.questions[2].options, null, '보기는 문제가 오를 때 만든다');
-  const log = play(g, (q) => q.country.code);
-  assert.equal(log.length, 10);
-  assert.ok(log.every(l => l.scheduled === false), '맞히면 계획 밖 다시 만나기는 없다');
-  const recs = FQ.storage.allAxisStats('capital');
-  assert.equal(recs[codes[0]].seen, 3);
-  assert.equal(recs[codes[0]].streak, 3);
-  assert.equal(g.summary().wrong.length, 0);
-  // 복습할 나라가 없으면 판 끝에 한 번 더 나온다 (첫 나라 0·2·5·9번째).
-  const h = fixture().FQ.quiz.createGame({ mode: 'capital', count: 10, level: 'all' });
-  const hc = h.questions.map(q => q.country.code);
-  assert.equal(new Set(hc).size, 3);
-  assert.deepEqual(positions(hc, hc[0]), [0, 2, 5, 9]);
-  assert.equal(hc.length, 10);
+test('수도 선택·말하기 퀴즈는 처음부터 서로 다른 나라를 고른 수만큼 내고 한 번씩만 기록한다', () => {
+  for (const mode of ['capital', 'capitalVoice']) for (const count of [5, 10]) {
+    const { FQ } = fixture();
+    const g = FQ.quiz.createGame({ mode, count, level: 'all' });
+    const codes = Array.from(g.questions, q => q.country.code);
+    assert.equal(g.total, count);
+    assert.equal(new Set(codes).size, count, '새 나라 2~3개만 반복하지 않는다');
+    assert.equal(g.againCount, 0);
+    assert.ok(g.questions.every(q => !q.again && !q.review));
+    while (!g.isOver()) {
+      const q = g.current();
+      const payload = mode === 'capitalVoice' ? { text: q.country.capital } : { code: q.country.code };
+      const result = g.submit(payload);
+      assert.equal(result.correct, true, mode + ': ' + q.country.capital);
+      assert.equal(result.scheduledAgain, false);
+      g.next();
+    }
+    assert.equal(g.correct, count);
+    assert.equal(g.summary().wrong.length, 0);
+    assert.deepEqual(Array.from(g.questions, q => q.country.code), codes, '채점 뒤에도 문제 순서가 그대로다');
+    for (const code of codes) {
+      assert.equal(FQ.storage.allAxisStats('capital')[code].seen, 1);
+      assert.equal(FQ.storage.allAxisStats('capital')[code].streak, 1);
+    }
+    assert.equal(Object.keys(FQ.storage.allCountryStats()).length, 0);
+  }
 });
 
-test('D24: 안 굳은 나라(복습 가중치 2 이상)가 한도의 두 배 이상 밀려 있으면 새 나라를 하나 줄인다', () => {
-  const { FQ } = fixture();
-  metCodes(FQ, 6, 1);   // 한 번씩만 맞힌 나라 6개 — 가중치 2.0
-  const g = FQ.quiz.createGame({ mode: 'capital', count: 10, level: 'all' });
-  const codes = Array.from(g.questions, q => q.country.code);
-  const metSet = new Set(FQ.countries.slice(0, 6).map(c => c.code));
-  assert.equal(new Set(codes.filter(c => !metSet.has(c))).size, 2, '새 나라는 2개: ' + codes.join(' '));
-  assert.ok(codes.filter(c => metSet.has(c)).length >= 3, '복습이 늘어난다');
-  const f = fixture();
-  metCodes(f.FQ, 5, 1);   // 5개면 아직 한도 그대로
-  const g2 = f.FQ.quiz.createGame({ mode: 'capital', count: 10, level: 'all' });
-  const met2 = new Set(f.FQ.countries.slice(0, 5).map(c => c.code));
-  assert.equal(new Set(Array.from(g2.questions, q => q.country.code).filter(c => !met2.has(c))).size, 3);
+test('수도 후보가 적으면 판을 줄이고 전부를 고르면 필터에 맞는 나라를 빠짐없이 한 번씩 낸다', () => {
+  for (const mode of ['capital', 'capitalVoice']) {
+    const { FQ } = fixture();
+    for (const only of [['mx'], ['mx', 'kr']]) {
+      const g = FQ.quiz.createGame({ mode, only, count: 10 });
+      assert.equal(g.total, only.length);
+      assert.deepEqual(Array.from(g.questions, q => q.country.code).sort(), [...only].sort());
+    }
+    const g = FQ.quiz.createGame({ mode, count: 'all', level: '1', continent: '아시아' });
+    const expected = Array.from(FQ.quiz.pool({ level: '1', continent: '아시아', axis: 'capital' }), c => c.code);
+    assert.equal(g.total, expected.length);
+    assert.deepEqual(Array.from(g.questions, q => q.country.code).sort(), expected.sort());
+    assert.ok(new Set(g.questions.map(q => q.country.code)).size > 3, '전부 모드에도 새 나라 한도가 없다');
+  }
 });
 
-test('D24: 판이 짧거나 나라가 적으면 그만큼만 낸다 — 5문제는 새 나라 2개, 나라 하나면 문제 하나, 연달아 같은 나라는 없다', () => {
-  const { FQ } = fixture();
-  const g5 = FQ.quiz.createGame({ mode: 'capital', count: 5, level: 'all' });
-  const codes5 = g5.questions.map(q => q.country.code);
-  assert.equal(codes5.length, 5);
-  assert.equal(new Set(codes5).size, 2, '5문제 판의 새 나라는 2개');
-  assert.deepEqual(positions(codes5, codes5[0]), [0, 2, 4]);
-  const g1 = FQ.quiz.createGame({ mode: 'capital', only: ['mx'], count: 10 });
-  assert.equal(g1.total, 1, '나라 하나면 사이에 낄 문제가 없어 한 번만');
-  assert.equal(play(g1, (q) => q.country.code)[0].scheduled, false);
-  // 두 나라(둘 다 처음)면 번갈아 가며 각각 네 번까지. 위 판에서 mx 를 만났으므로 새 픽스처로 본다.
-  const g2 = fixture().FQ.quiz.createGame({ mode: 'capital', only: ['mx', 'kr'], count: 10 });
-  const codes2 = g2.questions.map(q => q.country.code);
-  assert.equal(codes2.length, 8, '두 나라면 번갈아 넷까지: ' + codes2.join(' '));
-  for (let i = 1; i < codes2.length; i++) assert.notEqual(codes2[i], codes2[i - 1]);
-  assert.ok(codes2.filter(c => c === 'mx').length === 4 && codes2.filter(c => c === 'kr').length === 4, '한 나라는 계획상 네 번까지');
-  // 만난 나라 하나 + 새 나라 하나면 새 나라는 사이에 낄 문제가 하나뿐이라 두 번, 만난 나라는 복습 한 번.
-  const g3 = FQ.quiz.createGame({ mode: 'capital', only: ['mx', 'kr'], count: 10 });
-  assert.deepEqual(Array.from(g3.questions, q => q.country.code), ['kr', 'mx', 'kr']);
-  assert.equal(g3.questions[1].review, true);
-  const gAll = fixture().FQ.quiz.createGame({ mode: 'capital', count: 'all', level: '1' });
-  assert.ok(gAll.total <= FQ.quiz.pool({ level: '1' }).length, '전부 모드도 나라 수를 넘지 않는다');
-  assert.equal(new Set(gAll.questions.map(q => q.country.code)).size, 5, '전부 모드의 새 나라는 5개');
+test('수도 문제를 모두 틀려도 예정된 서로 다른 문제를 끝까지 풀고 결과에서 복습할 수 있다', () => {
+  for (const mode of ['capital', 'capitalVoice']) {
+    const { FQ } = fixture();
+    const codes = metCodes(FQ, 12, 2);
+    const g = FQ.quiz.createGame({ mode, only: codes, count: 10 });
+    const order = Array.from(g.questions, q => q.country.code);
+    while (!g.isOver()) {
+      const q = g.current();
+      const payload = mode === 'capitalVoice' ? { text: '모르겠어요' } : { code: q.options.find(c => c.code !== q.country.code).code };
+      const result = g.submit(payload);
+      assert.equal(result.correct, false);
+      assert.equal(result.scheduledAgain, false);
+      assert.equal(result.again, false);
+      g.next();
+    }
+    assert.equal(g.total, 10);
+    assert.equal(g.againCount, 0);
+    assert.deepEqual(Array.from(g.questions, q => q.country.code), order);
+    assert.deepEqual(Array.from(g.summary().wrong, c => c.code), order);
+    for (const code of order) assert.equal(FQ.storage.allAxisStats('capital')[code].wrong, 1);
+  }
 });
 
-test('D24: 복습 문제를 틀리면 1문제 뒤에 한 번 더 내고 복습 자리 하나를 뒤에서 뺀다(총 문제 수 불변), 한 판 상한은 다섯 번', () => {
-  const { FQ } = fixture();
-  const codes = metCodes(FQ, 12, 2);
-  const g = FQ.quiz.createGame({ mode: 'capital', only: codes, count: 10 });
-  assert.equal(g.total, 10);
-  assert.ok(g.questions.every(q => q.review), '전부 만난 나라면 전부 복습');
-  const order = g.questions.map(q => q.country.code);
-  const target = order[0];
-  const wrongOf = (q) => (q.options.find(c => c.code !== q.country.code) || q.country).code;
-  const log = play(g, (q) => (q.country.code === target ? wrongOf(q) : q.country.code));
-  assert.equal(log.length, 10, '총 문제 수는 그대로');
-  assert.equal(g.total, 10);
-  assert.equal(log.filter(l => l.code === target).length, 5, '틀릴 때마다 1문제 뒤에 — 다섯 번까지');
-  assert.deepEqual(positions(log.map(l => l.code), target), [0, 2, 4, 6, 8]);
-  assert.ok(log[0].scheduled && log[2].scheduled && log[4].scheduled && log[6].scheduled, '틀리면 다시 잡는다');
-  assert.equal(log[8].scheduled, false, '상한에 닿으면 더 잡지 않는다');
-  assert.ok(log.filter(l => l.code === target).slice(1).every(l => l.again));
-  assert.equal(g.againCount, 4);
-  assert.equal(g.summary().wrong.length, 1, '여러 번 틀려도 한 번 더 만날 나라에는 한 번');
-  assert.equal(new Set(order.filter(c => log.some(l => l.code === c))).size, 6, '원래 복습 넷이 자리를 내준다');
-  assert.equal(FQ.storage.allAxisStats('capital')[target].wrong, 5);
-  // 마지막 두 문제에서는 사이에 낄 자리가 없어 잡지 않는다.
-  const h = FQ.quiz.createGame({ mode: 'capital', only: codes, count: 3 });
-  const hl = play(h, (q, i) => (i >= 1 ? wrongOf(q) : q.country.code));
-  assert.deepEqual(hl.map(l => l.scheduled), [false, false, false]);
-  assert.equal(hl.length, 3);
-});
-
-test('D24: 힌트 2단계로 나라 이름까지 듣고 맞힌 답은 점수는 주되 기록은 틀림으로 남기고 한 번 더 만난다', () => {
-  const { FQ } = fixture();
-  const codes = metCodes(FQ, 12, 2);
-  const g = FQ.quiz.createGame({ mode: 'capital', only: codes, count: 10 });
-  const q = g.current();
-  const r = g.submit({ code: q.country.code }, true, { revealed: true });
-  assert.equal(r.correct, true, '아이에게는 정답');
-  assert.equal(r.learned, false, '기록에는 아직');
-  assert.equal(r.gained, 10);
-  assert.equal(g.correct, 1);
-  assert.equal(g.hintsUsed, 1);
-  assert.equal(r.scheduledAgain, true, '1문제 뒤에 한 번 더');
-  assert.equal(g.questions[2].country.code, q.country.code);
-  assert.deepEqual(Array.from(g.summary().wrong, c => c.code), [q.country.code], '한 번 더 만날 나라에 오른다');
-  const rec = FQ.storage.allAxisStats('capital')[q.country.code];
-  assert.deepEqual([rec.seen, rec.correct, rec.wrong, rec.streak], [3, 2, 1, 0]);
-  // revealed 없이 맞히면 여느 정답과 같다.
-  g.next();
-  const q2 = g.current();
-  const r2 = g.submit({ code: q2.country.code }, false, { revealed: false });
-  assert.equal(r2.learned, true);
-  assert.equal(r2.scheduledAgain, false);
-  assert.equal(FQ.storage.allAxisStats('capital')[q2.country.code].streak, 3);
-  // 다른 축은 opts 를 넘겨도 D15 그대로다.
-  const s = FQ.quiz.createGame({ mode: 'symbol', count: 4 });
-  const sq = s.current();
-  const sr = s.submit({ code: sq.country.code }, false, { revealed: true });
-  assert.equal(sr.correct, true);
-  assert.equal(sr.learned, false);
-  assert.equal(FQ.storage.allAxisStats('symbol')[sq.country.code].wrong, 1);
+test('수도 힌트로 답을 들은 정답은 점수와 복습 기록만 남기고 같은 판에 다시 내지 않는다', () => {
+  for (const mode of ['capital', 'capitalVoice']) {
+    const { FQ } = fixture();
+    const codes = metCodes(FQ, 12, 2);
+    const g = FQ.quiz.createGame({ mode, only: codes, count: 10 });
+    const order = Array.from(g.questions, q => q.country.code);
+    const q = g.current();
+    const payload = mode === 'capitalVoice' ? { text: q.country.capital } : { code: q.country.code };
+    const r = g.submit(payload, true, { revealed: true });
+    assert.equal(r.correct, true, '아이에게는 정답');
+    assert.equal(r.learned, false, '기록에는 아직');
+    assert.equal(r.gained, 10);
+    assert.equal(g.correct, 1);
+    assert.equal(g.hintsUsed, 1);
+    assert.equal(r.scheduledAgain, false);
+    assert.deepEqual(Array.from(g.questions, q => q.country.code), order);
+    assert.deepEqual(Array.from(g.summary().wrong, c => c.code), [q.country.code]);
+    const rec = FQ.storage.allAxisStats('capital')[q.country.code];
+    assert.deepEqual([rec.seen, rec.correct, rec.wrong, rec.streak], [3, 2, 1, 0]);
+    g.next();
+    const q2 = g.current();
+    const payload2 = mode === 'capitalVoice' ? { text: q2.country.capital } : { code: q2.country.code };
+    const r2 = g.submit(payload2, false, { revealed: false });
+    assert.equal(r2.learned, true);
+    assert.equal(r2.scheduledAgain, false);
+    assert.equal(FQ.storage.allAxisStats('capital')[q2.country.code].streak, 3);
+  }
 });
 
 test('D24: 보기 거리는 익힌 정도로 정한다 — 처음은 다른 대륙 국기, 두 번 연속 맞히면 같은 대륙, 다섯 번이면 같은 지역', () => {
@@ -458,19 +418,18 @@ test('D24: 보기 거리는 익힌 정도로 정한다 — 처음은 다른 대�
   assert.ok(farAsia.every(c => c.continent === '아시아' && c.region !== '동아시아'));
 });
 
-test('D24: 복습 순서는 틀렸거나 한 번밖에 못 맞힌 나라가 먼저 흔들리고, 그림·명소·지도는 D15 그대로다', () => {
+test('그림·명소·지도는 공부·퀴즈 분리와 관계없이 기존 다시 만나기를 유지한다', () => {
   const { FQ } = fixture();
-  const w = FQ.quiz.LEARN.capital.reviewWeight;
-  assert.equal(w({ seen: 2, correct: 1, wrong: 1, streak: 0 }), 3.0);
-  assert.equal(w({ seen: 1, correct: 1, wrong: 0, streak: 1 }), 2.0);
-  assert.equal(w({ seen: 3, correct: 3, wrong: 0, streak: 3 }), 1.4);
-  assert.equal(w({ seen: 9, correct: 9, wrong: 0, streak: 9 }), 0.6);
-  assert.equal(w(undefined), 2.0);
-  assert.deepEqual(Object.keys(FQ.quiz.LEARN), ['capital'], '학습 규칙은 수도 축만');
-  for (const mode of ['symbol', 'place']) {
+  FQ.map = { MIN_WIDTH: 0, chooseOptions: (answer, source) => [answer].concat(source.filter(c => c !== answer).slice(0, 3)) };
+  for (const mode of ['symbol', 'place', 'map']) {
     const g = FQ.quiz.createGame({ mode, count: 10 });
-    assert.ok(g.questions.every(q => q.options && q.options.length === 4 && !q.review), mode + ' 은 보기를 미리 만들고 복습 표시가 없다');
-    assert.equal(g.againCount, 0, mode + ' 은 다시 만나기를 채점 때 잡는다');
+    assert.ok(g.questions.every(q => q.options && q.options.length === 4 && !q.review), mode + ' 은 보기를 미리 만든다');
+    assert.equal(g.againCount, 0);
+    const first = g.current().country.code;
+    const result = g.submit({ code: first });
+    assert.equal(result.scheduledAgain, true, mode + ' 은 처음 만난 쌍을 다시 낸다');
+    assert.equal(g.questions[3].country.code, first);
+    assert.equal(g.againCount, 1);
   }
 });
 
@@ -488,28 +447,4 @@ test('지도 축도 자기 버킷의 가중치와 다시 만나기를 쓴다', (
   assert.equal(log.length, 5);
   assert.ok(g.againCount >= 1, '지도에서도 처음 만난 쌍을 다시 만난다');
   assert.equal(Object.keys(FQ.storage.allCountryStats()).length, 0, '국기 기록은 그대로');
-});
-
-test('D27: 처음 만나는 나라는 유명한 수도부터 정한 순서로, 그다음 짧은 이름·보통·나라 이름과 같은 수도·긴 이름 순이다', () => {
-  const { FQ } = fixture();
-  const g = FQ.quiz.createGame({ mode: 'capital', count: 10, level: '1' });
-  const codes = Array.from(g.questions, q => q.country.code);
-  assert.deepEqual([codes[0], codes[1], codes[4]], ['kr', 'jp', 'cn'], '서울·도쿄·베이징부터: ' + codes.join(' '));
-  const rule = FQ.quiz.LEARN.capital;
-  const by = (c) => FQ.quiz.byCode(c);
-  const ordered = Array.from(FQ.quiz.orderFresh(rule, ['bn', 'pe', 'sg', 'fr', 'mx'].map(by)), c => c.code);
-  assert.equal(ordered[0], 'fr', '첫 묶음(파리)');
-  assert.equal(ordered[1], 'pe', '짧은 이름(리마)');
-  assert.deepEqual(ordered.slice(2, 4).sort(), ['mx', 'sg'], '나라 이름과 같은 수도(싱가포르·멕시코시티)는 중간 이후');
-  assert.equal(ordered[4], 'bn', '긴 이름(반다르스리브가완)은 맨 뒤');
-  assert.equal(rule.freshTier(by('my')), 2, '쿠알라룸푸르 — 보통');
-  assert.equal(rule.freshTier(by('pe')), 1);
-  assert.equal(rule.freshTier(by('sg')), 3);
-  assert.equal(rule.freshTier(by('lk')), 4);
-  // 첫 묶음이 다 만난(굳은) 나라면 그다음 묶음에서 고른다
-  for (const code of rule.firstCapitals) for (let i = 0; i < 5; i++) FQ.storage.recordAnswer(code, true, 'capital');
-  const h = FQ.quiz.createGame({ mode: 'capital', count: 10, level: 'all' });
-  const fresh = [...new Set(Array.from(h.questions, q => q.country.code).filter(c => !rule.firstCapitals.includes(c)))];
-  assert.equal(fresh.length, 3);
-  assert.ok(fresh.every(c => rule.freshTier(by(c)) === 1), '짧은 이름 묶음: ' + fresh.map(c => by(c).capital).join(' '));
 });

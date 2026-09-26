@@ -48,6 +48,21 @@ test('검증된 음악 16개만 배포하고 원본·제작 문서·목록 밖 �
   await assert.rejects(fs.access(path.join(env.root, '_site/previous-release')));
 });
 
+test('셸 파일이 바뀌면 배포 워커의 캐시 버전도 바뀌고 같은 빌드는 같은 버전을 쓴다', async t => {
+  const env = await fixture(t);
+  await fs.writeFile(path.join(env.root, 'sw.js'), "var SHELL_CACHE = 'flagquiz-shell-v2';\nvar AUDIO_CACHE = 'flagquiz-v4';");
+  const read = () => fs.readFile(path.join(env.root, '_site/sw.js'), 'utf8');
+  assert.equal((await env.run()).status, 0);
+  const first = await read();
+  assert.match(first, /flagquiz-shell-[a-f0-9]{16}/);
+  assert.match(first, /flagquiz-v4/);
+  assert.equal((await env.run()).status, 0);
+  assert.equal(await read(), first);
+  await fs.writeFile(path.join(env.root, 'js/offline.js'), 'new offline UI');
+  assert.equal((await env.run()).status, 0);
+  assert.notEqual(await read(), first);
+});
+
 test('미완성·중복·경로탈출·해시불일치·빠진파일·잘못된event는 기존 배포 묶음을 보존하고 거부한다', async t => {
   for (const variant of ['unready', 'duplicate', 'traversal', 'hash', 'missing', 'event-count', 'duration', 'symlink']) {
     await t.test(variant, async t => {

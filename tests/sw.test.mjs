@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 
 const BASE = 'https://example.test/FlagQuiz/';
-const SHELL = 'flagquiz-shell-v1';
+const SHELL = 'flagquiz-shell-v2';
 const FLAGS = 'flagquiz-flags-v1';
 const ART = 'flagquiz-art-v1';
 const AUDIO = 'flagquiz-v4';
@@ -53,7 +53,7 @@ function worker({ buckets = new Map(['another-app-v1', 'flagquiz-v2', 'flagquiz-
     };
   }
   const sandbox = {
-    URL, Request, Response, Headers, Promise,
+    URL, Request, Response, Headers, Promise, AbortController, setTimeout, clearTimeout,
     self: {
       location: { origin: 'https://example.test', href: BASE + 'sw.js' },
       addEventListener: (name, fn) => { events[name] = fn; },
@@ -83,6 +83,7 @@ async function lifecycle(w, eventName) {
   const pending = [];
   w.events[eventName]({ waitUntil: promise => { pending.push(promise); } });
   await Promise.all(pending);
+  if (eventName === 'activate') await w.sandbox.self.warmFlagsDone;
   w.assertScoped();
 }
 
@@ -307,7 +308,7 @@ test('셸 버킷 이름을 바꾼 다음 워커도 기존 수아와 음악을 �
   }
   first.seed(SHELL, './index.html', new Response('old shell'));
   await lifecycle(first, 'activate');
-  const updatedSource = source.replace('flagquiz-shell-v1', 'flagquiz-shell-v2');
+  const updatedSource = source.replace('flagquiz-shell-v2', 'flagquiz-shell-v3');
   assert.notEqual(updatedSource, source, '셸 캐시 이름만 바꾼 워커로 검증해야 합니다.');
   const second = worker({ buckets: first.buckets, script: updatedSource });
   const fetched = [];
@@ -327,9 +328,9 @@ test('셸 버킷 이름을 바꾼 다음 워커도 기존 수아와 음악을 �
     assert.equal(await second.read(AUDIO, path).text(), '0123456789');
   }
   assert.ok(!second.buckets.has(SHELL));
-  assert.ok(second.buckets.has('flagquiz-shell-v2'));
+  assert.ok(second.buckets.has('flagquiz-shell-v3'));
   assert.ok(fetched.every(url => !new URL(url).pathname.includes('/audio/')));
-  assert.ok(second.puts.every(put => put.name === 'flagquiz-shell-v2'));
+  assert.ok(second.puts.every(put => put.name === 'flagquiz-shell-v3'));
 });
 
 test('오프라인 탐색은 레거시나 타 앱의 옛 HTML 대신 현재 셸만 제공한다', async () => {
@@ -406,15 +407,15 @@ test('국기 예열은 국기 버킷만 채우고 개별 다운로드 실패를 
   assert.ok(fetched.every(url => !new URL(url).pathname.includes('/audio/')));
 });
 
-test('새 스크립트는 셸에만 저장하고 오프라인에서 같은 버전을 제공한다', async () => {
+test('활성 셸은 온라인과 오프라인에서 설치된 같은 스크립트를 제공한다', async () => {
   const w = worker();
   const script = './js/app.js';
   w.seed(SHELL, script, new Response('old script'));
   w.sandbox.fetch = async () => new Response('current script');
-  assert.equal(await (await request(w, script)).text(), 'current script');
-  assert.deepEqual(w.puts.map(put => put.name), [SHELL]);
+  assert.equal(await (await request(w, script)).text(), 'old script');
+  assert.deepEqual(w.puts, []);
   w.sandbox.fetch = async () => { throw new Error('offline'); };
-  assert.equal(await (await request(w, script)).text(), 'current script');
+  assert.equal(await (await request(w, script)).text(), 'old script');
 });
 
 test('음원과 국기 캐시 조회가 실패해도 네트워크 응답은 사용할 수 있다', async () => {
@@ -832,4 +833,271 @@ test('바뀐 그림을 못 받으면 옛 그림을 남기고 완료 기록도 �
   await request(w, './js/app.js');
   assert.equal(await w.read(ART, kr).text(), 'old-image', '새 그림을 못 받았으면 옛 그림이라도 남아야 한다');
   assert.equal(w.read(ART, MARK), undefined);
+});
+
+function offlineFixture(w) {
+  const countries = '[{"code":"kr"},{"code":"jp"}]';
+  const subjects = subjectsScript({ kr: { symbol: { ko: '김치', bytes: 5 } }, jp: { symbol: { noArt: true } } });
+  const voice = 'window.FQ.voiceManifest = ' + JSON.stringify({ ready: true, clips: {
+    '정답': { src: 'audio/sua/answer.mp3' }, '문제': { src: 'audio/sua/question.mp3' }
+  } }) + ';';
+  const music = 'window.FQ.musicManifest = ' + JSON.stringify({ ready: true, clips: [{ src: 'audio/music/chest.mp3' }] }) + ';';
+  for (const path of w.sandbox.SHELL) w.seed(SHELL, path, new Response('shell contents'));
+  for (const [path, content] of [
+    ['./data/countries.js', countries], ['./data/subjects.js', subjects],
+    ['./js/voice-manifest.js', voice], ['./js/music-manifest.js', music]
+  ]) w.seed(SHELL, path, new Response(content));
+  const fetched = [];
+  w.sandbox.fetch = async req => {
+    const url = urlOf(req);
+    fetched.push(url);
+    return new Response(url.includes('/images/') ? '12345' : 'asset contents');
+  };
+  return fetched;
+}
+
+function sendMessage(w, type, id = 'test-request') {
+  const messages = [], pending = [];
+  w.events.message({
+    data: { type, requestId: id },
+    ports: [{ postMessage(message) { messages.push(structuredClone(message)); } }],
+    waitUntil(promise) { pending.push(promise); }
+  });
+  return { messages, done: Promise.all(pending) };
+}
+
+test('저장된 셸은 응답 없는 네트워크를 기다리지 않고 쿼리 문자열이 있어도 즉시 열린다', async () => {
+  const w = worker();
+  w.seed(SHELL, './index.html', new Response('offline app'));
+  w.seed(SHELL, './js/app.js', new Response('installed code'));
+  // 예열의 타임아웃만 짧게 하여 이 검사가 실제 네트워크 대기를 만들지 않게 한다.
+  w.sandbox.setTimeout = fn => setTimeout(fn, 10);
+  const fetched = [];
+  w.sandbox.fetch = req => { fetched.push(urlOf(req)); return new Promise(() => {}); };
+  const lifetimes = [];
+  for (const [path, expected] of [['./?from=home', 'offline app'], ['./js/app.js?v=2', 'installed code']]) {
+    let result;
+    const req = path.startsWith('./?') ? { method: 'GET', url: urlOf(path), mode: 'navigate' } : new Request(urlOf(path));
+    w.events.fetch({ request: req, respondWith(p) { result = p; }, waitUntil(p) { lifetimes.push(p); } });
+    const response = await Promise.race([result, new Promise((_, reject) => setTimeout(() => reject(new Error('셸이 네트워크를 기다림')), 100))]);
+    assert.equal(await response.text(), expected);
+  }
+  assert.ok(fetched.every(url => /data\/(countries|subjects)\.js$/.test(url)));
+  await Promise.all(lifetimes);
+});
+
+test('새 셸 설치가 실패하면 사용 중인 이전 셸과 음원을 그대로 둔다', async () => {
+  const w = worker();
+  w.seed(SHELL, './index.html', new Response('installed app'));
+  w.seed(AUDIO, './audio/sua/answer.mp3', new Response('kept audio'));
+  const updated = worker({ buckets: w.buckets, script: source.replace('flagquiz-shell-v2', 'flagquiz-shell-test-new') });
+  let skipped = false;
+  updated.sandbox.self.skipWaiting = () => { skipped = true; };
+  updated.sandbox.fetch = async req => new Response('new asset', { status: urlOf(req).endsWith('/js/offline.js') ? 503 : 200 });
+  await assert.rejects(lifecycle(updated, 'install'));
+  assert.equal(skipped, false);
+  assert.equal(await w.read(SHELL, './index.html').text(), 'installed app');
+  assert.equal(await w.read(AUDIO, './audio/sua/answer.mp3').text(), 'kept audio');
+  assert.equal(updated.buckets.get('flagquiz-shell-test-new').size, 0);
+  assert.deepEqual(updated.deleted, []);
+});
+
+test('국기 네트워크가 멈춰도 워커 활성화는 예열을 기다리지 않는다', async () => {
+  const w = worker();
+  w.sandbox.setTimeout = fn => setTimeout(fn, 10);
+  w.sandbox.fetch = () => new Promise(() => {});
+  const pending = [];
+  w.events.activate({ waitUntil(p) { pending.push(p); } });
+  await Promise.all(pending);
+  let warmed = false;
+  w.sandbox.self.warmFlagsDone.then(() => { warmed = true; });
+  assert.equal(warmed, false);
+  await Promise.all([w.sandbox.self.warmFlagsDone, w.sandbox.self.warmArtDone]);
+});
+
+test('오프라인 상태 검사는 실제 파일만 세고 누락 자료나 전체 음원을 자동으로 받지 않는다', async () => {
+  const w = worker();
+  const fetched = offlineFixture(w);
+  w.seed(AUDIO, './audio/sua/answer.mp3', new Response('kept audio'));
+  w.seed(ART, MARK, new Response('이미 완료했다고 표시한 기록'));
+  const result = sendMessage(w, 'OFFLINE_STATUS', 'check-1');
+  await result.done;
+  const final = result.messages.at(-1);
+  assert.equal(final.type, 'OFFLINE_PROGRESS');
+  assert.equal(final.requestId, 'check-1');
+  assert.equal(final.status, 'partial');
+  assert.equal(final.groups.audio.total, 3);
+  assert.equal(final.groups.audio.cached, 1);
+  assert.equal(final.groups.flags.total, 2);
+  assert.equal(final.groups.art.total, 1);
+  assert.equal(final.groups.art.cached, 0);
+  assert.deepEqual(fetched, []);
+});
+
+test('전체 저장은 기존 음원을 재사용하고 완료 후 오프라인 재시작에서도 모든 파일을 확인한다', async () => {
+  const w = worker();
+  const fetched = offlineFixture(w);
+  w.seed(AUDIO, './audio/sua/answer.mp3', new Response('kept audio'));
+  const download = sendMessage(w, 'OFFLINE_DOWNLOAD');
+  await download.done;
+  const final = download.messages.at(-1);
+  assert.equal(final.status, 'ready');
+  assert.equal(final.cached, final.total);
+  assert.equal(final.failed, 0);
+  assert.equal(final.groups.audio.cached, 3);
+  assert.equal(fetched.length, 5);
+  assert.ok(!fetched.includes(urlOf('./audio/sua/answer.mp3')));
+  assert.equal(await w.read(AUDIO, './audio/sua/answer.mp3').text(), 'kept audio');
+  assert.ok(download.messages.some(message => message.status === 'downloading' && message.cached < message.total));
+
+  const next = worker({ buckets: w.buckets });
+  const checked = sendMessage(next, 'OFFLINE_STATUS');
+  await checked.done;
+  assert.equal(checked.messages.at(-1).status, 'ready');
+  next.buckets.get(ART).delete(urlOf('./images/symbols/kr.webp'));
+  const afterEviction = sendMessage(next, 'OFFLINE_STATUS');
+  await afterEviction.done;
+  assert.equal(afterEviction.messages.at(-1).status, 'partial', '저장 완료 기록이 남아도 실제로 사라진 자료를 감지한다');
+  assert.equal(afterEviction.messages.at(-1).groups.art.cached, 0);
+});
+
+test('저장 공간 오류를 준비 완료로 보고하지 않고 재시도하면 누락 자료만 이어받는다', async () => {
+  const w = worker();
+  const fetched = offlineFixture(w);
+  const open = w.sandbox.caches.open;
+  w.sandbox.caches.open = async name => {
+    const cache = await open(name);
+    return name === AUDIO ? { ...cache, put: async () => { throw new DOMException('Storage full', 'QuotaExceededError'); } } : cache;
+  };
+  const first = sendMessage(w, 'OFFLINE_DOWNLOAD');
+  await first.done;
+  const failed = first.messages.at(-1);
+  assert.equal(failed.status, 'partial');
+  assert.equal(failed.error, 'quota');
+  assert.ok(failed.failed > 0);
+  assert.ok(failed.cached < failed.total);
+  assert.equal(failed.groups.audio.cached, 0);
+  const visualFetches = fetched.filter(url => /\/(images|flags)\//.test(url));
+  assert.ok(visualFetches.length > 0);
+
+  w.sandbox.caches.open = open;
+  fetched.length = 0;
+  const retry = sendMessage(w, 'OFFLINE_DOWNLOAD');
+  await retry.done;
+  assert.equal(retry.messages.at(-1).status, 'ready');
+  assert.ok(fetched.every(url => url.includes('/audio/')), '이미 저장된 국기와 그림을 다시 받지 않는다');
+});
+
+test('네트워크 중단과 응답 정지 모두 다운로드를 끝내고 재시도 가능한 부분 저장 상태를 보낸다', async () => {
+  for (const stalled of [false, true]) {
+    const w = worker();
+    offlineFixture(w);
+    w.sandbox.setTimeout = fn => setTimeout(fn, 5);
+    w.sandbox.fetch = () => stalled ? new Promise(() => {}) : Promise.reject(new Error('offline'));
+    const result = sendMessage(w, 'OFFLINE_DOWNLOAD');
+    await result.done;
+    const last = result.messages.at(-1);
+    assert.equal(last.status, 'partial');
+    assert.equal(last.error, 'network');
+    assert.equal(last.failed, 4, '연결 실패 뒤 남은 전체 음원을 반복해서 요청하지 않는다');
+  }
+});
+
+test('캐시 저장이 성공으로 반환되어도 실제로 파일이 없으면 완료로 보고하지 않는다', async () => {
+  const w = worker();
+  offlineFixture(w);
+  const open = w.sandbox.caches.open;
+  w.sandbox.caches.open = async name => ({ ...await open(name), put: async () => {} });
+  const result = sendMessage(w, 'OFFLINE_DOWNLOAD');
+  await result.done;
+  const final = result.messages.at(-1);
+  assert.equal(final.status, 'partial');
+  assert.equal(final.error, 'storage');
+  assert.equal(final.groups.audio.cached, 0);
+});
+
+test('전체 저장 요청이 겹쳐도 다운로드 작업 하나를 공유하고 각 화면에 진행 결과를 보낸다', async () => {
+  const w = worker();
+  const fetched = offlineFixture(w);
+  const fetch = w.sandbox.fetch;
+  let release;
+  const gate = new Promise(resolve => { release = resolve; });
+  w.sandbox.fetch = async req => { await gate; return fetch(req); };
+  const first = sendMessage(w, 'OFFLINE_DOWNLOAD', 'first');
+  const second = sendMessage(w, 'OFFLINE_DOWNLOAD', 'second');
+  release();
+  await Promise.all([first.done, second.done]);
+  assert.equal(first.messages.at(-1).status, 'ready');
+  assert.equal(second.messages.at(-1).status, 'ready');
+  assert.ok(first.messages.every(message => message.requestId === 'first'));
+  assert.ok(second.messages.every(message => message.requestId === 'second'));
+  assert.equal(fetched.length, new Set(fetched).size, '겹친 요청에서 파일을 두 번 받았다');
+});
+
+test('재연결 메시지는 같은 워커에서 중단된 국기와 그림만 다시 받고 음원은 받지 않는다', async () => {
+  const w = worker();
+  const fetched = offlineFixture(w);
+  const online = w.sandbox.fetch;
+  w.sandbox.fetch = async () => { throw new Error('offline'); };
+  const first = sendMessage(w, 'OFFLINE_WARM');
+  await first.done;
+  assert.equal(w.read(FLAGS, './flags/kr.svg'), undefined);
+  assert.equal(w.read(ART, './images/symbols/kr.webp'), undefined);
+  w.sandbox.fetch = online;
+  const second = sendMessage(w, 'OFFLINE_WARM');
+  await second.done;
+  assert.ok(w.read(FLAGS, './flags/kr.svg'));
+  assert.ok(w.read(FLAGS, './flags/jp.svg'));
+  assert.ok(w.read(ART, './images/symbols/kr.webp'));
+  assert.ok(fetched.every(url => !url.includes('/audio/')));
+});
+
+test('손상된 원장은 비어 있는 자료 목록을 준비 완료로 오인하지 않는다', async () => {
+  const w = worker();
+  offlineFixture(w);
+  w.seed(SHELL, './js/voice-manifest.js', new Response('window.FQ.voiceManifest = {};'));
+  const result = sendMessage(w, 'OFFLINE_STATUS');
+  await result.done;
+  assert.equal(result.messages.at(-1).status, 'error');
+  assert.equal(result.messages.at(-1).error, 'manifest');
+});
+
+test('부분 음원 응답과 잘린 그림은 전체 오프라인 자료로 저장하지 않는다', async () => {
+  for (const body of [new Response('12'), new Response('12345', { status: 206 })]) {
+    const w = worker();
+    offlineFixture(w);
+    w.sandbox.fetch = async () => body.clone();
+    const result = sendMessage(w, 'OFFLINE_DOWNLOAD');
+    await result.done;
+    assert.equal(result.messages.at(-1).status, 'partial');
+    assert.equal(result.messages.at(-1).error, 'network');
+    assert.equal(result.messages.at(-1).groups.art.cached, 0);
+  }
+});
+
+test('실제 배포 원장의 국기·그림·수아 음성·음악을 빠짐없이 오프라인 목록으로 만든다', async () => {
+  const w = worker();
+  for (const path of ['./data/countries.js', './data/subjects.js', './js/voice-manifest.js', './js/music-manifest.js']) {
+    w.seed(SHELL, path, new Response(fs.readFileSync(new URL('.' + path, import.meta.url), 'utf8')));
+  }
+  const items = await w.sandbox.offlineItems();
+  assert.ok(items.filter(item => item.group === 'flags').length >= 194);
+  assert.ok(items.filter(item => item.group === 'art').length >= 342);
+  assert.ok(items.filter(item => item.group === 'audio').length >= 1319);
+  assert.ok(items.some(item => item.url.startsWith('./audio/music/')));
+  for (const item of items) assert.ok(fs.existsSync(new URL('.' + item.url, import.meta.url)), item.url);
+});
+
+test('캐시를 읽을 수 없으면 준비 완료 대신 저장소 오류를 알린다', async () => {
+  const w = worker();
+  offlineFixture(w);
+  const open = w.sandbox.caches.open;
+  w.sandbox.caches.open = async name => {
+    const cache = await open(name);
+    return name === AUDIO ? { ...cache, match: async () => { throw new Error('Cache inaccessible'); } } : cache;
+  };
+  const result = sendMessage(w, 'OFFLINE_STATUS');
+  await result.done;
+  assert.equal(result.messages.at(-1).status, 'error');
+  assert.equal(result.messages.at(-1).error, 'storage');
 });

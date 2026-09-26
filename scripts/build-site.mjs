@@ -71,4 +71,23 @@ for (const file of files) {
   await fs.mkdir(path.dirname(path.join(output, file)), { recursive: true });
   await fs.copyFile(path.join(root, file), path.join(output, file));
 }
+// 캐시 우선 셸은 내용이 바뀔 때마다 새 버킷에 설치한다. 빌드할 때 버전을 계산해
+// 수동 버전 갱신을 빠뜨려도 이전 화면과 새 스크립트가 섞이지 않게 한다.
+const shellHash = createHash('sha256');
+async function hashShell(folder) {
+  const entries = await fs.readdir(path.join(output, folder), { withFileTypes: true });
+  for (const entry of entries.sort((a, b) => a.name.localeCompare(b.name))) {
+    const relative = path.posix.join(folder, entry.name);
+    if (entry.isDirectory()) await hashShell(relative);
+    else shellHash.update(relative + '\0').update(await fs.readFile(path.join(output, relative)));
+  }
+}
+for (const folder of ['assets', 'css', 'js', 'data']) await hashShell(folder);
+for (const file of ['index.html', 'manifest.webmanifest', 'sw.js']) {
+  shellHash.update(file + '\0').update(await fs.readFile(path.join(output, file)));
+}
+const workerPath = path.join(output, 'sw.js');
+const workerSource = await fs.readFile(workerPath, 'utf8');
+await fs.writeFile(workerPath, workerSource.replace(/var SHELL_CACHE = '[^']+';/,
+  "var SHELL_CACHE = 'flagquiz-shell-" + shellHash.digest('hex').slice(0, 16) + "';"));
 console.log('배포 파일 준비 완료: Sua 음원 ' + manifest.expectedClips + '개, 새 음악 ' + music.clips.length + '개');

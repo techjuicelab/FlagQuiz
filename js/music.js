@@ -12,6 +12,7 @@
   var priming = false;
   var primeTimer = null;
   var START_TIMEOUT = 6000;
+  var OFFLINE_TIMEOUT = 1500;
   var SILENCE = 'data:audio/wav;base64,UklGRiYAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQIAAAAAAA==';
 
   function getPlayer() {
@@ -31,6 +32,8 @@
     player.onended = null;
     player.onerror = null;
     player.onloadedmetadata = null;
+    player.onwaiting = null;
+    player.onstalled = null;
     try {
       player.pause();
       player.loop = false;
@@ -44,6 +47,7 @@
     global.clearTimeout(run.startTimer);
     global.clearTimeout(run.endTimer);
     global.clearTimeout(run.callbackTimer);
+    global.clearTimeout(run.offlineTimer);
   }
 
   function stop() {
@@ -132,7 +136,7 @@
     var run = {
       event: event, options: options || {}, generation: generation,
       settled: false, playing: false, started: false,
-      startTimer: null, endTimer: null, callbackTimer: null
+      startTimer: null, endTimer: null, callbackTimer: null, offlineTimer: null
     };
     run.cancel = function () { if (isCurrent(run)) stop(); };
     current = run;
@@ -143,6 +147,13 @@
     run.playing = true;
     var isBgm = event === 'homeBgm';
     function fail(code) { complete(run, { code: code, id: clip.id, event: event }); }
+    // 저장된 곡은 그대로 재생하고, 오프라인에서 파일을 기다릴 때만 빠르게 넘어간다.
+    function waitForData() {
+      if (!isCurrent(run) || run.settled || run.offlineTimer !== null ||
+          !global.navigator || global.navigator.onLine !== false) return;
+      run.offlineTimer = global.setTimeout(function () { fail('offline-audio-unavailable'); }, OFFLINE_TIMEOUT);
+    }
+    run.waitForData = waitForData;
     function watchEnd() {
       if (!isCurrent(run) || run.settled || !run.started || isBgm) return;
       global.clearTimeout(run.endTimer);
@@ -153,7 +164,10 @@
       run.endTimer = global.setTimeout(function () { fail('playback-timeout'); }, remaining);
     }
     function began() {
-      if (!isCurrent(run) || run.settled || run.started) return;
+      if (!isCurrent(run) || run.settled) return;
+      global.clearTimeout(run.offlineTimer);
+      run.offlineTimer = null;
+      if (run.started) return;
       run.started = true;
       run.startedAt = +new Date();
       primed = true;
@@ -161,10 +175,15 @@
       watchEnd();
     }
     audio.onplaying = began;
+    audio.onwaiting = waitForData;
+    audio.onstalled = function () {
+      if (!run.started || audio.readyState < 3) waitForData();
+    };
     audio.onloadedmetadata = watchEnd;
     audio.onended = function () { if (isCurrent(run) && run.started && !isBgm) complete(run); };
     audio.onerror = function () { fail('audio-file-error'); };
     run.startTimer = global.setTimeout(function () { fail('start-timeout'); }, START_TIMEOUT);
+    waitForData();
     try {
       audio.src = clip.src;
       audio.loop = isBgm;
@@ -181,6 +200,17 @@
       fail(error && error.name === 'NotAllowedError' ? 'playback-blocked' : 'playback-failed');
     }
     return run.cancel;
+  }
+
+  if (global.addEventListener) {
+    global.addEventListener('offline', function () {
+      if (current && current.waitForData && (!current.started || (player && player.readyState < 3))) current.waitForData();
+    });
+    global.addEventListener('online', function () {
+      if (!current) return;
+      global.clearTimeout(current.offlineTimer);
+      current.offlineTimer = null;
+    });
   }
 
   FQ.music = {

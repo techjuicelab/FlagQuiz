@@ -4,9 +4,10 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 
 const source = fs.readFileSync(new URL('../js/music.js', import.meta.url), 'utf8');
-function setup({ ready = true, noAudio = false, clips } = {}) {
+function setup({ ready = true, noAudio = false, clips, online = true } = {}) {
   let now = 0, nextTimer = 1;
   const timers = new Map(), players = [];
+  const events = {};
   class FakeAudio {
     constructor() { this.src = ''; this.duration = 2; this.calls = []; this.pauseCount = 0; players.push(this); }
     setAttribute() {}
@@ -22,6 +23,8 @@ function setup({ ready = true, noAudio = false, clips } = {}) {
   }
   const sandbox = {
     Audio: noAudio ? null : FakeAudio,
+    navigator: { onLine: online },
+    addEventListener(name, callback) { (events[name] ||= []).push(callback); },
     Date: class extends Date { constructor(...args) { super(...(args.length ? args : [now])); } },
     Math: Object.assign(Object.create(Math), { random: () => 0 }),
     setTimeout(fn, delay = 0) { const id = nextTimer++; timers.set(id, { fn, time: now + delay }); return id; },
@@ -38,6 +41,10 @@ function setup({ ready = true, noAudio = false, clips } = {}) {
   return {
     music: sandbox.FQ.music, sandbox, players, timers,
     get player() { return players[0]; },
+    network(online) {
+      sandbox.navigator.onLine = online;
+      for (const callback of events[online ? 'online' : 'offline'] || []) callback();
+    },
     advance(ms) {
       const target = now + ms;
       while (true) {
@@ -180,6 +187,59 @@ test('시작과 종료 이벤트가 빠져도 짧은 음악이 게임을 무한�
   env.music.play('chest', { onFail: error => errors.push(error.code) });
   env.player.calls[1].resolve(); await flush(); env.advance(4500);
   assert.deepEqual(errors, ['start-timeout', 'playback-timeout']);
+  assert.equal(env.timers.size, 0);
+});
+
+test('오프라인에서 응답 없는 음악은 1.5초 안에 다음 안내를 이어 주고 재시도할 수 있다', async () => {
+  const env = setup({ online: false }); const errors = [];
+  env.music.play('chest', { onDone: error => errors.push(error.code) });
+  const old = env.player.calls[0];
+  env.advance(1499); assert.deepEqual(errors, []);
+  env.advance(1);
+  assert.deepEqual(errors, ['offline-audio-unavailable']);
+  assert.equal(env.music.isPlaying(), false);
+  old.resolve(); old.ended(); old.error(); await flush();
+  env.music.play('discovery'); await ended(env); env.advance(200000);
+  assert.deepEqual(errors, ['offline-audio-unavailable']);
+  assert.equal(env.timers.size, 0);
+});
+
+test('오프라인 저장 음악은 재생하며 일시적인 버퍼링은 재생 재개 시 풀린다', async () => {
+  const env = setup({ online: false }); let done = 0; const errors = [];
+  env.music.play('chest', { onDone: () => done++, onFail: error => errors.push(error.code) });
+  env.player.calls[0].resolve(); await flush(); env.advance(1600);
+  assert.equal(env.music.isPlaying(), true);
+  env.player.onwaiting(); env.advance(500); env.player.onplaying(); env.advance(1600);
+  assert.deepEqual(errors, []);
+  env.player.onended(); env.advance(0);
+  assert.equal(done, 1);
+  assert.equal(env.timers.size, 0);
+});
+
+test('온라인 음악 대기는 유지하고 재연결은 오프라인 타이머를 취소한다', async () => {
+  const env = setup(); const errors = [];
+  env.music.play('chest', { onFail: error => errors.push(error.code) });
+  env.advance(2000); assert.equal(env.music.isPlaying(), true);
+  env.network(false); env.advance(500); env.network(true); env.advance(1600);
+  assert.deepEqual(errors, []);
+  await ended(env);
+  assert.equal(env.timers.size, 0);
+});
+
+test('준비된 배경음은 연결이 끊겨도 이어지고 버퍼링이 멈추면 재생 상태를 푼다', async () => {
+  const env = setup(); const errors = [];
+  env.music.setBgmEnabled(true);
+  env.music.play('homeBgm', { onFail: error => errors.push(error.code) });
+  env.player.calls[0].resolve(); await flush();
+  env.player.readyState = 4;
+  env.network(false); env.advance(200000);
+  assert.equal(env.music.isPlaying(), true);
+  env.player.onstalled(); env.advance(2000);
+  assert.equal(env.music.isPlaying(), true, '버퍼가 충분하면 네트워크 이벤트만으로 중단하지 않는다');
+  env.player.readyState = 2;
+  env.player.onstalled(); env.advance(1500);
+  assert.deepEqual(errors, ['offline-audio-unavailable']);
+  assert.equal(env.music.isPlaying(), false);
   assert.equal(env.timers.size, 0);
 });
 
