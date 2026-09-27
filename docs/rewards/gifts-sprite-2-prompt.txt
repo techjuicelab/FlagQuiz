@@ -1,0 +1,14 @@
+Use case: stylized-concept
+Asset type: 3×3 game reward sprite sheet for FlagQuiz
+Primary request: Create a single square sprite sheet containing exactly nine separate toy reward objects in this exact row-major order: row 1: yellow toy bus, cute penguin plush, red toy airplane; row 2: toy dump truck, cute green frog plush, rainbow kite; row 3: toy helicopter, baby elephant plush, orange toy submarine.
+Input images: Image 1: style reference only; match its polished, cute, glossy 3D toy render style, soft studio lighting, vivid child-friendly colors, realistic soft contact shading, and isolated-object presentation.
+Scene/backdrop: genuinely transparent background, no floor or environment.
+Subject: one distinct complete object per cell, each object large, fully visible, centered in its own equal-sized cell of a precise 3-column by 3-row grid.
+Style/medium: high-quality glossy 3D toy product render, consistent scale, perspective, detail, and finish across all nine objects; cute and friendly.
+Composition/framing: square image; exact 3×3 layout; generous transparent padding between cells; keep every object's silhouette fully inside its cell; no overlap across cells; consistent object size.
+Lighting/mood: soft bright studio lighting, subtle contact shadows that stay within each object's cell; cheerful.
+Color palette: bright saturated toy colors, with the named main colors clearly readable.
+Materials/textures: smooth painted plastic for vehicles and kite; soft plush fabric for penguin, frog, and baby elephant.
+Text (verbatim): none.
+Constraints: preserve the exact object order above, one object only in each cell, transparent alpha channel, no lettering, no grid lines, no borders, no tile backgrounds.
+Avoid: extra objects, duplicated subjects, cropped silhouettes, scenery, ground plane, labels, symbols, watermark, text, grid lines, cell dividers, opaque background.

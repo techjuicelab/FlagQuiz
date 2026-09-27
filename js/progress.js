@@ -28,21 +28,39 @@
     return xp;
   }
 
-  /* 추가 보상으로 모으는 3×3 선물 그림. 배열과 항목은 호출자에게 복사해 준다. */
+  /* 추가 보상으로 모으는 3×3 선물 그림 세 장. 기존 선물 ID는 기록 호환을 위해 유지한다. */
   var GIFT_CATALOG = [
-    { id: 'fire_truck', name: '소방차', col: 0, row: 0 },
-    { id: 'dinosaur_toy', name: '공룡 장난감', col: 1, row: 0 },
-    { id: 'space_rocket', name: '우주 로켓', col: 2, row: 0 },
-    { id: 'excavator', name: '굴착기', col: 0, row: 1 },
-    { id: 'train', name: '기차', col: 1, row: 1 },
-    { id: 'teddy_bear', name: '곰 인형', col: 2, row: 1 },
-    { id: 'robot', name: '로봇', col: 0, row: 2 },
-    { id: 'colorful_blocks', name: '알록달록 블록', col: 1, row: 2 },
-    { id: 'submarine', name: '잠수함', col: 2, row: 2 }
+    { id: 'fire_truck', name: '소방차', sheet: 1, col: 0, row: 0 },
+    { id: 'dinosaur_toy', name: '공룡 장난감', sheet: 1, col: 1, row: 0 },
+    { id: 'space_rocket', name: '우주 로켓', sheet: 1, col: 2, row: 0 },
+    { id: 'excavator', name: '굴착기', sheet: 1, col: 0, row: 1 },
+    { id: 'train', name: '기차', sheet: 1, col: 1, row: 1 },
+    { id: 'teddy_bear', name: '곰 인형', sheet: 1, col: 2, row: 1 },
+    { id: 'robot', name: '로봇', sheet: 1, col: 0, row: 2 },
+    { id: 'colorful_blocks', name: '알록달록 블록', sheet: 1, col: 1, row: 2 },
+    { id: 'submarine', name: '잠수함', sheet: 1, col: 2, row: 2 },
+    { id: 'toy_bus', name: '장난감 버스', sheet: 2, col: 0, row: 0 },
+    { id: 'penguin_plush', name: '펭귄 인형', sheet: 2, col: 1, row: 0 },
+    { id: 'toy_airplane', name: '장난감 비행기', sheet: 2, col: 2, row: 0 },
+    { id: 'dump_truck', name: '덤프트럭', sheet: 2, col: 0, row: 1 },
+    { id: 'frog_plush', name: '개구리 인형', sheet: 2, col: 1, row: 1 },
+    { id: 'rainbow_kite', name: '무지개 연', sheet: 2, col: 2, row: 1 },
+    { id: 'toy_helicopter', name: '장난감 헬리콥터', sheet: 2, col: 0, row: 2 },
+    { id: 'elephant_plush', name: '코끼리 인형', sheet: 2, col: 1, row: 2 },
+    { id: 'orange_submersible', name: '주황 잠수정', sheet: 2, col: 2, row: 2 },
+    { id: 'race_car', name: '경주차', sheet: 3, col: 0, row: 0 },
+    { id: 'puppy_plush', name: '강아지 인형', sheet: 3, col: 1, row: 0 },
+    { id: 'mini_spaceship', name: '작은 우주선', sheet: 3, col: 2, row: 0 },
+    { id: 'cruise_ship', name: '유람선', sheet: 3, col: 0, row: 1 },
+    { id: 'kitten_plush', name: '고양이 인형', sheet: 3, col: 1, row: 1 },
+    { id: 'balloon_bunch', name: '풍선 묶음', sheet: 3, col: 2, row: 1 },
+    { id: 'toy_scooter', name: '장난감 스쿠터', sheet: 3, col: 0, row: 2 },
+    { id: 'duck_plush', name: '오리 인형', sheet: 3, col: 1, row: 2 },
+    { id: 'castle_blocks', name: '장난감 성 블록', sheet: 3, col: 2, row: 2 }
   ];
   function giftCatalog() {
     return GIFT_CATALOG.map(function (gift) {
-      return { id: gift.id, name: gift.name, col: gift.col, row: gift.row };
+      return { id: gift.id, name: gift.name, sheet: gift.sheet, col: gift.col, row: gift.row };
     });
   }
 

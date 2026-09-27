@@ -109,19 +109,28 @@
     var catalog = FQ.progress.giftCatalog();
     var ownedIds = FQ.storage.giftState().owned;
     var ownedCount = catalog.filter(function (gift) { return ownedIds.indexOf(gift.id) !== -1; }).length;
-    return '<section class="card section gift-collection" aria-label="내 그림 선물 ' + ownedCount + ' / ' + catalog.length + '">' +
-      '<h3>내 그림 선물 ' + ownedCount + '/' + catalog.length + '</h3>' +
-      '<div class="gift-grid">' + catalog.map(function (gift, index) {
+    var pages = [];
+    for (var start = 0; start < catalog.length; start += 9) {
+      var cells = catalog.slice(start, start + 9).map(function (gift, index) {
         var got = ownedIds.indexOf(gift.id) !== -1;
         var x = gift.col * 50;
         var y = gift.row * 50;
         return '<div class="gift-cell ' + (got ? 'got' : 'locked') + '" role="img"' +
-          ' aria-label="' + (got ? esc(gift.name) + ' 그림 선물' : '아직 받지 않은 선물 ' + (index + 1) + ' / ' + catalog.length) + '">' +
+          ' aria-label="' + (got ? esc(gift.name) + ' 그림 선물' : '아직 받지 않은 선물 ' + (start + index + 1) + ' / ' + catalog.length) + '">' +
           (got
-            ? '<span class="gift-sprite" style="background-position: ' + x + '% ' + y + '%" aria-hidden="true"></span>'
+            ? '<span class="gift-sprite' + (gift.sheet > 1 ? ' gift-sheet-' + gift.sheet : '') +
+                '" style="background-position: ' + x + '% ' + y + '%" aria-hidden="true"></span>'
             : '<span class="gift-locked" aria-hidden="true">?</span>') +
           '</div>';
-      }).join('') + '</div></section>';
+      }).join('');
+      pages.push('<div class="gift-page" role="group" aria-label="선물 모음 ' + (pages.length + 1) + ' / ' + Math.ceil(catalog.length / 9) + '">' +
+        cells + '</div>');
+    }
+    return '<section class="card section gift-collection" aria-label="내 그림 선물 ' + ownedCount + ' / ' + catalog.length + '">' +
+      '<h3>내 그림 선물 ' + ownedCount + '/' + catalog.length + '</h3>' +
+      '<p class="gift-swipe-hint">옆으로 밀어 다른 선물도 봐요</p>' +
+      '<div class="gift-pages" role="region" aria-label="그림 선물 목록 · 가로로 넘기기" tabindex="0">' +
+        pages.join('') + '</div></section>';
   }
 
   /** 스티커 판이 비었을 때, 왜 비었는지에 따라 다르게 말해 준다 */

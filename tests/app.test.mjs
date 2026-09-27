@@ -72,7 +72,7 @@ function fixture() {
   const source=fs.readFileSync(path.join(root,'js/app.js'),'utf8').replace('FQ.app = { home:',
     'FQ.test = {state:state,startListening:startListening,submit:submit,goNext:goNext,toggleMic:toggleMic};\n  FQ.app = { home:');
   vm.runInContext(source,c,{filename:'js/app.js'});
-  // 깜짝 상자 난수는 기본으로 고정한다(굴림 0.99 → 8장째 보장 전에는 안 열림, 종류 보통·흔들기 없음). 상자를 보려는 검사만 덮어쓴다.
+  // 깜짝 상자 난수는 기본으로 고정한다(굴림 0.99 → 8장째 보장 전에는 안 열림, 종류 보통). 상자를 보려는 검사만 덮어쓴다.
   c.FQ.test.state.rng=()=>0.99;c.FQ.test.state.rngKind=()=>0.5;
   function runDelay(delay){for(const [id,t] of [...timers])if(t.delay===delay){if(!t.interval)timers.delete(id);t.fn();}}
   function startVoice(only=['id','in']){
@@ -374,7 +374,7 @@ test('정답이 적어도 결과에서는 다시 잘해야 한다는 부담 없�
 test('오답·건너뛰기·시간 초과도 한 장씩 쌓이고 깜짝 상자는 굴린 대로 열린다',()=>{
   const f=fixture();f.c.FQ.storage.updateSettings({mode:'choice4',count:5,speak:false,timer:10});
   f.c.FQ.app.startGame(null);const a=f.c.FQ.test;
-  // 검사용 난수: 다섯째 카드에서만 열리고(보통 상자, 흔들기 없음) 그 전에는 열리지 않는다.
+  // 검사용 난수: 다섯째 카드에서만 열리고(보통 상자) 그 전에는 열리지 않는다.
   a.state.rng=()=>f.c.FQ.storage.chestState().since>=4?0:0.99;a.state.rngKind=()=>0.5;
   for(let i=0;i<5;i++){
     if(i===2){f.node('#answer-input').value='';for(let n=0;n<10;n++)f.runDelay(1000);}
@@ -387,7 +387,7 @@ test('오답·건너뛰기·시간 초과도 한 장씩 쌓이고 깜짝 상자�
   assert.equal(a.state.game.correct,0);assert.equal(a.state.game.bestStreak,0);
   assert.equal(a.state.game.wrong.length,5);assert.equal(a.state.game.bonusScore,5);
   assert.equal(a.state.xpGained,20);assert.equal(f.music.at(-1).event,'chest');
-  assert.match(f.node('created').innerHTML,/깜짝 상자를 찾았어요!/);
+  assert.match(f.node('created').innerHTML,/그림 선물을 받았어요!/);
   assert.deepEqual(JSON.parse(JSON.stringify(f.c.FQ.storage.chestState())),{since:0,opened:1,kinds:{plain:1}});
 });
 
@@ -1102,44 +1102,64 @@ test('결과 화면은 정확한 나라 수·여행 카드·레벨·상자·새 
   assert.match(html2,/aria-label="오늘 만난 나라 1개"/);
 });
 
-test('깜짝 상자는 대륙 모양 셋 중 하나를 골라 열고, 흔들기가 걸리면 한 번 더 두드리며, 닫기 전에는 다음 단추가 잠긴다',()=>{
+test('깜짝 상자는 선물을 즉시 지급하고 그림을 바로 보여 주며, 닫기 전에는 다음 단추가 잠긴다',()=>{
   const f=fixture();f.c.FQ.storage.updateSettings({mode:'choice4',speak:false});f.c.FQ.storage.recordChest(null);
   f.c.FQ.app.startGame(['kr']);const a=f.c.FQ.test;
-  a.state.rng=()=>0;a.state.rngKind=()=>0.2;   // 열림 · 반짝 상자(0.05~0.25) · 흔들기(0.2<0.3)
-  a.submit({code:'kr'});f.releases.at(-1)();
+  a.state.rng=()=>0;a.state.rngKind=()=>0.2;   // 열림 · 반짝 상자(0.05~0.25)
+  a.submit({code:'kr'});
+  assert.deepEqual([...f.c.FQ.storage.giftState().owned],['fire_truck'],'화면을 열거나 누르기 전에 선물이 저장된다');
+  assert.match(f.node('#feedback-area').innerHTML,/새 그림 선물을 받았어요![\s\S]*소방차/,'정답 카드에도 바로 그림 선물을 보여 준다');
+  f.releases.at(-1)();
   const back=f.node('created'),html=back.innerHTML;
-  assert.match(html,/<div class="chest-card shiny" role="dialog" aria-modal="true" aria-label="깜짝 상자를 찾았어요">/);
-  assert.equal((html.match(/class="chest-pick"/g)||[]).length,3);
-  assert.match(html,/id="chest-sub">연등 셋 중 하나를 골라 봐요</,'대한민국은 아시아라 연등');
-  assert.match(html,/🏮/);assert.match(html,/반짝 상자 ✨/);assert.match(html,/\+5점[\s\S]*\+40/);
+  assert.match(html,/<div class="chest-card shiny" role="dialog" aria-modal="true" aria-label="그림 선물을 받았어요">/);
+  assert.doesNotMatch(html,/chest-pick|chest-picks|한 번 더 두드려요/);
+  assert.match(html,/id="chest-sub">연등에서 나왔어요/,'대한민국은 아시아라 연등');
+  assert.match(html,/id="chest-open">[\s\S]*반짝 상자 ✨[\s\S]*\+5점[\s\S]*\+40/);
   assert.match(html,/class="gift-sprite" role="img" aria-label="소방차" style="background-position:0% 0%"/);
   assert.match(html,/<div class="chest-friend" role="group" aria-label="대한민국 친구 카드"><img src="flags\/kr\.svg"/);
   assert.equal(f.music.at(-1).event,'chest');assert.equal(f.music.at(-1).opts.prefer,'chest-01-musicbox');
   assert.equal(f.node('#next').disabled,true);
+  assert.equal(f.c.document.activeElement,f.node('#chest-close'));
   assert.equal(a.state.xpGained,50);assert.equal(a.state.game.bonusScore,5);
   assert.deepEqual(JSON.parse(JSON.stringify(f.c.FQ.storage.chestState())),{since:0,opened:1,kinds:{shiny:1}});
-  assert.deepEqual([...f.c.FQ.storage.giftState().owned],[],'상자를 실제로 열기 전에는 선물을 저장하지 않는다');
-  const pick=f.node('pick');const tap=()=>back.handlers.click({target:{closest:(sel)=>sel==='.chest-pick'?pick:null}});
-  tap();  // 첫 두드림: 흔들리기만 한다
-  assert.ok(pick.classList.contains('wobble'));assert.equal(f.node('#chest-sub').textContent,'한 번 더 두드려요!');
-  assert.notEqual(f.node('#chest-open').hidden,false);
-  assert.deepEqual([...f.c.FQ.storage.giftState().owned],[],'흔들기만 한 선물도 아직 기록하지 않는다');
-  tap();  // 두 번째: 열린다
-  assert.equal(f.node('#chest-picks').hidden,true);assert.equal(f.node('#chest-open').hidden,false);
-  assert.deepEqual([...f.c.FQ.storage.giftState().owned],['fire_truck']);
-  assert.equal(f.node('#chest-sub').textContent,'반짝반짝 상자예요!');
-  assert.equal(f.node('#next').disabled,true,'닫기 전에는 다음 단추가 잠겨 있다');
   back.handlers.click({target:{closest:(sel)=>sel==='#chest-close'?true:null}});
   assert.equal(f.node('#next').disabled,false);
-  // 흔들기가 없으면 한 번에 열리고, 황금 상자는 보너스 10점·경험치 60.
+  // 기존 아홉 선물이 있으면 새 그림 중 하나가 바로 나오고, 황금 상자는 보너스 10점·경험치 60.
   const g=fixture();g.c.FQ.storage.updateSettings({mode:'choice4',speak:false});g.c.FQ.storage.recordChest(null);
-  g.c.FQ.app.startGame(['kr']);const b=g.c.FQ.test;b.state.rng=()=>0;b.state.rngKind=()=>0.4;
-  const seq=[0.01,0.9];b.state.rngKind=()=>seq.shift();   // 종류 황금 · 흔들기 없음
-  b.submit({code:'kr'});g.releases.at(-1)();
+  for(const gift of g.c.FQ.progress.giftCatalog().slice(0,9))g.c.FQ.storage.awardGift(gift.id);
+  g.c.FQ.app.startGame(['kr']);const b=g.c.FQ.test;b.state.rng=()=>0;b.state.rngKind=()=>0.01;
+  b.submit({code:'kr'});
+  assert.equal(g.c.FQ.storage.giftState().owned.at(-1),'toy_bus');
+  g.releases.at(-1)();
   const back2=g.node('created');assert.match(back2.innerHTML,/class="chest-card gold"[\s\S]*황금 상자 👑[\s\S]*\+10점[\s\S]*\+60/);
-  back2.handlers.click({target:{closest:(sel)=>sel==='.chest-pick'?g.node('pick2'):null}});
-  assert.equal(g.node('#chest-open').hidden,false);assert.equal(b.state.game.bonusScore,10);assert.equal(b.state.xpGained,70);
-  assert.deepEqual([...g.c.FQ.storage.giftState().owned],['fire_truck']);
+  assert.match(back2.innerHTML,/class="gift-sprite gift-sheet-2"[\s\S]*장난감 버스/);
+  assert.equal(b.state.game.bonusScore,10);assert.equal(b.state.xpGained,70);
+});
+
+test('세 번째 선물 그림도 바로 보이고, 27종을 모두 모은 뒤에만 중복 선물이 나온다',()=>{
+  const f=fixture();f.c.FQ.storage.updateSettings({mode:'choice4',speak:false});f.c.FQ.storage.recordChest(null);
+  for(const gift of f.c.FQ.progress.giftCatalog().slice(0,18))f.c.FQ.storage.awardGift(gift.id);
+  f.c.FQ.app.startGame(['kr']);const a=f.c.FQ.test;a.state.rng=()=>0;a.submit({code:'kr'});
+  assert.equal(f.c.FQ.storage.giftState().owned.at(-1),'race_car');
+  assert.match(f.node('#feedback-area').innerHTML,/class="gift-sprite gift-sheet-3"[\s\S]*경주차/);
+  f.releases.at(-1)();
+  assert.match(f.node('created').innerHTML,/class="gift-sprite gift-sheet-3"/);
+
+  const g=fixture();g.c.FQ.storage.updateSettings({mode:'choice4',speak:false});g.c.FQ.storage.recordChest(null);
+  for(const gift of g.c.FQ.progress.giftCatalog())g.c.FQ.storage.awardGift(gift.id);
+  g.c.FQ.app.startGame(['kr']);const b=g.c.FQ.test;b.state.rng=()=>0;b.submit({code:'kr'});
+  assert.equal(g.c.FQ.storage.giftState().owned.length,27);
+  assert.match(g.node('#feedback-area').innerHTML,/그림 선물을 다시 만났어요!/);
+  assert.equal(b.state.giftsFound[0].isNew,false);
+});
+
+test('새 선물은 27종 전체에서 무작위로 골라 초반부터 추가 그림도 나올 수 있다',()=>{
+  const f=fixture();f.c.FQ.storage.updateSettings({mode:'choice4',speak:false});f.c.FQ.storage.recordChest(null);
+  f.c.FQ.app.startGame(['kr']);const a=f.c.FQ.test;
+  const rolls=[0,0.5];a.state.rng=()=>rolls.shift();a.state.rngKind=()=>0.5;
+  a.submit({code:'kr'});
+  assert.deepEqual([...f.c.FQ.storage.giftState().owned],['frog_plush']);
+  assert.match(f.node('#feedback-area').innerHTML,/class="gift-sprite gift-sheet-2"[\s\S]*개구리 인형/);
 });
 
 test('설정은 제한 시간 적용 범위를 설명하고 다른 놀이에서도 저장된 선택은 지우지 않는다',()=>{
@@ -1258,7 +1278,7 @@ test('말하기 정답 뒤 수동으로 다음을 누르거나 홈으로 나가�
   assert.match(f.node('main').innerHTML,/home-kid/);
 });
 
-test('말하기 정답으로 상자를 열면 선물을 본 뒤 닫았을 때 자동으로 다음 국기를 연다',()=>{
+test('말하기 정답으로 선물을 받으면 화면을 닫은 뒤 자동으로 다음 국기를 연다',()=>{
   const f=fixture();
   for(let i=0;i<4;i++){f.c.FQ.storage.recordAnswer('fr',false);f.c.FQ.storage.recordChest(null);}
   const a=f.startVoice(['kr','jp']);a.state.rng=()=>0;a.state.rngKind=()=>0.5;

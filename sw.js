@@ -42,7 +42,9 @@ var SHELL = [
   './assets/icon.svg',
   './assets/icon-180.png',
   './assets/icon-192.png',
-  './assets/gifts-sprite.png'
+  './assets/gifts-sprite.png',
+  './assets/gifts-sprite-2.png',
+  './assets/gifts-sprite-3.png'
 ];
 
 self.addEventListener('install', function (event) {

@@ -395,6 +395,11 @@ h3 { font-size: 1.1rem; }
 .feedback.ok .verdict { color: var(--success); }
 .fb-head { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 .fb-head .small { margin-left: auto; color: var(--text-soft); font-size: .78rem; }
+.feedback-gift { display: flex; align-items: center; gap: 10px; margin-top: 12px; padding: 8px 12px; border: 1px solid var(--accent); border-radius: 12px; background: var(--accent-bg); }
+.feedback-gift .gift-sprite { width: 56px; }
+.feedback-gift-copy { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.feedback-gift-copy b { color: var(--primary); font-size: .9rem; }
+.feedback-gift-copy small { font-size: 1rem; font-weight: 700; }
 .feedback .name-row { display: flex; flex-direction: column; align-items: center; gap: 12px; margin-top: 14px; }
 .feedback .name-row img { display: block; width: 100%; max-width: 300px; aspect-ratio: 4 / 3; object-fit: contain; border: 1px solid var(--line); border-radius: 12px; background: var(--card-2); }
 .feedback .kname { font-size: 2rem; font-weight: 750; line-height: 1.3; letter-spacing: -.03em; }
@@ -579,17 +584,12 @@ h3 { font-size: 1.1rem; }
 .loot .ic { font-size: 1.5rem; }
 .loot .n { margin-top: 4px; font-size: .9rem; font-weight: 600; }
 .loot .d { color: var(--text-soft); font-size: .75rem; }
-.chest-picks { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 18px; }
-.chest-pick { min-height: 84px; padding: 6px; border: 1px solid var(--line); border-radius: 16px; background: var(--card-2); font-size: 2.5rem; }
-.chest-pick:hover { border-color: var(--primary); }
-.chest-pick.wobble { animation: chestShake .35s ease 2; }
 .chest-kind { margin-top: 5px; color: var(--primary); font-size: 1.1rem; font-weight: 600; }
 .chest-card.gold { border-color: var(--accent); }
 .chest-card.gold .chest-kind { color: var(--accent); }
 .chest-friend { display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 16px; }
 .chest-friend img { width: 72px; height: 54px; object-fit: contain; border-radius: 8px; }
 .chest-friend-name { font-size: 1rem; font-weight: 600; }
-@keyframes chestShake { 0%, 100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg); } }
 .confetti-canvas { position: fixed; inset: 0; z-index: 60; pointer-events: none; }
 .celebrate { position: fixed; inset: 0; z-index: 65; display: flex; align-items: center; justify-content: center; pointer-events: none; }
 .celebrate-rays { display: none; }
@@ -693,9 +693,13 @@ h3 { font-size: 1.1rem; }
   .primary-nav button[aria-current="page"], .answer-btn.is-correct, .answer-btn.is-wrong { outline: 2px solid Highlight; }
 }
 
-/* 깜짝 상자에서 받는 그림 선물은 3×3 스프라이트 한 장으로 보여 준다. */
+/* 깜짝 상자에서 받는 그림 선물은 3×3 스프라이트 세 장으로 보여 준다. */
 .gift-sprite { display: block; width: 100%; aspect-ratio: 1; flex: 0 0 auto; background-image: url('../assets/gifts-sprite.png'); background-size: 300% 300%; background-repeat: no-repeat; }
-.gift-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 12px; }
+.gift-sprite.gift-sheet-2 { background-image: url('../assets/gifts-sprite-2.png'); }
+.gift-sprite.gift-sheet-3 { background-image: url('../assets/gifts-sprite-3.png'); }
+.gift-swipe-hint { margin: 6px 0 0; color: var(--text-soft); font-size: .8rem; }
+.gift-pages { display: flex; gap: 12px; width: 100%; max-width: 380px; margin: 12px auto 0; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; }
+.gift-page { display: grid; flex: 0 0 100%; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; min-width: 0; scroll-snap-align: start; }
 .gift-cell { display: grid; place-items: center; min-width: 0; aspect-ratio: 1; overflow: hidden; border: 1px solid var(--line); border-radius: 12px; background: var(--card-2); }
 .gift-cell.got { border-color: var(--accent); background: var(--accent-bg); }
 .gift-locked { display: grid; place-items: center; width: 100%; height: 100%; color: var(--text-soft); font-size: 2rem; font-weight: 700; }

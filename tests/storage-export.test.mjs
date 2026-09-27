@@ -144,6 +144,22 @@ function screenFixture(options) {
   return { ...f, main, visits, node: selector => main.querySelector(selector) };
 }
 
+test('선물 도감은 기존·추가 선물을 세 쪽에 표시하고 열람해도 기록을 바꾸지 않는다', () => {
+  const f = screenFixture();
+  const catalog = f.c.FQ.progress.giftCatalog();
+  for (const index of [0, 9, 18]) f.storage.awardGift(catalog[index].id);
+  const before = f.storage.exportJson();
+  f.c.FQ.screens.dex('all');
+  const html = f.main.innerHTML;
+  assert.match(html, /내 그림 선물 3\/27/);
+  assert.equal((html.match(/class="gift-page"/g) || []).length, 3);
+  assert.equal((html.match(/class="gift-cell /g) || []).length, 27);
+  assert.match(html, /class="gift-sprite"[^>]*aria-hidden="true"/);
+  assert.match(html, /class="gift-sprite gift-sheet-2"[^>]*aria-hidden="true"/);
+  assert.match(html, /class="gift-sprite gift-sheet-3"[^>]*aria-hidden="true"/);
+  assert.equal(f.storage.exportJson(), before);
+});
+
 // 실제 설정은 app.js가 렌더링한다. 이 테스트에서는 공개 기록 관리 API의 출력 호스트만 제공한다.
 function recordSettings(f) {
   f.main.innerHTML = '<div id="export-out"></div>';

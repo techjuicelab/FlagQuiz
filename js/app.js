@@ -1701,7 +1701,7 @@
       if (flagAxis) res.dailyDone = FQ.progress.noteDaily(q.country, true);
     }
     // 깜짝 상자(D22): 지난 상자 뒤 쌓인 카드 수로 굴린다 — 2장째부터 15%, 8장째에는 반드시. 오답·건너뛰기도 한 장이고
-    // 다음 판에 이어진다. 종류(보통·반짝·황금)와 흔들기 여부도 여기서 정하므로 셋 중 무엇을 골라도 결과는 같다.
+    // 다음 판에 이어진다. 선물은 정답을 제출하는 즉시 저장하고, 아직 없는 그림을 먼저 무작위로 준다.
     // state.rng / state.rngKind 는 검사에서 난수를 주입하는 자리다.
     var roll = state.rng || global.Math.random;
     var rollKind = state.rngKind || roll;
@@ -1711,13 +1711,14 @@
       res.chestKind = FQ.progress.chestKind(rollKind());
       res.chestLoot = FQ.progress.chestLoot(res.chestKind);
       res.chestShape = FQ.progress.chestShape(q.country.continent);
-      res.chestShake = rollKind() < 0.3;   // 열에 셋은 한 번 더 두드려야 열린다
       store.recordChest(res.chestKind);
       var gifts = FQ.progress.giftCatalog();
       var ownedGifts = store.giftState().owned;
-      res.gift = gifts.filter(function (gift) { return ownedGifts.indexOf(gift.id) < 0; })[0] ||
-        gifts[(store.chestState().opened - 1) % gifts.length];
-      res.newGift = ownedGifts.indexOf(res.gift.id) < 0;
+      var availableGifts = gifts.filter(function (gift) { return ownedGifts.indexOf(gift.id) < 0; });
+      var giftPool = availableGifts.length ? availableGifts : gifts;
+      res.gift = giftPool[Math.min(giftPool.length - 1, Math.floor(roll() * giftPool.length))];
+      res.newGift = store.awardGift(res.gift.id);
+      state.giftsFound = (state.giftsFound || []).concat([{ gift: res.gift, isNew: res.newGift }]);
       state.chestsOpened = (state.chestsOpened || 0) + 1;
       state.chestLoot = (state.chestLoot || []).concat([{ kind: res.chestKind, score: res.chestLoot.score, xp: res.chestLoot.xp }]);
       var chestLevel = FQ.progress.addXp(res.chestLoot.xp);
@@ -1818,7 +1819,7 @@
       });
     }
     // 말하기 정답은 이름을 한 번 더 듣고 자동으로 넘어간다. 오답과 다른 놀이는 정답 카드를 읽을 시간을 준다.
-    // 깜짝 상자는 아이가 열어 본 뒤 닫으면 진행하고, 재생 실패는 다시 듣기 안내를 남긴다.
+    // 깜짝 상자는 그림 선물을 바로 보여 주고, 닫으면 진행한다. 재생 실패는 다시 듣기 안내를 남긴다.
     var autoNext = speechMode(q.mode) && !!res.correct;
     var quickAnswerSpeech = autoNext ? { lines: [isCapitalQ ? c.capital : c.ko], opts: feedbackSpeech.opts } : feedbackSpeech;
     function scheduleAutoNext(request, delay) {
@@ -1885,6 +1886,11 @@
     var html =
       '<div class="feedback learn discovery-card' + (isCapitalQ ? ' capital-card' : '') + (isMapQ ? ' map-feedback' : '') + '">' +
         '<div class="fb-head"><div class="verdict">' + verdict + '</div>' + extra + '</div>' +
+        (res.gift
+          ? '<div class="feedback-gift">' + giftSprite(res.gift) +
+              '<div class="feedback-gift-copy"><b>' + (res.newGift ? '새 그림 선물을 받았어요!' : '그림 선물을 다시 만났어요!') + '</b>' +
+                '<small>' + esc(res.gift.name) + '</small></div></div>'
+          : '') +
         (isCapitalQ
           ? capitalPlate(c, capitalPlace(c)) + capitalOf(c)
           : '<div class="name-row">' +
@@ -1974,7 +1980,8 @@
   var CHEST_KIND_ICON = { plain: '🎁', shiny: '✨', gold: '👑' };
 
   function giftSprite(gift) {
-    return '<span class="gift-sprite" role="img" aria-label="' + esc(gift.name) +
+    return '<span class="gift-sprite' + (gift.sheet > 1 ? ' gift-sheet-' + gift.sheet : '') +
+      '" role="img" aria-label="' + esc(gift.name) +
       '" style="background-position:' + (gift.col * 50) + '% ' + (gift.row * 50) + '%"></span>';
   }
 
@@ -1989,28 +1996,20 @@
     return { count: all.length, score: score, xp: xp, kinds: kinds, icon: counts.gold ? '👑' : counts.shiny ? '✨' : '🎁' };
   }
 
-  /**
-   * 깜짝 상자(D22). 대륙 모양 상자 셋 중 하나를 아이가 고르면 열린다. 열에 셋은 한 번 더 두드려야 한다.
-   * 종류·점수·경험치는 submit 에서 정해져 무엇을 골라도 같다. 그림 선물은 상자를 실제로 열 때 저장한다.
-   */
+  /** 깜짝 상자(D22). 선물·점수·경험치는 submit 에서 저장하고, 그림 선물을 바로 보여 준다. */
   function showChest(country, res, mode, onClose) {
     var st = FQ.progress.stickers();
     var shape = res.chestShape || FQ.progress.chestShape(country && country.continent);
     var kind = res.chestKind || 'plain';
     var loot = res.chestLoot || FQ.progress.chestLoot(kind);
     var art = (mode === 'symbol' || mode === 'place') && country ? artFor(country.code, mode) : null;
-    var picks = '';
-    for (var i = 0; i < 3; i++) {
-      picks += '<button class="chest-pick" type="button" data-pick="' + i + '" aria-label="' + esc(shape.name) + ' ' + (i + 1) + '">' + shape.emoji + '</button>';
-    }
     var back = doc.createElement('div');
     back.className = 'chest-back';
     back.innerHTML =
-      '<div class="chest-card ' + kind + '" role="dialog" aria-modal="true" aria-label="깜짝 상자를 찾았어요">' +
-        '<div class="chest-title">깜짝 상자를 찾았어요!</div>' +
-        '<div class="chest-sub" id="chest-sub">' + esc(shape.name) + ' 셋 중 하나를 골라 봐요</div>' +
-        '<div class="chest-picks" id="chest-picks">' + picks + '</div>' +
-        '<div class="chest-open" id="chest-open" hidden>' +
+      '<div class="chest-card ' + kind + '" role="dialog" aria-modal="true" aria-label="그림 선물을 받았어요">' +
+        '<div class="chest-title">그림 선물을 받았어요!</div>' +
+        '<div class="chest-sub" id="chest-sub">' + esc(shape.name) + '에서 나왔어요</div>' +
+        '<div class="chest-open" id="chest-open">' +
           '<div class="chest-art">' +
             '<div class="chest-rays"></div>' +
             (res.gift ? giftSprite(res.gift) : '<div class="chest-emoji">' + shape.emoji + '</div>') +
@@ -2048,46 +2047,19 @@
       '</div>';
     doc.body.appendChild(back);
 
-    // 뒤의 '다음 문제' 단추를 잠가 둔다. 포커스를 쥔 채로 두면 엔터 한 번에
-    // 상자를 못 본 채 다음 문제로 넘어가 버린다.
+    // 선물 그림을 보고 닫을 때까지 뒤의 '다음 문제' 단추를 잠근다.
     var behind = ui.$('#next');
     if (behind) behind.disabled = true;
-    var firstPick = back.querySelector('.chest-pick');
-    if (firstPick) { try { firstPick.focus({ preventScroll: true }); } catch (e) { firstPick.focus(); } }
+    var closeBtn = back.querySelector('#chest-close');
+    if (closeBtn) { try { closeBtn.focus({ preventScroll: true }); } catch (e) { closeBtn.focus(); } }
 
-    // 상자가 나타나는 소리는 대륙 곡. 점수와 경험치는 submit 에서 이미 반영했다.
+    // 상자가 나타나는 소리는 대륙 곡. 선물·점수·경험치는 submit 에서 이미 반영했다.
     playMusic('chest', null, shape.music ? { prefer: shape.music } : null);
-
-    var opened = false;
-    var shaken = !res.chestShake;
-    function openBox(pick) {
-      if (opened) return;
-      if (!shaken) {
-        // 첫 두드림은 흔들리기만 한다. 아이가 한 번 더 두드리면 열린다.
-        shaken = true;
-        if (pick && pick.classList) pick.classList.add('wobble');
-        var sub = back.querySelector('#chest-sub');
-        if (sub) sub.textContent = '한 번 더 두드려요!';
-        return;
-      }
-      opened = true;
-      if (res.gift) {
-        res.newGift = store.awardGift(res.gift.id);
-        state.giftsFound = (state.giftsFound || []).concat([{ gift: res.gift, isNew: res.newGift }]);
-        var giftStatus = back.querySelector('#chest-gift-status');
-        if (giftStatus) giftStatus.textContent = res.newGift ? '새 그림 선물!' : '그림 선물을 다시 만났어요!';
-      }
-      var picksBox = back.querySelector('#chest-picks');
-      if (picksBox) picksBox.hidden = true;
-      var openArea = back.querySelector('#chest-open');
-      if (openArea) openArea.hidden = false;
-      var sub2 = back.querySelector('#chest-sub');
-      if (sub2) sub2.textContent = kind === 'gold' ? '와, 황금 상자예요!' : kind === 'shiny' ? '반짝반짝 상자예요!' : '상자가 열렸어요!';
-      FQ.effects.burst(kind === 'gold' ? 70 : kind === 'shiny' ? 50 : 35);
-      var closeBtn = back.querySelector('#chest-close');
-      if (closeBtn) { try { closeBtn.focus({ preventScroll: true }); } catch (e2) { closeBtn.focus(); } }
-    }
+    FQ.effects.burst(kind === 'gold' ? 70 : kind === 'shiny' ? 50 : 35);
+    var closed = false;
     function close() {
+      if (closed) return;
+      closed = true;
       stopMusic();
       back.remove();
       var nextBtn = ui.$('#next');
@@ -2095,10 +2067,7 @@
       if (onClose) onClose();
     }
     back.addEventListener('click', function (ev) {
-      // 바깥을 눌러 닫는 것은 상자를 연 뒤에만. 고르기 전에 실수로 닫히면 아이가 선물을 못 본다.
-      if (ev.target.closest('#chest-close') || (ev.target === back && opened)) { close(); return; }
-      var pick = ev.target.closest('.chest-pick');
-      if (pick) openBox(pick);
+      if (ev.target.closest('#chest-close') || ev.target === back) close();
     });
   }
 

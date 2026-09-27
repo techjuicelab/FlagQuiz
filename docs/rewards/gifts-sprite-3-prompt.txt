@@ -1,0 +1,14 @@
+Use case: game asset
+Asset type: 3x3 reward gift sprite sheet, transparent PNG, 1024x1024 square
+Primary request: Create one sprite sheet with exactly nine separate cute toy rewards in this exact row-major order: row 1: a blue toy race car, a brown puppy plush, a small spaceship; row 2: a toy passenger boat, a cute kitten plush, a colorful bunch of balloons; row 3: a toy scooter, a yellow duck plush, toy castle building blocks.
+Input images: Image 1: style reference only; match its polished, cheerful, glossy 3D toy-render style, soft studio highlights, rounded child-friendly forms, and isolated product presentation.
+Scene/backdrop: fully transparent background.
+Subject: nine individual toy reward objects, one centered in each equal cell of a precise invisible 3-column by 3-row grid.
+Style/medium: polished colorful 3D toy illustration, matching the existing reward sprite's realistic plastic and soft plush materials, crisp edges, bright colors, gentle studio lighting.
+Composition/framing: square canvas divided conceptually into nine equal cells; each object centered within its own cell, fully visible with comfortable transparent padding and no overlap across cells; consistent apparent scale; preserve clear separation between all objects.
+Lighting/mood: cheerful soft studio lighting with glossy highlights and subtle contact shading confined to each object.
+Color palette: vivid blue race car; warm brown puppy; white/red/blue spaceship; bright toy boat; soft pastel kitten; rainbow balloons; colorful scooter; sunny yellow duck; vivid multicolor toy castle blocks.
+Materials/textures: smooth glossy molded plastic for vehicles, ship and blocks; soft fuzzy plush for puppy, kitten and duck; shiny latex balloons tied together.
+Text (verbatim): none.
+Constraints: exact order listed above, exactly nine objects, 3 columns and 3 rows, each centered in its cell. No visible cell boundaries. Actual transparent alpha background. Match the reference asset's toy-like 3D rendering.
+Avoid: text, letters, numbers, labels, logos, watermark, borders, grid lines, background, ground plane, extra objects, cropped objects, merged objects, duplicate objects, flat clipart, photorealistic real-world scenes.
