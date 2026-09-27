@@ -39,7 +39,9 @@
     axes: {},   /* axis(symbol·place·map·capital) -> code -> {seen,correct,wrong,streak} — 읽을 때는 늘 (x || 0) */
     history: [],
     /* 깜짝 상자: since = 지난 상자 뒤 쌓인 카드 수(8장 보장의 근거), opened = 연 상자 수, kinds = 종류별 수. 읽을 때는 (x || 0) */
-    chest: { since: 0, opened: 0, kinds: {} }
+    chest: { since: 0, opened: 0, kinds: {} },
+    /* 디지털 선물 그림 수집 */
+    gifts: { owned: [] }
   };
 
   function deepClone(o) { return JSON.parse(JSON.stringify(o)); }
@@ -224,6 +226,23 @@
   }
   function badges() { return state.badges; }
 
+  /** 선물 수집 상태. 오래된 저장 파일도 빈 배열로 읽고, 내부 배열은 노출하지 않는다. */
+  function giftState() {
+    var owned = state.gifts && Array.isArray(state.gifts.owned) ? state.gifts.owned : [];
+    return { owned: owned.slice() };
+  }
+
+  /** 선물을 한 번만 수집한다. 이미 가진 선물은 false 를 돌려준다. */
+  function awardGift(id) {
+    if (!id) return false;
+    state.gifts = state.gifts && typeof state.gifts === 'object' ? state.gifts : { owned: [] };
+    if (!Array.isArray(state.gifts.owned)) state.gifts.owned = [];
+    if (state.gifts.owned.indexOf(id) !== -1) return false;
+    state.gifts.owned.push(id);
+    save();
+    return true;
+  }
+
   function awardBadge(id) {
     if (state.badges[id]) return false;
     state.badges[id] = new Date().toISOString().slice(0, 10);
@@ -244,6 +263,7 @@
     state.history = [];
     state.daily = deepClone(DEFAULTS.daily);
     state.chest = deepClone(DEFAULTS.chest);
+    state.gifts = deepClone(DEFAULTS.gifts);
     save();
   }
 
@@ -293,6 +313,8 @@
     resetAll: resetAll,
     resetProgress: resetProgress,
     chestState: chestState,
-    recordChest: recordChest
+    recordChest: recordChest,
+    giftState: giftState,
+    awardGift: awardGift
   };
 })(window);

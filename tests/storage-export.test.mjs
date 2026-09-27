@@ -7,7 +7,7 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 
 const KEY = 'flagquiz.v1';
-const KEYS = ['settings', 'stats', 'daily', 'countries', 'badges', 'axes', 'history', 'chest'];
+const KEYS = ['settings', 'stats', 'daily', 'countries', 'badges', 'axes', 'history', 'chest', 'gifts'];
 
 function fixture({ saved, blocked = false, getterBlocked = false } = {}) {
   const local = new Map(saved === undefined ? [] : [[KEY, saved]]);
@@ -42,17 +42,19 @@ function recordProgress(storage) {
   storage.finishGame({ mode: 'choice4', total: 2, correct: 1, seconds: 20, bestStreak: 1, players: ['민규'] });
 }
 
-test('기록 백업은 새 축과 깜짝 상자를 포함한 여덟 버킷 JSON이며 저장된 내용과 일치한다', () => {
+test('기록 백업은 새 축·깜짝 상자·그림 선물을 포함한 아홉 버킷 JSON이며 저장된 내용과 일치한다', () => {
   const f = fixture();
   const initial = f.storage.exportJson();
   assert.equal(typeof initial, 'string');
   assert.deepEqual(Object.keys(JSON.parse(initial)), KEYS);
   assert.match(initial, /\n  "settings":/);
   recordProgress(f.storage);
+  f.storage.awardGift('fire_truck');
   const backup = JSON.parse(f.storage.exportJson());
   assert.equal(backup.countries.kr.correct, 1);
   assert.equal(backup.axes.symbol.kr.wrong, 1);
   assert.equal(backup.axes.map.au.correct, 1);
+  assert.deepEqual(backup.gifts.owned, ['fire_truck']);
   assert.deepEqual(backup, JSON.parse(f.local.get(KEY)));
   assert.deepEqual([...f.local.keys()], [KEY]);
 });
@@ -60,6 +62,7 @@ test('기록 백업은 새 축과 깜짝 상자를 포함한 여덟 버킷 JSON�
 test('백업 JSON을 새 브라우저 저장소에 넣으면 스티커·배지·오답노트와 전체 기록이 복원된다', () => {
   const original = fixture();
   recordProgress(original.storage);
+  original.storage.awardGift('fire_truck');
   original.load('data/countries.js', 'js/progress.js');
   const restored = fixture({ saved: original.storage.exportJson() });
   restored.load('data/countries.js', 'js/progress.js');
@@ -68,6 +71,7 @@ test('백업 JSON을 새 브라우저 저장소에 넣으면 스티커·배지·
   assert.deepEqual(JSON.parse(JSON.stringify(restored.c.FQ.progress.stickers())),
     JSON.parse(JSON.stringify(original.c.FQ.progress.stickers())));
   assert.ok(restored.storage.badges().first_game);
+  assert.deepEqual([...restored.storage.giftState().owned], ['fire_truck']);
   assert.deepEqual([...restored.storage.wrongList()], ['jp']);
   assert.equal(restored.local.size, 1);
 });
@@ -270,14 +274,14 @@ test('기록의 접힌 대륙별 수집은 국기 스티커만 읽고 해당 대
   assert.equal(f.storage.exportJson(), before);
 });
 
-test('기록 삭제를 취소하면 여덟 버킷 전체와 현재 화면을 보존한다', () => {
+test('기록 삭제를 취소하면 아홉 버킷 전체와 현재 화면을 보존한다', () => {
   const f = screenFixture();
   recordProgress(f.storage);
   const before = f.storage.exportJson();
   let prompt = '';
   f.c.confirm = message => { prompt = message; return false; };
   assert.equal(f.c.FQ.screens.resetRecords(), false);
-  assert.match(prompt, /스티커 판, 레벨과 경험치, 배지, 오답노트, 놀이 기록을 모두 지울까요/);
+  assert.match(prompt, /스티커 판, 그림 선물, 레벨과 경험치, 배지, 오답노트, 놀이 기록을 모두 지울까요/);
   assert.match(prompt, /되돌릴 수 없어요/);
   assert.equal(f.storage.exportJson(), before);
   assert.deepEqual(f.visits, []);

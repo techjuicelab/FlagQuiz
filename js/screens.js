@@ -104,6 +104,26 @@
     '</div>';
   }
 
+  /** 잠긴 칸에는 그림을 넣지 않아 아직 받지 않은 선물을 미리 보여 주지 않는다. */
+  function giftCollection() {
+    var catalog = FQ.progress.giftCatalog();
+    var ownedIds = FQ.storage.giftState().owned;
+    var ownedCount = catalog.filter(function (gift) { return ownedIds.indexOf(gift.id) !== -1; }).length;
+    return '<section class="card section gift-collection" aria-label="내 그림 선물 ' + ownedCount + ' / ' + catalog.length + '">' +
+      '<h3>내 그림 선물 ' + ownedCount + '/' + catalog.length + '</h3>' +
+      '<div class="gift-grid">' + catalog.map(function (gift, index) {
+        var got = ownedIds.indexOf(gift.id) !== -1;
+        var x = gift.col * 50;
+        var y = gift.row * 50;
+        return '<div class="gift-cell ' + (got ? 'got' : 'locked') + '" role="img"' +
+          ' aria-label="' + (got ? esc(gift.name) + ' 그림 선물' : '아직 받지 않은 선물 ' + (index + 1) + ' / ' + catalog.length) + '">' +
+          (got
+            ? '<span class="gift-sprite" style="background-position: ' + x + '% ' + y + '%" aria-hidden="true"></span>'
+            : '<span class="gift-locked" aria-hidden="true">?</span>') +
+          '</div>';
+      }).join('') + '</div></section>';
+  }
+
   /** 스티커 판이 비었을 때, 왜 비었는지에 따라 다르게 말해 준다 */
   function emptyDexMessage() {
     if (dexFilter.query) {
@@ -185,6 +205,7 @@
           '<button class="dex-toggle" id="dex-search-toggle" type="button" aria-label="나라 이름으로 찾기" aria-expanded="' + searchOpen + '" aria-controls="dex-tools">' + ICON_SEARCH + '</button>' +
           '<button class="dex-toggle" id="dex-filter-toggle" type="button" aria-label="한 번 더 만날 나라·새로 만날 스티커만 보기" aria-expanded="' + filterOpen + '" aria-controls="dex-filters">' + ICON_CHECK + '</button>' +
         '</div>' +
+        giftCollection() +
         stickerHeader() +
         '<div class="dex-tools" id="dex-tools"' + (searchOpen ? '' : ' hidden') + '>' +
           '<div class="field">' +
@@ -446,7 +467,7 @@
 
   /** 설정으로 옮겨도 삭제 확인을 생략하지 않는다. 삭제 후에는 홈으로 돌아간다. */
   function resetRecords() {
-    if (!global.confirm('스티커 판, 레벨과 경험치, 배지, 오답노트, 놀이 기록을 모두 지울까요?\n되돌릴 수 없어요.')) return false;
+    if (!global.confirm('스티커 판, 그림 선물, 레벨과 경험치, 배지, 오답노트, 놀이 기록을 모두 지울까요?\n되돌릴 수 없어요.')) return false;
     FQ.storage.resetProgress();
     FQ.app.home();
     return true;

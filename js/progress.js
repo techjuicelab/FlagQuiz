@@ -28,6 +28,31 @@
     return xp;
   }
 
+  /* 추가 보상으로 모으는 3×3 선물 그림. 배열과 항목은 호출자에게 복사해 준다. */
+  var GIFT_CATALOG = [
+    { id: 'fire_truck', name: '소방차', col: 0, row: 0 },
+    { id: 'dinosaur_toy', name: '공룡 장난감', col: 1, row: 0 },
+    { id: 'space_rocket', name: '우주 로켓', col: 2, row: 0 },
+    { id: 'excavator', name: '굴착기', col: 0, row: 1 },
+    { id: 'train', name: '기차', col: 1, row: 1 },
+    { id: 'teddy_bear', name: '곰 인형', col: 2, row: 1 },
+    { id: 'robot', name: '로봇', col: 0, row: 2 },
+    { id: 'colorful_blocks', name: '알록달록 블록', col: 1, row: 2 },
+    { id: 'submarine', name: '잠수함', col: 2, row: 2 }
+  ];
+  function giftCatalog() {
+    return GIFT_CATALOG.map(function (gift) {
+      return { id: gift.id, name: gift.name, col: gift.col, row: gift.row };
+    });
+  }
+
+  function gifts() {
+    var catalog = giftCatalog();
+    var ownedIds = FQ.storage.giftState().owned;
+    var owned = catalog.filter(function (gift) { return ownedIds.indexOf(gift.id) !== -1; }).length;
+    return { owned: owned, total: catalog.length };
+  }
+
   function xp() {
     var s = FQ.storage.stats();
     return Math.max(0, s.xp || 0);
@@ -215,6 +240,8 @@
     xp: xp,
     level: level,
     addXp: addXp,
+    giftCatalog: giftCatalog,
+    gifts: gifts,
     hasSticker: hasSticker,
     stickers: stickers,
     starsFor: starsFor,

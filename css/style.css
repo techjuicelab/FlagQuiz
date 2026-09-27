@@ -692,3 +692,18 @@ h3 { font-size: 1.1rem; }
   .setting-row input[type="checkbox"]::before, .setting-row input[type="checkbox"]::after { display: none; }
   .primary-nav button[aria-current="page"], .answer-btn.is-correct, .answer-btn.is-wrong { outline: 2px solid Highlight; }
 }
+
+/* 깜짝 상자에서 받는 그림 선물은 3×3 스프라이트 한 장으로 보여 준다. */
+.gift-sprite { display: block; width: 100%; aspect-ratio: 1; flex: 0 0 auto; background-image: url('../assets/gifts-sprite.png'); background-size: 300% 300%; background-repeat: no-repeat; }
+.gift-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 12px; }
+.gift-cell { display: grid; place-items: center; min-width: 0; aspect-ratio: 1; overflow: hidden; border: 1px solid var(--line); border-radius: 12px; background: var(--card-2); }
+.gift-cell.got { border-color: var(--accent); background: var(--accent-bg); }
+.gift-locked { display: grid; place-items: center; width: 100%; height: 100%; color: var(--text-soft); font-size: 2rem; font-weight: 700; }
+.chest-art .gift-sprite { width: 112px; margin: 0 auto; }
+.chest-gift-copy { display: flex; flex-direction: column; gap: 3px; margin-top: 3px; font-size: .9rem; }
+.chest-gift-copy b { color: var(--primary); }
+.chest-gift-copy span { font-size: 1.05rem; font-weight: 700; }
+.result-gifts h3 { margin-top: 0; }
+.result-gift-list { display: flex; flex-wrap: wrap; gap: 12px; }
+.result-gift { display: flex; flex-direction: column; align-items: center; gap: 4px; width: 88px; text-align: center; font-size: .78rem; }
+.result-gift .gift-sprite { width: 80px; border-radius: 8px; background-color: var(--card-2); }

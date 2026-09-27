@@ -1112,17 +1112,21 @@ test('깜짝 상자는 대륙 모양 셋 중 하나를 골라 열고, 흔들기�
   assert.equal((html.match(/class="chest-pick"/g)||[]).length,3);
   assert.match(html,/id="chest-sub">연등 셋 중 하나를 골라 봐요</,'대한민국은 아시아라 연등');
   assert.match(html,/🏮/);assert.match(html,/반짝 상자 ✨/);assert.match(html,/\+5점[\s\S]*\+40/);
+  assert.match(html,/class="gift-sprite" role="img" aria-label="소방차" style="background-position:0% 0%"/);
   assert.match(html,/<div class="chest-friend" role="group" aria-label="대한민국 친구 카드"><img src="flags\/kr\.svg"/);
   assert.equal(f.music.at(-1).event,'chest');assert.equal(f.music.at(-1).opts.prefer,'chest-01-musicbox');
   assert.equal(f.node('#next').disabled,true);
   assert.equal(a.state.xpGained,50);assert.equal(a.state.game.bonusScore,5);
   assert.deepEqual(JSON.parse(JSON.stringify(f.c.FQ.storage.chestState())),{since:0,opened:1,kinds:{shiny:1}});
+  assert.deepEqual([...f.c.FQ.storage.giftState().owned],[],'상자를 실제로 열기 전에는 선물을 저장하지 않는다');
   const pick=f.node('pick');const tap=()=>back.handlers.click({target:{closest:(sel)=>sel==='.chest-pick'?pick:null}});
   tap();  // 첫 두드림: 흔들리기만 한다
   assert.ok(pick.classList.contains('wobble'));assert.equal(f.node('#chest-sub').textContent,'한 번 더 두드려요!');
   assert.notEqual(f.node('#chest-open').hidden,false);
+  assert.deepEqual([...f.c.FQ.storage.giftState().owned],[],'흔들기만 한 선물도 아직 기록하지 않는다');
   tap();  // 두 번째: 열린다
   assert.equal(f.node('#chest-picks').hidden,true);assert.equal(f.node('#chest-open').hidden,false);
+  assert.deepEqual([...f.c.FQ.storage.giftState().owned],['fire_truck']);
   assert.equal(f.node('#chest-sub').textContent,'반짝반짝 상자예요!');
   assert.equal(f.node('#next').disabled,true,'닫기 전에는 다음 단추가 잠겨 있다');
   back.handlers.click({target:{closest:(sel)=>sel==='#chest-close'?true:null}});
@@ -1135,6 +1139,7 @@ test('깜짝 상자는 대륙 모양 셋 중 하나를 골라 열고, 흔들기�
   const back2=g.node('created');assert.match(back2.innerHTML,/class="chest-card gold"[\s\S]*황금 상자 👑[\s\S]*\+10점[\s\S]*\+60/);
   back2.handlers.click({target:{closest:(sel)=>sel==='.chest-pick'?g.node('pick2'):null}});
   assert.equal(g.node('#chest-open').hidden,false);assert.equal(b.state.game.bonusScore,10);assert.equal(b.state.xpGained,70);
+  assert.deepEqual([...g.c.FQ.storage.giftState().owned],['fire_truck']);
 });
 
 test('설정은 제한 시간 적용 범위를 설명하고 다른 놀이에서도 저장된 선택은 지우지 않는다',()=>{

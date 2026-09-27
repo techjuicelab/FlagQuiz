@@ -1,0 +1,8 @@
+Use case: illustration-story
+Asset type: transparent sprite sheet for preschool reward icons, intended to be cropped into individual tiles
+Primary request: create one square 3 by 3 sprite sheet containing exactly nine distinct toy gifts, one isolated item centered in each equal square cell
+Exact row-major order (left to right, top to bottom): red toy fire truck; friendly green toy dinosaur; toy rocket ship; yellow toy excavator; colorful wooden toy train; soft teddy bear; cheerful toy robot; chunky colorful building blocks; cute blue toy submarine
+Style/medium: cohesive polished children's picture-book 3D illustration, soft rounded child-friendly forms, bright appealing colors, clean crisp outlines, gentle studio shading
+Composition/framing: strict regular 3-column by 3-row grid, equal square cells, each full object centered within its own cell with transparent breathing room, consistent scale, no part crossing cell boundaries
+Backdrop: genuinely transparent across the entire canvas
+Constraints: exactly nine cells in the specified order, one object per cell, no grid lines or borders, no lettering or symbols, no text, no watermark, no extra objects. Do not substitute or reorder items.

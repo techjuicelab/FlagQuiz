@@ -129,6 +129,7 @@
     lastSpeech: { lines: [], opts: {} },
     xpGained: 0,
     newStickers: [],
+    giftsFound: [],
     lastSummary: null,
     lastBadges: [],
     category: null,
@@ -502,6 +503,7 @@
     state.met = [];            // 이 판에서 채점한 순서대로 { country, correct }. 여행 카드 칸과 결과의 카드 다섯 장이 읽는다(저장 안 함).
     state.chestsOpened = 0;    // 이 판에서 열린 깜짝 상자 수. 결과 화면의 🎁 카드만 읽는다.
     state.chestLoot = [];      // 이 판에서 연 상자의 { kind, score, xp } — 결과 화면 합계용(저장 안 함).
+    state.giftsFound = [];     // 이 판에서 상자로 받은 그림 선물 — 결과 화면용.
     renderQuiz();
     // 말하기는 클릭한 순간 바로 마이크를 연다. 시작 음악보다 듣기를 우선한다.
     if (!speechMode(s.mode)) playMusic('start');
@@ -1711,6 +1713,11 @@
       res.chestShape = FQ.progress.chestShape(q.country.continent);
       res.chestShake = rollKind() < 0.3;   // 열에 셋은 한 번 더 두드려야 열린다
       store.recordChest(res.chestKind);
+      var gifts = FQ.progress.giftCatalog();
+      var ownedGifts = store.giftState().owned;
+      res.gift = gifts.filter(function (gift) { return ownedGifts.indexOf(gift.id) < 0; })[0] ||
+        gifts[(store.chestState().opened - 1) % gifts.length];
+      res.newGift = ownedGifts.indexOf(res.gift.id) < 0;
       state.chestsOpened = (state.chestsOpened || 0) + 1;
       state.chestLoot = (state.chestLoot || []).concat([{ kind: res.chestKind, score: res.chestLoot.score, xp: res.chestLoot.xp }]);
       var chestLevel = FQ.progress.addXp(res.chestLoot.xp);
@@ -1966,6 +1973,11 @@
   var CHEST_KIND_LABEL = { plain: '여행 상자', shiny: '반짝 상자 ✨', gold: '황금 상자 👑' };
   var CHEST_KIND_ICON = { plain: '🎁', shiny: '✨', gold: '👑' };
 
+  function giftSprite(gift) {
+    return '<span class="gift-sprite" role="img" aria-label="' + esc(gift.name) +
+      '" style="background-position:' + (gift.col * 50) + '% ' + (gift.row * 50) + '%"></span>';
+  }
+
   /** 이 판에서 연 깜짝 상자의 합계 — 결과 화면용 */
   function chestSummary() {
     var all = state.chestLoot || [];
@@ -1979,7 +1991,7 @@
 
   /**
    * 깜짝 상자(D22). 대륙 모양 상자 셋 중 하나를 아이가 고르면 열린다. 열에 셋은 한 번 더 두드려야 한다.
-   * 종류·보상은 submit 에서 이미 정해 반영했으므로 무엇을 골라도 같다. 여기서는 화면과 효과만 보여 준다.
+   * 종류·점수·경험치는 submit 에서 정해져 무엇을 골라도 같다. 그림 선물은 상자를 실제로 열 때 저장한다.
    */
   function showChest(country, res, mode, onClose) {
     var st = FQ.progress.stickers();
@@ -2001,9 +2013,13 @@
         '<div class="chest-open" id="chest-open" hidden>' +
           '<div class="chest-art">' +
             '<div class="chest-rays"></div>' +
-            '<div class="chest-emoji">' + shape.emoji + '</div>' +
+            (res.gift ? giftSprite(res.gift) : '<div class="chest-emoji">' + shape.emoji + '</div>') +
           '</div>' +
           '<div class="chest-kind">' + (CHEST_KIND_LABEL[kind] || CHEST_KIND_LABEL.plain) + '</div>' +
+          (res.gift
+            ? '<div class="chest-gift-copy"><b id="chest-gift-status">' + (res.newGift ? '새 그림 선물!' : '그림 선물을 다시 만났어요!') + '</b>' +
+                '<span>' + esc(res.gift.name) + '</span></div>'
+            : '') +
           '<div class="chest-loot">' +
             '<div class="loot" style="animation-delay:.15s">' +
               '<div class="ic">⭐</div><div class="n">보너스 별</div><div class="d">+' + loot.score + '점</div>' +
@@ -2039,7 +2055,7 @@
     var firstPick = back.querySelector('.chest-pick');
     if (firstPick) { try { firstPick.focus({ preventScroll: true }); } catch (e) { firstPick.focus(); } }
 
-    // 상자가 나타나는 소리는 대륙 곡. 보상은 submit 에서 이미 반영했다.
+    // 상자가 나타나는 소리는 대륙 곡. 점수와 경험치는 submit 에서 이미 반영했다.
     playMusic('chest', null, shape.music ? { prefer: shape.music } : null);
 
     var opened = false;
@@ -2055,6 +2071,12 @@
         return;
       }
       opened = true;
+      if (res.gift) {
+        res.newGift = store.awardGift(res.gift.id);
+        state.giftsFound = (state.giftsFound || []).concat([{ gift: res.gift, isNew: res.newGift }]);
+        var giftStatus = back.querySelector('#chest-gift-status');
+        if (giftStatus) giftStatus.textContent = res.newGift ? '새 그림 선물!' : '그림 선물을 다시 만났어요!';
+      }
       var picksBox = back.querySelector('#chest-picks');
       if (picksBox) picksBox.hidden = true;
       var openArea = back.querySelector('#chest-open');
@@ -2268,6 +2290,14 @@
                 '<span class="ns-name">' + state.newStickers.map(function (c) { return esc(c.ko); }).join(' · ') + '</span></span>' +
               '<span class="ns-count small muted">📖 ' + st.owned + ' / ' + st.total + '</span>' +
             '</div>'
+          : '') +
+
+        (state.giftsFound && state.giftsFound.length
+          ? '<div class="card result-gifts"><h3>오늘 받은 그림 선물</h3><div class="result-gift-list">' +
+              state.giftsFound.map(function (item) {
+                return '<div class="result-gift">' + giftSprite(item.gift) +
+                  '<span>' + esc(item.gift.name) + (item.isNew ? ' · 새 선물' : '') + '</span></div>';
+              }).join('') + '</div></div>'
           : '') +
 
         duelHtml +
