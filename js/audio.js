@@ -233,6 +233,9 @@
       for (var i = 0; i < voices.length; i++) {
         if (voices[i].lang && voices[i].lang.toLowerCase().indexOf(want) === 0) { u.voice = voices[i]; break; }
       }
+      if (opts.onStart) u.onstart = opts.onStart;
+      if (opts.onEnd) u.onend = opts.onEnd;
+      if (opts.onError) u.onerror = opts.onError;
       synth.speak(u);
       return u;
     } catch (e) {
@@ -260,29 +263,54 @@
     var token = speechGeneration;
     var started = false;
     var attempt = 0;
+    var finished = false;
+
+    function current() { return token === speechGeneration && !finished && speakEnabled; }
+
+    function finish() {
+      if (!current()) return;
+      finished = true;
+      clearSpeechWork();
+      // 재시도 때문에 이미 큐에 들어간 중복 발화는 끝난 뒤 들리지 않게 한다.
+      if (attempt > 1) { try { synth.cancel(); } catch (e) {} }
+      if (opts.onEnd) opts.onEnd();
+    }
+
+    function fail() {
+      if (!current()) return;
+      finished = true;
+      clearSpeechWork();
+      try { synth.cancel(); } catch (e) {}
+      if (onFail) onFail();
+    }
 
     function utter() {
       for (var i = 0; i < list.length; i++) {
+        if (!current()) return;
         var u = speak(list[i], {
           rate: (opts.rates && opts.rates[i]) || opts.rate,
           pitch: (opts.pitches && opts.pitches[i]) || opts.pitch,
-          queue: true
+          queue: true,
+          onStart: i === 0 ? function () { if (current()) started = true; } : null,
+          onEnd: i === list.length - 1 ? finish : null,
+          onError: fail
         });
-        if (i === 0 && u) u.onstart = function () { if (token === speechGeneration) started = true; };
+        if (!u) { fail(); return; }
       }
     }
 
     function attemptOnce() {
-      if (token !== speechGeneration || !speakEnabled) return;
+      if (!current()) return;
       attempt += 1;
       utter();
+      if (!current()) return;
       afterSpeech(600, function () {
-        if (started || !speakEnabled || !synth) return;
+        if (started || !current()) return;
         if (attempt < 3) {
           // 다시 시도할 때는 cancel 하지 않는다. 사파리는 cancel 뒤의 speak 을 삼킨다.
           attemptOnce();
-        } else if (onFail) {
-          onFail();
+        } else {
+          fail();
         }
       });
     }

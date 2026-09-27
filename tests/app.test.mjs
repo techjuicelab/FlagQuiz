@@ -155,8 +155,9 @@ test('실제 speech.js와 연결해 빠르게 다음 문제로 넘어가도 이�
 
 test('예약된 안내도 홈 화면으로 이동하면 취소',()=>{
   const f=fixture(),a=f.startVoice();
-  a.submit({code:a.state.game.current().country.code});f.releases[0]();
-  f.c.FQ.app.home();f.runDelay(180);
+  a.submit({code:a.state.game.current().country.code});
+  const pending=f.releases[0];
+  f.c.FQ.app.home();pending();f.runDelay(180);
   assert.equal(f.spoken.length,0);assert.equal(a.state.game,null);
 });
 
@@ -445,9 +446,9 @@ test('상자를 기다리던 설명 실패도 상자를 보여 주고 숨기면 
 });
 
 test('겹친 보상은 상자, 단계, 스티커 순으로 한 음악만 고른다',()=>{
-  const f=fixture();f.c.FQ.storage.addXp(295);const a=f.startVoice(['kr']);
+  const f=fixture();f.c.FQ.storage.addXp(295);f.c.FQ.storage.updateSettings({mode:'choice4'});f.c.FQ.app.startGame(['kr']);const a=f.c.FQ.test;
   a.submit({code:'kr'});f.releases.at(-1)();assert.equal(f.music.at(-1).event,'level');
-  const g=fixture(),b=g.startVoice(['kr']);b.submit({code:'kr'});g.releases.at(-1)();
+  const g=fixture();g.c.FQ.storage.updateSettings({mode:'choice4'});g.c.FQ.app.startGame(['kr']);const b=g.c.FQ.test;b.submit({code:'kr'});g.releases.at(-1)();
   assert.equal(g.music.at(-1).event,'sticker');
   const h=fixture();for(let i=0;i<4;i++){h.c.FQ.storage.recordAnswer('jp',false);h.c.FQ.storage.recordChest(null);}
   h.c.FQ.storage.addXp(295);const c=h.startVoice(['kr']);c.state.rng=()=>0;c.state.rngKind=()=>0.5;c.submit({code:'kr'});h.releases.at(-1)();
@@ -456,12 +457,13 @@ test('겹친 보상은 상자, 단계, 스티커 순으로 한 음악만 고른�
 
 test('정답 전용 음악과 홈 배경음은 기본 꺼짐이며 선택하면 사용할 수 있다',()=>{
   const f=fixture();assert.equal(f.c.FQ.storage.settings().correctMusic,false);assert.equal(f.c.FQ.storage.settings().homeMusic,false);
-  f.c.FQ.storage.recordAnswer('kr',true);const a=f.startVoice(['kr']);a.submit({code:'kr'});f.releases.at(-1)();
+  f.c.FQ.storage.recordAnswer('kr',true);f.c.FQ.storage.updateSettings({mode:'choice4'});f.c.FQ.app.startGame(['kr']);const a=f.c.FQ.test;a.submit({code:'kr'});f.releases.at(-1)();
   assert.equal(f.music.at(-1).event,'discovery');
   f.c.FQ.storage.updateSettings({correctMusic:true});f.c.FQ.app.startGame(['kr']);a.submit({code:'kr'});f.releases.at(-1)();
   assert.equal(f.music.at(-1).event,'correct');
   f.c.FQ.storage.updateSettings({homeMusic:true});f.c.FQ.app.home();f.releases.at(-1)();assert.equal(f.music.at(-1).event,'homeBgm');
-  f.c.FQ.app.startGame(['kr']);assert.equal(f.music.at(-1).cancelled,true);
+  const bgm=f.music.at(-1);
+  f.c.FQ.app.startGame(['kr']);assert.equal(bgm.cancelled,true);
 });
 
 test('결과는 정확도와 관계없이 응원을 마친 뒤 같은 완료 음악을 재생한다',()=>{
@@ -1176,15 +1178,15 @@ test('중간 결과라도 목표 나라 이름이 확실하면 바로 채점하�
   i.c.callbacks.result(['독일']);assert.equal(d.state.answered,true);assert.equal(d.state.game.correct,0);
 });
 
-test('말로 맞히면 설명이 끝난 뒤 저절로 다음 나라로 가고, 틀리거나 다른 놀이에서는 아이가 누를 때까지 기다린다',()=>{
+test('말로 맞히면 나라 이름을 다시 읽고 저절로 다음 나라로 가고, 틀리거나 다른 놀이에서는 기다린다',()=>{
   const f=fixture(),a=f.startVoice(['id','fr']);
   const first=a.state.game.current().country.code;
   a.submit({code:first});assert.equal(a.state.answered,true);
-  f.releases.at(-1)();                                    // 마이크 해제 → 발견음
-  f.finishMusic();                                         // 발견음 끝 → 설명 낭독
-  assert.equal(f.spoken.length,1);
+  f.releases.at(-1)();                                    // 마이크 해제 → 정답 이름 즉시 낭독
+  assert.deepEqual(f.spoken.at(-1),[a.state.game.current().country.ko]);
+  assert.equal(f.music.length,0,'말하기 정답에서 발견 음악을 기다리지 않는다');
   f.runDelay(900);assert.equal(a.state.game.index,0,'낭독이 끝나기 전에는 안 넘어간다');
-  f.finishVoice();                                         // 낭독 끝 → 0.9초 예약
+  f.finishVoice();                                         // 이름 낭독 끝 → 0.9초 예약
   assert.ok([...f.timers.values()].some(t=>t.delay===900),'0.9초 뒤 다음 나라');
   f.runDelay(900);
   assert.equal(a.state.game.index,1);assert.equal(a.state.answered,false);assert.equal(a.state.autoNextTimer,null);
@@ -1199,9 +1201,99 @@ test('말로 맞히면 설명이 끝난 뒤 저절로 다음 나라로 가고, �
   assert.ok(![...g.timers.values()].some(t=>t.delay===900));g.runDelay(900);assert.equal(b.state.game.index,0);
 });
 
+test('마이크로 국기 이름을 맞히면 정답 이름을 다시 읽고 낭독이 끝나면 다음 문제를 자동으로 연다',()=>{
+  const f=fixture(),a=f.startVoice(['kr','jp']);
+  const first=a.state.game.current().country;
+  f.c.callbacks.start();
+  f.c.callbacks.result([first.ko]);
+  assert.equal(a.state.game.correct,1);
+  assert.equal(a.state.answered,true);
+  assert.equal(f.spoken.length,0,'마이크가 닫히기 전에는 읽지 않는다');
+  f.releases.at(-1)();
+  assert.deepEqual(f.spoken.at(-1),[first.ko]);
+  assert.equal(f.music.length,0);
+  assert.equal(a.state.game.index,0,'나라 이름을 읽는 동안에는 현재 국기를 유지한다');
+  f.finishVoice();
+  f.runDelay(900);
+  assert.equal(a.state.game.index,1);
+  assert.equal(a.state.answered,false);
+  assert.equal(f.c.listening,true);
+});
+
+test('낭독 종료 알림이 오지 않아도 말하기 정답 뒤에 다음 국기로 진행한다',()=>{
+  const f=fixture(),a=f.startVoice(['kr','jp']);
+  const first=a.state.game.current().country;
+  f.c.callbacks.result([first.ko]);
+  f.releases.at(-1)();
+  assert.deepEqual(f.spoken.at(-1),[first.ko]);
+  const recovery=[...f.timers.values()].find(t=>!t.interval&&t.delay>=2000&&t.delay<=15000);
+  assert.ok(recovery,'브라우저가 음성 종료 알림을 놓쳐도 진행할 수 있는 제한 시간이 있어야 한다');
+  f.runDelay(recovery.delay);
+  f.runDelay(900);
+  assert.equal(a.state.game.index,1);
+  assert.equal(f.c.listening,true);
+});
+
+test('말하기 정답 뒤 수동으로 다음을 누르거나 홈으로 나가면 예약된 자동 이동을 취소한다',()=>{
+  const f=fixture(),a=f.startVoice(['kr','jp','fr']);
+  a.submit({code:a.state.game.current().country.code});
+  f.releases.at(-1)();f.finishVoice();
+  assert.ok([...f.timers.values()].some(t=>t.delay===900));
+  f.node('#next').click();
+  assert.equal(a.state.game.index,1);
+  f.runDelay(900);
+  assert.equal(a.state.game.index,1,'수동으로 연 두 번째 국기를 자동 예약이 건너뛰지 않는다');
+
+  a.submit({code:a.state.game.current().country.code});
+  f.releases.at(-1)();f.finishVoice();
+  assert.ok([...f.timers.values()].some(t=>t.delay===900));
+  f.c.FQ.app.home();
+  f.runDelay(900);
+  assert.equal(a.state.game,null);
+  assert.match(f.node('main').innerHTML,/home-kid/);
+});
+
+test('말하기 정답으로 상자를 열면 선물을 본 뒤 닫았을 때 자동으로 다음 국기를 연다',()=>{
+  const f=fixture();
+  for(let i=0;i<4;i++){f.c.FQ.storage.recordAnswer('fr',false);f.c.FQ.storage.recordChest(null);}
+  const a=f.startVoice(['kr','jp']);a.state.rng=()=>0;a.state.rngKind=()=>0.5;
+  const first=a.state.game.current().country;
+  a.submit({code:a.state.game.current().country.code});
+  f.releases.at(-1)();
+  assert.deepEqual(f.spoken.at(-1),[first.ko]);
+  f.finishVoice();
+  assert.equal(f.music.at(-1).event,'chest');
+  assert.equal(f.node('#next').disabled,true);
+  assert.ok(![...f.timers.values()].some(t=>t.delay===900));
+  f.node('created').handlers.click({target:{closest:()=>true}});
+  assert.equal(f.node('#next').disabled,false);
+  assert.ok([...f.timers.values()].some(t=>t.delay===900));
+  f.runDelay(900);
+  assert.equal(a.state.game.index,1);
+  assert.equal(f.c.listening,true);
+});
+
+test('상자 앞에서 이름 재생이 실패하면 닫아도 기다리고, 다시 듣기에 성공하면 자동으로 진행한다',()=>{
+  const f=fixture();
+  for(let i=0;i<4;i++){f.c.FQ.storage.recordAnswer('fr',false);f.c.FQ.storage.recordChest(null);}
+  const a=f.startVoice(['kr','jp']);a.state.rng=()=>0;a.state.rngKind=()=>0.5;
+  const first=a.state.game.current().country;
+  a.submit({code:a.state.game.current().country.code});
+  f.releases.at(-1)();f.playbackFailures.at(-1)();
+  assert.equal(f.music.at(-1).event,'chest');
+  f.node('created').handlers.click({target:{closest:()=>true}});
+  assert.ok(![...f.timers.values()].some(t=>t.delay===900),'이름을 못 들었으면 상자를 닫아도 자동으로 넘어가지 않는다');
+  f.node('#replay').click();f.releases.at(-1)();
+  assert.deepEqual(f.spoken.at(-1),[first.ko,first.flagHint]);
+  f.finishVoice();
+  assert.ok([...f.timers.values()].some(t=>t.delay===900));
+  f.runDelay(900);
+  assert.equal(a.state.game.index,1);
+});
+
 test('자동 넘어가기는 설명 다시 듣기를 누르면 미뤄졌다가 다시 들은 뒤에 가고, 읽어주기가 꺼져 있으면 1.8초 뒤에 간다',()=>{
   const f=fixture(),a=f.startVoice(['id','fr']);
-  a.submit({code:a.state.game.current().country.code});f.releases.at(-1)();f.finishMusic();f.finishVoice();
+  a.submit({code:a.state.game.current().country.code});f.releases.at(-1)();f.finishVoice();
   assert.ok([...f.timers.values()].some(t=>t.delay===900));
   f.node('#replay').click();
   assert.ok(![...f.timers.values()].some(t=>t.delay===900),'다시 듣기를 누르면 예약이 사라진다');

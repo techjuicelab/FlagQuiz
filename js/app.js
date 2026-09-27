@@ -93,9 +93,10 @@
 
   var CONTINENTS = ['all', '아시아', '유럽', '아프리카', '북아메리카', '남아메리카', '오세아니아'];
   var COUNTS = [5, 10, 20, 'all'];
-  // 말로 답하기에서 맞힌 뒤 저절로 다음으로 가기까지(D25): 설명을 다 들은 뒤 0.9초, 읽어주기가 꺼져 있으면 1.8초.
+  // 말로 맞힌 정답 이름을 들은 뒤 잠깐 쉬고 넘어간다. 종료 알림이 빠져도 다음 국기에 갇히지 않는다.
   var AUTO_NEXT_AFTER_SPEECH = 900;
   var AUTO_NEXT_SILENT = 1800;
+  var AUTO_NEXT_VOICE_WATCHDOG = 7000;
 
   var state = {
     game: null,
@@ -1771,7 +1772,7 @@
     var slots = ui.$('.travel-slots');
     if (slots) slots.innerHTML = travelSlots(chestNow, false);
 
-    // 정오답 모두 이름 한 번과 쉬운 설명 한 문장만 읽는다. 그림 문제는 나라 이름 뒤에 그림 이름을 한 번 더 읽어 쌍을 잇는다.
+    // 정답 카드의 다시 듣기는 이름과 설명을 읽는다. 말하기 정답의 첫 안내는 이름만 짧게 읽는다.
     var isCapitalQ = capitalAxis(q.mode);
     var isMapQ = q.mode === 'map';
     var isArtQ = q.mode === 'symbol' || q.mode === 'place';
@@ -1783,9 +1784,16 @@
     var feedbackSpeech = state.lastSpeech;
     var generation = state.feedbackGeneration;
     var narrationRequest = 0;
+    var voiceWatchdog = null;
     var chestShown = false;
+    var chestClosed = false;
+    var autoAfterChest = false;
+    function clearVoiceWatchdog() {
+      if (voiceWatchdog !== null) { global.clearTimeout(voiceWatchdog); voiceWatchdog = null; }
+    }
     function cancelNarration() {
       narrationRequest += 1;
+      clearVoiceWatchdog();
       stopMusic();
       if (state.autoNextTimer) { global.clearTimeout(state.autoNextTimer); state.autoNextTimer = null; }
     }
@@ -1797,13 +1805,17 @@
     function afterExplanation(request) {
       if (!feedbackCurrent() || request !== narrationRequest || !res.chest || chestShown) return;
       chestShown = true;
-      showChest(c, res, q.mode);
+      showChest(c, res, q.mode, function () {
+        chestClosed = true;
+        if (autoAfterChest) scheduleAutoNext(request, AUTO_NEXT_AFTER_SPEECH);
+      });
     }
-    // 말로 답하기에서 맞히면 설명을 다 듣고 저절로 다음 나라로 간다(D25). 틀리면 아이가 답을 보고 스스로 넘기고,
-    // 깜짝 상자가 열리면 상자를 닫고 넘기며, 낭독이 실패하면 '눌러서 들어보기' 를 두고 기다린다. 다른 놀이는 종전대로다.
+    // 말하기 정답은 이름을 한 번 더 듣고 자동으로 넘어간다. 오답과 다른 놀이는 정답 카드를 읽을 시간을 준다.
+    // 깜짝 상자는 아이가 열어 본 뒤 닫으면 진행하고, 재생 실패는 다시 듣기 안내를 남긴다.
     var autoNext = speechMode(q.mode) && !!res.correct;
+    var quickAnswerSpeech = autoNext ? { lines: [isCapitalQ ? c.capital : c.ko], opts: feedbackSpeech.opts } : feedbackSpeech;
     function scheduleAutoNext(request, delay) {
-      if (!autoNext || res.chest || !feedbackCurrent() || request !== narrationRequest) return;
+      if (!autoNext || (res.chest && !chestClosed) || !feedbackCurrent() || request !== narrationRequest) return;
       if (state.autoNextTimer) global.clearTimeout(state.autoNextTimer);
       state.autoNextTimer = global.setTimeout(function () {
         state.autoNextTimer = null;
@@ -1811,13 +1823,36 @@
         goNext();
       }, delay);
     }
-    function narrate(request) {
+    function narrate(request, replaying) {
       if (!feedbackCurrent() || request !== narrationRequest) return;
-      if (!store.settings().speak) { afterExplanation(request); scheduleAutoNext(request, AUTO_NEXT_SILENT); return; }
-      audio.say(feedbackSpeech.lines, Object.assign({}, feedbackSpeech.opts, {
-        onEnd: function () { afterExplanation(request); scheduleAutoNext(request, AUTO_NEXT_AFTER_SPEECH); }
+      if (!store.settings().speak) {
+        autoAfterChest = true;
+        afterExplanation(request);
+        scheduleAutoNext(request, AUTO_NEXT_SILENT);
+        return;
+      }
+      var spoken = replaying ? feedbackSpeech : quickAnswerSpeech;
+      if (autoNext && !replaying) {
+        clearVoiceWatchdog();
+        voiceWatchdog = global.setTimeout(function () {
+          voiceWatchdog = null;
+          if (!feedbackCurrent() || request !== narrationRequest) return;
+          audio.stopSpeaking();
+          autoAfterChest = true;
+          afterExplanation(request);
+          scheduleAutoNext(request, AUTO_NEXT_AFTER_SPEECH);
+        }, AUTO_NEXT_VOICE_WATCHDOG);
+      }
+      audio.say(spoken.lines, Object.assign({}, spoken.opts, {
+        onEnd: function () {
+          clearVoiceWatchdog();
+          autoAfterChest = true;
+          afterExplanation(request);
+          scheduleAutoNext(request, AUTO_NEXT_AFTER_SPEECH);
+        }
       }), function () {
         if (!feedbackCurrent() || request !== narrationRequest) return;
+        clearVoiceWatchdog();
         nudgeReplay();
         afterExplanation(request);
       });
@@ -1826,10 +1861,10 @@
       FQ.speech.stopAnd(function () {
         if (!feedbackCurrent() || request !== narrationRequest) return;
         // 보상 소리는 우선순위가 높은 하나만 쓴다. 상자는 설명이 끝난 뒤 열린다.
-        if (res.chest || replaying) { narrate(request); return; }
+        if (autoNext || res.chest || replaying) { narrate(request, replaying); return; }
         var event = res.levelUp ? 'level' : res.newSticker ? 'sticker' :
           res.correct && store.settings().correctMusic ? 'correct' : 'discovery';
-        playMusic(event, function () { narrate(request); });
+        playMusic(event, function () { narrate(request, replaying); });
       });
     }
 
@@ -1946,7 +1981,7 @@
    * 깜짝 상자(D22). 대륙 모양 상자 셋 중 하나를 아이가 고르면 열린다. 열에 셋은 한 번 더 두드려야 한다.
    * 종류·보상은 submit 에서 이미 정해 반영했으므로 무엇을 골라도 같다. 여기서는 화면과 효과만 보여 준다.
    */
-  function showChest(country, res, mode) {
+  function showChest(country, res, mode, onClose) {
     var st = FQ.progress.stickers();
     var shape = res.chestShape || FQ.progress.chestShape(country && country.continent);
     var kind = res.chestKind || 'plain';
@@ -2035,6 +2070,7 @@
       back.remove();
       var nextBtn = ui.$('#next');
       if (nextBtn) { nextBtn.disabled = false; nextBtn.focus({ preventScroll: true }); }
+      if (onClose) onClose();
     }
     back.addEventListener('click', function (ev) {
       // 바깥을 눌러 닫는 것은 상자를 연 뒤에만. 고르기 전에 실수로 닫히면 아이가 선물을 못 본다.
