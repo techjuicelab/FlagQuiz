@@ -97,6 +97,7 @@
   var AUTO_NEXT_AFTER_SPEECH = 900;
   var AUTO_NEXT_SILENT = 1800;
   var AUTO_NEXT_VOICE_WATCHDOG = 7000;
+  var GIFT_DISPLAY_MS = 3000;
 
   var state = {
     game: null,
@@ -121,6 +122,9 @@
     artTimer: null,
     questionGeneration: 0,
     autoNextTimer: null,   // 말로 맞힌 뒤 저절로 다음으로 가는 예약(D25)
+    giftTimer: null,
+    giftClose: null,
+    giftResume: null,
     feedbackGeneration: 0,
     screen: 'home',
     musicGeneration: 0,
@@ -143,6 +147,9 @@
     state.feedbackGeneration += 1;
     stopMusic();
     if (state.autoNextTimer) { global.clearTimeout(state.autoNextTimer); state.autoNextTimer = null; }
+    if (state.giftTimer) { global.clearTimeout(state.giftTimer); state.giftTimer = null; }
+    state.giftClose = null;
+    state.giftResume = null;
     var chest = ui.$('.chest-back');
     if (chest) {
       chest.remove();
@@ -1794,8 +1801,6 @@
     var narrationRequest = 0;
     var voiceWatchdog = null;
     var chestShown = false;
-    var chestClosed = false;
-    var autoAfterChest = false;
     function clearVoiceWatchdog() {
       if (voiceWatchdog !== null) { global.clearTimeout(voiceWatchdog); voiceWatchdog = null; }
     }
@@ -1813,17 +1818,23 @@
     function afterExplanation(request) {
       if (!feedbackCurrent() || request !== narrationRequest || !res.chest || chestShown) return;
       chestShown = true;
+      state.giftResume = null;
       showChest(c, res, q.mode, function () {
-        chestClosed = true;
-        if (autoAfterChest) scheduleAutoNext(request, AUTO_NEXT_AFTER_SPEECH);
+        if (feedbackCurrent() && request === narrationRequest) goNext();
       });
     }
+    if (res.chest) state.giftResume = function () {
+      narrationRequest += 1;
+      clearVoiceWatchdog();
+      audio.stopSpeaking();
+      afterExplanation(narrationRequest);
+    };
     // 말하기 정답은 이름을 한 번 더 듣고 자동으로 넘어간다. 오답과 다른 놀이는 정답 카드를 읽을 시간을 준다.
-    // 깜짝 상자는 그림 선물을 바로 보여 주고, 닫으면 진행한다. 재생 실패는 다시 듣기 안내를 남긴다.
+    // 깜짝 상자는 그림 선물을 잠깐 보여 준 뒤 놀이 방식에 관계없이 자동으로 진행한다.
     var autoNext = speechMode(q.mode) && !!res.correct;
     var quickAnswerSpeech = autoNext ? { lines: [isCapitalQ ? c.capital : c.ko], opts: feedbackSpeech.opts } : feedbackSpeech;
     function scheduleAutoNext(request, delay) {
-      if (!autoNext || (res.chest && !chestClosed) || !feedbackCurrent() || request !== narrationRequest) return;
+      if (!autoNext || res.chest || !feedbackCurrent() || request !== narrationRequest) return;
       if (state.autoNextTimer) global.clearTimeout(state.autoNextTimer);
       state.autoNextTimer = global.setTimeout(function () {
         state.autoNextTimer = null;
@@ -1834,19 +1845,17 @@
     function narrate(request, replaying) {
       if (!feedbackCurrent() || request !== narrationRequest) return;
       if (!store.settings().speak) {
-        autoAfterChest = true;
         afterExplanation(request);
         scheduleAutoNext(request, AUTO_NEXT_SILENT);
         return;
       }
       var spoken = replaying ? feedbackSpeech : quickAnswerSpeech;
-      if (autoNext && !replaying) {
+      if (res.chest || (autoNext && !replaying)) {
         clearVoiceWatchdog();
         voiceWatchdog = global.setTimeout(function () {
           voiceWatchdog = null;
           if (!feedbackCurrent() || request !== narrationRequest) return;
           audio.stopSpeaking();
-          autoAfterChest = true;
           afterExplanation(request);
           scheduleAutoNext(request, AUTO_NEXT_AFTER_SPEECH);
         }, AUTO_NEXT_VOICE_WATCHDOG);
@@ -1854,7 +1863,6 @@
       audio.say(spoken.lines, Object.assign({}, spoken.opts, {
         onEnd: function () {
           clearVoiceWatchdog();
-          autoAfterChest = true;
           afterExplanation(request);
           scheduleAutoNext(request, AUTO_NEXT_AFTER_SPEECH);
         }
@@ -2004,9 +2012,12 @@
     var loot = res.chestLoot || FQ.progress.chestLoot(kind);
     var art = (mode === 'symbol' || mode === 'place') && country ? artFor(country.code, mode) : null;
     var back = doc.createElement('div');
+    var announcement = res.gift
+      ? esc(res.gift.name) + (res.newGift ? ' 그림 선물을 받았어요.' : ' 그림 선물을 다시 만났어요.')
+      : '선물을 받았어요.';
     back.className = 'chest-back';
     back.innerHTML =
-      '<div class="chest-card ' + kind + '" role="dialog" aria-modal="true" aria-label="그림 선물을 받았어요">' +
+      '<div class="chest-card ' + kind + '" role="dialog" aria-modal="true" aria-label="' + announcement + ' 잠시 후 자동으로 넘어가요">' +
         '<div class="chest-title">그림 선물을 받았어요!</div>' +
         '<div class="chest-sub" id="chest-sub">' + esc(shape.name) + '에서 나왔어요</div>' +
         '<div class="chest-open" id="chest-open">' +
@@ -2042,16 +2053,16 @@
                 '<span class="chest-friend-name">' + esc(country.ko) + '</span>' +
               '</div>'
             : '') +
-          '<button class="btn btn-primary btn-big" id="chest-close" type="button" style="width:100%;margin-top:18px">좋아요!</button>' +
+          '<div class="chest-auto-note">잠시 후 자동으로 넘어가요</div>' +
         '</div>' +
       '</div>';
     doc.body.appendChild(back);
 
-    // 선물 그림을 보고 닫을 때까지 뒤의 '다음 문제' 단추를 잠근다.
+    // 선물 그림을 보여 주는 동안 뒤의 '다음 문제' 단추를 잠근다.
     var behind = ui.$('#next');
     if (behind) behind.disabled = true;
-    var closeBtn = back.querySelector('#chest-close');
-    if (closeBtn) { try { closeBtn.focus({ preventScroll: true }); } catch (e) { closeBtn.focus(); } }
+    var card = back.querySelector('.chest-card');
+    if (card) { card.setAttribute('tabindex', '-1'); try { card.focus({ preventScroll: true }); } catch (e) { card.focus(); } }
 
     // 상자가 나타나는 소리는 대륙 곡. 선물·점수·경험치는 submit 에서 이미 반영했다.
     playMusic('chest', null, shape.music ? { prefer: shape.music } : null);
@@ -2060,15 +2071,16 @@
     function close() {
       if (closed) return;
       closed = true;
+      if (state.giftTimer) { global.clearTimeout(state.giftTimer); state.giftTimer = null; }
+      state.giftClose = null;
       stopMusic();
       back.remove();
       var nextBtn = ui.$('#next');
-      if (nextBtn) { nextBtn.disabled = false; nextBtn.focus({ preventScroll: true }); }
+      if (nextBtn) nextBtn.disabled = false;
       if (onClose) onClose();
     }
-    back.addEventListener('click', function (ev) {
-      if (ev.target.closest('#chest-close') || ev.target === back) close();
-    });
+    state.giftClose = close;
+    state.giftTimer = global.setTimeout(close, GIFT_DISPLAY_MS);
   }
 
   function goNext() {
@@ -2481,13 +2493,20 @@
 
     doc.addEventListener('visibilitychange', function () {
       if (doc.hidden) {
-        cancelPendingFeedback();
+        if (state.giftClose || state.giftResume) {
+          if (state.giftTimer) { global.clearTimeout(state.giftTimer); state.giftTimer = null; }
+          stopMusic();
+        } else cancelPendingFeedback();
         audio.stopSpeaking();
         if (state.game && !state.answered) {
           state.timerPaused = !!state.timerId;
           stopTimer();
         }
         stopListening();
+      } else if (state.giftClose) {
+        state.giftTimer = global.setTimeout(state.giftClose, GIFT_DISPLAY_MS);
+      } else if (state.giftResume) {
+        state.giftResume();
       } else if (state.game && !state.answered) {
         if (state.timerPaused) {
           state.timerPaused = false;

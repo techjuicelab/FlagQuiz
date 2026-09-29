@@ -424,25 +424,59 @@ test('음원 실패는 설명으로 이어지고 다음 문제는 늦게 끝나�
   a.goNext();late();assert.equal(f.spoken.length,1);
 });
 
-test('상자는 Sua 설명 완료 후 한 번만 열리고 다시 듣기로 추가 적립하지 않는다',()=>{
+test('상자는 Sua 설명 완료 후 한 번만 열리고 3초 뒤 결과로 자동 진행한다',()=>{
   const f=fixture();for(let i=0;i<4;i++){f.c.FQ.storage.recordAnswer('jp',false);f.c.FQ.storage.recordChest(null);}
   const a=f.startVoice(['kr']);a.state.rng=()=>0;a.state.rngKind=()=>0.5;a.submit({text:''},true);f.releases.at(-1)();
   assert.equal(f.music.length,0);assert.equal(f.spoken.length,1);assert.equal(f.node('#next').disabled,false);
   f.finishVoice();assert.equal(f.music.at(-1).event,'chest');assert.equal(f.node('#next').disabled,true);
   f.finishVoice();assert.equal(f.music.filter(x=>x.event==='chest').length,1);
-  f.node('created').handlers.click({target:{closest:()=>true}});
+  assert.ok([...f.timers.values()].some(t=>t.delay===3000));
+  f.runDelay(3000);
   assert.equal(f.node('#next').disabled,false);
-  f.node('#replay').click();f.releases.at(-1)();f.finishVoice();
+  assert.match(f.node('main').innerHTML,/result-screen/);
   assert.equal(f.music.filter(x=>x.event==='chest').length,1);assert.equal(f.c.FQ.storage.stats().asked,5);
   assert.equal(a.state.game.bonusScore,5);
 });
 
-test('상자를 기다리던 설명 실패도 상자를 보여 주고 숨기면 소리와 잠금이 남지 않는다',()=>{
+test('상자를 기다리던 설명 실패도 선물을 보여 주고 앱 복귀 후 자동으로 진행한다',()=>{
   const f=fixture();f.c.FQ.app.boot();for(let i=0;i<4;i++){f.c.FQ.storage.recordAnswer('jp',false);f.c.FQ.storage.recordChest(null);}
   const a=f.startVoice(['kr']);a.state.rng=()=>0;a.state.rngKind=()=>0.5;a.submit({text:''},true);f.releases.at(-1)();f.playbackFailures.at(-1)();
   assert.equal(f.music.at(-1).event,'chest');
   f.c.document.hidden=true;f.events.visibilitychange[0]();
-  assert.equal(f.music.at(-1).cancelled,true);assert.equal(f.node('#next').disabled,false);
+  assert.equal(f.music.at(-1).cancelled,true);assert.equal(f.node('#next').disabled,true);
+  assert.ok(![...f.timers.values()].some(t=>t.delay===3000));
+  f.runDelay(3000);assert.doesNotMatch(f.node('main').innerHTML,/result-screen/);
+  f.c.document.hidden=false;f.events.visibilitychange[0]();
+  assert.ok([...f.timers.values()].some(t=>t.delay===3000));
+  f.runDelay(3000);assert.match(f.node('main').innerHTML,/result-screen/);
+});
+
+test('선물 설명 중 앱을 가렸다 돌아와도 보상을 보여 준 뒤 자동으로 진행한다',()=>{
+  const f=fixture();f.c.FQ.app.boot();f.c.FQ.storage.recordChest(null);
+  const a=f.startVoice(['kr','jp']);a.state.rng=()=>0;
+  a.submit({code:a.state.game.current().country.code});f.releases.at(-1)();
+  assert.equal(f.music.length,0);
+  f.c.document.hidden=true;f.events.visibilitychange[0]();
+  f.finishVoice();assert.equal(f.music.length,0);
+  f.c.document.hidden=false;f.events.visibilitychange[0]();
+  assert.equal(f.music.at(-1).event,'chest');
+  assert.ok([...f.timers.values()].some(t=>t.delay===3000));
+  f.finishVoice();assert.equal(f.music.filter(item=>item.event==='chest').length,1);
+  f.runDelay(3000);assert.equal(a.state.game.index,1);
+});
+
+test('선물 화면 복귀 뒤 늦은 마이크 해제는 설명을 다시 시작하지 않는다',()=>{
+  const f=fixture();f.c.FQ.app.boot();f.c.FQ.storage.recordChest(null);
+  const a=f.startVoice(['kr','jp']);a.state.rng=()=>0;
+  a.submit({code:a.state.game.current().country.code});
+  const lateRelease=f.releases.at(-1);
+  f.c.document.hidden=true;f.events.visibilitychange[0]();
+  f.c.document.hidden=false;f.events.visibilitychange[0]();
+  assert.equal(f.music.at(-1).event,'chest');
+  lateRelease();
+  assert.equal(f.spoken.length,0);
+  assert.equal(f.music.filter(item=>item.event==='chest').length,1);
+  f.runDelay(3000);assert.equal(a.state.game.index,1);
 });
 
 test('겹친 보상은 상자, 단계, 스티커 순으로 한 음악만 고른다',()=>{
@@ -1102,28 +1136,33 @@ test('결과 화면은 정확한 나라 수·여행 카드·레벨·상자·새 
   assert.match(html2,/aria-label="오늘 만난 나라 1개"/);
 });
 
-test('깜짝 상자는 선물을 즉시 지급하고 그림을 바로 보여 주며, 닫기 전에는 다음 단추가 잠긴다',()=>{
+test('깜짝 상자는 선물을 즉시 지급하고 3초 뒤 확인 없이 다음 문제로 간다',()=>{
   const f=fixture();f.c.FQ.storage.updateSettings({mode:'choice4',speak:false});f.c.FQ.storage.recordChest(null);
-  f.c.FQ.app.startGame(['kr']);const a=f.c.FQ.test;
+  f.c.FQ.app.startGame(['kr','jp']);const a=f.c.FQ.test;
+  const first=a.state.game.current().country;
   a.state.rng=()=>0;a.state.rngKind=()=>0.2;   // 열림 · 반짝 상자(0.05~0.25)
-  a.submit({code:'kr'});
+  a.submit({code:first.code});
   assert.deepEqual([...f.c.FQ.storage.giftState().owned],['fire_truck'],'화면을 열거나 누르기 전에 선물이 저장된다');
   assert.match(f.node('#feedback-area').innerHTML,/새 그림 선물을 받았어요![\s\S]*소방차/,'정답 카드에도 바로 그림 선물을 보여 준다');
   f.releases.at(-1)();
   const back=f.node('created'),html=back.innerHTML;
-  assert.match(html,/<div class="chest-card shiny" role="dialog" aria-modal="true" aria-label="그림 선물을 받았어요">/);
+  assert.match(html,/<div class="chest-card shiny" role="dialog" aria-modal="true" aria-label="소방차 그림 선물을 받았어요\. 잠시 후 자동으로 넘어가요">/);
   assert.doesNotMatch(html,/chest-pick|chest-picks|한 번 더 두드려요/);
   assert.match(html,/id="chest-sub">연등에서 나왔어요/,'대한민국은 아시아라 연등');
   assert.match(html,/id="chest-open">[\s\S]*반짝 상자 ✨[\s\S]*\+5점[\s\S]*\+40/);
   assert.match(html,/class="gift-sprite" role="img" aria-label="소방차" style="background-position:0% 0%"/);
-  assert.match(html,/<div class="chest-friend" role="group" aria-label="대한민국 친구 카드"><img src="flags\/kr\.svg"/);
+  assert.ok(html.includes('<div class="chest-friend" role="group" aria-label="'+first.ko+' 친구 카드"><img src="flags/'+first.code+'.svg"'));
   assert.equal(f.music.at(-1).event,'chest');assert.equal(f.music.at(-1).opts.prefer,'chest-01-musicbox');
   assert.equal(f.node('#next').disabled,true);
-  assert.equal(f.c.document.activeElement,f.node('#chest-close'));
+  assert.equal(f.c.document.activeElement,f.node('.chest-card'));
+  assert.doesNotMatch(html,/id="chest-close"|좋아요!/);
+  assert.match(html,/잠시 후 자동으로 넘어가요/);
   assert.equal(a.state.xpGained,50);assert.equal(a.state.game.bonusScore,5);
   assert.deepEqual(JSON.parse(JSON.stringify(f.c.FQ.storage.chestState())),{since:0,opened:1,kinds:{shiny:1}});
-  back.handlers.click({target:{closest:(sel)=>sel==='#chest-close'?true:null}});
+  f.runDelay(3000);
   assert.equal(f.node('#next').disabled,false);
+  assert.equal(a.state.game.index,1);
+  assert.equal(a.state.answered,false);
   // 기존 아홉 선물이 있으면 새 그림 중 하나가 바로 나오고, 황금 상자는 보너스 10점·경험치 60.
   const g=fixture();g.c.FQ.storage.updateSettings({mode:'choice4',speak:false});g.c.FQ.storage.recordChest(null);
   for(const gift of g.c.FQ.progress.giftCatalog().slice(0,9))g.c.FQ.storage.awardGift(gift.id);
@@ -1134,6 +1173,36 @@ test('깜짝 상자는 선물을 즉시 지급하고 그림을 바로 보여 주
   const back2=g.node('created');assert.match(back2.innerHTML,/class="chest-card gold"[\s\S]*황금 상자 👑[\s\S]*\+10점[\s\S]*\+60/);
   assert.match(back2.innerHTML,/class="gift-sprite gift-sheet-2"[\s\S]*장난감 버스/);
   assert.equal(b.state.game.bonusScore,10);assert.equal(b.state.xpGained,70);
+});
+
+test('선물을 받는 마지막 문제도 자동으로 결과를 열고 홈 이동은 예약을 취소한다',()=>{
+  const f=fixture();f.c.FQ.storage.updateSettings({mode:'choice4',speak:false});f.c.FQ.storage.recordChest(null);
+  f.c.FQ.app.startGame(['kr']);const a=f.c.FQ.test;a.state.rng=()=>0;
+  a.submit({code:a.state.game.current().country.code});f.releases.at(-1)();
+  assert.ok([...f.timers.values()].some(t=>t.delay===3000));
+  f.runDelay(3000);
+  assert.match(f.node('main').innerHTML,/result-screen/);
+  assert.match(f.node('main').innerHTML,/오늘 받은 그림 선물/);
+
+  const g=fixture();g.c.FQ.storage.updateSettings({mode:'choice4',speak:false});g.c.FQ.storage.recordChest(null);
+  g.c.FQ.app.startGame(['kr','jp']);const b=g.c.FQ.test;b.state.rng=()=>0;
+  b.submit({code:b.state.game.current().country.code});g.releases.at(-1)();
+  assert.ok([...g.timers.values()].some(t=>t.delay===3000));
+  g.c.FQ.app.home();g.runDelay(3000);
+  assert.equal(b.state.game,null);
+  assert.match(g.node('main').innerHTML,/home-kid/);
+});
+
+test('선물 설명 종료 신호가 없어도 대기 한도 뒤 선물을 보여 주고 진행한다',()=>{
+  const f=fixture();f.c.FQ.storage.updateSettings({mode:'choice4'});f.c.FQ.storage.recordChest(null);
+  f.c.FQ.app.startGame(['kr','jp']);const a=f.c.FQ.test;a.state.rng=()=>0;
+  a.submit({code:a.state.game.current().country.code});f.releases.at(-1)();
+  assert.ok([...f.timers.values()].some(t=>t.delay===7000));
+  f.runDelay(7000);
+  assert.equal(f.music.at(-1).event,'chest');
+  assert.ok([...f.timers.values()].some(t=>t.delay===3000));
+  f.runDelay(3000);
+  assert.equal(a.state.game.index,1);
 });
 
 test('세 번째 선물 그림도 바로 보이고, 27종을 모두 모은 뒤에만 중복 선물이 나온다',()=>{
@@ -1278,7 +1347,7 @@ test('말하기 정답 뒤 수동으로 다음을 누르거나 홈으로 나가�
   assert.match(f.node('main').innerHTML,/home-kid/);
 });
 
-test('말하기 정답으로 선물을 받으면 화면을 닫은 뒤 자동으로 다음 국기를 연다',()=>{
+test('말하기 정답으로 선물을 받으면 3초 뒤 자동으로 다음 국기를 연다',()=>{
   const f=fixture();
   for(let i=0;i<4;i++){f.c.FQ.storage.recordAnswer('fr',false);f.c.FQ.storage.recordChest(null);}
   const a=f.startVoice(['kr','jp']);a.state.rng=()=>0;a.state.rngKind=()=>0.5;
@@ -1290,15 +1359,13 @@ test('말하기 정답으로 선물을 받으면 화면을 닫은 뒤 자동으�
   assert.equal(f.music.at(-1).event,'chest');
   assert.equal(f.node('#next').disabled,true);
   assert.ok(![...f.timers.values()].some(t=>t.delay===900));
-  f.node('created').handlers.click({target:{closest:()=>true}});
+  f.runDelay(3000);
   assert.equal(f.node('#next').disabled,false);
-  assert.ok([...f.timers.values()].some(t=>t.delay===900));
-  f.runDelay(900);
   assert.equal(a.state.game.index,1);
   assert.equal(f.c.listening,true);
 });
 
-test('상자 앞에서 이름 재생이 실패하면 닫아도 기다리고, 다시 듣기에 성공하면 자동으로 진행한다',()=>{
+test('상자 앞에서 이름 재생이 실패해도 선물을 보여 준 뒤 자동으로 진행한다',()=>{
   const f=fixture();
   for(let i=0;i<4;i++){f.c.FQ.storage.recordAnswer('fr',false);f.c.FQ.storage.recordChest(null);}
   const a=f.startVoice(['kr','jp']);a.state.rng=()=>0;a.state.rngKind=()=>0.5;
@@ -1306,13 +1373,8 @@ test('상자 앞에서 이름 재생이 실패하면 닫아도 기다리고, 다
   a.submit({code:a.state.game.current().country.code});
   f.releases.at(-1)();f.playbackFailures.at(-1)();
   assert.equal(f.music.at(-1).event,'chest');
-  f.node('created').handlers.click({target:{closest:()=>true}});
-  assert.ok(![...f.timers.values()].some(t=>t.delay===900),'이름을 못 들었으면 상자를 닫아도 자동으로 넘어가지 않는다');
-  f.node('#replay').click();f.releases.at(-1)();
-  assert.deepEqual(f.spoken.at(-1),[first.ko,first.flagHint]);
-  f.finishVoice();
-  assert.ok([...f.timers.values()].some(t=>t.delay===900));
-  f.runDelay(900);
+  assert.deepEqual(f.spoken.at(-1),[first.ko]);
+  f.runDelay(3000);
   assert.equal(a.state.game.index,1);
 });
 
