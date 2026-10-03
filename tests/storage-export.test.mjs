@@ -123,6 +123,9 @@ function element(id) {
       if (!listeners.has(type)) listeners.set(type, []);
       listeners.get(type).push(callback);
     },
+    removeEventListener(type, callback) {
+      listeners.set(type, (listeners.get(type) || []).filter(listener => listener !== callback));
+    },
     click() { for (const callback of listeners.get('click') || []) callback({ target: this }); },
     change(checked) { this.checked = checked; for (const callback of listeners.get('change') || []) callback({ target: this }); },
     select() { this.selectCalls++; }

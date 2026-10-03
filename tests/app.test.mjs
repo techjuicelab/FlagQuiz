@@ -107,8 +107,6 @@ const quizModes=['choice4','reverse','voice','typing','symbol','place','map','ca
 function startMode(f,mode,only=['kr','jp','fr'],settings={}){
   f.c.FQ.storage.updateSettings({mode,dev:{art:true},...settings});f.c.FQ.app.startGame(only);
   if(mode==='symbol'||mode==='place')f.node('#question-art').handlers.load();
-  // 수도 문제의 시작 안내는 읽어주기를 켠다. 채점 순간의 꺼짐 분기는 렌더 뒤 다시 지정한다.
-  if(Object.hasOwn(settings,'speak'))f.c.FQ.storage.updateSettings({speak:settings.speak});
   return f.c.FQ.test;
 }
 function answerCurrent(f){
@@ -516,7 +514,7 @@ test('정답 진행은 음악 설정과 관계없이 짧은 이름 뒤 이어지
   const f=fixture();assert.equal(f.c.FQ.storage.settings().correctMusic,false);assert.equal(f.c.FQ.storage.settings().homeMusic,false);
   for(const correctMusic of [false,true]){
     f.c.FQ.storage.updateSettings({mode:'choice4',correctMusic});f.c.FQ.app.startGame(['kr']);
-    f.c.FQ.test.submit({code:'kr'});f.releases.at(-1)();assert.equal(f.music.filter(item=>item.event!=='start').length,0);
+    f.c.FQ.test.submit({code:'kr'});f.releases.at(-1)();assert.equal(f.music.filter(item=>item.event!=='start').length,Number(correctMusic));
     assert.deepEqual(f.spoken.at(-1),['대한민국']);
   }
   f.c.FQ.storage.updateSettings({homeMusic:true});f.c.FQ.app.home();f.releases.at(-1)();assert.equal(f.music.at(-1).event,'homeBgm');
@@ -1820,7 +1818,7 @@ test('아홉 놀이의 정답은 이름만 읽고 다음 문제로 이어지며 
 
 test('아홉 놀이에서 음원 실패나 마이크 해제·낭독 종료 콜백 누락이 있어도 자동 진행한다',()=>{
   for(const mode of quizModes)for(const failure of ['audio','release','end']){
-    const f=fixture(),a=startMode(f,mode);answerCurrent(f);const release=f.releases.at(-1);
+    const f=fixture(),a=startMode(f,mode,undefined,{correctMusic:true});answerCurrent(f);const release=f.releases.at(-1);
     if(failure!=='release')release();
     if(failure==='audio'){f.playbackFailures.at(-1)();f.advance(900);}
     else {f.advance(7899);assert.equal(a.state.game.index,0,mode+' '+failure);f.advance(1);}
@@ -1910,6 +1908,122 @@ test('명소 정답 카드에서 수도 개별 듣기도 완료·실패·콜백 
     f.advance(900);assert.equal(a.state.game.index,0,ending);
     if(ending==='end')f.finishVoice();if(ending==='fail')f.playbackFailures.at(-1)();
     f.advance(ending.startsWith('missing')?21000:900);assert.equal(a.state.game.index,1,ending);
+  }
+});
+
+test('아홉 놀이의 시작·정답·다음 문제는 저장된 읽어주기 꺼짐을 그대로 유지한다',()=>{
+  for(const mode of quizModes){
+    const f=fixture(),a=startMode(f,mode,undefined,{speak:false});
+    f.releases.forEach(release=>release());
+    assert.equal(f.c.FQ.storage.settings().speak,false,mode+' 시작');assert.equal(f.spoken.length,0,mode);
+    answerCurrent(f);f.releases.at(-1)();f.advance(1800);
+    f.releases.forEach(release=>release());
+    assert.equal(a.state.game.index,1,mode);assert.equal(f.c.FQ.storage.settings().speak,false,mode+' 다음');
+    assert.equal(f.spoken.length,0,mode);
+  }
+});
+
+test('오프라인·음성 연결 실패의 대체 문제도 읽어주기 꺼짐을 유지하고 직접 듣기는 켜 준다',()=>{
+  for(const mode of ['voice','capitalVoice'])for(const failure of ['offline','network']){
+    const f=fixture();if(failure==='offline')f.c.navigator.onLine=false;
+    const a=startMode(f,mode,['kr','jp'],{speak:false});
+    if(failure==='network')f.c.callbacks.error('network');
+    const q=a.state.game.current(),button=f.node(mode==='voice'?'#touch-listen':'#capital-listen');
+    f.releases.forEach(release=>release());
+    assert.equal(q.mode,mode==='voice'?'reverse':'capital');
+    assert.equal(f.c.FQ.storage.settings().speak,false,mode+' '+failure);assert.equal(f.spoken.length,0);
+    f.clickDelegated('[data-speak]',button);f.releases.at(-1)();
+    assert.equal(f.c.FQ.storage.settings().speak,true);assert.deepEqual(f.spoken.at(-1),[mode==='voice'?q.country.ko:q.country.capital]);
+    f.playbackFailures.at(-1)();assert.match(button.textContent,/다시 눌러서 듣기/);
+    assert.equal(a.state.answered,false);assert.equal(a.state.game.index,0);
+  }
+});
+
+test('정답 음악은 아홉 놀이의 소리 설정을 따르며 이름 낭독과 자동 진행이 음악 종료를 기다리지 않는다',()=>{
+  for(const mode of quizModes)for(const sound of [false,true])for(const speak of [false,true])for(const correctMusic of [false,true]){
+    const label=mode+' sound='+sound+' speak='+speak+' music='+correctMusic;
+    const f=fixture(),a=startMode(f,mode,undefined,{sound,speak,correctMusic}),q=a.state.game.current();
+    answerCurrent(f);f.releases.at(-1)();
+    const tunes=f.music.filter(item=>item.event==='correct');assert.equal(tunes.length,Number(sound&&correctMusic),label);
+    const tune=tunes[0];if(tune){assert.equal(tune.opts.onDone,undefined,label);assert.equal(tune.opts.onFail,undefined,label);}
+    if(speak){
+      assert.deepEqual(f.spoken.at(-1),[mode==='capital'||mode==='capitalVoice'?q.country.capital:q.country.ko],label);
+      f.finishVoice();f.advance(899);assert.equal(a.state.game.index,0,label);f.advance(1);
+    }else{
+      assert.equal(f.spoken.length,0,label);f.advance(1799);assert.equal(a.state.game.index,0,label);f.advance(1);
+    }
+    assert.equal(a.state.game.index,1,label);assert.equal(a.state.answered,false,label);
+    if(tune)assert.equal(tune.cancelled,true,label+' 다음 문제에서 음악 정리');
+    assert.equal(f.c.FQ.storage.settings().speak,speak,label);
+  }
+});
+
+test('정답 음악이 끝나거나 실패해도 다시 듣기의 종료·실패·watchdog 예약을 앞당기거나 막지 않는다',()=>{
+  for(const musicFailure of [false,true])for(const ending of ['end','fail','missing-end','missing-release']){
+    const f=fixture(),a=startMode(f,'voice',undefined,{correctMusic:true});answerCurrent(f);f.releases.at(-1)();
+    assert.equal(f.music.filter(item=>item.event==='correct').length,1);assert.equal(f.spoken.length,1);
+    f.finishMusic(musicFailure);assert.equal(a.state.autoNextTimer,null,'음악 종료는 다음 문제를 예약하지 않는다');
+    f.finishVoice();f.advance(400);f.node('#replay').click();
+    assert.equal(f.music.filter(item=>item.event==='correct').length,1,'직접 다시 듣기는 음악을 되풀이하지 않는다');
+    if(ending!=='missing-release')f.releases.at(-1)();
+    f.advance(900);assert.equal(a.state.game.index,0,ending);
+    if(ending==='end')f.finishVoice();if(ending==='fail')f.playbackFailures.at(-1)();
+    f.advance(ending.startsWith('missing')?21000:900);assert.equal(a.state.game.index,1,ending);
+  }
+});
+
+test('정답 음악 대기·늦은 마이크 해제·숨김 복귀가 겹쳐도 이름은 현재 요청만 읽고 음악은 한 번만 시작한다',()=>{
+  for(const released of [false,true]){
+    const f=fixture();f.c.FQ.app.boot();const a=startMode(f,'voice',undefined,{correctMusic:true});answerCurrent(f);
+    const staleRelease=f.releases.at(-1);if(released)staleRelease();
+    f.c.document.hidden=true;f.events.visibilitychange[0]();f.advance(10000);
+    f.c.document.hidden=false;f.events.visibilitychange[0]();staleRelease();f.releases.at(-1)();
+    assert.equal(f.music.filter(item=>item.event==='correct').length,1);
+    assert.equal(f.spoken.length,released?2:1);f.finishVoice();f.advance(900);assert.equal(a.state.game.index,1);
+  }
+});
+
+test('실제 음악 플레이어의 오프라인 파일 대기 실패도 읽어주기 없이 정답을 자동 진행한다',()=>{
+  const f=fixture(),players=[];f.c.navigator.onLine=false;
+  f.c.Audio=class {constructor(){players.push(this);}setAttribute(){}removeAttribute(){}pause(){}load(){}play(){return undefined;}};
+  f.c.FQ.musicManifest={ready:true,clips:[{event:'correct',id:'correct-test',src:'audio/music/correct-test.mp3',duration:8,gain:0.4}]};
+  vm.runInContext(fs.readFileSync(path.join(root,'js/music.js'),'utf8'),f.c,{filename:'js/music.js'});
+  const a=startMode(f,'choice4',undefined,{speak:false,correctMusic:true});answerCurrent(f);f.releases.at(-1)();
+  assert.equal(players.at(-1).src,'audio/music/correct-test.mp3');assert.equal(f.spoken.length,0);
+  f.advance(1500);assert.equal(a.state.game.index,0);f.advance(300);assert.equal(a.state.game.index,1);
+  assert.equal(f.c.FQ.storage.stats().asked,1);
+});
+
+test('두 말하기 놀이의 마이크 중단 안내는 답 종류를 정확히 말하고 글자 정답으로 계속 풀 수 있다',()=>{
+  for(const mode of ['voice','capitalVoice'])for(const error of ['unsupported','audio-capture','language-not-supported','start-timeout','repeated']){
+    const f=fixture(),a=startMode(f,mode,['kr','jp'],{speak:false}),q=a.state.game.current();
+    if(error==='repeated')for(let n=0;n<3;n++)f.c.callbacks.error('unknown');else f.c.callbacks.error(error);
+    const what=mode==='voice'?'나라 이름':'수도 이름';
+    assert.match(f.node('#listen-tip').textContent,new RegExp(what),mode+' '+error);
+    assert.doesNotMatch(f.node('#listen-tip').textContent,new RegExp(mode==='voice'?'수도 이름':'나라 이름'));
+    assert.equal(f.node('.type-fallback').open,true);assert.equal(a.state.listenOn,false);
+    f.node('#answer-input').value=mode==='voice'?q.country.ko:q.country.capital;f.node('#answer-submit').click();
+    assert.equal(a.state.game.correct,1);assert.equal(a.state.game.voiceCorrect,0);f.advance(1800);assert.equal(a.state.game.index,1);
+  }
+});
+
+test('실제 중간·최종 음성 답에만 음성 출처가 붙고 글자·보기·오프라인 정답에는 붙지 않는다',()=>{
+  for(const mode of ['voice','capitalVoice'])for(const result of ['interim','final','wrong','giveup','typed']){
+    const f=fixture(),a=startMode(f,mode,['kr'],{speak:false}),q=a.state.game.current(),payloads=[];
+    const original=a.state.game.submit;a.state.game.submit=function(payload,opts){payloads.push(payload);return original(payload,opts);};
+    const answer=mode==='voice'?q.country.ko:q.country.capital;
+    if(result==='interim')f.c.callbacks.interim(answer);
+    if(result==='final')f.c.callbacks.result(['찾을 수 없는 말',answer]);
+    if(result==='wrong')f.c.callbacks.result([mode==='voice'?'일본':'도쿄']);
+    if(result==='giveup')f.c.callbacks.result(['몰라요']);
+    if(result==='typed'){f.node('#answer-input').value=answer;f.node('#answer-submit').click();}
+    assert.equal(payloads.length,1,mode+' '+result);assert.equal(payloads[0].source,result==='typed'?undefined:'voice');
+    assert.equal(a.state.game.voiceCorrect,result==='interim'||result==='final'?1:0);
+  }
+  for(const mode of ['voice','capitalVoice']){
+    const f=fixture();f.c.navigator.onLine=false;const a=startMode(f,mode,['kr'],{speak:false}),payloads=[];
+    const original=a.state.game.submit;a.state.game.submit=function(payload,opts){payloads.push(payload);return original(payload,opts);};
+    answerCurrent(f);assert.equal(payloads[0].source,undefined);assert.equal(a.state.game.voiceCorrect,0);
   }
 });
 console.log('앱 흐름 회귀 검사 '+passed+'건 통과');

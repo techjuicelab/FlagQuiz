@@ -3,6 +3,7 @@
   'use strict';
   var FQ = (global.FQ = global.FQ || {});
   var doc = global.document;
+  var delegatedListeners = new WeakMap();
 
   function esc(s) {
     return String(s == null ? '' : s)
@@ -75,6 +76,10 @@
 
   function setMain(html) {
     var m = main();
+    // #main은 화면 사이에 남으므로, 이전 화면에서 맡긴 위임 이벤트를 먼저 해제한다.
+    var listeners = delegatedListeners.get(m) || [];
+    listeners.forEach(function (item) { m.removeEventListener(item.event, item.listener); });
+    delegatedListeners.delete(m);
     m.innerHTML = html;
     global.scrollTo({ top: 0, behavior: 'auto' });
     if (m.focus) m.focus({ preventScroll: true });
@@ -87,10 +92,14 @@
   }
 
   function on(root, selector, event, fn) {
-    root.addEventListener(event, function (ev) {
+    var listener = function (ev) {
       var t = ev.target.closest(selector);
       if (t && root.contains(t)) fn(ev, t);
-    });
+    };
+    var listeners = delegatedListeners.get(root) || [];
+    listeners.push({ event: event, listener: listener });
+    delegatedListeners.set(root, listeners);
+    root.addEventListener(event, listener);
   }
 
   /* --------- 나라 상세 모달 --------- */

@@ -824,11 +824,12 @@
   }
 
   /** 공부는 정답 기록·점수와 분리한다. 이 앱에서 이미 본 수도는 다음 묶음의 뒤로 보낸다. */
-  function startCapitalStudy() {
-    var list = capitalStudyPool();
+  function startCapitalStudy(onlyCodes) {
+    var reviewing = Array.isArray(onlyCodes) && onlyCodes.length > 0;
+    var list = reviewing ? quiz.pool({ axis: 'capital', only: onlyCodes }) : capitalStudyPool();
     var fresh = list.filter(function (c) { return !state.studiedCapitals[c.code]; });
     var seen = list.filter(function (c) { return state.studiedCapitals[c.code]; });
-    state.study = { countries: util.shuffle(fresh).concat(util.shuffle(seen)).slice(0, capitalBatchSize(list)), index: 0 };
+    state.study = { countries: util.shuffle(fresh).concat(util.shuffle(seen)).slice(0, reviewing ? list.length : capitalBatchSize(list)), index: 0 };
     var s = store.settings();
     audio.setEnabled(s.sound);
     audio.setSpeakEnabled(s.speak);
@@ -1159,9 +1160,11 @@
       else speakFromButton(t, resumeListening);
     });
 
-    // 수도 문제는 글자가 아니라 소리가 문제다. 뜨자마자 수도 이름을 한 번 읽어 준다.
-    if (q.mode === 'capital') speakLines(ui.$('#capital-listen', m), [q.country.capital], '🔊 눌러서 들어보기');
-    if (q.mode === 'reverse' && q.touchFallback) speakLines(ui.$('#touch-listen', m), [q.country.ko], '🔊 들어보기');
+    // 자동 안내는 읽어주기 설정을 따른다. 직접 듣기를 누르면 speakLines 에서 켤 수 있다.
+    if (s.speak) {
+      if (q.mode === 'capital') speakLines(ui.$('#capital-listen', m), [q.country.capital], '🔊 눌러서 들어보기');
+      if (q.mode === 'reverse' && q.touchFallback) speakLines(ui.$('#touch-listen', m), [q.country.ko], '🔊 들어보기');
+    }
     ui.$('#quit', m).addEventListener('click', function () {
       var g2 = state.game;
       var played = g2 ? g2.index : 0;
@@ -1396,8 +1399,8 @@
 
   function actOn(hit, text) {
     if (!hit) return false;
-    if (hit.kind === 'giveup') { submit({ text: '' }, true); return true; }
-    submit({ text: hit.text || text });
+    if (hit.kind === 'giveup') { submit({ text: '', source: 'voice' }, true); return true; }
+    submit({ text: hit.text || text, source: 'voice' });
     return true;
   }
 
@@ -1459,7 +1462,7 @@
         // 사파리가 스스로 끊어 놓치는 것보다 낫고, 아이는 말하자마자 정답 카드를 본다.
         // 단 이름이 다른 나라 이름의 앞부분인 나라(인도·기니)는 끝까지 듣는다 — “인도네시아”의 “인도”를 먼저 채점하지 않는다.
         // 다른 나라 이름은 중간 결과로 채점하지 않는다(말이 끝나기 전에 틀렸다고 하지 않는다).
-        if (!quiz.prefixRisky(question.country, kind) && quiz.checkText(question.country, text, kind).correct) submit({ text: text });
+        if (!quiz.prefixRisky(question.country, kind) && quiz.checkText(question.country, text, kind).correct) submit({ text: text, source: 'voice' });
       },
       result: function (alts) {
         if (!current()) return;
@@ -1471,7 +1474,7 @@
         for (i = 0; i < alts.length; i++) {
           var hit = interpret(alts[i]);
           if (hit && hit.kind === 'answer' && quiz.checkText(state.game.current().country, alts[i], kind).correct) {
-            submit({ text: alts[i] });
+            submit({ text: alts[i], source: 'voice' });
             return;
           }
         }
@@ -1509,7 +1512,7 @@
           setListenState(code === 'start-timeout'
             ? '마이크 준비가 오래 걸려요. 권한 허용을 확인한 뒤 마이크를 눌러 주세요.'
             : '마이크가 멈췄어요. 마이크를 눌러 다시 시도하거나 글자로 답해 주세요.', 'off');
-          openTypeFallback(message || '아래에 나라 이름을 써서 답해도 좋아요.');
+          openTypeFallback(message || '아래에 ' + what + '을 써서 답해도 좋아요.');
           return;
         }
         setListenState('마이크가 잠깐 멈췄어요. 다시 들을게요.', 'off');
@@ -1807,6 +1810,7 @@
     var narrationRequest = 0;
     var voiceWatchdog = null;
     var narrationFinished = -1;
+    var correctMusicPlayed = false;
     function clearVoiceWatchdog() {
       if (voiceWatchdog !== null) { global.clearTimeout(voiceWatchdog); voiceWatchdog = null; }
     }
@@ -1865,7 +1869,16 @@
       }
       FQ.speech.stopAnd(function () {
         if (!feedbackCurrent() || request !== narrationRequest || narrationFinished === request) return;
-        if (autoNext || replaying) { narrate(request, replaying, requestedSpeech); return; }
+        if (autoNext || replaying) {
+          var feedbackSettings = store.settings();
+          if (autoNext && !replaying && !correctMusicPlayed && feedbackSettings.sound && feedbackSettings.correctMusic) {
+            correctMusicPlayed = true;
+            // 음악과 이름은 별도 플레이어에서 시작한다. 음악 종료를 기다리지 않고 문제를 이어 간다.
+            playMusic('correct');
+          }
+          narrate(request, replaying, requestedSpeech);
+          return;
+        }
         var event = res.levelUp ? 'level' : res.newSticker ? 'sticker' :
           res.correct && store.settings().correctMusic ? 'correct' : 'discovery';
         playMusic(event, function () { narrate(request, replaying, requestedSpeech); });
@@ -2160,6 +2173,8 @@
     var correctCount = state.met && state.met.length
       ? state.met.filter(function (m2) { return m2.correct; }).length
       : summary.correct;
+    var helpedCount = summary.helpedCorrect || 0;
+    var correctLabel = helpedCount ? '직접 맞힌 나라' : '맞힌 나라';
     var met = (state.met || []).slice(-5);   // 여행 카드 다섯 장: 이 판에서 마지막으로 만난 다섯 나라
     var chest = FQ.progress.chestProgress(store.stats().asked);
     var st = FQ.progress.stickers();
@@ -2187,11 +2202,12 @@
             '<span class="k"><span aria-hidden="true">🚩</span> 오늘 만난 나라</span>' +
             '<span class="v" aria-hidden="true">' + metCount + '<small>개</small></span>' +
           '</div>' +
-          '<div class="big-stat ok" role="group" aria-label="맞힌 나라 ' + correctCount + '개">' +
-            '<span class="k">' + ICONS.check + ' 맞힌 나라</span>' +
+          '<div class="big-stat ok" role="group" aria-label="' + correctLabel + ' ' + correctCount + '개">' +
+            '<span class="k">' + ICONS.check + ' ' + correctLabel + '</span>' +
             '<span class="v" aria-hidden="true">' + correctCount + '<small>개</small></span>' +
           '</div>' +
         '</div>' +
+        (helpedCount ? '<p class="small muted" role="status">답을 듣고 맞힌 나라 ' + helpedCount + '개 · 이름 힌트를 쓴 나라는 한 번 더 공부해요.</p>' : '') +
         reviewResultBlock() +
         (met.length
           ? '<div class="card travel-cards">' +
@@ -2249,7 +2265,7 @@
           '<div class="stat"><div class="v">' + summary.score + '</div><div class="k">점수</div></div>' +
           '<div class="stat"><div class="v">' + summary.bestStreak + '</div><div class="k">최고 연속</div></div>' +
           '<div class="stat"><div class="v">' + util.formatDuration(summary.seconds) + '</div><div class="k">걸린 시간</div></div>' +
-          '<div class="stat"><div class="v">' + Math.round((summary.correct / (summary.total || 1)) * 100) + '%</div><div class="k">정답률</div></div>' +
+          '<div class="stat"><div class="v">' + Math.round((summary.correct / (summary.total || 1)) * 100) + '%</div><div class="k">' + (helpedCount ? '정답률 · 도움받은 답 포함' : '정답률') + '</div></div>' +
         '</div>' +
         (state.xpGained ? '<div class="xp-gain">✨ 경험치 +' + state.xpGained + '</div>' : '') +
         (summary.wrong.length
@@ -2266,6 +2282,8 @@
           (summary.mode === 'map' ? '<button class="btn btn-big btn-mid" id="map-result-study" type="button">지도에서 다시 보기</button>' : '') +
           ((summary.mode === 'symbol' || summary.mode === 'place') && state.met && state.met.length
             ? '<button class="btn btn-big btn-mid" id="art-result-study" type="button">' + artTitle(summary.mode) + ' 다시 공부하기</button>' : '') +
+          (capitalAxis(summary.mode) && state.met && state.met.length
+            ? '<button class="btn btn-big btn-mid" id="capital-result-study" type="button">수도 다시 공부하기</button>' : '') +
           '<button class="btn btn-big btn-mid" id="home" type="button">' + ICONS.home + '<span>홈으로</span></button>' +
         '</div>' +
       '</section>';
@@ -2278,6 +2296,10 @@
     var resultArtStudy = ui.$('#art-result-study', m);
     if (resultArtStudy) resultArtStudy.addEventListener('click', function () {
       startArtStudy(summary.mode, (state.met || []).map(function (item) { return item.country.code; }));
+    });
+    var resultCapitalStudy = ui.$('#capital-result-study', m);
+    if (resultCapitalStudy) resultCapitalStudy.addEventListener('click', function () {
+      startCapitalStudy((state.met || []).map(function (item) { return item.country.code; }));
     });
     var resultGame = state.game;
     var resultReplay = ui.$('#result-replay', m);

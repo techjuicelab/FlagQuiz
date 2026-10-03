@@ -405,6 +405,7 @@
           '<p class="small muted" style="margin:12px 0 0">‘모든 놀이’는 국기·그림·명소·위치·수도 놀이를 모두 더한 수예요. ' +
             '국기 놀이에서는 전체 ' + total + '개국 중 ' + seenCount + '개국을 만났어요. ' +
             (seenCount >= total ? '온 세계를 한 바퀴 돌았네요!' : '아직 ' + (total - seenCount) + '개국이 남았어요.') + '</p>' +
+          '<p class="small muted" style="margin:8px 0 0">누적 정답률은 직접 맞힌 답만 정답으로 세요. 이름 힌트로 답을 들은 문제도 푼 문제 수에는 포함되지만 도장을 찍지 않아요. 최근 놀이에는 답을 듣고 맞힌 나라도 따로 보여 줘요.</p>' +
         '</div>' +
 
         continentCollection() + axisSummary() +
@@ -416,7 +417,8 @@
                 return '<li><span class="muted small">' + esc(h.date) + '</span>' +
                   '<span>' + esc(modeLabel(h.mode)) + '</span>' +
                   '<span class="spacer"></span>' +
-                  '<b>' + h.correct + ' / ' + h.total + '</b></li>';
+                  '<b>' + h.correct + ' / ' + h.total + '</b>' +
+                  (h.helpedCorrect > 0 ? '<span class="small muted">직접 ' + h.learnedCorrect + ' · 답을 듣고 ' + h.helpedCorrect + '</span>' : '') + '</li>';
               }).join('') + '</ul>' +
             '</div>'
           : '<div class="card section"><h3>최근 놀이</h3><p class="muted">놀이를 마치면 여기에 기록이 쌓여요.</p></div>') +

@@ -601,6 +601,9 @@
       score: 0,
       bonusScore: 0,
       correct: 0,
+      learnedCorrect: 0,
+      helpedCorrect: 0,
+      voiceCorrect: 0,
       wrong: [],
       hintsUsed: 0,
       answered: {},
@@ -626,7 +629,7 @@
 
     /**
      * 답을 채점하고 게임 상태를 갱신한다.
-     * payload: {code: '선택한 나라 코드'} 또는 {text: '말하거나 쓴 답'}
+     * payload: {code: '선택한 나라 코드'} 또는 {text: '말하거나 쓴 답'}. 실제 음성 인식 답에는 source: 'voice' 를 붙인다.
      * opts.revealed: 힌트 2단계로 나라 이름('○○의 수도예요')까지 듣고 답했다(수도 놀이). 점수는 주되 기록은 '아직'이다.
      */
     game.submit = function (payload, usedHint, opts) {
@@ -657,6 +660,9 @@
 
       if (res.correct) {
         game.correct += 1;
+        if (learned) game.learnedCorrect += 1;
+        else game.helpedCorrect += 1;
+        if (payload && payload.source === 'voice' && MODES[q.mode] && MODES[q.mode].speech) game.voiceCorrect += 1;
         game.streak += 1;
         if (game.streak > game.bestStreak) game.bestStreak = game.streak;
         var gained = 10 + (game.streak >= 3 ? 5 : 0);
@@ -699,6 +705,9 @@
         mode: cfg.mode,
         total: game.total,
         correct: game.correct,
+        learnedCorrect: game.learnedCorrect,
+        helpedCorrect: game.helpedCorrect,
+        voiceCorrect: game.voiceCorrect,
         score: game.score,
         bonusScore: game.bonusScore,
         bestStreak: game.bestStreak,

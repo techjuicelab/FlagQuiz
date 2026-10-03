@@ -21,7 +21,7 @@
     { id: 'play200', icon: '🏆', name: '이백 문제', desc: '문제를 200개 풀었어요',
       test: function (c) { return c.stats.asked >= 200; } },
     { id: 'voice_win', icon: '🎤', name: '목소리 탐험가', desc: '말하기로 정답을 맞혔어요',
-      test: function (c) { return c.summary && c.summary.mode === 'voice' && c.summary.correct >= 1; } },
+      test: function (c) { return c.summary && c.summary.mode === 'voice' && c.summary.voiceCorrect >= 1; } },
     { id: 'explorer50', icon: '🧭', name: '50개국 탐험', desc: '서로 다른 나라 국기 50개를 만났어요',
       test: function (c) { return c.seenCount >= 50; } },
     { id: 'explorer100', icon: '🌏', name: '100개국 탐험', desc: '서로 다른 나라 국기 100개를 만났어요',

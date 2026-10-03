@@ -109,7 +109,7 @@
     return r;
   }
 
-  /** 오늘 날짜(기기 시간) — 도장 단계의 '다른 날' 판정용. progress.js 의 today 와 같은 모양이다. */
+  /** 오늘 날짜(기기 시간) — 도장·놀이·배지에 같은 날짜를 쓴다. progress.js 의 today 와 같은 모양이다. */
   function localDay() {
     var d = new Date();
     return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
@@ -190,13 +190,17 @@
     state.stats.games += 1;
     state.stats.playSeconds += summary.seconds || 0;
     if (summary.bestStreak > state.stats.bestStreak) state.stats.bestStreak = summary.bestStreak;
-    state.history.unshift({
-      date: new Date().toISOString().slice(0, 10),
+    var entry = {
+      date: localDay(),
       mode: summary.mode,
       total: summary.total,
       correct: summary.correct,
       players: summary.players
-    });
+    };
+    // 새 집계가 없는 옛 요약에는 추정값을 더하지 않고 기존 기록 형식을 유지한다.
+    if (typeof summary.learnedCorrect === 'number') entry.learnedCorrect = summary.learnedCorrect;
+    if (typeof summary.helpedCorrect === 'number') entry.helpedCorrect = summary.helpedCorrect;
+    state.history.unshift(entry);
     state.history = state.history.slice(0, 50);
     save();
   }
@@ -245,7 +249,7 @@
 
   function awardBadge(id) {
     if (state.badges[id]) return false;
-    state.badges[id] = new Date().toISOString().slice(0, 10);
+    state.badges[id] = localDay();
     save();
     return true;
   }
