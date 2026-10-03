@@ -93,7 +93,7 @@
 
   var CONTINENTS = ['all', '아시아', '유럽', '아프리카', '북아메리카', '남아메리카', '오세아니아'];
   var COUNTS = [5, 10, 20, 'all'];
-  // 말로 맞힌 정답 이름을 들은 뒤 잠깐 쉬고 넘어간다. 종료 알림이 빠져도 다음 국기에 갇히지 않는다.
+  // 모든 놀이에서 맞힌 이름을 짧게 듣고 넘어간다. 소리나 마이크 종료 알림이 빠져도 진행한다.
   var AUTO_NEXT_AFTER_SPEECH = 900;
   var AUTO_NEXT_SILENT = 1800;
   var AUTO_NEXT_VOICE_WATCHDOG = 7000;
@@ -121,10 +121,11 @@
     speechNeedsConnection: false,
     artTimer: null,
     questionGeneration: 0,
-    autoNextTimer: null,   // 말로 맞힌 뒤 저절로 다음으로 가는 예약(D25)
+    autoNextTimer: null,   // 정답 뒤 저절로 다음 문제로 가는 예약
+    feedbackResume: null,
+    feedbackSpeak: null,
     giftTimer: null,
     giftClose: null,
-    giftResume: null,
     feedbackGeneration: 0,
     screen: 'home',
     musicGeneration: 0,
@@ -144,18 +145,15 @@
   function cancelPendingFeedback() {
     if (state.cancelFeedbackVoice) state.cancelFeedbackVoice();
     state.cancelFeedbackVoice = null;
+    state.feedbackResume = null;
+    state.feedbackSpeak = null;
     state.feedbackGeneration += 1;
     stopMusic();
     if (state.autoNextTimer) { global.clearTimeout(state.autoNextTimer); state.autoNextTimer = null; }
     if (state.giftTimer) { global.clearTimeout(state.giftTimer); state.giftTimer = null; }
     state.giftClose = null;
-    state.giftResume = null;
-    var chest = ui.$('.chest-back');
-    if (chest) {
-      chest.remove();
-      var next = ui.$('#next');
-      if (next) next.disabled = false;
-    }
+    var chest = ui.$('.chest-toast');
+    if (chest) chest.remove();
   }
 
   function stopMusic() {
@@ -987,8 +985,8 @@
     ui.$('#map-study-home', m).addEventListener('click', renderHome);
   }
 
-  /** 🔊 단추 하나로 이름을 읽는다. data-speak 문구 뒤에 data-speak-extra 문구가 있으면 이어서 읽고, data-speak-lines('|'로 나눔)면 그 전부를 읽는다. */
-  function speakFromButton(t, after) {
+  /** 듣기 단추의 data-speak 문구와 추가 문구를 읽을 순서로 모은다. */
+  function speechFromButton(t) {
     var lines;
     var joined = t.getAttribute('data-speak-lines');
     if (joined) {
@@ -998,7 +996,12 @@
       var extra = t.getAttribute('data-speak-extra');
       if (extra) lines.push(extra);
     }
-    speakLines(t, lines, t.getAttribute('data-label') || '🔊 들어보기', after);
+    return lines;
+  }
+
+  /** 🔊 단추 하나로 이름을 읽는다. data-speak-lines('|'로 나눔)면 그 전부를 읽는다. */
+  function speakFromButton(t, after) {
+    speakLines(t, speechFromButton(t), t.getAttribute('data-label') || '🔊 들어보기', after);
   }
 
   /** 문구를 읽는다. 끝나거나 실패하면(같은 화면일 때만) after 를 부른다 — 말하기 놀이가 마이크를 다시 여는 자리다. */
@@ -1151,7 +1154,10 @@
     if (shell) shell.setAttribute('data-mode', q.mode);
 
     // 🔊 를 듣고 나면 말하기 놀이는 마이크를 다시 연다(수도 말하기의 나라 이름 듣기·힌트).
-    ui.on(m, '[data-speak]', 'click', function (e, t) { speakFromButton(t, resumeListening); });
+    ui.on(m, '[data-speak]', 'click', function (e, t) {
+      if (state.answered && state.feedbackSpeak) state.feedbackSpeak(t);
+      else speakFromButton(t, resumeListening);
+    });
 
     // 수도 문제는 글자가 아니라 소리가 문제다. 뜨자마자 수도 이름을 한 번 읽어 준다.
     if (q.mode === 'capital') speakLines(ui.$('#capital-listen', m), [q.country.capital], '🔊 눌러서 들어보기');
@@ -1787,7 +1793,7 @@
     var slots = ui.$('.travel-slots');
     if (slots) slots.innerHTML = travelSlots(chestNow, false);
 
-    // 정답 카드의 다시 듣기는 이름과 설명을 읽는다. 말하기 정답의 첫 안내는 이름만 짧게 읽는다.
+    // 다시 듣기는 이름과 설명을 읽고, 모든 놀이의 정답 첫 안내는 이름만 짧게 읽는다.
     var isCapitalQ = capitalAxis(q.mode);
     var isMapQ = q.mode === 'map';
     var isArtQ = q.mode === 'symbol' || q.mode === 'place';
@@ -1800,7 +1806,7 @@
     var generation = state.feedbackGeneration;
     var narrationRequest = 0;
     var voiceWatchdog = null;
-    var chestShown = false;
+    var narrationFinished = -1;
     function clearVoiceWatchdog() {
       if (voiceWatchdog !== null) { global.clearTimeout(voiceWatchdog); voiceWatchdog = null; }
     }
@@ -1815,26 +1821,11 @@
       return state.feedbackGeneration === generation && state.game === g &&
         g.current() === q && state.answered && !doc.hidden;
     }
-    function afterExplanation(request) {
-      if (!feedbackCurrent() || request !== narrationRequest || !res.chest || chestShown) return;
-      chestShown = true;
-      state.giftResume = null;
-      showChest(c, res, q.mode, function () {
-        if (feedbackCurrent() && request === narrationRequest) goNext();
-      });
-    }
-    if (res.chest) state.giftResume = function () {
-      narrationRequest += 1;
-      clearVoiceWatchdog();
-      audio.stopSpeaking();
-      afterExplanation(narrationRequest);
-    };
-    // 말하기 정답은 이름을 한 번 더 듣고 자동으로 넘어간다. 오답과 다른 놀이는 정답 카드를 읽을 시간을 준다.
-    // 깜짝 상자는 그림 선물을 잠깐 보여 준 뒤 놀이 방식에 관계없이 자동으로 진행한다.
-    var autoNext = speechMode(q.mode) && !!res.correct;
+    // 선물 유무와 놀이 방식에 관계없이 정답은 자동 진행하고, 오답은 설명 카드에 머문다.
+    var autoNext = !!res.correct;
     var quickAnswerSpeech = autoNext ? { lines: [isCapitalQ ? c.capital : c.ko], opts: feedbackSpeech.opts } : feedbackSpeech;
     function scheduleAutoNext(request, delay) {
-      if (!autoNext || res.chest || !feedbackCurrent() || request !== narrationRequest) return;
+      if (!autoNext || !feedbackCurrent() || request !== narrationRequest) return;
       if (state.autoNextTimer) global.clearTimeout(state.autoNextTimer);
       state.autoNextTimer = global.setTimeout(function () {
         state.autoNextTimer = null;
@@ -1842,47 +1833,60 @@
         goNext();
       }, delay);
     }
-    function narrate(request, replaying) {
-      if (!feedbackCurrent() || request !== narrationRequest) return;
-      if (!store.settings().speak) {
-        afterExplanation(request);
-        scheduleAutoNext(request, AUTO_NEXT_SILENT);
-        return;
-      }
-      var spoken = replaying ? feedbackSpeech : quickAnswerSpeech;
-      if (res.chest || (autoNext && !replaying)) {
-        clearVoiceWatchdog();
-        voiceWatchdog = global.setTimeout(function () {
-          voiceWatchdog = null;
-          if (!feedbackCurrent() || request !== narrationRequest) return;
-          audio.stopSpeaking();
-          afterExplanation(request);
-          scheduleAutoNext(request, AUTO_NEXT_AFTER_SPEECH);
-        }, AUTO_NEXT_VOICE_WATCHDOG);
-      }
-      audio.say(spoken.lines, Object.assign({}, spoken.opts, {
-        onEnd: function () {
-          clearVoiceWatchdog();
-          afterExplanation(request);
-          scheduleAutoNext(request, AUTO_NEXT_AFTER_SPEECH);
-        }
-      }), function () {
-        if (!feedbackCurrent() || request !== narrationRequest) return;
-        clearVoiceWatchdog();
-        nudgeReplay();
-        afterExplanation(request);
-      });
+    function finishNarration(request, failed) {
+      if (!feedbackCurrent() || request !== narrationRequest || narrationFinished === request) return;
+      narrationFinished = request;
+      clearVoiceWatchdog();
+      if (failed && !autoNext) nudgeReplay();
+      scheduleAutoNext(request, AUTO_NEXT_AFTER_SPEECH);
     }
-    function beginFeedback(request, replaying) {
+    function narrate(request, replaying, requestedSpeech) {
+      if (!feedbackCurrent() || request !== narrationRequest || narrationFinished === request) return;
+      if (!store.settings().speak) return;
+      var spoken = requestedSpeech || (replaying ? feedbackSpeech : quickAnswerSpeech);
+      audio.say(spoken.lines, Object.assign({}, spoken.opts, {
+        onEnd: function () { finishNarration(request, false); }
+      }), function () { finishNarration(request, true); });
+    }
+    function beginFeedback(request, replaying, requestedSpeech) {
+      if (!feedbackCurrent() || request !== narrationRequest) return;
+      if (autoNext) {
+        // 마이크 해제 완료 알림이 빠져도 이 예약으로 다음 문제에 진행한다.
+        // 읽어주기 재시도도 같은 보호를 쓰되, 직접 고른 상세 설명은 더 오래 들을 수 있다.
+        clearVoiceWatchdog();
+        if (store.settings().speak) {
+          voiceWatchdog = global.setTimeout(function () {
+            voiceWatchdog = null;
+            if (!feedbackCurrent() || request !== narrationRequest) return;
+            audio.stopSpeaking();
+            finishNarration(request, false);
+          }, replaying ? AUTO_NEXT_VOICE_WATCHDOG * 3 : AUTO_NEXT_VOICE_WATCHDOG);
+        } else scheduleAutoNext(request, AUTO_NEXT_SILENT);
+      }
       FQ.speech.stopAnd(function () {
-        if (!feedbackCurrent() || request !== narrationRequest) return;
-        // 보상 소리는 우선순위가 높은 하나만 쓴다. 상자는 설명이 끝난 뒤 열린다.
-        if (autoNext || res.chest || replaying) { narrate(request, replaying); return; }
+        if (!feedbackCurrent() || request !== narrationRequest || narrationFinished === request) return;
+        if (autoNext || replaying) { narrate(request, replaying, requestedSpeech); return; }
         var event = res.levelUp ? 'level' : res.newSticker ? 'sticker' :
           res.correct && store.settings().correctMusic ? 'correct' : 'discovery';
-        playMusic(event, function () { narrate(request, replaying); });
+        playMusic(event, function () { narrate(request, replaying, requestedSpeech); });
       });
     }
+    state.feedbackResume = autoNext ? function () {
+      if (!feedbackCurrent()) return;
+      cancelNarration();
+      audio.stopSpeaking();
+      beginFeedback(narrationRequest, false);
+    } : null;
+    state.feedbackSpeak = autoNext ? function (button) {
+      if (!feedbackCurrent()) return;
+      if (!store.settings().speak) {
+        store.updateSettings({ speak: true });
+        audio.setSpeakEnabled(true);
+      }
+      button.classList.remove('needs-tap');
+      button.textContent = button.getAttribute('data-label') || '🔊 들어보기';
+      replayFeedback({ lines: speechFromButton(button), opts: feedbackSpeech.opts });
+    } : null;
 
     // 정답 카드(시안 PhoneAnswer): 정오답이 같은 카드다. 폰에서 국기 전폭, 이름 34px, 노란 상자(그림 이름·상식 / 국기 특징),
     // 🔊 설명 다시 듣기 56px, '다음 나라 →' 64px.
@@ -1894,11 +1898,6 @@
     var html =
       '<div class="feedback learn discovery-card' + (isCapitalQ ? ' capital-card' : '') + (isMapQ ? ' map-feedback' : '') + '">' +
         '<div class="fb-head"><div class="verdict">' + verdict + '</div>' + extra + '</div>' +
-        (res.gift
-          ? '<div class="feedback-gift">' + giftSprite(res.gift) +
-              '<div class="feedback-gift-copy"><b>' + (res.newGift ? '새 그림 선물을 받았어요!' : '그림 선물을 다시 만났어요!') + '</b>' +
-                '<small>' + esc(res.gift.name) + '</small></div></div>'
-          : '') +
         (isCapitalQ
           ? capitalPlate(c, capitalPlace(c)) + capitalOf(c)
           : '<div class="name-row">' +
@@ -1923,7 +1922,7 @@
           ? '<button class="btn btn-listen btn-listen-soft" id="replay" type="button">🔊 설명 다시 듣기</button>'
           : '<button class="btn btn-listen btn-listen-soft" id="speak-on" type="button">🔇 읽어주기가 꺼져 있어요 · 켜고 듣기</button>') +
         '<button class="btn btn-primary btn-big btn-go" id="next" type="button">' +
-          (g.isLast() ? '오늘 여행 보기 →' : '다음 나라 →') +
+          (g.isLast() ? '오늘 여행 보기 →' : autoNext ? '바로 다음 문제 →' : '다음 나라 →') +
         '</button>' +
       '</div>';
 
@@ -1932,13 +1931,13 @@
     // 폰에서는 무대·보기를 접어 카드만 남긴다(css .quiz-screen.answered). 아이패드 가로는 보기(지도 핀)를 그대로 둔다.
     var screen = ui.$('.quiz-screen');
     if (screen && screen.classList) screen.classList.add('answered');
-    function replayFeedback() {
+    function replayFeedback(requestedSpeech) {
       if (state.cancelFeedbackVoice && state.cancelFeedbackVoice !== cancelNarration) state.cancelFeedbackVoice();
       cancelNarration();
       state.cancelFeedbackVoice = cancelNarration;
       generation = state.feedbackGeneration;
       audio.stopSpeaking();
-      beginFeedback(narrationRequest, true);
+      beginFeedback(narrationRequest, true, requestedSpeech);
     }
     var replay = ui.$('#replay', area);
     if (replay) {
@@ -1960,8 +1959,8 @@
     }
     var next = ui.$('#next');
     next.addEventListener('click', goNext);
-    if (isMapQ) {
-      // 큰 위치 설명을 건너뛰지 않고 정답 카드의 시작부터 보여 준다.
+    if (autoNext || isMapQ) {
+      // 자동 진행 중에는 확인 버튼 대신 정답 카드의 시작부터 보여 준다.
       area.setAttribute('tabindex', '-1');
       area.focus({ preventScroll: true });
       area.scrollIntoView({ block: 'start', behavior: 'smooth' });
@@ -1969,6 +1968,7 @@
       next.focus();
       next.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     }
+    if (res.chest) showChest(c, res);
     beginFeedback(narrationRequest, false);
   }
 
@@ -2004,80 +2004,35 @@
     return { count: all.length, score: score, xp: xp, kinds: kinds, icon: counts.gold ? '👑' : counts.shiny ? '✨' : '🎁' };
   }
 
-  /** 깜짝 상자(D22). 선물·점수·경험치는 submit 에서 저장하고, 그림 선물을 바로 보여 준다. */
-  function showChest(country, res, mode, onClose) {
-    var st = FQ.progress.stickers();
+  /** 선물·점수·경험치는 submit 에서 저장한다. 보상 안내는 문제 머리에 잠깐 표시한다. */
+  function showChest(country, res) {
+    var head = ui.$('.quiz-head');
+    if (!head) return;
+    if (state.giftClose) state.giftClose();
     var shape = res.chestShape || FQ.progress.chestShape(country && country.continent);
     var kind = res.chestKind || 'plain';
     var loot = res.chestLoot || FQ.progress.chestLoot(kind);
-    var art = (mode === 'symbol' || mode === 'place') && country ? artFor(country.code, mode) : null;
-    var back = doc.createElement('div');
-    var announcement = res.gift
-      ? esc(res.gift.name) + (res.newGift ? ' 그림 선물을 받았어요.' : ' 그림 선물을 다시 만났어요.')
-      : '선물을 받았어요.';
-    back.className = 'chest-back';
-    back.innerHTML =
-      '<div class="chest-card ' + kind + '" role="dialog" aria-modal="true" aria-label="' + announcement + ' 잠시 후 자동으로 넘어가요">' +
-        '<div class="chest-title">그림 선물을 받았어요!</div>' +
-        '<div class="chest-sub" id="chest-sub">' + esc(shape.name) + '에서 나왔어요</div>' +
-        '<div class="chest-open" id="chest-open">' +
-          '<div class="chest-art">' +
-            '<div class="chest-rays"></div>' +
-            (res.gift ? giftSprite(res.gift) : '<div class="chest-emoji">' + shape.emoji + '</div>') +
-          '</div>' +
-          '<div class="chest-kind">' + (CHEST_KIND_LABEL[kind] || CHEST_KIND_LABEL.plain) + '</div>' +
-          (res.gift
-            ? '<div class="chest-gift-copy"><b id="chest-gift-status">' + (res.newGift ? '새 그림 선물!' : '그림 선물을 다시 만났어요!') + '</b>' +
-                '<span>' + esc(res.gift.name) + '</span></div>'
-            : '') +
-          '<div class="chest-loot">' +
-            '<div class="loot" style="animation-delay:.15s">' +
-              '<div class="ic">⭐</div><div class="n">보너스 별</div><div class="d">+' + loot.score + '점</div>' +
-            '</div>' +
-            '<div class="loot" style="animation-delay:.3s">' +
-              '<div class="ic">✨</div><div class="n">경험치</div><div class="d">+' + loot.xp + '</div>' +
-            '</div>' +
-            (res.newSticker && country
-              ? '<div class="loot" style="animation-delay:.45s">' +
-                  '<div class="ic">🏳️</div><div class="n">' + esc(country.ko) + '</div><div class="d">새 스티커</div>' +
-                '</div>'
-              : '<div class="loot" style="animation-delay:.45s">' +
-                  '<div class="ic">📖</div><div class="n">스티커 판</div><div class="d">' + st.owned + ' / ' + st.total + '</div>' +
-                '</div>') +
-          '</div>' +
-          // 나라 친구 카드: 방금 만난 나라의 국기(그림 놀이면 그림도)가 상자에서 나온다. 새 읽어주기 문구는 없다.
-          (country
-            ? '<div class="chest-friend" role="group" aria-label="' + esc(country.ko) + ' 친구 카드">' +
-                '<img src="' + ui.flagSrc(country.code) + '" alt="' + esc(country.ko) + ' 국기">' +
-                (art ? '<img class="art" src="' + esc(art.src) + '" alt="' + esc(art.alt) + '">' : '') +
-                '<span class="chest-friend-name">' + esc(country.ko) + '</span>' +
-              '</div>'
-            : '') +
-          '<div class="chest-auto-note">잠시 후 자동으로 넘어가요</div>' +
-        '</div>' +
-      '</div>';
-    doc.body.appendChild(back);
+    var notice = doc.createElement('div');
+    notice.className = 'chest-toast ' + kind;
+    notice.setAttribute('role', 'status');
+    notice.setAttribute('aria-live', 'polite');
+    notice.setAttribute('aria-atomic', 'true');
+    notice.innerHTML =
+      '<span class="chest-toast-art" aria-hidden="true">' +
+        (res.gift ? giftSprite(res.gift) : esc(shape.emoji)) +
+      '</span>' +
+      '<span class="chest-toast-copy"><b>' +
+        (res.gift ? (res.newGift ? '새 선물 · ' : '선물 · ') + esc(res.gift.name) : '선물을 받았어요!') +
+        '</b><small>' + esc(CHEST_KIND_LABEL[kind] || CHEST_KIND_LABEL.plain) +
+          ' · 보너스 +' + loot.score + '점 · 경험치 +' + loot.xp + '</small></span>';
+    head.appendChild(notice);
 
-    // 선물 그림을 보여 주는 동안 뒤의 '다음 문제' 단추를 잠근다.
-    var behind = ui.$('#next');
-    if (behind) behind.disabled = true;
-    var card = back.querySelector('.chest-card');
-    if (card) { card.setAttribute('tabindex', '-1'); try { card.focus({ preventScroll: true }); } catch (e) { card.focus(); } }
-
-    // 상자가 나타나는 소리는 대륙 곡. 선물·점수·경험치는 submit 에서 이미 반영했다.
-    playMusic('chest', null, shape.music ? { prefer: shape.music } : null);
-    FQ.effects.burst(kind === 'gold' ? 70 : kind === 'shiny' ? 50 : 35);
-    var closed = false;
+    // 안내가 사라지는 시간은 다음 문제 이동과 독립적이다. 포커스와 버튼을 바꾸지 않는다.
     function close() {
-      if (closed) return;
-      closed = true;
+      notice.remove();
+      if (state.giftClose !== close) return;
       if (state.giftTimer) { global.clearTimeout(state.giftTimer); state.giftTimer = null; }
       state.giftClose = null;
-      stopMusic();
-      back.remove();
-      var nextBtn = ui.$('#next');
-      if (nextBtn) nextBtn.disabled = false;
-      if (onClose) onClose();
     }
     state.giftClose = close;
     state.giftTimer = global.setTimeout(close, GIFT_DISPLAY_MS);
@@ -2445,7 +2400,7 @@
   /* =================== 키보드 =================== */
   doc.addEventListener('keydown', function (ev) {
     if (!state.game) return;
-    if (doc.querySelector('.modal-back') || doc.querySelector('.chest-back')) return;
+    if (doc.querySelector('.modal-back')) return;
     var tag = (ev.target.tagName || '').toLowerCase();
     if (tag === 'input' || tag === 'textarea') return;
     // 버튼에 포커스가 있으면 Enter/Space는 그 버튼의 원래 동작을 따른다.
@@ -2493,8 +2448,9 @@
 
     doc.addEventListener('visibilitychange', function () {
       if (doc.hidden) {
-        if (state.giftClose || state.giftResume) {
-          if (state.giftTimer) { global.clearTimeout(state.giftTimer); state.giftTimer = null; }
+        if (state.feedbackResume) {
+          if (state.cancelFeedbackVoice) state.cancelFeedbackVoice();
+          if (state.giftClose) state.giftClose();
           stopMusic();
         } else cancelPendingFeedback();
         audio.stopSpeaking();
@@ -2503,10 +2459,8 @@
           stopTimer();
         }
         stopListening();
-      } else if (state.giftClose) {
-        state.giftTimer = global.setTimeout(state.giftClose, GIFT_DISPLAY_MS);
-      } else if (state.giftResume) {
-        state.giftResume();
+      } else if (state.feedbackResume) {
+        state.feedbackResume();
       } else if (state.game && !state.answered) {
         if (state.timerPaused) {
           state.timerPaused = false;

@@ -12,8 +12,9 @@ function fixture() {
   const nodes = new Map(), events = {}, spoken = [], releases = [], timers = new Map(), local = new Map();
   const delegated = [], playbackFailures = [], modals = [], voiceOptions = [], music = [];
   let currentMusic = null;
-  let timerId = 0;
+  let timerId = 0, elapsed = 0;
   function node(sel) {
+    if(sel==='.chest-toast'&&nodes.get('created')?.className?.split(' ').includes('chest-toast'))return nodes.get('created');
     if (!nodes.has(sel)) {
       const classes = new Set();
       nodes.set(sel, {
@@ -22,7 +23,7 @@ function fixture() {
         addEventListener(type, fn){this.handlers[type] = fn;},
         click(){if (!this.disabled) this.handlers.click?.({target:this});},
         setAttribute(k,v){this.attrs[k]=String(v);}, getAttribute(k){return this.attrs[k]??'';}, removeAttribute(k){delete this.attrs[k];},
-        querySelector: node, querySelectorAll:()=>[], appendChild(){}, remove(){}, focus(options){this.focusOptions=options;c.document.activeElement=this;}, scrollIntoView(options){this.scrollOptions=options;},
+        querySelector: node, querySelectorAll:()=>[], appendChild(child){(this.children??=[]).push(child);child.parentNode=this;child.removed=false;}, remove(){this.removed=true;if(this.parentNode)this.parentNode.children=this.parentNode.children.filter(child=>child!==this);}, focus(options){this.focusOptions=options;c.document.activeElement=this;}, scrollIntoView(options){this.scrollOptions=options;},
         set innerHTML(html){
           this.html=html;this.renderCount++;
           for (const m of html.matchAll(/<([a-z]+)\b[^>]*\bid="([^"]+)"[^>]*>/g)) {
@@ -45,8 +46,8 @@ function fixture() {
     return nodes.get(sel);
   }
   const c={console, Math, Date, JSON, Object, Array, String, Number, Image:function(){},
-    setTimeout(fn,delay){const id=++timerId;timers.set(id,{fn,delay});return id;}, clearTimeout:(id)=>timers.delete(id),
-    setInterval(fn,delay){const id=++timerId;timers.set(id,{fn,delay,interval:true});return id;}, clearInterval:(id)=>timers.delete(id),
+    setTimeout(fn,delay){const id=++timerId;timers.set(id,{fn,delay,at:elapsed+delay});return id;}, clearTimeout:(id)=>timers.delete(id),
+    setInterval(fn,delay){const id=++timerId;timers.set(id,{fn,delay,at:elapsed+delay,interval:true});return id;}, clearInterval:(id)=>timers.delete(id),
     localStorage:{getItem:k=>local.get(k)??null,setItem:(k,v)=>local.set(k,String(v)),removeItem:k=>local.delete(k)},
     document:{hidden:false,readyState:'loading',addEventListener(type,fn){(events[type]??=[]).push(fn);},querySelector:sel=>sel==='.app'?node('.app'):null,body:node('body'),createElement:()=>node('created'),getElementById:(id)=>node('#'+id)},
     navigator:{}, location:{protocol:'http:',hostname:'localhost'},confirm:()=>true,
@@ -75,6 +76,19 @@ function fixture() {
   // 깜짝 상자 난수는 기본으로 고정한다(굴림 0.99 → 8장째 보장 전에는 안 열림, 종류 보통). 상자를 보려는 검사만 덮어쓴다.
   c.FQ.test.state.rng=()=>0.99;c.FQ.test.state.rngKind=()=>0.5;
   function runDelay(delay){for(const [id,t] of [...timers])if(t.delay===delay){if(!t.interval)timers.delete(id);t.fn();}}
+  // 신규 흐름 검사는 예약 순서와 실제 경과 시간을 같이 검사한다. 낭독·상자·다음 예약을 한꺼번에 실행하지 않는다.
+  function advance(ms){
+    const until=elapsed+ms;let ticks=0;
+    for(;;){
+      const next=[...timers].filter(([,t])=>t.at<=until).sort((a,b)=>a[1].at-b[1].at||a[0]-b[0])[0];
+      if(!next)break;
+      assert.ok(++ticks<200,'타이머가 끝없이 반복된다');
+      const [id,t]=next;elapsed=t.at;
+      if(t.interval)t.at+=t.delay;else timers.delete(id);
+      t.fn();
+    }
+    elapsed=until;
+  }
   function startVoice(only=['id','in']){
     c.FQ.storage.updateSettings({mode:'voice'});
     c.FQ.app.startGame(only);
@@ -83,12 +97,26 @@ function fixture() {
   function clickDelegated(selector,target){delegated.filter(item=>item.selector===selector&&item.event==='click').at(-1).fn({target},target);}
   function finishMusic(failed=false){const item=currentMusic;if(!item||item.cancelled)return;currentMusic=null;(failed?item.opts.onFail:item.opts.onDone)?.();}
   function finishVoice(){voiceOptions.at(-1)?.onEnd?.();}
-  return {c,node,nodes,events,spoken,releases,timers,runDelay,startVoice,clickDelegated,playbackFailures,modals,music,finishMusic,finishVoice};
+  return {c,node,nodes,events,spoken,releases,timers,runDelay,advance,startVoice,clickDelegated,playbackFailures,voiceOptions,modals,music,finishMusic,finishVoice};
 }
 
 let passed=0;
 function test(name,fn){fn();passed++;console.log('✓ '+name);}
 const rx=(s)=>s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+const quizModes=['choice4','reverse','voice','typing','symbol','place','map','capital','capitalVoice'];
+function startMode(f,mode,only=['kr','jp','fr'],settings={}){
+  f.c.FQ.storage.updateSettings({mode,dev:{art:true},...settings});f.c.FQ.app.startGame(only);
+  if(mode==='symbol'||mode==='place')f.node('#question-art').handlers.load();
+  // 수도 문제의 시작 안내는 읽어주기를 켠다. 채점 순간의 꺼짐 분기는 렌더 뒤 다시 지정한다.
+  if(Object.hasOwn(settings,'speak'))f.c.FQ.storage.updateSettings({speak:settings.speak});
+  return f.c.FQ.test;
+}
+function answerCurrent(f){
+  const q=f.c.FQ.test.state.game.current();
+  if(q.mode==='voice'||q.mode==='capitalVoice')f.c.callbacks.result([q.mode==='capitalVoice'?q.country.capital:q.country.ko]);
+  else if(q.mode==='typing'){f.node('#answer-input').value=q.country.ko;f.node('#answer-submit').click();}
+  else {const choice=f.node('answer:'+q.country.code);choice.setAttribute('data-code',q.country.code);f.clickDelegated('.answer-btn',choice);}
+}
 
 test('중간 인도 이후 최종 인도네시아를 끝까지 듣고 정답으로 인정',()=>{
   const f=fixture(),a=f.startVoice(['id']);
@@ -320,7 +348,7 @@ test('결과 응원 대기는 화면 이동으로 취소하고 백그라운드 �
   assert.equal(f.spoken.length,1);
 });
 
-test('나라 이름 듣기도 재생 실패를 버튼에 안내하고 설명 재청취가 앞선 이름 대기를 취소',()=>{
+test('정답의 이름 다시 듣기도 자동 진행을 유지하고 설명 재청취가 앞선 이름 대기를 취소',()=>{
   const f=fixture(),a=f.startVoice(['kr']);a.submit({code:'kr'});
   const target=f.node('name-audio');target.textContent='🔊';target.setAttribute('data-speak','대한민국');
   f.clickDelegated('[data-speak]',target);const name=f.releases.at(-1);
@@ -329,7 +357,7 @@ test('나라 이름 듣기도 재생 실패를 버튼에 안내하고 설명 재
   f.clickDelegated('[data-speak]',target);f.releases.at(-1)();
   assert.deepEqual(f.spoken.at(-1),['대한민국']);
   assert.equal(typeof f.playbackFailures.at(-1),'function');f.playbackFailures.at(-1)();
-  assert.match(target.textContent,/다시/);
+  assert.ok([...f.timers.values()].some(t=>t.delay===900));
 });
 
 test('나라 이름 듣기를 예약한 뒤 답을 고르면 이전 이름 요청보다 새 정답 설명을 우선',()=>{
@@ -386,8 +414,8 @@ test('오답·건너뛰기·시간 초과도 한 장씩 쌓이고 깜짝 상자�
   }
   assert.equal(a.state.game.correct,0);assert.equal(a.state.game.bestStreak,0);
   assert.equal(a.state.game.wrong.length,5);assert.equal(a.state.game.bonusScore,5);
-  assert.equal(a.state.xpGained,20);assert.equal(f.music.at(-1).event,'chest');
-  assert.match(f.node('created').innerHTML,/그림 선물을 받았어요!/);
+  assert.equal(a.state.xpGained,20);assert.equal(f.music.at(-1).event,'discovery');
+  assert.match(f.node('created').innerHTML,/새 선물 ·/);
   assert.deepEqual(JSON.parse(JSON.stringify(f.c.FQ.storage.chestState())),{since:0,opened:1,kinds:{plain:1}});
 });
 
@@ -424,80 +452,75 @@ test('음원 실패는 설명으로 이어지고 다음 문제는 늦게 끝나�
   a.goNext();late();assert.equal(f.spoken.length,1);
 });
 
-test('상자는 Sua 설명 완료 후 한 번만 열리고 3초 뒤 결과로 자동 진행한다',()=>{
+test('오답 선물은 즉시 기록하고 표시하지만 설명이나 다음 버튼을 막지 않는다',()=>{
   const f=fixture();for(let i=0;i<4;i++){f.c.FQ.storage.recordAnswer('jp',false);f.c.FQ.storage.recordChest(null);}
-  const a=f.startVoice(['kr']);a.state.rng=()=>0;a.state.rngKind=()=>0.5;a.submit({text:''},true);f.releases.at(-1)();
-  assert.equal(f.music.length,0);assert.equal(f.spoken.length,1);assert.equal(f.node('#next').disabled,false);
-  f.finishVoice();assert.equal(f.music.at(-1).event,'chest');assert.equal(f.node('#next').disabled,true);
-  f.finishVoice();assert.equal(f.music.filter(x=>x.event==='chest').length,1);
-  assert.ok([...f.timers.values()].some(t=>t.delay===3000));
-  f.runDelay(3000);
-  assert.equal(f.node('#next').disabled,false);
-  assert.match(f.node('main').innerHTML,/result-screen/);
-  assert.equal(f.music.filter(x=>x.event==='chest').length,1);assert.equal(f.c.FQ.storage.stats().asked,5);
-  assert.equal(a.state.game.bonusScore,5);
+  const a=f.startVoice(['kr']);a.state.rng=()=>0;a.state.rngKind=()=>0.5;a.submit({text:''},true);
+  assert.match(f.node('created').innerHTML,/소방차/);
+  assert.equal(f.node('created').attrs.role,'status');assert.equal(f.node('#next').disabled,false);
+  assert.equal(f.c.FQ.storage.giftState().owned.length,1);assert.equal(a.state.game.bonusScore,5);
+  f.releases.at(-1)();f.finishMusic();f.finishVoice();f.runDelay(3000);
+  assert.equal(a.state.game.index,0);assert.equal(a.state.answered,true);
+  assert.doesNotMatch(f.node('main').innerHTML,/result-screen/);
+  assert.equal(f.music.filter(x=>x.event==='chest').length,0);
+  f.node('#next').click();assert.match(f.node('main').innerHTML,/result-screen/);
 });
 
-test('상자를 기다리던 설명 실패도 선물을 보여 주고 앱 복귀 후 자동으로 진행한다',()=>{
-  const f=fixture();f.c.FQ.app.boot();for(let i=0;i<4;i++){f.c.FQ.storage.recordAnswer('jp',false);f.c.FQ.storage.recordChest(null);}
-  const a=f.startVoice(['kr']);a.state.rng=()=>0;a.state.rngKind=()=>0.5;a.submit({text:''},true);f.releases.at(-1)();f.playbackFailures.at(-1)();
-  assert.equal(f.music.at(-1).event,'chest');
-  f.c.document.hidden=true;f.events.visibilitychange[0]();
-  assert.equal(f.music.at(-1).cancelled,true);assert.equal(f.node('#next').disabled,true);
-  assert.ok(![...f.timers.values()].some(t=>t.delay===3000));
-  f.runDelay(3000);assert.doesNotMatch(f.node('main').innerHTML,/result-screen/);
-  f.c.document.hidden=false;f.events.visibilitychange[0]();
-  assert.ok([...f.timers.values()].some(t=>t.delay===3000));
-  f.runDelay(3000);assert.match(f.node('main').innerHTML,/result-screen/);
+test('오답 선물과 설명 실패가 겹쳐도 화면 복귀 뒤 현재 문제를 읽고 수동으로 이어 간다',()=>{
+  const f=fixture();f.c.FQ.app.boot();f.c.FQ.storage.recordChest(null);
+  const a=f.startVoice(['kr']);a.state.rng=()=>0;a.submit({text:''},true);f.releases.at(-1)();f.finishMusic();f.playbackFailures.at(-1)();
+  assert.equal(f.node('#next').disabled,false);assert.match(f.node('created').innerHTML,/소방차/);
+  f.c.document.hidden=true;f.events.visibilitychange[0]();f.runDelay(3000);
+  f.c.document.hidden=false;f.events.visibilitychange[0]();f.advance(10000);
+  assert.equal(a.state.game.index,0);assert.equal(a.state.answered,true);
+  assert.equal(f.node('#next').disabled,false);assert.doesNotMatch(f.node('main').innerHTML,/result-screen/);
+  f.node('#next').click();assert.match(f.node('main').innerHTML,/result-screen/);
 });
 
-test('선물 설명 중 앱을 가렸다 돌아와도 보상을 보여 준 뒤 자동으로 진행한다',()=>{
+test('정답 선물을 받은 뒤 화면을 가리면 예약을 멈추고 복귀 뒤 확인 없이 다음 문제로 간다',()=>{
   const f=fixture();f.c.FQ.app.boot();f.c.FQ.storage.recordChest(null);
   const a=f.startVoice(['kr','jp']);a.state.rng=()=>0;
   a.submit({code:a.state.game.current().country.code});f.releases.at(-1)();
-  assert.equal(f.music.length,0);
-  f.c.document.hidden=true;f.events.visibilitychange[0]();
-  f.finishVoice();assert.equal(f.music.length,0);
-  f.c.document.hidden=false;f.events.visibilitychange[0]();
-  assert.equal(f.music.at(-1).event,'chest');
-  assert.ok([...f.timers.values()].some(t=>t.delay===3000));
-  f.finishVoice();assert.equal(f.music.filter(item=>item.event==='chest').length,1);
-  f.runDelay(3000);assert.equal(a.state.game.index,1);
+  assert.equal(f.music.length,0);assert.match(f.node('created').innerHTML,/소방차/);
+  f.c.document.hidden=true;f.events.visibilitychange[0]();f.finishVoice();f.advance(10000);
+  assert.equal(a.state.game.index,0);assert.equal(f.node('#next').disabled,false);
+  f.c.document.hidden=false;f.events.visibilitychange[0]();f.releases.at(-1)();f.finishVoice();f.advance(900);
+  assert.equal(a.state.game.index,1);assert.equal(a.state.answered,false);
+  assert.equal(f.c.FQ.storage.giftState().owned.length,1);
 });
 
-test('선물 화면 복귀 뒤 늦은 마이크 해제는 설명을 다시 시작하지 않는다',()=>{
+test('선물 뒤 화면 복귀와 늦은 마이크 해제가 겹쳐도 이전 안내는 살아나지 않는다',()=>{
   const f=fixture();f.c.FQ.app.boot();f.c.FQ.storage.recordChest(null);
   const a=f.startVoice(['kr','jp']);a.state.rng=()=>0;
-  a.submit({code:a.state.game.current().country.code});
-  const lateRelease=f.releases.at(-1);
+  a.submit({code:a.state.game.current().country.code});const lateRelease=f.releases.at(-1);
   f.c.document.hidden=true;f.events.visibilitychange[0]();
-  f.c.document.hidden=false;f.events.visibilitychange[0]();
-  assert.equal(f.music.at(-1).event,'chest');
-  lateRelease();
-  assert.equal(f.spoken.length,0);
-  assert.equal(f.music.filter(item=>item.event==='chest').length,1);
-  f.runDelay(3000);assert.equal(a.state.game.index,1);
+  f.c.document.hidden=false;f.events.visibilitychange[0]();lateRelease();
+  assert.equal(f.spoken.length,0);assert.equal(f.music.length,0);
+  f.releases.at(-1)();f.finishVoice();f.advance(900);assert.equal(a.state.game.index,1);
+  assert.equal(f.c.FQ.storage.chestState().opened,1);
 });
 
-test('겹친 보상은 상자, 단계, 스티커 순으로 한 음악만 고른다',()=>{
-  const f=fixture();f.c.FQ.storage.addXp(295);f.c.FQ.storage.updateSettings({mode:'choice4'});f.c.FQ.app.startGame(['kr']);const a=f.c.FQ.test;
-  a.submit({code:'kr'});f.releases.at(-1)();assert.equal(f.music.at(-1).event,'level');
-  const g=fixture();g.c.FQ.storage.updateSettings({mode:'choice4'});g.c.FQ.app.startGame(['kr']);const b=g.c.FQ.test;b.submit({code:'kr'});g.releases.at(-1)();
-  assert.equal(g.music.at(-1).event,'sticker');
-  const h=fixture();for(let i=0;i<4;i++){h.c.FQ.storage.recordAnswer('jp',false);h.c.FQ.storage.recordChest(null);}
-  h.c.FQ.storage.addXp(295);const c=h.startVoice(['kr']);c.state.rng=()=>0;c.state.rngKind=()=>0.5;c.submit({code:'kr'});h.releases.at(-1)();
-  assert.equal(h.music.length,0);h.finishVoice();assert.equal(h.music.at(-1).event,'chest');
+test('정답에서 단계·스티커·선물이 겹쳐도 이름만 읽고 보상 음악을 기다리지 않는다',()=>{
+  for(const reward of ['level','sticker','chest']){
+    const f=fixture();f.c.FQ.storage.updateSettings({mode:'choice4'});
+    if(reward==='level')f.c.FQ.storage.addXp(295);
+    if(reward==='chest'){f.c.FQ.storage.recordChest(null);f.c.FQ.storage.addXp(295);}
+    f.c.FQ.app.startGame(['kr','jp']);const a=f.c.FQ.test;if(reward==='chest')a.state.rng=()=>0;
+    a.submit({code:a.state.game.current().country.code});f.releases.at(-1)();
+    assert.equal(f.music.filter(item=>item.event!=='start').length,0,reward);assert.deepEqual(f.spoken.at(-1),[a.state.game.current().country.ko],reward);
+    assert.equal(f.node('#next').disabled,false,reward);
+    f.finishVoice();f.runDelay(900);assert.equal(a.state.game.index,1,reward);
+  }
 });
 
-test('정답 전용 음악과 홈 배경음은 기본 꺼짐이며 선택하면 사용할 수 있다',()=>{
+test('정답 진행은 음악 설정과 관계없이 짧은 이름 뒤 이어지고 홈 음악은 선택해서 사용할 수 있다',()=>{
   const f=fixture();assert.equal(f.c.FQ.storage.settings().correctMusic,false);assert.equal(f.c.FQ.storage.settings().homeMusic,false);
-  f.c.FQ.storage.recordAnswer('kr',true);f.c.FQ.storage.updateSettings({mode:'choice4'});f.c.FQ.app.startGame(['kr']);const a=f.c.FQ.test;a.submit({code:'kr'});f.releases.at(-1)();
-  assert.equal(f.music.at(-1).event,'discovery');
-  f.c.FQ.storage.updateSettings({correctMusic:true});f.c.FQ.app.startGame(['kr']);a.submit({code:'kr'});f.releases.at(-1)();
-  assert.equal(f.music.at(-1).event,'correct');
+  for(const correctMusic of [false,true]){
+    f.c.FQ.storage.updateSettings({mode:'choice4',correctMusic});f.c.FQ.app.startGame(['kr']);
+    f.c.FQ.test.submit({code:'kr'});f.releases.at(-1)();assert.equal(f.music.filter(item=>item.event!=='start').length,0);
+    assert.deepEqual(f.spoken.at(-1),['대한민국']);
+  }
   f.c.FQ.storage.updateSettings({homeMusic:true});f.c.FQ.app.home();f.releases.at(-1)();assert.equal(f.music.at(-1).event,'homeBgm');
-  const bgm=f.music.at(-1);
-  f.c.FQ.app.startGame(['kr']);assert.equal(bgm.cancelled,true);
+  const bgm=f.music.at(-1);f.c.FQ.app.startGame(['kr']);assert.equal(bgm.cancelled,true);
 });
 
 test('결과는 정확도와 관계없이 응원을 마친 뒤 같은 완료 음악을 재생한다',()=>{
@@ -561,7 +584,7 @@ test('지도 핀 제출은 지도 기록만 쌓고 기존 국기 스티커와 �
     assert.equal(a.state.newStickers.length,0);
     assert.equal(JSON.stringify(f.c.FQ.storage.daily()),before);
     f.releases.at(-1)();f.finishMusic();
-    assert.deepEqual(f.spoken.at(-1),[q.country.ko,q.country.fact]);
+    assert.deepEqual(f.spoken.at(-1),correct?[q.country.ko]:[q.country.ko,q.country.fact]);
   }
 });
 
@@ -591,7 +614,7 @@ test('두 그림 퀴즈는 실제 그림 경로·4개 보기·별도 기록·기
     assert.equal(f.c.FQ.storage.countryStat('kr').correct,0);
     assert.equal(JSON.stringify(f.c.FQ.storage.daily()),before);
     assert.equal(a.state.newStickers.length,0);
-    assert.deepEqual(f.spoken.at(-1),[q.country.ko,artName,q.country.fact]);
+    assert.deepEqual(f.spoken.at(-1),[q.country.ko]);
   }
 });
 
@@ -1075,7 +1098,7 @@ test('정답 카드는 나라별 국기·설명·듣기·다음을 제공하고 
   assert.match(html,new RegExp('<div class="remember-box"><img class="remember-art" src="images/symbols/'+c.code+'\\.webp" alt="">'));
   assert.match(html,new RegExp('<b class="remember-title">'+rx(artName)+'</b><span class="remember-body">'+rx(c.fact)+'</span>'));
   assert.match(html,/<button class="btn btn-listen btn-listen-soft" id="replay" type="button">🔊 설명 다시 듣기<\/button>/);
-  assert.match(html,/<button class="btn btn-primary btn-big btn-go" id="next" type="button">다음 나라 →<\/button>/);
+  assert.match(html,/<button class="btn btn-primary btn-big btn-go" id="next" type="button">바로 다음 문제 →<\/button>/);
   assert.doesNotMatch(html,/fact-box|info-list|ename|style="/);
   assert.ok(f.node('.quiz-screen').classList.contains('answered'));
   // 머리의 여행 카드 칸은 이 판에서 만난 나라 국기로 차고 #combo-title 은 남는다.
@@ -1136,73 +1159,52 @@ test('결과 화면은 정확한 나라 수·여행 카드·레벨·상자·새 
   assert.match(html2,/aria-label="오늘 만난 나라 1개"/);
 });
 
-test('깜짝 상자는 선물을 즉시 지급하고 3초 뒤 확인 없이 다음 문제로 간다',()=>{
+test('깜짝 상자는 즉시 지급하고 작은 상태 알림만 보여 주며 정답 진행을 지연하지 않는다',()=>{
   const f=fixture();f.c.FQ.storage.updateSettings({mode:'choice4',speak:false});f.c.FQ.storage.recordChest(null);
   f.c.FQ.app.startGame(['kr','jp']);const a=f.c.FQ.test;
-  const first=a.state.game.current().country;
-  a.state.rng=()=>0;a.state.rngKind=()=>0.2;   // 열림 · 반짝 상자(0.05~0.25)
+  const first=a.state.game.current().country;a.state.rng=()=>0;a.state.rngKind=()=>0.2;
   a.submit({code:first.code});
   assert.deepEqual([...f.c.FQ.storage.giftState().owned],['fire_truck'],'화면을 열거나 누르기 전에 선물이 저장된다');
-  assert.match(f.node('#feedback-area').innerHTML,/새 그림 선물을 받았어요![\s\S]*소방차/,'정답 카드에도 바로 그림 선물을 보여 준다');
-  f.releases.at(-1)();
-  const back=f.node('created'),html=back.innerHTML;
-  assert.match(html,/<div class="chest-card shiny" role="dialog" aria-modal="true" aria-label="소방차 그림 선물을 받았어요\. 잠시 후 자동으로 넘어가요">/);
-  assert.doesNotMatch(html,/chest-pick|chest-picks|한 번 더 두드려요/);
-  assert.match(html,/id="chest-sub">연등에서 나왔어요/,'대한민국은 아시아라 연등');
-  assert.match(html,/id="chest-open">[\s\S]*반짝 상자 ✨[\s\S]*\+5점[\s\S]*\+40/);
+  const notice=f.node('created'),html=notice.innerHTML;
+  assert.equal(notice.className,'chest-toast shiny');assert.equal(notice.attrs.role,'status');
+  assert.equal(notice.attrs['aria-live'],'polite');assert.equal(notice.attrs['aria-atomic'],'true');
+  assert.equal(notice.parentNode,f.node('.quiz-head'),'풀이 위를 덮는 모달 대신 문제 머리에 표시한다');
+  assert.doesNotMatch(html,/role="dialog"|aria-modal|<button|chest-pick|확인|좋아요|자동으로 넘어/);
+  assert.match(html,/새 선물 · 소방차/);assert.match(html,/반짝 상자 ✨[\s\S]*\+5점[\s\S]*\+40/);
   assert.match(html,/class="gift-sprite" role="img" aria-label="소방차" style="background-position:0% 0%"/);
-  assert.ok(html.includes('<div class="chest-friend" role="group" aria-label="'+first.ko+' 친구 카드"><img src="flags/'+first.code+'.svg"'));
-  assert.equal(f.music.at(-1).event,'chest');assert.equal(f.music.at(-1).opts.prefer,'chest-01-musicbox');
-  assert.equal(f.node('#next').disabled,true);
-  assert.equal(f.c.document.activeElement,f.node('.chest-card'));
-  assert.doesNotMatch(html,/id="chest-close"|좋아요!/);
-  assert.match(html,/잠시 후 자동으로 넘어가요/);
+  assert.equal(f.music.filter(item=>item.event!=='start').length,0);assert.equal(f.node('#next').disabled,false);assert.notEqual(f.c.document.activeElement,notice);
   assert.equal(a.state.xpGained,50);assert.equal(a.state.game.bonusScore,5);
   assert.deepEqual(JSON.parse(JSON.stringify(f.c.FQ.storage.chestState())),{since:0,opened:1,kinds:{shiny:1}});
-  f.runDelay(3000);
-  assert.equal(f.node('#next').disabled,false);
-  assert.equal(a.state.game.index,1);
-  assert.equal(a.state.answered,false);
-  // 기존 아홉 선물이 있으면 새 그림 중 하나가 바로 나오고, 황금 상자는 보너스 10점·경험치 60.
+  f.releases.at(-1)();f.advance(1800);
+  assert.equal(a.state.game.index,1);assert.equal(a.state.answered,false);
+  f.advance(3000);assert.equal(a.state.game.index,1,'선물 표시 종료는 다음 문제를 건너뛰지 않는다');
   const g=fixture();g.c.FQ.storage.updateSettings({mode:'choice4',speak:false});g.c.FQ.storage.recordChest(null);
   for(const gift of g.c.FQ.progress.giftCatalog().slice(0,9))g.c.FQ.storage.awardGift(gift.id);
-  g.c.FQ.app.startGame(['kr']);const b=g.c.FQ.test;b.state.rng=()=>0;b.state.rngKind=()=>0.01;
-  b.submit({code:'kr'});
+  g.c.FQ.app.startGame(['kr']);const b=g.c.FQ.test;b.state.rng=()=>0;b.state.rngKind=()=>0.01;b.submit({code:'kr'});
   assert.equal(g.c.FQ.storage.giftState().owned.at(-1),'toy_bus');
-  g.releases.at(-1)();
-  const back2=g.node('created');assert.match(back2.innerHTML,/class="chest-card gold"[\s\S]*황금 상자 👑[\s\S]*\+10점[\s\S]*\+60/);
+  const back2=g.node('created');assert.equal(back2.className,'chest-toast gold');
+  assert.match(back2.innerHTML,/황금 상자 👑[\s\S]*\+10점[\s\S]*\+60/);
   assert.match(back2.innerHTML,/class="gift-sprite gift-sheet-2"[\s\S]*장난감 버스/);
   assert.equal(b.state.game.bonusScore,10);assert.equal(b.state.xpGained,70);
 });
 
-test('선물을 받는 마지막 문제도 자동으로 결과를 열고 홈 이동은 예약을 취소한다',()=>{
-  const f=fixture();f.c.FQ.storage.updateSettings({mode:'choice4',speak:false});f.c.FQ.storage.recordChest(null);
-  f.c.FQ.app.startGame(['kr']);const a=f.c.FQ.test;a.state.rng=()=>0;
-  a.submit({code:a.state.game.current().country.code});f.releases.at(-1)();
-  assert.ok([...f.timers.values()].some(t=>t.delay===3000));
-  f.runDelay(3000);
-  assert.match(f.node('main').innerHTML,/result-screen/);
-  assert.match(f.node('main').innerHTML,/오늘 받은 그림 선물/);
-
-  const g=fixture();g.c.FQ.storage.updateSettings({mode:'choice4',speak:false});g.c.FQ.storage.recordChest(null);
-  g.c.FQ.app.startGame(['kr','jp']);const b=g.c.FQ.test;b.state.rng=()=>0;
-  b.submit({code:b.state.game.current().country.code});g.releases.at(-1)();
-  assert.ok([...g.timers.values()].some(t=>t.delay===3000));
-  g.c.FQ.app.home();g.runDelay(3000);
-  assert.equal(b.state.game,null);
-  assert.match(g.node('main').innerHTML,/home-kid/);
+test('선물을 받는 마지막 정답도 보상을 기록하고 자동으로 결과를 열며 홈 이동은 예약을 취소한다',()=>{
+  const f=fixture();f.c.FQ.storage.recordChest(null);const a=startMode(f,'choice4',['kr'],{speak:false});a.state.rng=()=>0;
+  answerCurrent(f);f.releases.at(-1)();f.advance(1800);
+  assert.match(f.node('main').innerHTML,/result-screen/);assert.match(f.node('main').innerHTML,/오늘 받은 그림 선물/);
+  assert.equal(a.state.lastSummary.correct,1);assert.equal(a.state.lastSummary.bonusScore,5);
+  const g=fixture();g.c.FQ.storage.recordChest(null);const b=startMode(g,'choice4',['kr','jp'],{speak:false});b.state.rng=()=>0;
+  answerCurrent(g);const release=g.releases.at(-1);g.c.FQ.app.home();release();g.advance(10000);
+  assert.equal(b.state.game,null);assert.match(g.node('main').innerHTML,/home-kid/);
+  assert.equal(g.c.FQ.storage.giftState().owned.length,1,'홈 이동도 이미 지급한 선물을 잃지 않는다');
 });
 
-test('선물 설명 종료 신호가 없어도 대기 한도 뒤 선물을 보여 주고 진행한다',()=>{
-  const f=fixture();f.c.FQ.storage.updateSettings({mode:'choice4'});f.c.FQ.storage.recordChest(null);
-  f.c.FQ.app.startGame(['kr','jp']);const a=f.c.FQ.test;a.state.rng=()=>0;
-  a.submit({code:a.state.game.current().country.code});f.releases.at(-1)();
-  assert.ok([...f.timers.values()].some(t=>t.delay===7000));
-  f.runDelay(7000);
-  assert.equal(f.music.at(-1).event,'chest');
-  assert.ok([...f.timers.values()].some(t=>t.delay===3000));
-  f.runDelay(3000);
-  assert.equal(a.state.game.index,1);
+test('선물은 낭독 종료 신호 전에 보여 주고 종료 신호가 없어도 한도 뒤 다음 문제로 간다',()=>{
+  const f=fixture();f.c.FQ.storage.recordChest(null);const a=startMode(f,'choice4');a.state.rng=()=>0;
+  answerCurrent(f);assert.match(f.node('created').innerHTML,/소방차/);f.releases.at(-1)();
+  assert.equal(f.node('#next').disabled,false);assert.equal(f.music.filter(item=>item.event!=='start').length,0);
+  f.advance(6999);assert.equal(a.state.game.index,0);
+  f.advance(901);assert.equal(a.state.game.index,1);assert.equal(a.state.answered,false);
 });
 
 test('세 번째 선물 그림도 바로 보이고, 27종을 모두 모은 뒤에만 중복 선물이 나온다',()=>{
@@ -1210,7 +1212,7 @@ test('세 번째 선물 그림도 바로 보이고, 27종을 모두 모은 뒤�
   for(const gift of f.c.FQ.progress.giftCatalog().slice(0,18))f.c.FQ.storage.awardGift(gift.id);
   f.c.FQ.app.startGame(['kr']);const a=f.c.FQ.test;a.state.rng=()=>0;a.submit({code:'kr'});
   assert.equal(f.c.FQ.storage.giftState().owned.at(-1),'race_car');
-  assert.match(f.node('#feedback-area').innerHTML,/class="gift-sprite gift-sheet-3"[\s\S]*경주차/);
+  assert.match(f.node('created').innerHTML,/class="gift-sprite gift-sheet-3"[\s\S]*경주차/);
   f.releases.at(-1)();
   assert.match(f.node('created').innerHTML,/class="gift-sprite gift-sheet-3"/);
 
@@ -1218,7 +1220,7 @@ test('세 번째 선물 그림도 바로 보이고, 27종을 모두 모은 뒤�
   for(const gift of g.c.FQ.progress.giftCatalog())g.c.FQ.storage.awardGift(gift.id);
   g.c.FQ.app.startGame(['kr']);const b=g.c.FQ.test;b.state.rng=()=>0;b.submit({code:'kr'});
   assert.equal(g.c.FQ.storage.giftState().owned.length,27);
-  assert.match(g.node('#feedback-area').innerHTML,/그림 선물을 다시 만났어요!/);
+  assert.match(g.node('created').innerHTML,/>선물 · 소방차/);
   assert.equal(b.state.giftsFound[0].isNew,false);
 });
 
@@ -1228,7 +1230,7 @@ test('새 선물은 27종 전체에서 무작위로 골라 초반부터 추가 �
   const rolls=[0,0.5];a.state.rng=()=>rolls.shift();a.state.rngKind=()=>0.5;
   a.submit({code:'kr'});
   assert.deepEqual([...f.c.FQ.storage.giftState().owned],['frog_plush']);
-  assert.match(f.node('#feedback-area').innerHTML,/class="gift-sprite gift-sheet-2"[\s\S]*개구리 인형/);
+  assert.match(f.node('created').innerHTML,/class="gift-sprite gift-sheet-2"[\s\S]*개구리 인형/);
 });
 
 test('설정은 제한 시간 적용 범위를 설명하고 다른 놀이에서도 저장된 선택은 지우지 않는다',()=>{
@@ -1272,7 +1274,7 @@ test('중간 결과라도 목표 나라 이름이 확실하면 바로 채점하�
   i.c.callbacks.result(['독일']);assert.equal(d.state.answered,true);assert.equal(d.state.game.correct,0);
 });
 
-test('말로 맞히면 나라 이름을 다시 읽고 저절로 다음 나라로 가고, 틀리거나 다른 놀이에서는 기다린다',()=>{
+test('말로 맞히면 이름을 짧게 읽고 자동 진행하며, 고르는 놀이도 같은 흐름으로 이어 간다',()=>{
   const f=fixture(),a=f.startVoice(['id','fr']);
   const first=a.state.game.current().country.code;
   a.submit({code:first});assert.equal(a.state.answered,true);
@@ -1289,10 +1291,10 @@ test('말로 맞히면 나라 이름을 다시 읽고 저절로 다음 나라로
   a.submit({text:''},true);f.releases.at(-1)();f.finishMusic();f.finishVoice();
   assert.ok(![...f.timers.values()].some(t=>t.delay===900));
   f.runDelay(900);assert.equal(a.state.game.index,1);assert.equal(a.state.answered,true);
-  // 국기 보고 고르기는 종전대로 기다린다.
+  // 국기 보고 고르기도 정답이면 같은 속도로 자동 진행한다.
   const g=fixture();g.c.FQ.storage.updateSettings({mode:'choice4'});g.c.FQ.app.startGame(['kr','jp']);const b=g.c.FQ.test;
   b.submit({code:b.state.game.current().country.code});g.releases.at(-1)();g.finishMusic();g.finishVoice();
-  assert.ok(![...g.timers.values()].some(t=>t.delay===900));g.runDelay(900);assert.equal(b.state.game.index,0);
+  assert.ok([...g.timers.values()].some(t=>t.delay===900));g.runDelay(900);assert.equal(b.state.game.index,1);
 });
 
 test('마이크로 국기 이름을 맞히면 정답 이름을 다시 읽고 낭독이 끝나면 다음 문제를 자동으로 연다',()=>{
@@ -1347,35 +1349,22 @@ test('말하기 정답 뒤 수동으로 다음을 누르거나 홈으로 나가�
   assert.match(f.node('main').innerHTML,/home-kid/);
 });
 
-test('말하기 정답으로 선물을 받으면 3초 뒤 자동으로 다음 국기를 연다',()=>{
-  const f=fixture();
-  for(let i=0;i<4;i++){f.c.FQ.storage.recordAnswer('fr',false);f.c.FQ.storage.recordChest(null);}
-  const a=f.startVoice(['kr','jp']);a.state.rng=()=>0;a.state.rngKind=()=>0.5;
-  const first=a.state.game.current().country;
-  a.submit({code:a.state.game.current().country.code});
-  f.releases.at(-1)();
-  assert.deepEqual(f.spoken.at(-1),[first.ko]);
-  f.finishVoice();
-  assert.equal(f.music.at(-1).event,'chest');
-  assert.equal(f.node('#next').disabled,true);
-  assert.ok(![...f.timers.values()].some(t=>t.delay===900));
-  f.runDelay(3000);
-  assert.equal(f.node('#next').disabled,false);
-  assert.equal(a.state.game.index,1);
-  assert.equal(f.c.listening,true);
+test('말하기 정답 선물은 이름을 읽는 동안 표시하고 3초 표시 시간을 기다리지 않고 이어 간다',()=>{
+  const f=fixture();f.c.FQ.storage.recordChest(null);
+  const a=f.startVoice(['kr','jp']);a.state.rng=()=>0;a.state.rngKind=()=>0.5;const first=a.state.game.current().country;
+  a.submit({code:first.code});assert.match(f.node('created').innerHTML,/소방차/);assert.equal(f.node('#next').disabled,false);
+  f.releases.at(-1)();assert.deepEqual(f.spoken.at(-1),[first.ko]);f.finishVoice();
+  assert.equal(f.music.length,0);f.advance(900);
+  assert.equal(a.state.game.index,1);assert.equal(f.c.listening,true);
+  f.advance(3000);assert.equal(a.state.game.index,1);assert.equal(a.state.answered,false);
 });
 
-test('상자 앞에서 이름 재생이 실패해도 선물을 보여 준 뒤 자동으로 진행한다',()=>{
-  const f=fixture();
-  for(let i=0;i<4;i++){f.c.FQ.storage.recordAnswer('fr',false);f.c.FQ.storage.recordChest(null);}
-  const a=f.startVoice(['kr','jp']);a.state.rng=()=>0;a.state.rngKind=()=>0.5;
-  const first=a.state.game.current().country;
-  a.submit({code:a.state.game.current().country.code});
-  f.releases.at(-1)();f.playbackFailures.at(-1)();
-  assert.equal(f.music.at(-1).event,'chest');
-  assert.deepEqual(f.spoken.at(-1),[first.ko]);
-  f.runDelay(3000);
-  assert.equal(a.state.game.index,1);
+test('선물과 이름 재생 실패가 겹쳐도 확인 없이 다음 문제로 진행한다',()=>{
+  const f=fixture();f.c.FQ.storage.recordChest(null);
+  const a=f.startVoice(['kr','jp']);a.state.rng=()=>0;const first=a.state.game.current().country;
+  a.submit({code:first.code});f.releases.at(-1)();f.playbackFailures.at(-1)();
+  assert.match(f.node('created').innerHTML,/소방차/);assert.equal(f.node('#next').disabled,false);
+  assert.deepEqual(f.spoken.at(-1),[first.ko]);f.advance(900);assert.equal(a.state.game.index,1);
 });
 
 test('자동 넘어가기는 설명 다시 듣기를 누르면 미뤄졌다가 다시 들은 뒤에 가고, 읽어주기가 꺼져 있으면 1.8초 뒤에 간다',()=>{
@@ -1643,7 +1632,7 @@ test('수도 문제는 큰 🔊 가 수도 이름을 자동으로 한 번 읽고
   assert.match(fb,/<div class="capital-plate"><div class="capital-plate-text"><span class="capital-tag">🏙️ 수도<\/span><span class="capital-word">멕시코시티<\/span><\/div><\/div><div class="capital-of"><img class="capital-of-flag" src="flags\/mx\.svg" alt="멕시코 국기"><span class="capital-of-text"><b>멕시코<\/b>의 수도예요<\/span><\/div>/);
   assert.doesNotMatch(fb,/remember-title|remember-art|remember-box|kname/);
   assert.deepEqual([...a.state.lastSpeech.lines],['멕시코시티','멕시코의 수도예요']);
-  f.releases.at(-1)();f.runDelay(120);f.finishMusic();assert.deepEqual(f.spoken.at(-1),['멕시코시티','멕시코의 수도예요']);
+  f.releases.at(-1)();f.runDelay(120);f.finishMusic();assert.deepEqual(f.spoken.at(-1),['멕시코시티']);
   // 기록은 axes.capital 에만: 194칸 국기 스티커·오늘의 도전·국기 기록은 그대로다.
   assert.equal(f.c.FQ.storage.allAxisStats('capital').mx.correct,1);assert.equal(f.c.FQ.storage.allAxisStats('capital').mx.seen,1);
   assert.equal(f.c.FQ.storage.allCountryStats().mx,undefined);assert.equal(f.c.FQ.progress.hasSticker('mx'),false);
@@ -1795,5 +1784,132 @@ test('지도 확대는 채점·보기·좌표를 바꾸지 않고 세계 전체�
   assert.equal(f.node('#answer-area').innerHTML,area);assert.deepEqual(progressSnapshot(f),before);
   f.node('#map-zoom').click();assert.equal(viewport.scrollLeft,0);assert.equal(f.node('#map-zoom').attrs['aria-pressed'],'false');
   assert.equal(f.node('.map-explorer').classList.contains('is-zoomed'),false);
+});
+/* ---- 2026-10-02 모든 놀이 자동 진행 · 선물 비차단 · 늦은 음성 콜백 ---- */
+test('아홉 놀이 모두 선택·글자·음성으로 맞히면 마이크 해제 신호 없이도 조용히 다음 문제로 간다',()=>{
+  for(const mode of quizModes){
+    const f=fixture(),a=startMode(f,mode,undefined,{speak:false,sound:false});answerCurrent(f);
+    assert.equal(a.state.game.correct,1,mode);assert.equal(a.state.answered,true,mode);
+    f.advance(1799);assert.equal(a.state.game.index,0,mode);
+    f.advance(1);assert.equal(a.state.game.index,1,mode);assert.equal(a.state.answered,false,mode);
+    assert.equal(f.c.FQ.storage.stats().asked,1,mode);assert.equal(f.spoken.length,0,mode);
+  }
+});
+
+test('아홉 놀이의 마지막 정답도 확인 없이 결과로 이동하고 점수와 기록은 한 번만 남긴다',()=>{
+  for(const mode of quizModes){
+    const f=fixture(),a=startMode(f,mode,['kr'],{speak:false});answerCurrent(f);f.advance(1800);
+    assert.match(f.node('main').innerHTML,/result-screen/,mode);
+    assert.equal(a.state.lastSummary.correct,1,mode);assert.equal(a.state.lastSummary.total,1,mode);
+    assert.equal(a.state.lastSummary.score,10,mode);assert.equal(f.c.FQ.storage.stats().asked,1,mode);
+    f.advance(10000);assert.equal(f.c.FQ.storage.stats().games,1,mode);
+  }
+});
+
+test('아홉 놀이의 정답은 이름만 읽고 다음 문제로 이어지며 중복 종료·실패 신호는 예약을 연장하지 않는다',()=>{
+  for(const mode of quizModes){
+    const f=fixture(),a=startMode(f,mode);const q=a.state.game.current();answerCurrent(f);f.releases.at(-1)();
+    assert.deepEqual(f.spoken.at(-1),[mode==='capital'||mode==='capitalVoice'?q.country.capital:q.country.ko],mode);
+    assert.equal(f.music.filter(item=>item.event!=='start').length,0,mode);
+    const done=f.c.FQ.test.state.lastSpeech;assert.ok(done.lines.length>1,mode+' 상세 설명은 다시 듣기에 남긴다');
+    f.finishVoice();f.advance(500);f.playbackFailures.at(-1)();f.finishVoice();
+    f.advance(399);assert.equal(a.state.game.index,0,mode);
+    f.advance(1);assert.equal(a.state.game.index,1,mode);assert.equal(a.state.answered,false,mode);
+  }
+});
+
+test('아홉 놀이에서 음원 실패나 마이크 해제·낭독 종료 콜백 누락이 있어도 자동 진행한다',()=>{
+  for(const mode of quizModes)for(const failure of ['audio','release','end']){
+    const f=fixture(),a=startMode(f,mode);answerCurrent(f);const release=f.releases.at(-1);
+    if(failure!=='release')release();
+    if(failure==='audio'){f.playbackFailures.at(-1)();f.advance(900);}
+    else {f.advance(7899);assert.equal(a.state.game.index,0,mode+' '+failure);f.advance(1);}
+    assert.equal(a.state.game.index,1,mode+' '+failure);assert.equal(a.state.answered,false,mode+' '+failure);
+    const spoken=f.spoken.length;release();assert.equal(f.spoken.length,spoken,mode+' 이전 마이크 해제');
+    f.finishVoice();f.playbackFailures.at(-1)?.();f.advance(900);
+    assert.equal(a.state.game.index,1,mode+' 늦은 종료는 새 문제를 넘기지 않는다');
+  }
+});
+
+test('아홉 놀이에서 선물 알림이 떠도 다음 입력으로 바로 정답을 제출하고 보상은 결과에 보존된다',()=>{
+  for(const mode of quizModes){
+    const f=fixture();f.c.FQ.storage.recordChest(null);
+    const a=startMode(f,mode,['kr','jp'],{speak:false});a.state.rng=()=>0;answerCurrent(f);
+    const notice=f.node('created'),close=[...f.timers.values()].find(t=>t.delay===3000).fn;
+    assert.equal(notice.attrs.role,'status',mode);assert.equal(f.node('#next').disabled,false,mode);
+    assert.doesNotMatch(notice.innerHTML,/<button|role="dialog"|aria-modal/,mode);
+    assert.equal(f.c.FQ.storage.giftState().owned.length,1,mode);
+    f.advance(1800);assert.equal(a.state.game.index,1,mode);assert.equal(notice.removed,true,mode);
+    if(mode==='symbol'||mode==='place')f.node('#question-art').handlers.load();
+    f.c.FQ.storage.updateSettings({speak:false});a.state.rng=()=>0.99;answerCurrent(f);
+    assert.equal(a.state.game.correct,2,mode);assert.equal(f.c.FQ.storage.stats().asked,2,mode);
+    close();assert.equal(a.state.game.index,1,mode+' 이전 선물 종료');assert.equal(a.state.answered,true,mode);
+    f.advance(1800);assert.match(f.node('main').innerHTML,/result-screen/,mode);
+    assert.equal(a.state.lastSummary.bonusScore,5,mode);assert.match(f.node('main').innerHTML,/오늘 받은 그림 선물/,mode);
+  }
+});
+
+test('아홉 놀이의 오답·모르겠어요는 선물을 받아도 설명에 머물고 다음 버튼으로 이어 간다',()=>{
+  for(const mode of quizModes)for(const gaveUp of [false,true]){
+    const f=fixture();f.c.FQ.storage.recordChest(null);const a=startMode(f,mode);a.state.rng=()=>0;
+    const q=a.state.game.current();a.submit({code:q.country.code==='kr'?'jp':'kr'},gaveUp);
+    f.releases.at(-1)();f.finishMusic();f.finishVoice();f.advance(30000);
+    assert.equal(a.state.game.index,0,mode);assert.equal(a.state.answered,true,mode);assert.equal(a.state.game.correct,0,mode);
+    assert.equal(a.state.autoNextTimer,null,mode);assert.equal(f.node('#next').disabled,false,mode);
+    assert.equal(f.c.FQ.storage.giftState().owned.length,1,mode);
+    f.node('#next').click();assert.equal(a.state.game.index,1,mode);assert.equal(a.state.answered,false,mode);
+  }
+});
+
+test('아홉 놀이에서 수동 다음·홈 이동은 이전 정답의 해제·watchdog·종료 콜백을 취소한다',()=>{
+  for(const mode of quizModes){
+    const f=fixture(),a=startMode(f,mode);a.goNext();assert.equal(a.state.game.index,0,mode+' 답하기 전');
+    answerCurrent(f);const release=f.releases.at(-1),watchdog=[...f.timers.values()].find(t=>t.delay===7000).fn;
+    f.node('#next').click();assert.equal(a.state.game.index,1,mode);f.node('#next').click();
+    release();watchdog();f.advance(10000);assert.equal(a.state.game.index,1,mode);assert.equal(f.c.FQ.storage.stats().asked,1,mode);
+    if(mode==='symbol'||mode==='place')f.node('#question-art').handlers.load();
+    answerCurrent(f);f.releases.at(-1)();const onEnd=f.voiceOptions.at(-1).onEnd,onFail=f.playbackFailures.at(-1);
+    f.c.FQ.app.home();onEnd();onFail();f.advance(30000);
+    assert.equal(a.state.game,null,mode);assert.match(f.node('main').innerHTML,/home-kid/,mode);
+    assert.equal(f.c.FQ.storage.stats().asked,2,mode);
+  }
+});
+
+test('아홉 놀이의 정답 대기 중 화면을 가리면 현재 문제를 보존하고 복귀 뒤 자동 진행을 다시 예약한다',()=>{
+  for(const mode of quizModes){
+    const f=fixture();f.c.FQ.app.boot();const a=startMode(f,mode,undefined,{speak:false});answerCurrent(f);
+    const staleRelease=f.releases.at(-1);f.advance(1000);
+    f.c.document.hidden=true;f.events.visibilitychange[0]();f.advance(10000);staleRelease();
+    assert.equal(a.state.game.index,0,mode);assert.equal(a.state.answered,true,mode);assert.equal(f.spoken.length,0,mode);
+    f.c.document.hidden=false;f.events.visibilitychange[0]();f.advance(1799);assert.equal(a.state.game.index,0,mode);
+    f.advance(1);assert.equal(a.state.game.index,1,mode);assert.equal(a.state.answered,false,mode);
+    assert.equal(f.c.FQ.storage.stats().asked,1,mode);
+  }
+});
+
+test('아홉 놀이에서 설명 다시 듣기는 상세 설명을 읽고 성공·실패·신호 누락 뒤 자동 진행을 재개한다',()=>{
+  for(const mode of quizModes)for(const ending of ['end','fail','missing']){
+    const f=fixture(),a=startMode(f,mode);answerCurrent(f);f.releases.at(-1)();f.finishVoice();f.advance(400);
+    const staleFailure=f.playbackFailures.at(-1);f.node('#replay').click();staleFailure();f.releases.at(-1)();
+    assert.deepEqual(f.spoken.at(-1),Array.from(a.state.lastSpeech.lines),mode+' '+ending);
+    f.advance(900);assert.equal(a.state.game.index,0,mode+' 다시 듣는 동안 유지');
+    if(ending==='end')f.finishVoice();
+    if(ending==='fail')f.playbackFailures.at(-1)();
+    f.advance(ending==='missing'?21000:900);assert.equal(a.state.game.index,1,mode+' '+ending);
+  }
+});
+
+test('명소 정답 카드에서 수도 개별 듣기도 완료·실패·콜백 누락 뒤 이어지고 홈 이동은 취소한다',()=>{
+  for(const ending of ['end','fail','missing-end','missing-release','home']){
+    const f=fixture(),a=startMode(f,'place');answerCurrent(f);f.releases.at(-1)();f.finishVoice();f.advance(400);
+    const oldFailure=f.playbackFailures.at(-1),button=f.node('capital-card-listen');
+    button.setAttribute('data-speak','서울');button.setAttribute('data-speak-extra','대한민국의 수도예요');button.setAttribute('data-label','🔊');
+    f.clickDelegated('[data-speak]',button);const release=f.releases.at(-1);oldFailure();
+    if(ending==='home'){f.c.FQ.app.home();release();f.advance(30000);assert.equal(a.state.game,null);continue;}
+    if(ending!=='missing-release'){release();assert.deepEqual(f.spoken.at(-1),['서울','대한민국의 수도예요']);}
+    f.advance(900);assert.equal(a.state.game.index,0,ending);
+    if(ending==='end')f.finishVoice();if(ending==='fail')f.playbackFailures.at(-1)();
+    f.advance(ending.startsWith('missing')?21000:900);assert.equal(a.state.game.index,1,ending);
+  }
 });
 console.log('앱 흐름 회귀 검사 '+passed+'건 통과');
