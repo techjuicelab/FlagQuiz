@@ -14,7 +14,7 @@
     '기억났어요', '기억났어', '알겠어요', '알겠다', '제생각에는', '내생각에는',
     '최종정답은', '최종답은', '마지막답은', '최종정답', '최종답', '마지막답',
     '정답은', '정답이', '정답', '제답은', '내답은', '답은', '답', '정정할게요', '정정할게', '정정',
-    '아맞다', '맞다', '그러니까', '그러면', '잠깐만요', '잠깐만', '잠깐', '잠시만',
+    '아맞다', '맞다', '그러니까', '그러면', '잠깐만요', '잠깐만', '잠깐', '잠시만', '다시',
     '이국기는', '국기는', '수도는', '이게뭐였죠', '이게뭐였지', '이게뭐지', '뭐였죠', '뭐였지', '뭐지', '뭐', '어느나라지', '무슨나라지',
     '이거는', '이건요', '이건', '이거', '이게', '그거', '그건', '아빠', '엄마', '저기',
     'theansweris', 'myansweris', 'finalansweris', 'answeris', 'actually', 'correction', 'itis', 'its',
@@ -150,6 +150,14 @@
     return entry && { code: found.code, name: entry.ko };
   }
 
+  function detachedRestart(raw, suffix, spans, candidates) {
+    // STT가 같은 이름을 반복한 뒤 별도 문장에 남긴 미완성 시작말만 무시한다.
+    // 완전한 문장, 다른 후보, 질문·부정·인용은 기존 보수적 판정을 유지한다.
+    if (spans.length < 2 || candidates.length !== 1 || !/^(?:그는|나는|저는|이건|그건)$/.test(suffix)) return false;
+    var sentences = raw.split(/[.!。！]+/).filter(function (sentence) { return sentence.trim(); });
+    return sentences.length > 1 && compact(sentences[sentences.length - 1]) === suffix;
+  }
+
   function resolve(raw, options) {
     options = options || {};
     var kind = options.kind === 'capital' ? 'capital' : 'country';
@@ -192,6 +200,7 @@
     }
     if (negative(suffix)) return result('retry', 'negation', candidates);
     if (uncertainty(suffix) || /\?\s*$/.test(raw) || /(?:몰라|모르겠|모릅니|기억안나)$/.test(suffix)) return result('retry', 'uncertain', candidates);
+    if (detachedRestart(raw, suffix, spans, candidates)) suffix = '';
     if (!wordsOnly(suffix, SUFFIX)) return result('retry', help(suffix) ? 'help-request' : 'unsupported-structure', candidates);
     var prefixNot = /^(?:not|아니|아닌)$/.test(prefix);
     if (!prefixNot && !wordsOnly(prefix, PREFIX)) return result('retry', uncertainty(prefix) ? 'uncertain' : negative(prefix) ? 'negation' : 'unsupported-structure', candidates);

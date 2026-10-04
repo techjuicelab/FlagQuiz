@@ -73,6 +73,27 @@ test('두 말하기 모드는 브라우저 STT 없이 NAS 어댑터에 모드·�
   }
 });
 
+test('두 말하기 모드의 준비 비프는 권한을 요청할 때 울리지 않고 어댑터 준비 hook에서만 울린다', () => {
+  for (const mode of ['voice', 'capitalVoice']) {
+    const f = setup(), h = handlers(mode); let cues = 0, done = 0, canceled = 0, finishCue;
+    const cleanup = () => canceled++;
+    f.window.FQ.audio = { cueListening(onDone) { cues++; finishCue = onDone; return cleanup; } };
+    f.speech.start(h.value);
+    assert.equal(cues, 0, '마이크 권한 대기 중에는 준비음을 내지 않는다');
+    const cancel = f.factories[0].beforeRecord(() => done++);
+    assert.equal(cues, 1); assert.equal(done, 0); assert.equal(cancel, cleanup);
+    finishCue(); assert.equal(done, 1); cancel(); assert.equal(canceled, 1);
+    assert.equal(f.sessions.length, 1); assert.equal(h.events.length, 0, 'recording 이전에는 말하기 시작을 알리지 않는다');
+  }
+});
+
+test('비프 기능이 없는 환경에서도 준비 hook은 즉시 완료하여 녹음을 막지 않는다', () => {
+  const f = setup(), h = handlers(); f.speech.start(h.value); let done = 0;
+  f.factories[0].beforeRecord(() => done++); assert.equal(done, 1);
+  f.sessions[0].onState({ state: 'recording' });
+  assert.deepEqual(h.events.filter(event => event[0] === 'start'), [['start']]);
+});
+
 test('요청·녹음·정리·전사 중 모두 활성 세션이고 녹음 상태에서만 시작을 알린다', () => {
   const f = setup(), h = handlers(); f.speech.start(h.value); const session = f.sessions[0];
   assert.equal(f.speech.isListening(), true);

@@ -56,7 +56,13 @@
       turnId: String(h.turnId === undefined ? ++sequence : h.turnId), started: false };
     session = current;
     try {
-      if (!engine) engine = FQ.cloudSpeech.create({ csrfToken: function () { return FQ.auth && FQ.auth.csrfToken() || ''; } });
+      if (!engine) engine = FQ.cloudSpeech.create({
+        csrfToken: function () { return FQ.auth && FQ.auth.csrfToken() || ''; },
+        beforeRecord: function (done) {
+          if (FQ.audio && FQ.audio.cueListening) return FQ.audio.cueListening(done);
+          done();
+        }
+      });
       var pending = engine.start({ mode: current.mode, playerId: current.playerId, turnId: current.turnId,
         onState: function (event) {
           if (!live(current, event) || event.state === 'idle') return;
