@@ -1,6 +1,9 @@
 FROM node:24-bookworm-slim AS build
 WORKDIR /app
-COPY package.json README.md .gitignore ./
+COPY package.json README.md .gitignore Dockerfile ./
+COPY .github ./.github
+COPY .forgejo ./.forgejo
+COPY deploy ./deploy
 COPY scripts ./scripts
 COPY docs ./docs
 COPY design ./design
