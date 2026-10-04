@@ -59,6 +59,8 @@ NAS 커널 `4.4.302+`는 [Node.js 24의 공식 Linux 지원 범위](https://gith
 
 앱·음원·응답은 `no-store, private`로 제공하고 인증된 앱 복사본을 PWA 오프라인 캐시에 보관하지 않는다. 공개 `/sw.js`와 로그인 정리 스크립트는 해당 origin의 루트 `/sw.js` 등록과 `flagquiz-` cache만 정리한다. 학습 localStorage는 로그인·로그아웃 시 지우지 않는다. GitHub Pages는 NAS 진입과 이전 브라우저 기록 이동 화면을 제공한다. NAS 안에 기존 기록이 있으면 자동으로 덮어쓰지 않으며 사용자가 가져올 기록을 선택한다. 자세한 이전 경로와 오프라인 구버전의 전환 한계는 [NAS 안내](../docs/nas-deploy.md)에 있다.
 
+홈 화면 설치용 메타데이터는 `GET`·`HEAD`의 정확한 공개 목록으로 제공한다: `/manifest.webmanifest`, `/assets/icon-180.png`, `/assets/icon-192.png`, `/assets/icon-512.png`, `/assets/icon-maskable-512.png`, `/assets/icon.svg`, `/assets/favicon.svg`. Safari의 기본 탐색 경로 `/apple-touch-icon.png`와 `/apple-touch-icon-precomposed.png`도 같은 180px PNG에 고정 매핑한다. 로그인 화면에도 같은 manifest와 180px `apple-touch-icon`, 설치 이름을 선언하므로 로그인 전 설치와 세션 만료 뒤 아이콘 요청이 인증 상태에 의존하지 않는다. 지정 파일만 공개하며 앱 HTML·JS·나라 데이터·음원·계정 및 유료 API에는 기존 인증을 유지한다. 공개 파일도 `no-store`·정확한 MIME·정적 경로 검증을 적용한다.
+
 ## 유료 말하기와 영속 저장
 
 전사는 Groq `whisper-large-v3-turbo`를 고정 사용한다. 한국어 `ko`·JSON 응답과 160 UTF-8 바이트 이하의 짧은 나라 또는 수도 말하기 힌트를 보낸다. 힌트에는 현재 문제의 나라·수도 정답을 넣지 않는다. STT는 최종 문자를 반환하고, 공유 `js/spoken-answer.js`가 실제 이름·별칭과 정정 표현으로 최종 선택을 찾은 뒤 브라우저의 기존 채점 엔진에 정식 이름 하나를 전달한다. 현재 문제 정답을 기준으로 전사에서 원하는 이름을 골라 넣지 않는다. 시간당 $0.04, 요청당 최소 10초 과금이며 월 3,000회 × 최대 12초는 약 $0.40의 전사 비용에 해당한다(무료 크레딧·세금 제외, 2026-10-03 기준의 계산이며 이번 변경에서 요금은 재검증하지 않았다). 실제 어린이 발화 정확도는 별도 검증이 필요하다. [공식 규격·요금](https://console.groq.com/docs/speech-to-text).
