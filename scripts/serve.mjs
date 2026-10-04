@@ -38,6 +38,17 @@ const server = http.createServer((req, res) => {
     return;
   }
   if (urlPath.endsWith('/')) urlPath += 'index.html';
+  // 개발 서버에서도 자격 증명, Git 정보, 서버 내부 파일은 노출하지 않는다.
+  var publicPath = urlPath.replace(/^\/_site\//, '/');
+  if (!/^\/(?:index\.html|sw\.js|manifest\.webmanifest)$/.test(publicPath) &&
+      !/^\/(?:assets|css|flags|audio|images|js|data)\/[a-zA-Z0-9_./-]+$/.test(publicPath)) {
+    res.writeHead(404).end('Not found');
+    return;
+  }
+  if (publicPath.split('/').some(part => part.startsWith('.') || part === '..')) {
+    res.writeHead(404).end('Not found');
+    return;
+  }
 
   const filePath = path.join(root, urlPath);
   // 루트 밖으로 나가는 경로 차단
@@ -58,8 +69,9 @@ const server = http.createServer((req, res) => {
   });
 });
 
-server.listen(port, () => {
-  console.log('🌍 세계 국기 퀴즈가 열렸어요!');
-  console.log('   브라우저에서  http://localhost:' + port + '  로 접속하세요.');
+server.listen(port, '127.0.0.1', () => {
+  console.log('🌍 세계 국기 퀴즈 개발 미리보기가 열렸어요!');
+  console.log('   브라우저에서  http://localhost:' + port + '/?preview=1  로 접속하세요.');
+  console.log('   로그인·클라우드 음성 연결은 npm run start:private 로 실행하세요.');
   console.log('   (마이크로 말하기 모드는 이 주소에서만 동작해요. 끄려면 Ctrl+C)');
 });

@@ -101,6 +101,7 @@
 
   var state = {
     game: null,
+    countryChain: null,
     study: null,
     studiedCapitals: {},
     mapStudy: null,
@@ -168,6 +169,10 @@
   }
 
   function musicScreen(screen) {
+    if (screen !== 'country-chain' && state.countryChain) {
+      state.countryChain.cleanup();
+      state.countryChain = null;
+    }
     state.screen = screen;
     var shell = doc.querySelector('.app');
     if (shell) shell.setAttribute('data-screen', screen);
@@ -175,7 +180,7 @@
     if (extras) extras.hidden = screen !== 'settings';
     ['home', 'dex', 'stats', 'settings'].forEach(function (name) {
       var link = doc.getElementById('nav-' + name);
-      if (link) link.setAttribute('aria-current', (name === screen || (name === 'home' && ['category', 'art-menu', 'capital-menu', 'map-menu', 'result'].indexOf(screen) >= 0)) ? 'page' : 'false');
+      if (link) link.setAttribute('aria-current', (name === screen || (name === 'home' && ['category', 'art-menu', 'capital-menu', 'map-menu', 'result', 'country-chain'].indexOf(screen) >= 0)) ? 'page' : 'false');
     });
     if (!FQ.music) return;
     var s = store.settings();
@@ -207,12 +212,18 @@
     var m = ui.setMain('<section class="screen home-kid">' +
       '<div class="home-intro"><span class="home-avatar" aria-hidden="true">' + esc(name.slice(0, 1)) + '</span>' +
         '<span class="eyebrow">' + esc(name) + '의 세계 여행</span><h2>무엇을 알아볼까요?</h2></div>' +
-      playGrid(s) + playerCard(s) + dailyCard() +
+      playGrid(s) +
+      (FQ.countryChain ? '<button class="card chain-home-card" id="home-country-chain" type="button">' + ui.icon('mic') +
+        '<span><b>나라 이름 번갈아 말하기</b><span>아직 나오지 않은 나라를 말하고 지도에 모아요</span></span>' + ui.icon('chevron') + '</button>' : '') +
+      playerCard(s) + dailyCard() +
       '<button class="home-offline" id="home-offline" type="button">' + ui.icon('download') +
         '<span>인터넷 없이 놀기</span><span class="spacer"></span><span id="home-offline-summary">준비 확인</span>' + ui.icon('chevron') + '</button>' +
       '</section>');
     ui.on(m, '[data-play]', 'click', function (e, t) { renderCategory(t.getAttribute('data-play')); });
+    var chainButton = ui.$('#home-country-chain', m);
+    if (chainButton) chainButton.addEventListener('click', startCountryChain);
     ui.$('#home-offline', m).addEventListener('click', function () { renderSettings('offline'); });
+    if (FQ.auth && !FQ.auth.isPreview()) ui.$('#home-offline', m).hidden = true;
     ui.$('#home-progress', m).addEventListener('click', function () { FQ.screens.stats(); });
     var dailyGo = ui.$('#daily-go', m);
     if (dailyGo) dailyGo.addEventListener('click', function () {
@@ -223,6 +234,26 @@
       renderCategory('flag');
     });
     if (FQ.offline && FQ.offline.render) FQ.offline.render();
+  }
+
+  function startCountryChain() {
+    if (!FQ.countryChain) return;
+    enterCapitalScreen('country-chain');
+    var account = FQ.auth && FQ.auth.session();
+    var voice = FQ.cloudSpeech && account && !account.preview ?
+      FQ.cloudSpeech.create({ csrfToken: FQ.auth.csrfToken }) : null;
+    state.countryChain = FQ.countryChain.start({ players: store.settings().players,
+      onHome: renderHome, voice: voice,
+      onVoiceError: function (error) {
+        if (FQ.auth && error && (error.code === 'auth-required' || error.status === 401 || error.status === 403)) FQ.auth.requireLogin();
+      }
+    });
+  }
+
+  function renderAccount() {
+    if (!FQ.auth) return;
+    enterCapitalScreen('account');
+    FQ.auth.account({ onHome: renderHome });
   }
 
   function renderCategory(group) {
@@ -2440,6 +2471,16 @@
 
   /* =================== 시작 =================== */
   function boot() {
+    if (FQ.auth) {
+      FQ.auth.start({ onReady: bootReady, onBlocked: function () { enterCapitalScreen('login'); } });
+      return;
+    }
+    bootReady();
+  }
+
+  function bootReady() {
+    var offlinePanel = doc.getElementById('offline-panel');
+    if (offlinePanel && FQ.auth && !FQ.auth.isPreview()) offlinePanel.hidden = true;
     if (!FQ.countries || !FQ.countries.length) {
       ui.setMain('<div class="card">국기 자료를 불러오지 못했어요. <code>data/countries.js</code> 파일을 확인해 주세요.</div>');
       return;
@@ -2450,6 +2491,8 @@
 
     doc.getElementById('nav-home').addEventListener('click', renderHome);
     doc.getElementById('nav-settings').addEventListener('click', function () { renderSettings(); });
+    var accountButton = doc.getElementById('nav-account');
+    if (accountButton) accountButton.addEventListener('click', renderAccount);
     doc.getElementById('nav-dex').addEventListener('click', function () {
       cancelPendingFeedback();
       stopTimer(); stopListening(); audio.stopSpeaking(); state.game = null;
@@ -2516,6 +2559,8 @@
 
   /* 한 번 열어 두면 인터넷 없이도 놀 수 있게 한다. file:// 로 연 경우에는 건너뛴다. */
   function registerServiceWorker() {
+    // 보호된 서버에서는 로그인 이전의 앱 복사본을 캐시로 열지 않는다。
+    if (FQ.auth && !FQ.auth.isPreview()) return;
     if (FQ.offline) { FQ.offline.init(); return; }
     if (!('serviceWorker' in global.navigator)) return;
     var proto = global.location.protocol;
@@ -2524,7 +2569,7 @@
     global.navigator.serviceWorker.register('sw.js').catch(function () { /* 없어도 그만 */ });
   }
 
-  FQ.app = { home: renderHome, settings: renderSettings, category: renderCategory, boot: boot, startGame: startGame, musicScreen: musicScreen };
+  FQ.app = { home: renderHome, settings: renderSettings, category: renderCategory, boot: boot, startGame: startGame, countryChain: startCountryChain, musicScreen: musicScreen };
 
   if (doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', boot);
   else boot();

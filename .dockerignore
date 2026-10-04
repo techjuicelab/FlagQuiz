@@ -1,0 +1,7 @@
+.git
+.private-data
+.env
+.env.*
+node_modules
+docs/artifacts
+_site

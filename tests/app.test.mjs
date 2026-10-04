@@ -8,7 +8,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
-function fixture() {
+function fixture({ chain = false } = {}) {
   const nodes = new Map(), events = {}, spoken = [], releases = [], timers = new Map(), local = new Map();
   const delegated = [], playbackFailures = [], modals = [], voiceOptions = [], music = [];
   let currentMusic = null;
@@ -49,7 +49,7 @@ function fixture() {
     setTimeout(fn,delay){const id=++timerId;timers.set(id,{fn,delay,at:elapsed+delay});return id;}, clearTimeout:(id)=>timers.delete(id),
     setInterval(fn,delay){const id=++timerId;timers.set(id,{fn,delay,at:elapsed+delay,interval:true});return id;}, clearInterval:(id)=>timers.delete(id),
     localStorage:{getItem:k=>local.get(k)??null,setItem:(k,v)=>local.set(k,String(v)),removeItem:k=>local.delete(k)},
-    document:{hidden:false,readyState:'loading',addEventListener(type,fn){(events[type]??=[]).push(fn);},querySelector:sel=>sel==='.app'?node('.app'):null,body:node('body'),createElement:()=>node('created'),getElementById:(id)=>node('#'+id)},
+    document:{hidden:false,readyState:'loading',addEventListener(type,fn){(events[type]??=[]).push(fn);},removeEventListener(type,fn){events[type]=(events[type]||[]).filter(listener=>listener!==fn);},querySelector:sel=>sel==='.app'?node('.app'):null,body:node('body'),createElement:()=>node('created'),getElementById:(id)=>node('#'+id)},
     navigator:{}, location:{protocol:'http:',hostname:'localhost'},confirm:()=>true,
     addEventListener(type,fn){(events[type]??=[]).push(fn);},
     requestAnimationFrame(){},cancelAnimationFrame(){},matchMedia:()=>({matches:false}),scrollY:0,scrollTo(opts){c.scrollY=opts.top||0;},
@@ -69,6 +69,7 @@ function fixture() {
   vm.runInContext(fs.readFileSync(path.join(root,'js/ui.js'),'utf8'),c,{filename:'js/ui.js'});
   Object.assign(c.FQ.ui,uiMock);
   for(const file of ['js/util.js','js/storage.js','js/features.js','data/countries.js', 'data/subjects.js', 'data/confusion-groups.js','data/map-coords.js','data/map-shapes.js','js/map.js','js/progress.js','js/quiz.js']) vm.runInContext(fs.readFileSync(path.join(root,file),'utf8'),c,{filename:file});
+  if(chain)for(const file of ['js/badges.js','js/screens.js','js/country-chain.js'])vm.runInContext(fs.readFileSync(path.join(root,file),'utf8'),c,{filename:file});
   // 제품 코드에는 테스트 전용 진입점을 추가하지 않고 VM 안에서만 내부 상태를 노출한다.
   const source=fs.readFileSync(path.join(root,'js/app.js'),'utf8').replace('FQ.app = { home:',
     'FQ.test = {state:state,startListening:startListening,submit:submit,goNext:goNext,toggleMic:toggleMic};\n  FQ.app = { home:');
@@ -2025,5 +2026,48 @@ test('실제 중간·최종 음성 답에만 음성 출처가 붙고 글자·보
     const original=a.state.game.submit;a.state.game.submit=function(payload,opts){payloads.push(payload);return original(payload,opts);};
     answerCurrent(f);assert.equal(payloads[0].source,undefined);assert.equal(a.state.game.voiceCorrect,0);
   }
+});
+for(const destination of ['home','settings','dex','stats'])for(const phase of ['recording','transcribing','name-read','next-listen'])test(`나라 이어 말하기 ${phase}에서 실제 nav-${destination}은 녹음을 취소하고 새 판으로 돌아온다`,()=>{
+  // 앱 경로·누적 지도·나라 화면·도감·기록은 제품 코드를 사용하고 마이크 장치만 모사한다.
+  const f=fixture({chain:true}),state=f.c.FQ.test.state,sessions=[];
+  let cancels=0,stops=0,adapterOptions;
+  f.c.FQ.storage.updateSettings({players:['민규','아빠'],speak:phase==='name-read',sound:false,homeMusic:false});
+  f.c.FQ.app.boot();
+  f.c.FQ.auth={session:()=>({preview:false}),isPreview:()=>false,csrfToken:()=> 'test-csrf'};
+  const adapter={supported:()=>true,cancel(){cancels++;},stop(){stops++;},start(options){sessions.push(options);options.onState({state:'recording'});return Promise.resolve();}};
+  f.c.FQ.cloudSpeech={create(options){adapterOptions=options;return adapter;}};
+  state.game=f.c.FQ.quiz.createGame({mode:'voice',only:['kr']});
+  f.c.FQ.app.countryChain();
+  const previous=state.countryChain;
+  assert.equal(state.screen,'country-chain');assert.equal(state.game,null);assert.equal(adapterOptions.csrfToken,f.c.FQ.auth.csrfToken);
+  previous.submit('한국');
+  f.clickDelegated('[data-chain-mic]',f.node('#chain-mic'));
+  const microphone=sessions.at(-1);
+  assert.equal(microphone.playerId,1);assert.equal(microphone.turnId,1);
+  if(phase==='transcribing'){
+    f.clickDelegated('[data-chain-mic]',f.node('#chain-mic'));assert.equal(stops,1);
+    microphone.onState({state:'finishing'});microphone.onState({state:'transcribing'});
+  }else if(phase==='name-read'||phase==='next-listen'){
+    microphone.onResult({text:'일본',playerId:'1',turnId:'1'});
+    assert.equal(previous.snapshot().total,2);
+    assert.ok([...f.timers.values()].some(timer=>timer.delay===(phase==='name-read'?7000:300)));
+  }
+  const before=JSON.stringify(previous.snapshot()),count=sessions.length,cancelled=cancels;
+  const reading=f.voiceOptions.at(-1),failure=f.playbackFailures.at(-1),visibility=(f.events.visibilitychange||[]).length;
+  f.node('#nav-'+destination).click();
+  assert.equal(state.screen,destination);assert.equal(state.countryChain,null);assert.equal(state.game,null);
+  assert.ok(cancels>cancelled,'실제 경로 이동이 마이크 요청을 취소한다');
+  assert.equal((f.events.visibilitychange||[]).length,visibility-1,'나라 화면의 문서 이벤트도 해제한다');
+  assert.equal(f.timers.size,0,'나라 이름 읽기와 다음 녹음 예약을 남기지 않는다');
+  microphone.onResult({text:'미국',playerId:'1',turnId:'1'});microphone.onState({state:'recording'});microphone.onError({message:'old request'});
+  reading?.onEnd?.();failure?.();f.runDelay(300);f.runDelay(7000);
+  assert.equal(JSON.stringify(previous.snapshot()),before);assert.equal(sessions.length,count);
+  assert.equal(previous.submit('프랑스').status,'inactive');
+  f.c.FQ.app.countryChain();
+  assert.equal(state.screen,'country-chain');assert.notEqual(state.countryChain,previous);
+  assert.equal(state.countryChain.snapshot().total,0);assert.equal(state.countryChain.snapshot().playerIndex,0);
+  assert.deepEqual(Array.from(state.countryChain.snapshot().players),['민규','아빠']);
+  assert.equal(sessions.length,count,'새 판에 들어가기만 해서는 녹음을 시작하지 않는다');
+  f.c.FQ.app.home();assert.equal(state.countryChain,null);
 });
 console.log('앱 흐름 회귀 검사 '+passed+'건 통과');

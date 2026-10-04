@@ -2,9 +2,11 @@
   "name": "flagquiz",
   "version": "1.0.0",
   "private": true,
+  "engines": { "node": ">=24.0.0" },
   "description": "아이와 함께 세계 국기와 나라 이름을 배우는 한국어 국기 맞히기 게임",
   "scripts": {
     "start": "node scripts/serve.mjs",
+    "start:private": "op run --env-file=env/private.op.env -- node server/auth-server.mjs",
     "build": "npm run voice:check && node scripts/build-site.mjs",
     "test": "node tests/run.mjs && node --test tests/*.test.mjs",
     "verify": "node scripts/verify-expansion.mjs",

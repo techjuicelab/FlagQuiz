@@ -529,7 +529,7 @@ const BASE_JS_FILES = [
 export function verifyMapScriptScope(t, actual) {
   const extra = actual.filter((file) => !BASE_JS_FILES.includes(file));
   // 지도 확장 이후 승인된 오프라인 전체 저장 UI도 명시적으로 허용한다.
-  const allowed = ['features.js', 'map.js', 'offline.js'];
+  const allowed = ['features.js', 'map.js', 'offline.js', 'auth.js', 'cloud-speech.js', 'country-chain.js'];
   const unexpected = extra.filter((file) => !allowed.includes(file));
   t.ok(unexpected.length === 0, 'js/ 에 승인 범위 밖의 새 파일이 들어왔다', unexpected.join(', '));
   const missing = BASE_JS_FILES.filter((file) => !actual.includes(file));

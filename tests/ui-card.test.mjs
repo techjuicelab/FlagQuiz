@@ -12,7 +12,7 @@ function fixture() {
       getItem: key => saved.get(key) || null,
       setItem(key, value) { saved.set(key, value); writes++; }
     },
-    document: {addEventListener() {}, querySelector: sel => sel === '.modal-back' ? modal : null,
+    document: {listeners: {}, addEventListener(type, callback, capture) { this.listeners[type] = { callback, capture }; }, querySelector: sel => sel === '.modal-back' ? modal : null,
       body: {appendChild: el => {modal = el;}},
       createElement: () => ({
         listeners: {},
@@ -30,6 +30,7 @@ function fixture() {
   return {
     f: c.FQ,
     render(code = 'kr') {c.FQ.ui.countryModal(c.FQ.countries.find(x => x.code === code)); return modal.innerHTML;},
+    imageError(image) { assert.equal(c.document.listeners.error.capture, true); c.document.listeners.error.callback({ target: image }); },
     close() {
       const button = {closest: sel => sel === '[data-close-modal]' ? button : null};
       modal.listeners.click({target: button});
@@ -103,18 +104,21 @@ test('기존 국기 기록은 도감에 표시하면서 그대로 보존한다',
   assert.equal(writes(), writesBefore);
 });
 
-test('도감 그림이 깨지면 onerror 가 인라인 style 로도 감춘다 — css 의 display:block 이 hidden 을 이긴다', () => {
-  const {f, render} = fixture();
+test('CSP가 인라인 이벤트를 허용하지 않아도 도감의 깨진 그림은 감추고 설명을 남긴다', () => {
+  const {f, render, imageError} = fixture();
   f.storage.updateSettings({dev: {art: true}});
   const html = render();
-  const handlers = [...html.matchAll(/<img [^>]*class="[^"]*"[^>]*>|<img [^>]*onerror="([^"]*)"/g)].map(m => m[1]).filter(Boolean);
-  assert.equal(handlers.length, 2, '상징물·명소 그림 두 장 모두 onerror 가 있어야 한다');
-  for (const handler of handlers) {
-    const img = {hidden: false, style: {}};
-    vm.runInNewContext('(function () { ' + handler + ' }).call(img)', {img});
+  assert.doesNotMatch(html, /\sonerror="/);
+  assert.equal((html.match(/data-country-art=""/g) || []).length, 2);
+  for (let n = 0; n < 2; n++) {
+    const img = { hidden: false, style: {}, getAttribute: name => name === 'data-country-art' ? '' : null };
+    imageError(img);
     assert.equal(img.hidden, true);
     assert.equal(img.style.display, 'none', 'hidden 속성만으로는 .country-art img { display: block } 에 밀려 깨진 그림이 보인다');
   }
+  const other = { hidden: false, style: {}, getAttribute: () => null };
+  imageError(other);
+  assert.equal(other.hidden, false);
 });
 
 test('도감의 수도 줄에는 듣기 단추가 있고 누르면 수도 이름과 설명 두 문구를 읽는다', () => {
