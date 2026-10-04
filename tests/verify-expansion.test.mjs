@@ -1,11 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import vm from 'node:vm';
 import { buildLand } from '../scripts/build-map.mjs';
 import { verifyAudioCache, verifyActivateKeepsAudio, verifyMapTolerance,
   verifyMapGeometry, verifySmallLandPreservation, verifyUiVoicePhrases, verifyMapScriptScope,
-  verifyScriptRegistration, verifyShellFileSources } from '../scripts/verify-expansion.mjs';
+  verifyScriptRegistration, verifyShellFileSources, verifyTestSourceTree } from '../scripts/verify-expansion.mjs';
 
 const sw = fs.readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
 const ui = fs.readFileSync(new URL('../js/ui.js', import.meta.url), 'utf8');
@@ -30,6 +32,29 @@ async function problems(check, ...args) {
   catch (error) { failures.push(error.message); }
   return failures;
 }
+
+test('CI 원본 의존 검사는 fixtures 하위 폴더를 읽고 내부 자료의 의존도 계속 거절한다', async t => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'flagquiz-ci-test-tree-'));
+  t.after(() => fs.rmSync(directory, { recursive: true, force: true }));
+  const nested = path.join(directory, 'fixtures', 'spoken');
+  fs.mkdirSync(nested, { recursive: true });
+  fs.writeFileSync(path.join(directory, 'sample.test.mjs'), 'export const fixture = true;');
+  const fixture = path.join(nested, 'answers.json');
+  fs.writeFileSync(fixture, JSON.stringify({ utterance: '포르투갈' }));
+  assert.deepEqual(await problems(verifyTestSourceTree, directory), []);
+  fs.writeFileSync(fixture, JSON.stringify({ source: ['natural', 'earth'].join('-') }));
+  const failed = await problems(verifyTestSourceTree, directory);
+  assert.ok(failed.some(message => message.includes('tests/fixtures/spoken/answers.json') && message.includes('원본 geojson')), failed.join('\n'));
+});
+
+test('CI 원본 의존 검사는 symlink 자료로 검사 범위를 벗어나지 않는다', async t => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'flagquiz-ci-test-link-'));
+  t.after(() => fs.rmSync(directory, { recursive: true, force: true }));
+  fs.writeFileSync(path.join(directory, 'source.json'), '{}');
+  fs.symlinkSync('source.json', path.join(directory, 'linked.json'));
+  const failed = await problems(verifyTestSourceTree, directory);
+  assert.ok(failed.some(message => message.includes('tests/linked.json') && message.includes('일반 파일')), failed.join('\n'));
+});
 
 test('기록 이전3개는 정확한 source·index·SHELL·빌드·실제 로더 등록만 허용한다', async () => {
   const html = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
