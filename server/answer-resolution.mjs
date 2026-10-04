@@ -62,7 +62,7 @@ function blockedUtterance(text) {
   return /[?"“”‘’`]|(?:아니|말고|아닌|않|또는|혹은|아마|일까|인가요|인지|중\s*하나|뭐야|힌트)|\b(?:or|either|maybe)\b|(?:ignore\s+(?:the\s+)?(?:previous|instructions)|system\s*prompt|무시|정답.{0,12}처리|instructions|criteria|unresolved|giveup|json)/i.test(text);
 }
 
-function committedUtterance(text) { return /(?:최종|확정|선택|답(?:으?로|은)|정답|할래|고를|바꿀)/.test(text); }
+function committedUtterance(text) { return /(?:최종|확정|선택|답(?:으?로|은)|정답|할래|할게|고를|바꿀)/.test(text); }
 
 function requestBody(text, kind, candidates) {
   const name = kind === 'capital' ? '수도' : '나라';

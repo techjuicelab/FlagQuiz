@@ -192,6 +192,27 @@ test('실제 shared helper가 최종 직접 선택을 확인한 복잡한 발화
   assert.equal(calls, 2);
 });
 
+test('shared helper가 확인한 할게·정할게·할게요 최종 선택도 서버 중복 검사를 통과한다', async () => {
+  for (const [text, expectedCode] of [
+    ['프랑스를 생각하다가 독일로 정할게', 'de'],
+    ['뉴질랜드를 잠깐 떠올렸는데 호주로 할게', 'au'],
+    ['프랑스를 생각하다가 독일로 정할게요', 'de'],
+    ['뉴질랜드를 잠깐 떠올렸는데 호주로 할게요', 'au']
+  ]) {
+    let calls = 0;
+    const resolve = createAnswerResolver({ apiKey: 'fixture-typesafe-never-real', fetchImpl: async (url, config) => {
+      calls++;
+      const payload = JSON.parse(config.body), criteria = payload.questions.final_selection.criteria;
+      assert.deepEqual(payload.state, { utterance: text });
+      assert.ok(Object.hasOwn(criteria, expectedCode));
+      return { ok: true, json: async () => ({ model: JEV_MODEL, answers: { final_selection: { type: 'choice', choice: expectedCode, confidence: 1,
+        probabilities: Object.fromEntries(Object.keys(criteria).map(key => [key, key === expectedCode ? 1 : 0])) } } }) };
+    } });
+    const result = await resolve({ text, mode: 'voice' });
+    assert.equal(result.status, 'answer'); assert.equal(result.code, expectedCode); assert.equal(result.source, 'jev'); assert.equal(calls, 1);
+  }
+});
+
 test('운영 이미지처럼 원본 js 없이 _site에만 브라우저 코드가 있어도 서버 판정이 동작한다', async t => {
   const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'flagquiz-resolution-image-'));
   t.after(() => fs.rm(directory, { recursive: true, force: true }));
