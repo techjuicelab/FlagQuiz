@@ -44,20 +44,27 @@ async function fixture(t, options = {}) {
   const env = { AUTH_PROVIDER: 'techjuice-id', PUBLIC_ORIGIN: options.secure ? 'https://quiz.test' : 'http://127.0.0.1',
     TJID_SUPABASE_URL: 'https://fixture.supabase.co', TJID_SUPABASE_ANON_KEY: 'fixture-public-anon-key', TJID_APP_SLUG: 'flagquiz',
     TJID_GOOGLE_ENABLED: options.google ? 'true' : 'false', SESSION_SECRET: 'a'.repeat(64),
-    STATE_DIR: path.join(directory, 'state'), STATIC_ROOT: staticRoot, GROQ_API_KEY: 'fixture-groq-key-never-real' };
+    STATE_DIR: path.join(directory, 'state'), STATIC_ROOT: staticRoot, GROQ_API_KEY: 'fixture-groq-key-never-real',
+    TYPESAFE_API_KEY: options.typesafeApiKey || '' };
   let app;
-  const speechModule = { readSpeechInput: async () => { events.push('input'); await options.onRead?.(); return { playerId: '0', turnId: '1' }; },
+  const speechModule = { readSpeechInput: async () => { events.push('input'); await options.onRead?.(); return { playerId: '0', turnId: '1', mode: 'voice' }; },
     createTranscriber: ({ apiKey }) => {
       assert.equal(apiKey, env.GROQ_API_KEY);
       return async () => {
         const saved = JSON.parse(await fs.readFile(path.join(env.STATE_DIR, 'access.json'), 'utf8'));
         assert.equal(saved.quota.monthly['2026-10'], 1);
         events.push('paid');
-        return { text: '대한민국' };
+        await options.onPaid?.();
+        return { text: options.text || '대한민국' };
       };
     } };
   t.after(async () => { try { await app?.close(); } finally { await fs.rm(directory, { recursive: true, force: true }); } });
-  app = await createAuthServer({ config: readConfig(env), techjuiceId, clock: () => now, speechModule });
+  app = await createAuthServer({ config: readConfig(env), techjuiceId, clock: () => now, speechModule,
+    fetchImpl: async (url, config) => {
+      events.push('jev');
+      if (!options.onFetch) throw new Error('Unexpected fixture provider call');
+      return options.onFetch(url, config);
+    } });
   await new Promise(resolve => app.server.listen(0, '127.0.0.1', resolve));
   const base = 'http://127.0.0.1:' + app.server.address().port;
   app.config.publicOrigin = base;
@@ -110,8 +117,18 @@ test('중앙 이메일·비밀번호 폼 로그인은 앱 권한을 가진 계�
   assert.doesNotMatch(JSON.stringify(state), /fixture-password|fixture-groq-key|fixture-public-anon-key/);
 });
 
+test('로그인 페이지는 native form POST의 Origin을 보존하는 same-origin 정책을 사용한다', async t => {
+  const f = await fixture(t), form = await f.form();
+  assert.equal(form.response.headers.get('referrer-policy'), 'same-origin');
+  assert.match(form.html, /<form method="post" action="\/api\/auth\/password">/);
+});
+
 test('비밀번호 로그인은 같은 Origin·폼 CSRF·로그인 쿠키가 확인되기 전 중앙 공급자를 호출하지 않는다', async t => {
   const f = await fixture(t), form = await f.form();
+  const opaqueOrigin = await f.password(form, { headers: { Origin: 'null', 'Sec-Fetch-Site': 'same-origin' } });
+  assert.equal(opaqueOrigin.status, 403);
+  assert.deepEqual(await opaqueOrigin.json(), { error: 'request-not-allowed' });
+  assert.equal(f.passwordCalls.length, 0);
   for (const patch of [{ csrf: 'wrong' }, { cookie: '' }, { headers: { Origin: 'https://attacker.test' } },
     { headers: { Origin: '' } }, { headers: { 'Sec-Fetch-Site': 'cross-site' } }]) {
     const response = await f.password(form, patch); assert.equal(response.status, 403); await response.arrayBuffer();
@@ -204,8 +221,47 @@ test('중앙 세션·CSRF·Origin 검사 뒤 사용량을 저장한 후에만 �
   assert.deepEqual(f.events, []);
   const response = await f.speech(login.cookie, session.csrfToken);
   assert.equal(response.status, 200); assert.deepEqual(f.events, ['input', 'central', 'paid']);
-  assert.deepEqual(await response.json(), { text: '대한민국', playerId: '0', turnId: '1', quota: { dailyUsed: 1, dailyLimit: 120 } });
+  assert.deepEqual(await response.json(), { text: '대한민국', playerId: '0', turnId: '1', mode: 'voice',
+    resolution: { status: 'answer', code: 'kr', text: '대한민국', reason: 'single-answer', source: 'rules' }, quota: { dailyUsed: 1, dailyLimit: 120 } });
   assert.equal((await f.request('/api/speech', { method: 'POST' })).status, 401);
+});
+
+test('STT 호출 중 중앙 disabled·세대 변경·장애가 생기면 추가 Jev 호출 직전에 다시 닫는다', async t => {
+  for (const [state, status, error] of [
+    [{ gen: 1, disabled: true }, 401, 'login-required'],
+    [{ gen: 2, disabled: false }, 401, 'login-required'],
+    [null, 503, 'identity-unavailable']
+  ]) {
+    let f;
+    f = await fixture(t, { typesafeApiKey: 'fixture-typesafe-never-real',
+      text: '포르투갈 스페인 중에서 포르투갈 쪽으로 선택할래', onPaid: () => f.setCentralState(state) });
+    const login = await f.login(), session = await f.session(login.cookie); f.events.length = 0;
+    const response = await f.speech(login.cookie, session.csrfToken);
+    assert.equal(response.status, status); assert.deepEqual(await response.json(), { error });
+    assert.deepEqual(f.events, ['input', 'central', 'paid', 'central']);
+    assert.equal(f.events.includes('jev'), false);
+    assert.equal(JSON.parse(await fs.readFile(path.join(f.env.STATE_DIR, 'access.json'), 'utf8')).quota.monthly['2026-10'], 1);
+  }
+});
+
+test('추가 Jev 호출은 최신 중앙 상태를 두 번째로 확인한 후 전사와 실제 후보만 보낸다', async t => {
+  const text = '스페인은 처음에 떠올랐던 거고 포르투갈 쪽으로 할래';
+  const f = await fixture(t, { typesafeApiKey: 'fixture-typesafe-never-real', text,
+    onFetch: async (url, config) => {
+      assert.equal(url, 'https://api.typesafe.ai/v1/systemone');
+      const payload = JSON.parse(config.body);
+      assert.equal(payload.model, 'jev-1.13.0'); assert.deepEqual(payload.state, { utterance: text });
+      assert.deepEqual(Object.keys(payload.questions.final_selection.criteria).sort(), ['es', 'giveup', 'pt', 'unresolved']);
+      return new Response(JSON.stringify({ model: 'jev-1.13.0', answers: { final_selection: { type: 'choice', choice: 'pt', confidence: 0.98,
+        probabilities: { es: 0.005, pt: 0.985, unresolved: 0.005, giveup: 0.005 } } } }), { headers: { 'Content-Type': 'application/json' } });
+    } });
+  const login = await f.login(), session = await f.session(login.cookie); f.events.length = 0;
+  const response = await f.speech(login.cookie, session.csrfToken);
+  assert.equal(response.status, 200); assert.deepEqual(f.events, ['input', 'central', 'paid', 'central', 'jev']);
+  const result = await response.json();
+  assert.equal(result.text, text); assert.equal(result.mode, 'voice');
+  assert.deepEqual(result.resolution, { status: 'answer', code: 'pt', text: '포르투갈', reason: 'final-selection', source: 'jev' });
+  assert.deepEqual(result.quota, { dailyUsed: 1, dailyLimit: 120 });
 });
 
 test('로그아웃도 자체 세션 CSRF가 필요하고 성공 후 앱 접근을 닫는다', async t => {

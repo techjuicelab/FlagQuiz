@@ -132,6 +132,8 @@
     musicGeneration: 0,
     cancelFeedbackVoice: null,
     timerPaused: false,
+    speechTimerPaused: false,
+    speechAttempt: 0,
     lastSpeech: { lines: [], opts: {} },
     xpGained: 0,
     newStickers: [],
@@ -241,7 +243,7 @@
     enterCapitalScreen('country-chain');
     var account = FQ.auth && FQ.auth.session();
     var voice = FQ.cloudSpeech && account && !account.preview ?
-      FQ.cloudSpeech.create({ csrfToken: FQ.auth.csrfToken }) : null;
+      FQ.cloudSpeech.create({ mode: 'country-chain', csrfToken: FQ.auth.csrfToken }) : null;
     state.countryChain = FQ.countryChain.start({ players: store.settings().players,
       onHome: renderHome, voice: voice,
       onVoiceError: function (error) {
@@ -473,7 +475,7 @@
       return '<div class="notice">📴 인터넷 없이도 놀 수 있어요. 이름을 듣고 국기를 누르는 놀이로 이어져요.</div>';
     }
     var reason = FQ.speech.unavailableReason();
-    if (!reason) return '<div class="notice">🎤 “듣고 있어요”가 나오면 <b>' + answerWhat(mode) + '을 끝까지 말해 주세요.</b> 마이크 사용을 물어보면 “허용”을 눌러 주세요. 음성 인식에는 인터넷 연결이 필요할 수 있어요.</div>';
+    if (!reason) return '<div class="notice">🎤 “듣고 있어요”가 나오면 <b>' + answerWhat(mode) + '을 끝까지 말해 주세요.</b> 마이크 사용을 물어보면 “허용”을 눌러 주세요. 말을 마치면 이름을 확인해요. 말하기에는 인터넷 연결이 필요해요.</div>';
     return '<div class="notice">⚠️ ' + esc(reason) +
       (FQ.speech.blocked() ? '<br>말하기 대신 <b>이름 써서 맞히기</b>로도 즐길 수 있어요.' : '') + '</div>';
   }
@@ -1090,6 +1092,7 @@
     }
     state.timedOut = false;
     state.timerPaused = false;
+    state.speechTimerPaused = false;
     state.listenFailures = 0;
 
     var q = g.current();
@@ -1295,7 +1298,7 @@
   function continueWithTouch() {
     var q = state.game && state.game.current();
     if (!q || !speechMode(q.mode) || state.answered) return;
-    var keep = { timeLeft: state.timerId || state.timerPaused ? state.timeLeft : 0, hint: ui.$('#hint-area').innerHTML };
+    var keep = { timeLeft: state.timerId || state.timerPaused || state.speechTimerPaused ? state.timeLeft : 0, hint: ui.$('#hint-area').innerHTML };
     stopListening();
     stopTimer();
     touchQuestion(q);
@@ -1388,6 +1391,12 @@
 
     var input = ui.$('#answer-input', m);
     if (input) {
+      if (speechMode(q.mode)) input.addEventListener('focus', function () {
+        if (!state.answered && state.listenOn) {
+          stopListening(true);
+          setListenState('글자로 답하고 있어요. 다시 말하려면 마이크를 눌러 주세요.', 'off');
+        }
+      });
       input.addEventListener('keydown', function (ev) {
         if (ev.key === 'Enter') { ev.preventDefault(); submitTyped(); }
       });
@@ -1409,28 +1418,31 @@
     var text = (input.value || '').trim();
     if (!text) { input.focus(); return; }
     var q = state.game && state.game.current();
+    if (q && speechMode(q.mode)) {
+      var resolved = FQ.speech.resolveAnswer(text, answerKind(q.mode));
+      if (resolved.status === 'giveup') { submit({ text: '' }, true); return; }
+      if (resolved.status === 'answer') { submit({ text: resolved.text }); return; }
+      openTypeFallback('답을 하나만 써 주세요. 지금 문제에서 계속 답할 수 있어요.');
+      return;
+    }
     if (!quiz.findCountry(text, answerKind(q ? q.mode : '')) && quiz.isGiveUp(text)) { submit({ text: '' }, true); return; }
     submit({ text: text });
   }
 
-  /* --------- 마이크: 버튼을 누르지 않아도 계속 듣는다 --------- */
+  /* --------- 마이크: 새 문제에서 듣고, 최종 전사로 답한다 --------- */
 
   /**
    * 들린 말을 어떻게 받아들일지 정한다.
    *   {kind:'answer'}  정답이거나 다른 나라 이름이 확실하다 → 채점
    *   {kind:'giveup'}  "몰라요" 처럼 넘어가고 싶다는 말이다
-   *   null             웅얼거림이나 나라 이름이 아닌 말 → 흘려듣고 계속 기다린다
+   *   null             나라·수도 이름이 아닌 말 → 같은 문제에서 다시 말하도록 안내한다
    */
-  function interpret(text) {
-    if (!text || !state.game) return null;
-    var q = state.game.current();
-    if (!q) return null;
-    // 나라 이름(수도 말하기는 수도 이름)을 먼저 본다. "브라질 뭐지?" 처럼 이름을 말했으면 그것을 답으로 받는다
-    var kind = answerKind(q.mode);
-    if (quiz.checkText(q.country, text, kind).correct) return { kind: 'answer', text: text };
-    var other = quiz.findCountry(text, kind);
-    if (other && other.code !== q.country.code) return { kind: 'answer', text: text };
-    if (quiz.isGiveUp(text)) return { kind: 'giveup' };
+  function interpret(text, remote) {
+    var q = state.game && state.game.current();
+    if (!q || !text) return null;
+    var resolved = FQ.speech.resolveAnswer(text, answerKind(q.mode), remote);
+    if (resolved.status === 'answer') return { kind: 'answer', text: resolved.text };
+    if (resolved.status === 'giveup') return { kind: 'giveup' };
     return null;
   }
 
@@ -1448,7 +1460,17 @@
     el.className = 'listen-state' + (cls ? ' ' + cls : '');
   }
 
-  /** 문제가 뜨면 알아서 듣기 시작한다. */
+  /** 녹음 이외의 준비·전사 대기는 문제 제한시간에 넣지 않는다. */
+  function pauseSpeechTimer(waiting) {
+    if (waiting) {
+      if (state.timerId) { state.speechTimerPaused = true; stopTimer(); }
+    } else if (state.speechTimerPaused) {
+      state.speechTimerPaused = false;
+      if (!doc.hidden && !state.answered) startTimer(state.timeLeft);
+    }
+  }
+
+  /** 문제가 뜨면 한 번 녹음한다. 실패·미인식은 아이가 마이크를 눌러 다시 시도한다. */
   function startListening() {
     if (state.answered || !state.listenOn || doc.hidden || !state.game) return;
     var game = state.game;
@@ -1456,11 +1478,11 @@
     if (!question || !speechMode(question.mode)) return;
     if (global.navigator.onLine === false || state.speechNeedsConnection) { continueWithTouch(); return; }
     if (FQ.speech.isListening && FQ.speech.isListening()) return;
-    var kind = answerKind(question.mode);
     var what = answerWhat(question.mode);
     var generation = state.feedbackGeneration;
+    var attempt = ++state.speechAttempt;
     function current() {
-      return state.game === game && game.current() === question &&
+      return state.game === game && game.current() === question && attempt === state.speechAttempt &&
         generation === state.feedbackGeneration && !state.answered && state.listenOn && !doc.hidden;
     }
     var mic = ui.$('#mic');
@@ -1473,99 +1495,73 @@
     setListenState('마이크를 준비하고 있어요…', '');
     var tip = ui.$('#listen-tip');
     if (tip) tip.textContent = '모르겠으면 “몰라요” 나 “이게 뭐야?” 라고 말해도 돼요';
-
-    function retryListening() {
-      if (state.listenTimer) global.clearTimeout(state.listenTimer);
-      state.listenTimer = global.setTimeout(function () {
-        state.listenTimer = null;
-        if (current()) startListening();
-      }, state.listenFailures ? Math.min(2000, state.listenFailures * 750) : 250);
+    function readyToRetry() {
+      pauseSpeechTimer(false);
+      state.listenOn = false;
+      mic.disabled = !!(FQ.speech.blocked && FQ.speech.blocked());
+      mic.classList.remove('listening');
+      mic.setAttribute('aria-pressed', 'false');
+      mic.setAttribute('aria-label', '마이크 다시 시도하기');
     }
-
+    pauseSpeechTimer(true);
     var requested = FQ.speech.start({
-      continuous: true,
+      mode: question.mode,
+      playerId: String(game.currentPlayerIndex()),
+      turnId: 'quiz_' + state.questionGeneration + '_' + attempt,
+      state: function (phase) {
+        if (!current()) return;
+        pauseSpeechTimer(phase !== 'recording');
+        if (phase === 'requesting') setListenState('마이크를 준비하고 있어요…', '');
+        if (phase === 'finishing' || phase === 'transcribing') {
+          mic.classList.remove('listening');
+          mic.setAttribute('aria-pressed', 'false');
+          setListenState('말한 이름을 확인하고 있어요…', '');
+        }
+      },
       start: function () {
         if (!current()) return;
+        pauseSpeechTimer(false);
         mic.classList.add('listening');
         mic.setAttribute('aria-pressed', 'true');
         setListenState('듣고 있어요. ' + what + '을 끝까지 말해 주세요!', 'on');
       },
-      interim: function (text) {
-        if (!current()) return;
-        state.listenFailures = 0;
-        var heard = ui.$('#heard');
-        if (heard) heard.textContent = text;
-        // 중간 결과라도 목표 나라 이름이 확실히 들렸으면 바로 채점한다(D25). 최종 결과를 기다리다
-        // 사파리가 스스로 끊어 놓치는 것보다 낫고, 아이는 말하자마자 정답 카드를 본다.
-        // 단 이름이 다른 나라 이름의 앞부분인 나라(인도·기니)는 끝까지 듣는다 — “인도네시아”의 “인도”를 먼저 채점하지 않는다.
-        // 다른 나라 이름은 중간 결과로 채점하지 않는다(말이 끝나기 전에 틀렸다고 하지 않는다).
-        if (!quiz.prefixRisky(question.country, kind) && quiz.checkText(question.country, text, kind).correct) submit({ text: text, source: 'voice' });
-      },
-      result: function (alts) {
+      result: function (alts, metadata) {
         if (!current()) return;
         state.listenFailures = 0;
         var heard = ui.$('#heard');
         if (heard) heard.textContent = alts[0] || '';
-        // 여러 후보 중 정답이 있으면 그것부터 인정해 준다
-        var i;
-        for (i = 0; i < alts.length; i++) {
-          var hit = interpret(alts[i]);
-          if (hit && hit.kind === 'answer' && quiz.checkText(state.game.current().country, alts[i], kind).correct) {
-            submit({ text: alts[i], source: 'voice' });
-            return;
-          }
-        }
-        for (i = 0; i < alts.length; i++) {
-          if (actOn(interpret(alts[i]), alts[i])) return;
-        }
-        if (heard) heard.textContent = alts[0] || '';
-        var tip2 = ui.$('#listen-tip');
-        if (tip2) tip2.textContent = what + '을 찾지 못했어요. 한 번 더 말하거나 글자로 답해 주세요.';
+        // 최종 전사의 선택 의사를 먼저 찾고, 그 답 하나만 기존 채점기로 판정한다.
+        var hit = interpret(alts[0], metadata && metadata.resolution);
+        if (actOn(hit, alts[0])) return;
+        readyToRetry();
+        setListenState('답을 하나만 다시 말해 주세요.', 'off');
+        openTypeFallback('아직 답을 고르지 못했어요. 마이크를 눌러 ' + what + '을 하나만 말하거나 글자로 답해 주세요.');
       },
       error: function (code, message) {
         if (!current()) return;
-        if (code === 'network' || global.navigator.onLine === false) {
+        if (global.navigator.onLine === false) {
           state.speechNeedsConnection = true;
           continueWithTouch();
           return;
         }
-        if (code === 'no-speech' || code === 'aborted') return;   // 조용하면 그냥 계속 기다린다
-        mic.classList.remove('listening');
-        mic.setAttribute('aria-pressed', 'false');
-        if (code === 'not-allowed' || code === 'service-not-allowed') {
-          state.listenOn = false;
-          mic.setAttribute('aria-label', '마이크 다시 시도하기');
-          setListenState('마이크 허용을 확인한 뒤 마이크를 눌러 다시 시도해 주세요.', 'off');
-          openTypeFallback('브라우저의 마이크 권한을 허용해 주세요. 글자로 답해도 좋아요.');
-          return;
-        }
+        readyToRetry();
         state.listenFailures += 1;
-        var fatal = code === 'unsupported' || code === 'audio-capture' ||
-          code === 'language-not-supported' || code === 'start-timeout';
-        if (fatal || state.listenFailures >= 3) {
-          state.listenOn = false;
-          mic.setAttribute('aria-label', '마이크 다시 시도하기');
-          mic.disabled = code === 'unsupported';
-          setListenState(code === 'start-timeout'
-            ? '마이크 준비가 오래 걸려요. 권한 허용을 확인한 뒤 마이크를 눌러 주세요.'
-            : '마이크가 멈췄어요. 마이크를 눌러 다시 시도하거나 글자로 답해 주세요.', 'off');
-          openTypeFallback(message || '아래에 ' + what + '을 써서 답해도 좋아요.');
-          return;
-        }
-        setListenState('마이크가 잠깐 멈췄어요. 다시 들을게요.', 'off');
-        // 이전 세션이 끝난 뒤 예약된 시작이 실패한 경우에는 start() 반환값을 받을 수 없다.
-        if (code === 'start-failed') retryListening();
+        setListenState(code === 'permission' ? '마이크 허용을 확인한 뒤 다시 눌러 주세요.' :
+          code === 'no-speech' ? '목소리가 들리지 않았어요. 마이크를 눌러 다시 말해 주세요.' :
+          '지금은 말하기가 어려워요. 다시 시도하거나 글자로 답해 주세요.', 'off');
+        openTypeFallback(message || '아래에 ' + what + '을 써서 답해도 좋아요.');
       },
       end: function () {
         if (!current()) return;
-        var mic3 = ui.$('#mic');
-        if (mic3) { mic3.classList.remove('listening'); mic3.setAttribute('aria-pressed', 'false'); }
-        // 사파리는 몇 초마다 스스로 끊는다. 아직 답을 안 했으면 곧바로 다시 듣는다.
-        retryListening();
+        readyToRetry();
+        setListenState('다시 말하려면 마이크를 눌러 주세요.', 'off');
       }
     });
-    // 동기 시작 실패에는 onend가 오지 않는다.
-    if (requested === false && current()) retryListening();
+    if (requested === false && current()) {
+      readyToRetry();
+      setListenState('말하기를 시작하지 못했어요. 글자로 답하거나 마이크를 다시 눌러 주세요.', 'off');
+      openTypeFallback();
+    }
   }
 
   /** 🔊 를 듣고 난 뒤 말하기 놀이면 마이크를 다시 연다(문제가 그대로이고 아직 답하지 않았을 때만). */
@@ -1585,8 +1581,11 @@
     if (t && tip) t.textContent = tip;
   }
 
-  function stopListening() {
+  function stopListening(resumeTimer) {
+    state.speechAttempt += 1;
     state.listenOn = false;
+    if (resumeTimer) pauseSpeechTimer(false);
+    else state.speechTimerPaused = false;
     if (state.listenTimer) { global.clearTimeout(state.listenTimer); state.listenTimer = null; }
     FQ.speech.abort();
     var mic = ui.$('#mic');
@@ -1601,7 +1600,7 @@
   function toggleMic() {
     if (state.answered) return;
     if (state.listenOn) {
-      stopListening();
+      stopListening(true);
       setListenState('듣기를 멈췄어요. 마이크를 누르면 다시 들어요.', 'off');
     } else {
       state.listenFailures = 0;
@@ -2136,7 +2135,7 @@
       state.timeLeft -= 1;
       var c = ui.$('#timer-chip');
       if (c) c.textContent = '⏱ ' + Math.max(0, state.timeLeft);
-      if (state.timeLeft <= 3 && state.timeLeft > 0) audio.play('tick');
+      if (state.timeLeft <= 3 && state.timeLeft > 0 && !state.listenOn) audio.play('tick');
       if (state.timeLeft <= 0) {
         stopTimer();
         if (!state.answered) {
@@ -2526,7 +2525,7 @@
         } else cancelPendingFeedback();
         audio.stopSpeaking();
         if (state.game && !state.answered) {
-          state.timerPaused = !!state.timerId;
+          state.timerPaused = !!state.timerId || state.speechTimerPaused;
           stopTimer();
         }
         stopListening();

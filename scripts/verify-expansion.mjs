@@ -531,7 +531,7 @@ const BASE_JS_FILES = [
 export function verifyMapScriptScope(t, actual) {
   const extra = actual.filter((file) => !BASE_JS_FILES.includes(file));
   // 지도 확장 이후 승인된 오프라인 전체 저장 UI도 명시적으로 허용한다.
-  const allowed = ['features.js', 'map.js', 'offline.js', 'auth.js', 'cloud-speech.js', 'country-chain.js', 'legacy-records.js', 'legacy-boot.js'];
+  const allowed = ['features.js', 'map.js', 'offline.js', 'auth.js', 'cloud-speech.js', 'country-chain.js', 'spoken-answer.js', 'legacy-records.js', 'legacy-boot.js'];
   const unexpected = extra.filter((file) => !allowed.includes(file));
   t.ok(unexpected.length === 0, 'js/ 에 승인 범위 밖의 새 파일이 들어왔다', unexpected.join(', '));
   const missing = BASE_JS_FILES.filter((file) => !actual.includes(file));
@@ -603,6 +603,21 @@ function newScriptFiles() {
 /* ══════════════════════════════════════════════════════════════════════
    1부 — 금지 사항 (severity: guardrail) · 위반하면 종료 코드 1
    ══════════════════════════════════════════════════════════════════════ */
+
+export function verifyTestSourceTree(t, directory, relative = 'tests') {
+  for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
+    const full = path.join(directory, entry.name), label = relative + '/' + entry.name;
+    if (entry.isDirectory()) {
+      verifyTestSourceTree(t, full, label);
+    } else {
+      t.ok(entry.isFile(), label + ' 는 일반 파일이어야 한다');
+      if (entry.isFile()) {
+        t.ok(!fs.readFileSync(full, 'utf8').includes('natural-earth'),
+          label + ' 가 원본 geojson 에 기댄다 — 원본 없이 npm test 가 성립해야 한다');
+      }
+    }
+  }
+}
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
 await check({
@@ -1296,10 +1311,7 @@ await check({
       }
     }
   }
-  for (const f of fs.readdirSync(p('tests'))) {
-    t.ok(!fs.readFileSync(p('tests', f), 'utf8').includes('natural-earth'),
-      'tests/' + f + ' 가 원본 geojson 에 기댄다 — 원본 없이 npm test 가 성립해야 한다');
-  }
+  verifyTestSourceTree(t, p('tests'));
 });
 
 await check({

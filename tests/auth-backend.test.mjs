@@ -366,7 +366,9 @@ test('유료 음성 요청은 로그인·CSRF·키·입력 검사를 먼저 하�
   assert.deepEqual(events, []);
   const response = await f.request('/api/speech', { method: 'POST', headers: { Cookie: admin.cookie, Origin: f.base, 'X-CSRF-Token': session.csrfToken } });
   assert.equal(response.status, 200); assert.deepEqual(events, ['input', 'paid']);
-  assert.deepEqual(await response.json(), { text: '대한민국', playerId: '2', turnId: 'turn-1', quota: { dailyUsed: 1, dailyLimit: 120 } });
+  assert.deepEqual(await response.json(), { text: '대한민국', playerId: '2', turnId: 'turn-1',
+    resolution: { status: 'answer', code: 'kr', text: '대한민국', reason: 'single-answer', source: 'rules' },
+    quota: { dailyUsed: 1, dailyLimit: 120 } });
   const missing = await httpFixture(t, { env: { GROQ_API_KEY: '', OPENAI_API_KEY: 'legacy-key-never-real' }, speechModule }); const other = await missing.login(), otherSession = await missing.session(other.cookie);
   assert.equal((await missing.request('/api/speech', { method: 'POST', headers: { Cookie: other.cookie, Origin: missing.base, 'X-CSRF-Token': otherSession.csrfToken } })).status, 503);
   assert.equal(events.length, 2); assert.deepEqual(JSON.parse(await fs.readFile(path.join(missing.env.STATE_DIR, 'access.json'), 'utf8')).quota.monthly, {});

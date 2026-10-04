@@ -6,8 +6,11 @@ const SAMPLE_RATE = 16000;
 const ENDPOINT = 'https://api.groq.com/openai/v1/audio/transcriptions';
 const MODEL = 'whisper-large-v3-turbo';
 // Whisper의 byte-level BPE는 UTF-8 바이트를 합친다. 내용은 최대 160토큰으로, 224토큰 한도에 여유를 둔다.
-const COUNTRY_PROMPT = '한국어 나라 이름 놀이. 나라 이름: 대한민국, 미국, 영국, 중국, 일본.';
-if (Buffer.byteLength(COUNTRY_PROMPT, 'utf8') > MAX_PROMPT_BYTES) throw new Error('나라 이름 안내가 너무 길어요.');
+const COUNTRY_PROMPT = '한국어 나라 이름 놀이의 짧은 답변과 요청. 힌트, 몰라요, 다시.';
+const CAPITAL_PROMPT = '한국어 수도 이름 놀이의 짧은 답변과 요청. 힌트, 몰라요, 다시.';
+for (const prompt of [COUNTRY_PROMPT, CAPITAL_PROMPT]) {
+  if (Buffer.byteLength(prompt, 'utf8') > MAX_PROMPT_BYTES) throw new Error('말하기 안내가 너무 길어요.');
+}
 
 export class SpeechError extends Error {
   constructor(status, code, message) { super(message); this.name = 'SpeechError'; this.status = status; this.code = code; }
@@ -16,11 +19,20 @@ export class SpeechError extends Error {
 function invalid() { return new SpeechError(400, 'invalid_audio', '녹음 형식을 확인할 수 없어요. 다시 말하거나 글자로 답해 주세요.'); }
 function cancelled() { return new SpeechError(499, 'cancelled', '말하기 요청을 취소했어요.'); }
 
+function speechMode(value) {
+  const mode = value === undefined ? 'country-chain' : value;
+  if (mode !== 'voice' && mode !== 'capitalVoice' && mode !== 'country-chain') {
+    throw new SpeechError(400, 'invalid_mode', '말하기 놀이를 확인할 수 없어요. 글자로 답해 주세요.');
+  }
+  return mode;
+}
+
 /** 브라우저가 만든 고정 PCM WAV만 받아 헤더 신고값 대신 실제 표본 수로 길이를 제한한다. */
 export function validateSpeechInput(input) {
+  const mode = speechMode(input && input.mode);
   const audio = input && input.audio;
   if (!Buffer.isBuffer(audio) || audio.length < 46) throw invalid();
-  if (audio.length > MAX_AUDIO_BYTES) throw new SpeechError(413, 'audio_too_large', '녹음이 너무 커요. 나라 이름을 짧게 말해 주세요.');
+  if (audio.length > MAX_AUDIO_BYTES) throw new SpeechError(413, 'audio_too_large', '녹음이 너무 커요. 답을 짧게 말해 주세요.');
   if (input.mimeType !== 'audio/wav') throw new SpeechError(415, 'unsupported_audio', '이 녹음 형식은 지원하지 않아요. 글자로 답해 주세요.');
   if (audio.toString('ascii', 0, 4) !== 'RIFF' || audio.readUInt32LE(4) !== audio.length - 8 ||
       audio.toString('ascii', 8, 12) !== 'WAVE' || audio.toString('ascii', 12, 16) !== 'fmt ' || audio.readUInt32LE(16) !== 16 ||
@@ -28,9 +40,11 @@ export function validateSpeechInput(input) {
       audio.readUInt32LE(28) !== SAMPLE_RATE * 2 || audio.readUInt16LE(32) !== 2 || audio.readUInt16LE(34) !== 16 ||
       audio.toString('ascii', 36, 40) !== 'data' || audio.readUInt32LE(40) !== audio.length - 44 || (audio.length - 44) % 2) throw invalid();
   const durationMs = (audio.length - 44) / 2 / SAMPLE_RATE * 1000;
-  if (durationMs > MAX_DURATION_MS) throw new SpeechError(413, 'audio_too_long', '나라 이름은 12초 안에 짧게 말해 주세요.');
+  if (durationMs > MAX_DURATION_MS) throw new SpeechError(413, 'audio_too_long', '답은 12초 안에 짧게 말해 주세요.');
   if (durationMs < 100) throw new SpeechError(400, 'no_speech', '목소리가 들리지 않았어요. 다시 말하거나 글자로 답해 주세요.');
-  return { ...input, durationMs };
+  // 문턱은 완전무음에만 적용하여 작은 목소리의 표본을 보존한다.
+  if (!audio.subarray(44).some(byte => byte !== 0)) throw new SpeechError(400, 'no_speech', '목소리가 들리지 않았어요. 다시 말하거나 글자로 답해 주세요.');
+  return { ...input, durationMs, mode };
 }
 
 function header(req, name) {
@@ -55,7 +69,7 @@ function readBody(req, signal, timeoutMs) {
     function data(chunk) {
       const bytes = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
       size += bytes.length;
-      if (size > MAX_AUDIO_BYTES) { finish(new SpeechError(413, 'audio_too_large', '녹음이 너무 커요. 나라 이름을 짧게 말해 주세요.')); return; }
+      if (size > MAX_AUDIO_BYTES) { finish(new SpeechError(413, 'audio_too_large', '녹음이 너무 커요. 답을 짧게 말해 주세요.')); return; }
       chunks.push(bytes);
     }
     function end() { const audio = Buffer.concat(chunks, size); chunks = []; finish(null, audio); }
@@ -70,6 +84,7 @@ function readBody(req, signal, timeoutMs) {
 }
 
 export async function readSpeechInput(req, { signal, timeoutMs = 10000 } = {}) {
+  const mode = speechMode(req.headers['x-speech-mode']);
   const mimeType = header(req, 'content-type').split(';')[0].trim().toLowerCase();
   if (mimeType !== 'audio/wav') throw new SpeechError(415, 'unsupported_audio', '이 녹음 형식은 지원하지 않아요. 글자로 답해 주세요.');
   const declared = header(req, 'x-audio-duration-ms');
@@ -79,10 +94,10 @@ export async function readSpeechInput(req, { signal, timeoutMs = 10000 } = {}) {
   if (req.headers['content-length'] !== undefined) {
     const length = header(req, 'content-length');
     if (!/^\d+$/.test(length)) throw invalid();
-    if (Number(length) > MAX_AUDIO_BYTES) throw new SpeechError(413, 'audio_too_large', '녹음이 너무 커요. 나라 이름을 짧게 말해 주세요.');
+    if (Number(length) > MAX_AUDIO_BYTES) throw new SpeechError(413, 'audio_too_large', '녹음이 너무 커요. 답을 짧게 말해 주세요.');
   }
   const audio = await readBody(req, signal, timeoutMs);
-  const input = validateSpeechInput({ audio, mimeType, playerId, turnId });
+  const input = validateSpeechInput({ audio, mimeType, playerId, turnId, mode });
   if (Math.abs(input.durationMs - Number(declared)) > 200) throw invalid();
   return input;
 }
@@ -100,8 +115,9 @@ export function createTranscriber({ apiKey = process.env.GROQ_API_KEY, fetchImpl
     const timer = setTimeout(() => { timedOut = true; controller.abort(); }, timeoutMs);
     try {
       const body = new FormData();
-      body.set('file', new Blob([input.audio], { type: 'audio/wav' }), 'country.wav');
-      body.set('model', MODEL); body.set('language', 'ko'); body.set('response_format', 'json'); body.set('prompt', COUNTRY_PROMPT);
+      body.set('file', new Blob([input.audio], { type: 'audio/wav' }), 'speech.wav');
+      body.set('model', MODEL); body.set('language', 'ko'); body.set('response_format', 'json');
+      body.set('prompt', input.mode === 'capitalVoice' ? CAPITAL_PROMPT : COUNTRY_PROMPT);
       const response = await fetchImpl(ENDPOINT, { method: 'POST', headers: { Authorization: 'Bearer ' + apiKey }, body, signal: controller.signal });
       if (!response.ok) throw new SpeechError(502, 'speech_failed', '목소리를 알아듣지 못했어요. 다시 말하거나 글자로 답해 주세요.');
       const result = await response.json();

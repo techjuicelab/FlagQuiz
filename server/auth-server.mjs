@@ -18,14 +18,14 @@ const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; ch
   '.webp': 'image/webp', '.mp3': 'audio/mpeg', '.wav': 'audio/wav', '.ico': 'image/x-icon' };
 
 export function readConfig(env = process.env) {
-  for (const name of ['PUBLIC_ORIGIN', 'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'SESSION_SECRET', 'STATE_DIR', 'STATIC_ROOT', 'GROQ_API_KEY', 'HOST', 'PORT', 'TJID_SUPABASE_URL', 'TJID_SUPABASE_ANON_KEY', 'TRUSTED_PROXY_IPS']) {
+  for (const name of ['PUBLIC_ORIGIN', 'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'SESSION_SECRET', 'STATE_DIR', 'STATIC_ROOT', 'GROQ_API_KEY', 'TYPESAFE_API_KEY', 'HOST', 'PORT', 'TJID_SUPABASE_URL', 'TJID_SUPABASE_ANON_KEY', 'TRUSTED_PROXY_IPS']) {
     if (typeof env[name] === 'string' && /^["']?\s*op:\/\//i.test(env[name].trim())) {
       throw new Error('Unresolved 1Password reference in ' + name + '; start with op run');
     }
   }
   const config = { publicOrigin: env.PUBLIC_ORIGIN || '', clientId: env.GOOGLE_CLIENT_ID || '', clientSecret: env.GOOGLE_CLIENT_SECRET || '',
     sessionSecret: env.SESSION_SECRET || '', stateDirectory: env.STATE_DIR || '', staticRoot: path.resolve(env.STATIC_ROOT || path.join(repository, '_site')),
-    groqApiKey: env.GROQ_API_KEY || '', port: Number(env.PORT || 8080), host: env.HOST || '127.0.0.1',
+    groqApiKey: env.GROQ_API_KEY || '', typesafeApiKey: env.TYPESAFE_API_KEY || '', port: Number(env.PORT || 8080), host: env.HOST || '127.0.0.1',
     authProvider: env.AUTH_PROVIDER || (env.TJID_SUPABASE_URL ? 'techjuice-id' : 'google'),
     supabaseUrl: env.TJID_SUPABASE_URL || '', anonKey: env.TJID_SUPABASE_ANON_KEY || '', appSlug: env.TJID_APP_SLUG || 'flagquiz',
     googleEnabled: env.TJID_GOOGLE_ENABLED === 'true', trustedProxyIPs: parseTrustedProxyIPs(env.TRUSTED_PROXY_IPS) };
@@ -137,7 +137,7 @@ export async function createAuthServer({ config = readConfig(), fetchImpl = fetc
   const tjid = config.ready && config.authProvider === 'techjuice-id' ? injectedTechjuiceId || createTechJuiceId({ supabaseUrl: config.supabaseUrl, anonKey: config.anonKey, appSlug: config.appSlug, fetchImpl, clock }) : null;
   const oidc = config.ready && !tjid ? injectedOidc || createGoogleOidc({ clientId: config.clientId, clientSecret: config.clientSecret,
     redirectUri: config.publicOrigin + '/api/auth/callback', fetchImpl, clock }) : null;
-  let speech = injectedSpeech, transcribe = null;
+  let speech = injectedSpeech, transcribe = null, resolveAnswer = null;
   const pending = new Map(), rates = new Map(), speechUsers = new Set(), centralStates = new Map(); let activeSpeech = 0;
   function csrf(session) { return createHmac('sha256', config.sessionSecret).update('csrf.' + session.id).digest('base64url'); }
   async function sessionOf(req, fresh = false) {
@@ -216,7 +216,16 @@ export async function createAuthServer({ config = readConfig(), fetchImpl = fetc
       if (current.id !== session.id) throw new AccessError(401, 'login-required');
       const quota = await store.consumeSpeechQuota(current);
       const result = await transcribe(input, { signal: abort.signal });
-      json(res, 200, { text: result.text, playerId: input.playerId, turnId: input.turnId, quota: { dailyUsed: quota.dailyUsed, dailyLimit: quota.dailyLimit } });
+      if (abort.signal.aborted) throw new AccessError(499, 'cancelled');
+      if (config.typesafeApiKey) {
+        const selectionSession = await authorized(req, true);
+        if (selectionSession.id !== session.id) throw new AccessError(401, 'login-required');
+      }
+      if (abort.signal.aborted) throw new AccessError(499, 'cancelled');
+      resolveAnswer ||= (await import('./answer-resolution.mjs')).createAnswerResolver({ apiKey: config.typesafeApiKey, fetchImpl });
+      const resolution = await resolveAnswer({ text: result.text, mode: input.mode }, { signal: abort.signal });
+      json(res, 200, { text: result.text, playerId: input.playerId, turnId: input.turnId, mode: input.mode,
+        resolution, quota: { dailyUsed: quota.dailyUsed, dailyLimit: quota.dailyLimit } });
     } catch (error) {
       if (speech?.SpeechError && error instanceof speech.SpeechError) json(res, error.status, { error: error.code });
       else throw error;
@@ -237,6 +246,8 @@ export async function createAuthServer({ config = readConfig(), fetchImpl = fetc
       return res.end(req.method === 'HEAD' ? undefined : bytes);
     }
     if (pathname === '/login' && req.method === 'GET') {
+      // 폼 POST의 Origin을 보존하고 외부 사이트에는 Referer를 보내지 않는다.
+      res.setHeader('Referrer-Policy', 'same-origin');
       const token = randomBytes(32).toString('base64url');
       if (config.ready && tjid) res.setHeader('Set-Cookie', cookie(LOGIN_COOKIE, sign({ form: token, exp: clock() + LOGIN_MS }, 'login', config.sessionSecret), config, LOGIN_MS));
       return loginPage(res, url.searchParams.get('error'), config, token);

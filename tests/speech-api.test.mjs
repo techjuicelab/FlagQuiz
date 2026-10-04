@@ -3,12 +3,13 @@ import assert from 'node:assert/strict';
 import { PassThrough } from 'node:stream';
 import { createTranscriber, readSpeechInput, validateSpeechInput, SpeechError, MAX_AUDIO_BYTES, MAX_PROMPT_BYTES } from '../server/speech.mjs';
 
-function wav(durationMs = 1000) {
+function wav(durationMs = 1000, sample = 512) {
   const samples = Math.round(durationMs * 16);
   const audio = Buffer.alloc(44 + samples * 2);
   audio.write('RIFF', 0); audio.writeUInt32LE(audio.length - 8, 4); audio.write('WAVEfmt ', 8); audio.writeUInt32LE(16, 16);
   audio.writeUInt16LE(1, 20); audio.writeUInt16LE(1, 22); audio.writeUInt32LE(16000, 24); audio.writeUInt32LE(32000, 28);
   audio.writeUInt16LE(2, 32); audio.writeUInt16LE(16, 34); audio.write('data', 36); audio.writeUInt32LE(samples * 2, 40);
+  for (let i = 44; i < audio.length; i += 2) audio.writeInt16LE(sample, i);
   return audio;
 }
 
@@ -29,9 +30,24 @@ test('서버는 PCM WAV 표본 수에서 실제 길이를 읽고 플레이어·�
   assert.equal(result.playerId, '0');
   assert.equal(result.turnId, '4');
   assert.equal(result.mimeType, 'audio/wav');
+  assert.equal(result.mode, 'country-chain');
   assert.equal(result.audio.length, 32044);
   const boundary = await request(wav(12000), { 'x-audio-duration-ms': '12000' });
   assert.equal(boundary.durationMs, 12000);
+});
+
+test('음성 모드는 허용된 나라·수도·이어 말하기만 받고 알 수 없는 모드는 본문을 읽기 전에 거절한다', async () => {
+  for (const mode of ['voice', 'capitalVoice', 'country-chain']) {
+    assert.equal((await request(wav(), { 'x-speech-mode': mode })).mode, mode);
+  }
+  for (const mode of ['other', '', null, ['voice'], ['voice', 'capitalVoice']]) {
+    await assert.rejects(request(wav(), { 'x-speech-mode': mode }), code('invalid_mode'));
+  }
+});
+
+test('서버도 완전무음 PCM은 유료 호출 전에 거절하지만 매우 작은 음성 표본은 허용한다', async () => {
+  await assert.rejects(request(wav(1000, 0)), code('no_speech'));
+  assert.equal((await request(wav(1000, 1))).durationMs, 1000);
 });
 
 test('인증 대기 중 pause한 요청은 리스너 설치 후 재개하여 이미 도착한 WAV 전체를 읽는다', async () => {
@@ -99,16 +115,33 @@ test('Groq 요청은 서버 고정 모델·한국어·짧은 맞춤법 안내를
   assert.equal(options.body.get('response_format'), 'json');
   const prompt = options.body.get('prompt');
   assert.match(prompt, /한국어 나라 이름/);
-  assert.match(prompt, /대한민국/);
-  assert.match(prompt, /미국, 영국, 중국, 일본/);
-  assert.doesNotMatch(prompt, /짐바브웨|x{10}/);
+  assert.doesNotMatch(prompt, /대한민국|미국|영국|중국|일본|짐바브웨|x{10}/);
   assert.ok(Buffer.byteLength(prompt, 'utf8') <= MAX_PROMPT_BYTES);
   assert.equal(MAX_PROMPT_BYTES, 160);
   assert.ok(MAX_PROMPT_BYTES < 224);
   const file = options.body.get('file');
   assert.equal(file.type, 'audio/wav');
-  assert.equal(file.name, 'country.wav');
+  assert.equal(file.name, 'speech.wav');
   assert.deepEqual(Buffer.from(await file.arrayBuffer()), input().audio);
+});
+
+test('나라와 수도는 서버 고정 문맥만 다르고 정답·동적 후보·클라이언트 prompt는 외부로 보내지 않는다', async () => {
+  const calls = [];
+  const transcribe = createTranscriber({ apiKey: 'test-secret', fetchImpl: async (url, options) => {
+    calls.push(options.body); return { ok: true, json: async () => ({ text: '파리' }) };
+  } });
+  for (const mode of ['voice', 'capitalVoice', 'country-chain']) {
+    await transcribe({ ...input(), mode, answer: '파리', country: '프랑스', prompt: '파리', candidates: ['파리'] });
+  }
+  assert.equal(calls[0].get('prompt'), calls[2].get('prompt'));
+  assert.match(calls[0].get('prompt'), /나라 이름/); assert.match(calls[1].get('prompt'), /수도 이름/);
+  for (const body of calls) {
+    assert.doesNotMatch(body.get('prompt'), /파리|프랑스/);
+    assert.ok(Buffer.byteLength(body.get('prompt'), 'utf8') <= MAX_PROMPT_BYTES);
+    assert.equal(body.get('language'), 'ko'); assert.equal(body.get('model'), 'whisper-large-v3-turbo');
+  }
+  await assert.rejects(transcribe({ ...input(), mode: 'other' }), code('invalid_mode'));
+  assert.equal(calls.length, 3);
 });
 
 test('기본 키는 GROQ_API_KEY만 사용하고 다른 공급자의 키로 대체하지 않는다', async () => {
