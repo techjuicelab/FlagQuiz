@@ -110,8 +110,18 @@ test('중앙 이메일·비밀번호 폼 로그인은 앱 권한을 가진 계�
   assert.doesNotMatch(JSON.stringify(state), /fixture-password|fixture-groq-key|fixture-public-anon-key/);
 });
 
+test('로그인 페이지는 native form POST의 Origin을 보존하는 same-origin 정책을 사용한다', async t => {
+  const f = await fixture(t), form = await f.form();
+  assert.equal(form.response.headers.get('referrer-policy'), 'same-origin');
+  assert.match(form.html, /<form method="post" action="\/api\/auth\/password">/);
+});
+
 test('비밀번호 로그인은 같은 Origin·폼 CSRF·로그인 쿠키가 확인되기 전 중앙 공급자를 호출하지 않는다', async t => {
   const f = await fixture(t), form = await f.form();
+  const opaqueOrigin = await f.password(form, { headers: { Origin: 'null', 'Sec-Fetch-Site': 'same-origin' } });
+  assert.equal(opaqueOrigin.status, 403);
+  assert.deepEqual(await opaqueOrigin.json(), { error: 'request-not-allowed' });
+  assert.equal(f.passwordCalls.length, 0);
   for (const patch of [{ csrf: 'wrong' }, { cookie: '' }, { headers: { Origin: 'https://attacker.test' } },
     { headers: { Origin: '' } }, { headers: { 'Sec-Fetch-Site': 'cross-site' } }]) {
     const response = await f.password(form, patch); assert.equal(response.status, 403); await response.arrayBuffer();

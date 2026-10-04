@@ -237,6 +237,8 @@ export async function createAuthServer({ config = readConfig(), fetchImpl = fetc
       return res.end(req.method === 'HEAD' ? undefined : bytes);
     }
     if (pathname === '/login' && req.method === 'GET') {
+      // 폼 POST의 Origin을 보존하고 외부 사이트에는 Referer를 보내지 않는다.
+      res.setHeader('Referrer-Policy', 'same-origin');
       const token = randomBytes(32).toString('base64url');
       if (config.ready && tjid) res.setHeader('Set-Cookie', cookie(LOGIN_COOKIE, sign({ form: token, exp: clock() + LOGIN_MS }, 'login', config.sessionSecret), config, LOGIN_MS));
       return loginPage(res, url.searchParams.get('error'), config, token);
