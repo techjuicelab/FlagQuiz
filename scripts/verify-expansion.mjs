@@ -531,7 +531,7 @@ const BASE_JS_FILES = [
 export function verifyMapScriptScope(t, actual) {
   const extra = actual.filter((file) => !BASE_JS_FILES.includes(file));
   // 지도 확장 이후 승인된 오프라인 전체 저장 UI도 명시적으로 허용한다.
-  const allowed = ['features.js', 'map.js', 'offline.js', 'auth.js', 'cloud-speech.js', 'country-chain.js'];
+  const allowed = ['features.js', 'map.js', 'offline.js', 'auth.js', 'cloud-speech.js', 'country-chain.js', 'legacy-records.js', 'legacy-boot.js'];
   const unexpected = extra.filter((file) => !allowed.includes(file));
   t.ok(unexpected.length === 0, 'js/ 에 승인 범위 밖의 새 파일이 들어왔다', unexpected.join(', '));
   const missing = BASE_JS_FILES.filter((file) => !actual.includes(file));
@@ -555,6 +555,36 @@ function shellList() {
   return arrayLiterals(read('sw.js'), /var\s+SHELL\s*=\s*\[([\s\S]*?)\];/);
 }
 
+// 공개 로그인 helper만 저장소와 배포 URL의 위치가 다르다. 다른 경로는 바꾸지 않는다.
+const SCRIPT_SOURCES = { 'login-legacy.js': 'server/login-legacy.js' };
+function scriptSource(file) { return Object.hasOwn(SCRIPT_SOURCES, file) ? SCRIPT_SOURCES[file] : file; }
+
+export function verifyScriptRegistration(t, file, { html, shell, buildSrc, loader }) {
+  t.ok(html.includes('<script src="' + file + '"></script>'), 'index.html 에 새 script 등록이 없다', file);
+  t.ok(shell.includes('./' + file), 'sw.js SHELL 에 새 script 등록이 없다', file);
+  const source = scriptSource(file);
+  t.ok(loader.includes("'" + source + "'"), 'tests/run.mjs 로더에 실제 source 등록이 없다', source);
+  if (file === 'login-legacy.js') {
+    t.ok(buildSrc.includes("fs.copyFile(path.join(root, 'server/login-legacy.js'), path.join(output, 'login-legacy.js'))"),
+      '공개 helper의 source→배포 URL copyFile 매핑이 다르다', source + ' → ' + file);
+  } else if (file.startsWith('js/')) {
+    const folders = (/for \(const folder of \[([^\]]*)\]/.exec(buildSrc) || [, ''])[1];
+    t.ok(folders.includes("'js'") && buildSrc.includes('fs.cp(path.join(root, folder), path.join(output, folder)'),
+      'js/ 새 script가 실제 build-site 폴더 복사에 포함되지 않는다', file);
+  } else if (file.startsWith('data/')) {
+    const files = (/const files = \[([^\]]*)\]/.exec(buildSrc) || [, ''])[1];
+    t.ok(files.includes("'" + file + "'"), '새 data script가 build-site files 배열에 없다', file);
+  }
+}
+
+export function verifyShellFileSources(t, shell, sourceExists = exists) {
+  for (const item of shell) {
+    if (item === './') continue;
+    const relative = item.replace(/^\.\//, '');
+    t.ok(sourceExists(scriptSource(relative)), 'SHELL 에 이름만 있고 실제 source 파일이 없다', item);
+  }
+}
+
 /** 지금 저장소에 새로 들어온 js/·data/ 스크립트 (기준선에 없던 것). */
 function newScriptFiles() {
   const found = [];
@@ -566,6 +596,7 @@ function newScriptFiles() {
       if (!BASE_SCRIPTS.includes(rel)) found.push(rel);
     }
   }
+  found.push(...Object.keys(SCRIPT_SOURCES));
   return found.sort();
 }
 
@@ -1132,21 +1163,11 @@ await check({
   const html = read('index.html');
   const shell = shellList() || [];
   const buildSrc = read('scripts/build-site.mjs');
-  const buildFiles = (/const files = \[([^\]]*)\]/.exec(buildSrc) || [, ''])[1];
   const runSrc = read('tests/run.mjs');
   const loader = (/for \(const file of \[([^\]]*)\]/.exec(runSrc) || [, ''])[1];
 
   for (const f of newFiles) {
-    t.ok(html.includes('<script src="' + f + '"></script>'),
-      'index.html 에 <script src="' + f + '"></script> 를 더해야 한다 (없으면 화면에 안 뜬다)');
-    t.ok(shell.includes('./' + f),
-      "sw.js 의 SHELL 배열에 './" + f + "' 를 더해야 한다 (없으면 아이패드 비행기 모드에서만 깨진다)");
-    if (f.startsWith('data/')) {
-      t.ok(buildFiles.includes("'" + f + "'"),
-        "scripts/build-site.mjs 의 const files 배열에 '" + f + "' 를 더해야 한다 (없으면 배포본에만 없어 아이패드가 흰 화면이다)");
-    }
-    t.ok(loader.includes("'" + f + "'"),
-      "tests/run.mjs 의 로더 배열에 '" + f + "' 를 더해야 한다 (없으면 검사가 그 파일을 아예 못 읽는다)");
+    verifyScriptRegistration(t, f, { html, shell, buildSrc, loader });
     if (exists('tests/app.test.mjs')) {
       t.note(f + ' — tests/app.test.mjs 로더에도 ' + (read('tests/app.test.mjs').includes(f) ? '있다' : '없다 (참고)'));
     }
@@ -1164,11 +1185,7 @@ await check({
   const shell = shellList();
   t.ok(shell, 'sw.js 에서 SHELL 배열을 떼어 내지 못했다');
   if (!shell) return;
-  for (const item of shell) {
-    if (item === './') continue;
-    const rel = item.replace(/^\.\//, '');
-    t.ok(exists(rel), 'SHELL 에 이름만 있고 파일이 없다 — 서비스워커 설치가 통째로 실패한다', item);
-  }
+  verifyShellFileSources(t, shell);
   const missing = indexScripts().filter((s) => !shell.includes('./' + s));
   t.ok(missing.length === 0, 'index.html 이 읽는데 SHELL 에 없는 스크립트가 있다 (오프라인에서만 깨진다)', missing.join(', '));
   t.note('SHELL 항목 ' + shell.length + '개 / index.html script ' + indexScripts().length + '개');

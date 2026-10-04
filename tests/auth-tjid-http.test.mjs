@@ -95,6 +95,7 @@ test('중앙 이메일·비밀번호 폼 로그인은 앱 권한을 가진 계�
   assert.equal(login.completed.status, 303); assert.equal(login.completed.headers.get('location'), '/');
   assert.match(login.started.html, /기존 TechJuice ID/);
   assert.match(login.started.html, /action="\/api\/auth\/password"/);
+  assert.match(login.started.html, /<script src="\/login-legacy\.js" defer><\/script>/);
   assert.doesNotMatch(login.started.html, /Google 계정으로 로그인|fixture-public-anon-key|fixture-groq-key/);
   assert.match(login.sessionHeader, /HttpOnly/); assert.match(login.sessionHeader, /SameSite=Lax/); assert.match(login.sessionHeader, /Secure/);
   assert.match(login.sessionHeader, /Max-Age=3600/);

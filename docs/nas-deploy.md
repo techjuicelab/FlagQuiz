@@ -67,6 +67,8 @@ NAS의 기존 `cloudflared`는 host network로 실행 중이다. 2026-10-03 `cf-
 
 GitHub Pages 워크플로는 `main` push 또는 `main`의 수동 실행에서 테스트가 통과하면 NAS 진입 페이지를 배포한다. NAS 로그인 검증의 완료 여부를 자동으로 판정하지 않으므로 운영 연결은 별도로 확인한다. `scripts/build-github-entry.mjs`는 NAS 링크와 이전 PWA 정리용 service worker를 만든다. 기존 `flagquiz-*` 캐시를 삭제하고 해당 Pages scope 안에서 새 worker가 실제 제어하는 열린 창만 새 진입 화면으로 이동한다. 별도 하위 service worker가 제어하는 창은 이동시키지 않는다. 학습 기록을 저장한 localStorage는 변경하지 않는다. 완전히 오프라인인 구버전 설치에는 온라인으로 돌아와 새 worker를 받을 때까지 이 전환을 전달할 수 없다. NAS의 앱·Docker 빌드는 기존 `npm run build`를 유지한다.
 
+Pages 진입 화면은 같은 기기의 `flagquiz.v1` 기록을 주소 fragment로 전달한다. fragment는 HTTP 요청에 포함되지 않으며 로그인 보조 스크립트가 새 origin의 sessionStorage에 보관한 뒤 주소에서 제거한다. 로그인 후 새 주소의 저장소가 비어 있을 때만 자동 복원하며, 기존 기록이 있으면 놀이를 계속하면서 가져올 기록을 선택할 수 있다. 교체 전 기록은 기기에 백업하고 설정에서 파일로 내려받을 수 있다. 기록 파일 가져오기도 설정에서 제공한다. 원본 Pages 기록은 지우지 않으며 유효하지 않거나 512KiB를 초과한 기록은 자동 이동을 멈추고 원문 백업과 수동 이동을 안내한다. 이 기능은 기기 간 또는 계정 간 기록 동기화가 아니다.
+
 ## 배포와 실패 복귀
 
 이번 릴리스는 **스키마 변경 없음**이다. `access.json`의 형식을 유지하고 별도 migration은 실행하지 않는다. Docker build 안에서 `npm test`, `npm run build`, `npm run verify -- --strict`를 통과한 뒤 운영 이미지를 만든다. 엄격 검사는 금지 사항과 완료 판정의 실패를 모두 배포 중단으로 처리한다. 빌드에는 서버 비밀을 전달하지 않으며 NAS 호환을 위해 classic builder(`DOCKER_BUILDKIT=0`)를 사용한다.

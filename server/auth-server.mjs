@@ -111,20 +111,20 @@ function loginPage(res, error, config, formToken) {
   if (config.authProvider === 'techjuice-id') {
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }).end('<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>세계 놀이 · TechJuice ID 로그인</title>' +
       '<style>body{margin:0;background:#f2f7ee;color:#243c2b;font-family:system-ui,sans-serif;display:grid;min-height:100dvh;place-items:center}main{box-sizing:border-box;background:#fff;border-radius:24px;padding:32px;width:min(92vw,440px);box-shadow:0 12px 40px #243c2b14}h1{margin-top:0}label{display:block;margin:20px 0 8px;font-weight:600}input,button{box-sizing:border-box;font:inherit;border-radius:12px;padding:13px;width:100%}input{border:1px solid #a9bba9}button{border:0;background:#397749;color:#fff;margin-top:24px;font-weight:700;cursor:pointer}a{color:#275f38}p{line-height:1.6}.hint{color:#536558;font-size:14px}input:focus-visible,button:focus-visible,a:focus-visible{outline:3px solid #df9e2e;outline-offset:3px}</style></head><body><main>' +
-      '<h1>세계 놀이</h1><p>기존 TechJuice ID로 로그인해 주세요.</p>' +
+      '<h1>세계 놀이</h1><p>기존 TechJuice ID로 로그인해 주세요.</p><p id="legacy-notice" class="hint" role="status" aria-live="polite" hidden></p>' +
       (!config.ready ? '<p role="status">로그인 서비스 준비 중이에요. 잠시 뒤 다시 시도해 주세요.</p>' :
         '<form method="post" action="/api/auth/password"><input type="hidden" name="csrf" value="' + formToken + '">' +
         '<label for="identifier">아이디 또는 이메일</label><input id="identifier" name="identifier" autocomplete="username" required maxlength="254" autocapitalize="none" spellcheck="false">' +
         '<label for="password">비밀번호</label><input id="password" name="password" type="password" autocomplete="current-password" required maxlength="1024"><button type="submit">로그인</button></form>' +
         (config.googleEnabled ? '<p><a href="/api/auth/login">Google 계정으로 로그인</a></p>' : '')) +
       (error ? '<p role="status">' + (error === 'denied' ? '이 계정은 세계 놀이를 이용할 수 없어요. 관리자에게 문의해 주세요.' : '로그인하지 못했어요. 아이디와 비밀번호를 확인해 주세요.') + '</p>' : '') +
-      '<p class="hint">다른 TechJuice 앱에서 사용하는 계정과 같아요.<br>비밀번호를 잊으셨다면 관리자에게 문의해 주세요.</p></main><script src="/auth-cleanup.js" defer></script></body></html>');
+      '<p class="hint">다른 TechJuice 앱에서 사용하는 계정과 같아요.<br>비밀번호를 잊으셨다면 관리자에게 문의해 주세요.</p></main><script src="/auth-cleanup.js" defer></script><script src="/login-legacy.js" defer></script></body></html>');
     return;
   }
   res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }).end('<!doctype html><html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">' +
     '<title>세계 놀이 · 로그인</title><main><h1>세계 놀이</h1><p>등록된 Gmail 또는 Google Workspace 계정으로 로그인해 주세요.</p>' +
     (messages[error] ? '<p role="status">' + messages[error] + '</p>' : '') +
-    '<a href="/api/auth/login">Google 계정으로 로그인</a></main><script src="/auth-cleanup.js" defer></script></html>');
+    '<p id="legacy-notice" role="status" aria-live="polite" hidden></p><a href="/api/auth/login">Google 계정으로 로그인</a></main><script src="/auth-cleanup.js" defer></script><script src="/login-legacy.js" defer></script></html>');
 }
 
 export async function createAuthServer({ config = readConfig(), fetchImpl = fetch, clock = Date.now, oidc: injectedOidc, techjuiceId: injectedTechjuiceId, speechModule: injectedSpeech } = {}) {
@@ -230,8 +230,8 @@ export async function createAuthServer({ config = readConfig(), fetchImpl = fetc
     res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self' blob: data:; connect-src 'self'; worker-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'");
     const url = new URL(req.url, 'http://localhost'); const pathname = url.pathname;
     if (pathname === '/health' && req.method === 'GET') return json(res, 200, { ok: true, configured: config.ready });
-    if ((pathname === '/sw.js' || pathname === '/auth-cleanup.js') && ['GET', 'HEAD'].includes(req.method)) {
-      const file = path.join(repository, 'server', pathname === '/sw.js' ? 'private-sw.js' : 'login-cleanup.js');
+    if ((pathname === '/sw.js' || pathname === '/auth-cleanup.js' || pathname === '/login-legacy.js') && ['GET', 'HEAD'].includes(req.method)) {
+      const file = path.join(repository, 'server', pathname === '/sw.js' ? 'private-sw.js' : pathname === '/auth-cleanup.js' ? 'login-cleanup.js' : 'login-legacy.js');
       let bytes; try { bytes = await fs.readFile(file); } catch { throw new AccessError(404, 'not-found'); }
       res.writeHead(200, { 'Content-Type': 'text/javascript; charset=utf-8', 'Content-Length': bytes.length });
       return res.end(req.method === 'HEAD' ? undefined : bytes);

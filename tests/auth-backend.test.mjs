@@ -211,6 +211,25 @@ test('비밀 설정이 없어도 상태·로그인 화면만 열고 전체 앱 �
   assert.equal((await f.request('/auth-cleanup.js')).status, 200);
 });
 
+test('기록 전달 helper만 고정 공개 경로로 제공하며 로그인 CSP·CSRF·앱 차단을 유지한다', async t => {
+  const expected = await fs.readFile(new URL('../server/login-legacy.js', import.meta.url));
+  for (const ready of [true, false]) {
+    const f = await httpFixture(t, ready ? {} : { env: { GOOGLE_CLIENT_SECRET: '' } });
+    const script = await f.request('/login-legacy.js');
+    assert.equal(script.status, 200); assert.deepEqual(Buffer.from(await script.arrayBuffer()), expected);
+    assert.match(script.headers.get('cache-control'), /no-store/); assert.match(script.headers.get('content-type'), /text\/javascript/);
+    assert.match(script.headers.get('content-security-policy'), /script-src 'self';/); assert.equal(script.headers.getSetCookie().length, 0);
+    const head = await f.request('/login-legacy.js', { method: 'HEAD' });
+    assert.equal(head.status, 200); assert.equal((await head.arrayBuffer()).byteLength, 0); assert.equal(Number(head.headers.get('content-length')), expected.length);
+    assert.equal((await f.request('/login-legacy.js', { method: 'POST' })).status, 405);
+    const login = await f.request('/login'), html = await login.text();
+    assert.match(html, /<script src="\/login-legacy\.js" defer><\/script>/); assert.match(html, /id="legacy-notice"/);
+    assert.doesNotMatch(html, /fixture-public|private-secret|test-key-never-real|onload=|onclick=/);
+    for (const route of ['/server/login-legacy.js', '/app.js', '/clip.mp3']) assert.equal((await f.request(route)).status, 401);
+    assert.equal(f.exchanges, 0);
+  }
+});
+
 test('서버 설정은 HTTPS·강한 서명 키·웹 루트 밖 영속 경로만 허용한다', () => {
   const base = { PUBLIC_ORIGIN: 'https://quiz.test', GOOGLE_CLIENT_ID: clientId, GOOGLE_CLIENT_SECRET: 'secret', SESSION_SECRET: 's'.repeat(64), STATE_DIR: '/private/state', STATIC_ROOT: '/private/site' };
   assert.equal(readConfig(base).secureCookie, true); assert.equal(readConfig({ ...base, PUBLIC_ORIGIN: 'http://localhost:8080' }).secureCookie, false);

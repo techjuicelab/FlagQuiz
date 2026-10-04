@@ -13,6 +13,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 /* --------- 아주 작은 브라우저 흉내 --------- */
 const store = new Map();
+const session = new Map();
 const sandbox = {
   console,
   Math,
@@ -27,6 +28,12 @@ const sandbox = {
   clearTimeout,
   setInterval,
   clearInterval,
+  location: { origin: 'https://fixture.example', href: 'https://fixture.example/', pathname: '/', hash: '' },
+  sessionStorage: {
+    getItem: (k) => (session.has(k) ? session.get(k) : null),
+    setItem: (k, v) => session.set(k, String(v)),
+    removeItem: (k) => session.delete(k)
+  },
   localStorage: {
     getItem: (k) => (store.has(k) ? store.get(k) : null),
     setItem: (k, v) => store.set(k, String(v)),
@@ -51,7 +58,7 @@ sandbox.window = sandbox;
 sandbox.global = sandbox;
 vm.createContext(sandbox);
 
-for (const file of ['js/util.js', 'js/storage.js', 'js/features.js', 'data/countries.js', 'data/subjects.js', 'data/confusion-groups.js', 'data/map-coords.js', 'data/map-shapes.js', 'js/map.js', 'js/progress.js', 'js/quiz.js', 'js/offline.js', 'js/auth.js', 'js/cloud-speech.js', 'js/country-chain.js']) {
+for (const file of ['server/login-legacy.js', 'js/legacy-records.js', 'js/legacy-boot.js', 'js/util.js', 'js/storage.js', 'js/features.js', 'data/countries.js', 'data/subjects.js', 'data/confusion-groups.js', 'data/map-coords.js', 'data/map-shapes.js', 'js/map.js', 'js/progress.js', 'js/quiz.js', 'js/offline.js', 'js/auth.js', 'js/cloud-speech.js', 'js/country-chain.js']) {
   const full = path.join(root, file);
   if (!fs.existsSync(full)) {
     console.error('✗ 파일이 없어요: ' + file);

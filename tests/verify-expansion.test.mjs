@@ -4,7 +4,8 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 import { buildLand } from '../scripts/build-map.mjs';
 import { verifyAudioCache, verifyActivateKeepsAudio, verifyMapTolerance,
-  verifyMapGeometry, verifySmallLandPreservation, verifyUiVoicePhrases } from '../scripts/verify-expansion.mjs';
+  verifyMapGeometry, verifySmallLandPreservation, verifyUiVoicePhrases, verifyMapScriptScope,
+  verifyScriptRegistration, verifyShellFileSources } from '../scripts/verify-expansion.mjs';
 
 const sw = fs.readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
 const ui = fs.readFileSync(new URL('../js/ui.js', import.meta.url), 'utf8');
@@ -29,6 +30,40 @@ async function problems(check, ...args) {
   catch (error) { failures.push(error.message); }
   return failures;
 }
+
+test('기록 이전3개는 정확한 source·index·SHELL·빌드·실제 로더 등록만 허용한다', async () => {
+  const html = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  const buildSrc = fs.readFileSync(new URL('../scripts/build-site.mjs', import.meta.url), 'utf8');
+  const run = fs.readFileSync(new URL('../tests/run.mjs', import.meta.url), 'utf8');
+  const loader = /for \(const file of \[([^\]]*)\]/.exec(run)[1];
+  const shell = ['login-legacy.js', 'js/legacy-records.js', 'js/legacy-boot.js'].map(file => './' + file);
+  const context = { html, buildSrc, loader, shell };
+  for (const file of ['login-legacy.js', 'js/legacy-records.js', 'js/legacy-boot.js']) {
+    assert.deepEqual(await problems(verifyScriptRegistration, file, context), []);
+    for (const patch of [{ html: html.replace('<script src="' + file + '"></script>', '') },
+      { shell: shell.filter(item => item !== './' + file) },
+      { loader: loader.replace("'" + (file === 'login-legacy.js' ? 'server/login-legacy.js' : file) + "'", '') }]) {
+      assert.ok((await problems(verifyScriptRegistration, file, { ...context, ...patch })).length > 0);
+    }
+  }
+  for (const build of [buildSrc.replace("path.join(root, 'server/login-legacy.js')", "path.join(root, 'server/other.js')"),
+    buildSrc.replace("path.join(output, 'login-legacy.js')", "path.join(output, 'other.js')")]) {
+    assert.ok((await problems(verifyScriptRegistration, 'login-legacy.js', { ...context, buildSrc: build })).length > 0);
+  }
+  assert.ok((await problems(verifyScriptRegistration, 'js/legacy-records.js', { ...context,
+    buildSrc: buildSrc.replace("['assets', 'css', 'flags', 'js', 'images']", "['assets', 'css', 'flags', 'images']") })).length > 0);
+});
+
+test('공개 helper source 매핑은 단일 파일이며 다른 이름이나 사라진 source를 통과시키지 않는다', async () => {
+  const files = new Set(['server/login-legacy.js', 'js/legacy-records.js', 'js/legacy-boot.js']);
+  const shell = ['./login-legacy.js', './js/legacy-records.js', './js/legacy-boot.js'];
+  assert.deepEqual(await problems(verifyShellFileSources, shell, file => files.has(file)), []);
+  assert.ok((await problems(verifyShellFileSources, ['./other-login.js'], file => files.has(file))).length > 0);
+  assert.ok((await problems(verifyShellFileSources, ['./login-legacy.js'], () => false)).length > 0);
+  const actual = fs.readdirSync(new URL('../js/', import.meta.url)).filter(file => file.endsWith('.js'));
+  assert.deepEqual(await problems(verifyMapScriptScope, actual), []);
+  assert.ok((await problems(verifyMapScriptScope, actual.concat('other-legacy.js'))).length > 0);
+});
 
 function voiceAssets() {
   const context = { window: {} };

@@ -12,6 +12,7 @@ var KEEP = [SHELL_CACHE, FLAG_CACHE, ART_CACHE, AUDIO_CACHE];
 var SHELL = [
   './',
   './index.html',
+  './login-legacy.js',
   './manifest.webmanifest',
   './css/style.css',
   './css/map.css',
@@ -21,6 +22,8 @@ var SHELL = [
   './data/map-coords.js',
   './data/map-shapes.js',
   './js/util.js',
+  './js/legacy-records.js',
+  './js/legacy-boot.js',
   './js/storage.js',
   './js/offline.js',
   './js/auth.js',

@@ -329,6 +329,8 @@
     state.artStudy = null;
     var s = store.settings();
     var canDuel = duelAllowed(s.mode), duel = s.players.length > 1;
+    var legacyBackup = false;
+    try { legacyBackup = !!global.localStorage.getItem('flagquiz.legacy-backup'); } catch (error) { /* 저장소 차단은 놀이를 막지 않는다. */ }
     var m = ui.setMain('<section class="screen settings-screen">' +
       '<div class="settings-header"><div><p class="eyebrow">내게 맞게</p><h2>설정</h2></div>' +
         '<button class="btn btn-sm btn-ghost" id="settings-done" type="button">완료</button></div>' +
@@ -352,7 +354,11 @@
       '</section><section class="settings-group" id="settings-records"><h3>기록 관리</h3>' +
         '<p class="settings-caption">기록은 이 기기의 브라우저에 저장돼요.</p>' +
         '<div class="settings-actions"><button class="btn" id="settings-export" type="button">기록 내보내기</button>' +
-          '<button class="btn btn-ghost danger-text" id="settings-reset" type="button">기록 초기화</button></div><div id="export-out"></div>' +
+          '<button class="btn" id="settings-import" type="button">기록 가져오기</button>' +
+          (legacyBackup ? '<button class="btn btn-ghost" id="settings-legacy-backup" type="button">가져오기 전 기록 다운로드</button>' : '') +
+          '<button class="btn btn-ghost danger-text" id="settings-reset" type="button">기록 초기화</button></div>' +
+          '<input id="settings-import-file" type="file" accept="application/json,.json" hidden>' +
+          '<p id="settings-import-status" class="small" role="status"></p><div id="export-out"></div>' +
       '</section></section>');
     ui.$('#settings-done', m).addEventListener('click', closeSettings);
     function updatePool() {
