@@ -44,13 +44,27 @@ jobs:
           cd deploy
           docker compose -p "$APP" -f compose.prod.yml config --quiet
           if docker volume inspect flagquiz-data >/dev/null 2>&1; then
-            DEPLOYMENT_SHA=unknown
-            if [[ -n "$OLD_IMAGE" ]]; then
-              DEPLOYMENT_SHA=$(docker image inspect --format '{{index .Config.Labels "org.opencontainers.image.revision"}}' "$OLD_IMAGE")
-              [[ "$DEPLOYMENT_SHA" =~ ^[0-9a-f]{40}$ ]] || exit 1
+            STATE_ARGS=(--directory /var/lib/flagquiz)
+            if [[ -z "$OLD_IMAGE" ]]; then STATE_ARGS+=(--allow-empty); fi
+            SOURCE_STATUS=0
+            docker run --rm --network none --read-only --user 1000:1000 --cap-drop ALL \
+              --security-opt no-new-privileges:true \
+              --mount type=volume,source=flagquiz-data,target=/var/lib/flagquiz,readonly \
+              --entrypoint node "$APP:$TAG" scripts/check-private-state.mjs "${STATE_ARGS[@]}" \
+              || SOURCE_STATUS=$?
+            [[ "$SOURCE_STATUS" == 0 || "$SOURCE_STATUS" == 3 ]] || exit "$SOURCE_STATUS"
+            if [[ "$SOURCE_STATUS" == 3 ]]; then
+              [[ -z "$OLD_IMAGE" ]] || exit 1
+              printf '기존 운영 앱이 없고 데이터가 완전히 비어 있어 새 데이터를 초기화합니다.\n'
+            else
+              DEPLOYMENT_SHA=unknown
+              if [[ -n "$OLD_IMAGE" ]]; then
+                DEPLOYMENT_SHA=$(docker image inspect --format '{{index .Config.Labels "org.opencontainers.image.revision"}}' "$OLD_IMAGE")
+                [[ "$DEPLOYMENT_SHA" =~ ^[0-9a-f]{40}$ ]] || exit 1
+              fi
+              export DEPLOYMENT_SHA
+              docker compose -p "$APP" -f compose.prod.yml --profile operations run --rm --no-deps backup
             fi
-            export DEPLOYMENT_SHA
-            docker compose -p "$APP" -f compose.prod.yml --profile operations run --rm --no-deps backup
           fi
           if docker compose -p "$APP" -f compose.prod.yml up -d --wait --wait-timeout 120 web; then
             docker tag "$APP:$TAG" "$APP:latest"

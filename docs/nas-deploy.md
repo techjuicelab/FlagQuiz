@@ -2,7 +2,9 @@
 
 Forgejo `techjuice/flagquiz`의 `main`을 NAS에 배포한다. 기존 GitHub `origin`은 유지하고 Forgejo는 별도 remote로 연결한다. Forgejo Actions의 `deploy` runner는 NAS Docker 소켓을 사용하므로 배포 워크플로와 `main` 변경은 운영 관리자 권한으로 검토한다.
 
-2026-10-03 구성 작성 시점에는 NAS의 Node 24·SQLite·fetch 기동과 로컬 구성 검사가 완료됐으며, NAS의 전체 이미지 빌드·Forgejo 배포 run·외부 로그인·실제 음성 인식·운영 백업 실행은 아직 확인 전이다. 운영자는 아래 확인을 마친 뒤 배포 SHA와 성공 시각을 기록한다.
+2026-10-03 NAS 전체 이미지 `flagquiz:build-check`(`d2b366557e36`)의 빌드와 Compose 구성 검사를 완료했다. 로컬 Node 테스트 541개가 통과했고, NAS에서는 540개 통과·macOS 전용 이미지 도구 검사 1개 제외·실패 0개였다. 기존 통합 10,028개와 엄격 검사 36개도 NAS에서 통과했다. 문서 근거 파일이 빠진 검증용 사본은 엄격 검사에서 종료 코드 1로 차단되는 것을 확인했다.
+
+NAS의 격리 컨테이너에서 UID 1000·읽기 전용 루트·빈 볼륨 보호·권한 회수·재시작 후 사용량과 세대 보존·백업·별도 대상 복원을 확인했다. 이 검사는 임시 합성 데이터로 수행했으며 운영 데이터 볼륨과 실제 서비스는 생성하지 않았다. 1Password CLI 조회 시간 초과로 런타임 비밀 주입이 대기 중이다. Forgejo 배포 run·DNS/Cloudflare 경로·외부 실제 계정 로그인·마이크·운영 예약 백업은 아직 확인 전이다. 운영자는 아래 확인을 마친 뒤 배포 SHA와 성공 시각을 기록한다.
 
 ## 운영 계약
 
@@ -10,7 +12,7 @@ Forgejo `techjuice/flagquiz`의 `main`을 NAS에 배포한다. 기존 GitHub `or
 | --- | --- |
 | Compose project / 이미지 이름 | `flagquiz` |
 | 실행 서비스 | `web` 한 개, UID/GID `1000:1000` |
-| NAS 포트 → 컨테이너 포트 | `31015` → `8090` |
+| NAS loopback 포트 → 컨테이너 포트 | `127.0.0.1:31015` → `8090` |
 | 외부 URL | `https://flagquiz.techjuicelab.space` |
 | Cloudflare 경로 | HTTP `localhost:31015` |
 | 네트워크 | 기존 외부 네트워크 `cf-web` |
@@ -35,6 +37,7 @@ TJID_SUPABASE_URL=<TechJuice ID Supabase URL>
 TJID_SUPABASE_ANON_KEY=<TechJuice ID 공개 anon key>
 TJID_APP_SLUG=flagquiz
 TJID_GOOGLE_ENABLED=false
+TRUSTED_PROXY_IPS=172.21.0.1
 SESSION_SECRET=<32바이트 이상의 서버 비밀>
 GROQ_API_KEY=<서버 전용 Groq 키>
 STATE_DIR=/var/lib/flagquiz
@@ -42,17 +45,19 @@ STATE_DIR=/var/lib/flagquiz
 
 `op://` 참조를 직접 secret에 넣지 않는다. 1Password 주입으로 참조를 해결한 사본을 저장한다. `PUBLIC_ORIGIN`은 경로 없는 HTTPS origin이다. `SESSION_SECRET` 교체 시 기존 세션이 무효화된다. `AUTH_PROVIDER`는 공통 로그인으로 고정하고 선택값 `TJID_GOOGLE_ENABLED`는 중앙 Google provider를 실제 확인한 뒤에만 `true`로 바꾼다. 기본 로그인은 중앙 계정의 이메일·비밀번호를 사용한다. 개인 Google OAuth 변수는 이 공통 로그인 배포에 전달하지 않는다. Groq 모델은 서버의 `whisper-large-v3-turbo` 고정 설정을 사용한다.
 
+NAS의 기존 `cloudflared`는 host network로 실행 중이다. 2026-10-03 `cf-web`의 격리 컨테이너에 loopback 포트로 접속해 실제 peer `172.21.0.1`을 확인했다. `TRUSTED_PROXY_IPS`는 정확한 IP만 지정하며, 일치하는 peer의 유효한 단일 `CF-Connecting-IP`만 방문자 제한에 사용한다. `X-Forwarded-For`는 신뢰하지 않는다. 직접 LAN 접속으로 헤더를 위조하지 못하도록 published port를 `127.0.0.1`에 한정한다. 네트워크·터널 실행 방식 변경 시 peer를 다시 측정하고 설정도 함께 변경한다.
+
 워크플로는 `umask 077`로 절대 경로의 `deploy/.env`를 만들고 EXIT trap으로 삭제한다. Compose의 `web.environment`가 필요한 값만 읽으며 `HOST`, `PORT`, `STATE_DIR`, `STATIC_ROOT`는 컨테이너 계약으로 고정한다. `config --quiet`를 사용해 환경 값을 출력하지 않는다. 운영 파일 시스템은 읽기 전용이고 쓰기는 데이터 볼륨과 임시 `/tmp`에 한정한다. 음성 녹음 파일은 영속 저장하지 않는다.
 
 ## 배포와 실패 복귀
 
-이번 릴리스는 **스키마 변경 없음**이다. `access.json`의 형식을 유지하고 별도 migration은 실행하지 않는다. Docker build 안에서 `npm test`, `npm run build`, `npm run verify`를 통과한 뒤 운영 이미지를 만든다. 빌드에는 서버 비밀을 전달하지 않으며 NAS 호환을 위해 classic builder(`DOCKER_BUILDKIT=0`)를 사용한다.
+이번 릴리스는 **스키마 변경 없음**이다. `access.json`의 형식을 유지하고 별도 migration은 실행하지 않는다. Docker build 안에서 `npm test`, `npm run build`, `npm run verify -- --strict`를 통과한 뒤 운영 이미지를 만든다. 엄격 검사는 금지 사항과 완료 판정의 실패를 모두 배포 중단으로 처리한다. 빌드에는 서버 비밀을 전달하지 않으며 NAS 호환을 위해 classic builder(`DOCKER_BUILDKIT=0`)를 사용한다.
 
 `main` push 또는 `main`에서 수동 실행하면 다음 순서로 진행한다.
 
 1. 저장소 slug가 `flagquiz`인지 검증하고 commit SHA 앞 12자리를 이미지 tag로 사용한다.
 2. 이미지 빌드와 설정 사전 검사를 수행한다. 필수 로그인 설정 및 Groq 키가 없으면 현재 앱을 교체하지 않는다.
-3. 기존 데이터 볼륨이 있으면 새 이미지의 백업 도구로 검증된 사본을 먼저 만든다. 백업 실패는 배포를 중단한다.
+3. 기존 데이터 볼륨이 있으면 읽기 전용 검사 뒤 새 이미지의 백업 도구로 검증된 사본을 먼저 만든다. 기존 운영 앱이 없고 UID 1000·0700의 완전히 빈 볼륨일 때만 초기화를 허용한다. 손상·권한 오류·잠금 파일만 남은 상태·기존 앱의 빈 볼륨·백업 실패는 배포를 중단한다.
 4. `docker compose up -d --wait --wait-timeout 120 web`으로 교체한다. 한 개의 writable 앱만 실행하며 데이터 잠금은 서버가 관리한다.
 5. 정상 확인 후에만 `flagquiz:latest`를 새 이미지로 갱신한다.
 
@@ -82,11 +87,13 @@ STATE_DIR=/var/lib/flagquiz
 node scripts/verify-private-state.mjs --source <검증할 access.json의 절대 경로>
 ```
 
-운영 데이터 위로 복원하는 작업은 별도 승인 대상이다. 정확한 백업 UTC 시각·SHA256·schema version·볼륨과 중단 시간을 먼저 확인한다. 복원 시 세션을 비우고 권한을 재검토하며 현재 월 사용량을 보수적으로 대조한다. 이 검토를 마칠 때까지 유료 음성 키를 연결하지 않는다. 오래된 quota를 되돌리면 실제 비용 사용량보다 낮게 보일 수 있기 때문이다.
+운영 데이터 위로 복원하는 작업은 별도 승인 대상이다. 정확한 백업 UTC 시각·SHA256·schema version·볼륨과 중단 시간을 먼저 확인한다. Snapshot에는 당시 세션·허용/차단 목록·사용량이 들어 있으므로, 사본을 그대로 운영에 연결하면 이후 로그아웃·로컬 차단·사용량 예약이 되돌아갈 수 있다.
+
+별도 복원 대상에서 전체 세션을 폐기한 뒤 최신 중앙 `disabled`·session generation·`flagquiz` 권한과 로컬 `blockedEmails`를 대조한다. Snapshot 이후 해제한 계정의 차단 기록을 빠뜨리지 않으며, 단순 재로그인으로 자동 등록되지 않는지 확인한다. 현재 UTC 월·일의 사용량은 snapshot 이후 호출까지 포함한 검증 가능한 기록과 대조하고 보수적으로 보정한다. 누락분을 확인할 수 없으면 해당 기간의 한도 여유를 임의로 되살리지 않고 유료 호출을 보류한다. 원본을 보존하고 이 검토와 별도 대상 검증을 마칠 때까지 운영 트래픽과 유료 음성 키를 연결하지 않는다.
 
 ## 운영 확인과 중지
 
-Actions 성공 뒤 LAN `http://192.168.0.100:31015/health`와 외부 `https://flagquiz.techjuicelab.space/health`를 확인한다. 외부 로그인 화면에서 TechJuice ID 로그인을 하고 해당 앱 권한을 가진 계정만 들어가는지 검증한다. 나라 이어 말하기에서 실제 마이크 인식, 중복 나라의 현재 차례 유지, 새 나라의 차례 전환, 지도 누적, 홈 이동 시 녹음 취소를 확인한다. 로그인 없이 앱 파일과 `/api/speech`가 열리지 않는지도 확인한다.
+Actions 성공 뒤 SSH로 NAS 안의 `http://127.0.0.1:31015/health`와 외부 `https://flagquiz.techjuicelab.space/health`를 확인한다. 외부 로그인 화면에서 TechJuice ID 로그인을 하고 해당 앱 권한을 가진 계정만 들어가는지 검증한다. 서로 다른 방문자가 로그인 제한을 공유하지 않는지도 확인한다. 나라 이어 말하기에서 실제 마이크 인식, 중복 나라의 현재 차례 유지, 새 나라의 차례 전환, 지도 누적, 홈 이동 시 녹음 취소를 확인한다. 로그인 없이 앱 파일과 `/api/speech`가 열리지 않는지도 확인한다.
 
 재시작·재배포 후 운영 권한, 세션, 사용량이 보존되는지 확인한다. 마지막 배포 SHA, 마지막 성공 백업 UTC 시각, 마지막 별도 복원 확인 시각과 외부 암호화 사본 위치를 운영 기록에 남긴다.
 

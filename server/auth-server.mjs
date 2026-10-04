@@ -8,6 +8,7 @@ import { randomBytes, createHmac, timingSafeEqual } from 'node:crypto';
 import { createGoogleOidc, IdentityError } from './lib/google-oidc.mjs';
 import { createTechJuiceId, TechJuiceIdError } from './lib/techjuice-id.mjs';
 import { openAccessStore, AccessError } from './lib/access-store.mjs';
+import { clientIp, parseTrustedProxyIPs } from './lib/proxy-ip.mjs';
 
 const repository = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const COOKIE = 'flagquiz_session', LOGIN_COOKIE = 'flagquiz_login';
@@ -17,7 +18,7 @@ const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; ch
   '.webp': 'image/webp', '.mp3': 'audio/mpeg', '.wav': 'audio/wav', '.ico': 'image/x-icon' };
 
 export function readConfig(env = process.env) {
-  for (const name of ['PUBLIC_ORIGIN', 'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'SESSION_SECRET', 'STATE_DIR', 'STATIC_ROOT', 'GROQ_API_KEY', 'HOST', 'PORT', 'TJID_SUPABASE_URL', 'TJID_SUPABASE_ANON_KEY']) {
+  for (const name of ['PUBLIC_ORIGIN', 'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'SESSION_SECRET', 'STATE_DIR', 'STATIC_ROOT', 'GROQ_API_KEY', 'HOST', 'PORT', 'TJID_SUPABASE_URL', 'TJID_SUPABASE_ANON_KEY', 'TRUSTED_PROXY_IPS']) {
     if (typeof env[name] === 'string' && /^["']?\s*op:\/\//i.test(env[name].trim())) {
       throw new Error('Unresolved 1Password reference in ' + name + '; start with op run');
     }
@@ -27,7 +28,7 @@ export function readConfig(env = process.env) {
     groqApiKey: env.GROQ_API_KEY || '', port: Number(env.PORT || 8080), host: env.HOST || '127.0.0.1',
     authProvider: env.AUTH_PROVIDER || (env.TJID_SUPABASE_URL ? 'techjuice-id' : 'google'),
     supabaseUrl: env.TJID_SUPABASE_URL || '', anonKey: env.TJID_SUPABASE_ANON_KEY || '', appSlug: env.TJID_APP_SLUG || 'flagquiz',
-    googleEnabled: env.TJID_GOOGLE_ENABLED === 'true' };
+    googleEnabled: env.TJID_GOOGLE_ENABLED === 'true', trustedProxyIPs: parseTrustedProxyIPs(env.TRUSTED_PROXY_IPS) };
   if (!['google', 'techjuice-id'].includes(config.authProvider)) throw new Error('AUTH_PROVIDER is invalid');
   const identityReady = config.authProvider === 'techjuice-id' ? Boolean(config.supabaseUrl && config.anonKey) : Boolean(config.clientId && config.clientSecret);
   config.ready = Boolean(config.publicOrigin && identityReady && config.sessionSecret && config.stateDirectory);
@@ -243,10 +244,12 @@ export async function createAuthServer({ config = readConfig(), fetchImpl = fetc
     if (pathname === '/api/auth/password' && req.method === 'POST') {
       if (!tjid) throw new AccessError(503, 'auth-not-configured');
       if (req.headers.origin !== config.publicOrigin || (req.headers['sec-fetch-site'] && req.headers['sec-fetch-site'] !== 'same-origin')) throw new AccessError(403, 'request-not-allowed');
-      rate('password:' + req.socket.remoteAddress, 30, 5 * 60 * 1000);
+      // 잘못된 폼은 방문자 한도를 소비하지 않는다. 전체 입력 비용은 짧은 전역 한도로 제한한다.
+      rate('password-input', 300, 60 * 1000);
       const form = await readForm(req);
       const data = unsign(cookies(req).get(LOGIN_COOKIE), 'login', config.sessionSecret);
       if (!data || !Number.isInteger(data.exp) || data.exp <= clock() || !equal(data.form, form.csrf)) throw new AccessError(403, 'invalid-login-state');
+      rate('password:' + clientIp(req, config.trustedProxyIPs), 30, 5 * 60 * 1000);
       rate('account:' + createHmac('sha256', config.sessionSecret).update(form.identifier.trim().toLowerCase()).digest('hex'), 10, 5 * 60 * 1000);
       res.setHeader('Set-Cookie', cookie(LOGIN_COOKIE, '', config));
       const identity = await tjid.passwordGrant(form.identifier, form.password);
@@ -271,7 +274,7 @@ export async function createAuthServer({ config = readConfig(), fetchImpl = fetc
       if (!config.ready) throw new AccessError(503, 'auth-not-configured');
       if (req.headers['sec-fetch-site'] === 'cross-site') throw new AccessError(403, 'request-not-allowed');
       if (tjid && !config.googleEnabled) return redirect(res, '/login');
-      rate('login:' + req.socket.remoteAddress, 10, 5 * 60 * 1000);
+      rate('login:' + clientIp(req, config.trustedProxyIPs), 10, 5 * 60 * 1000);
       for (const [id, data] of pending) if (data.expiresAt <= clock()) pending.delete(id);
       if (pending.size >= 1000) throw new AccessError(429, 'request-limit');
       const state = randomBytes(32).toString('base64url'), nonce = randomBytes(32).toString('base64url'), verifier = randomBytes(32).toString('base64url');

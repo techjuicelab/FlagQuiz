@@ -25,7 +25,7 @@ npm run build
 npm run start:private
 ```
 
-직접 실행할 때 `STATIC_ROOT` 기본값은 `_site`, `HOST`는 `127.0.0.1`, `PORT`는 `8080`이다. NAS 컨테이너는 UID/GID `1000:1000`, `HOST=0.0.0.0`, 내부 `PORT=8090`, `/app/_site`를 사용하며 호스트 `31015`와 `cf-web` 네트워크에 연결한다. `flagquiz-data` named volume을 `/var/lib/flagquiz`에 마운트한다. 배포·HTTPS 연결 절차는 [NAS 안내](../docs/nas-deploy.md)에 있다.
+직접 실행할 때 `STATIC_ROOT` 기본값은 `_site`, `HOST`는 `127.0.0.1`, `PORT`는 `8080`이다. NAS 컨테이너는 UID/GID `1000:1000`, `HOST=0.0.0.0`, 내부 `PORT=8090`, `/app/_site`를 사용하며 호스트 loopback `127.0.0.1:31015`와 `cf-web` 네트워크에 연결한다. `flagquiz-data` named volume을 `/var/lib/flagquiz`에 마운트한다. 배포·HTTPS 연결 절차는 [NAS 안내](../docs/nas-deploy.md)에 있다.
 
 NAS 커널 `4.4.302+`는 [Node.js 24의 공식 Linux 지원 범위](https://github.com/nodejs/node/blob/v24.x/BUILDING.md)의 kernel 4.18 이상을 충족하지 않는다. 실제 NAS smoke 성공과 공식 지원 여부를 구분하며 운영 컨테이너 재시작·인증·백업까지 별도로 확인한다.
 
@@ -52,7 +52,7 @@ NAS 커널 `4.4.302+`는 [Node.js 24의 공식 Linux 지원 범위](https://gith
 | `/api/admin/allowlist` | POST/DELETE | 최신 중앙 상태·최고 관리자·같은 Origin·CSRF·JSON `{email}` 또는 `{identifier}` |
 | `/api/speech` | POST | 로그인·같은 Origin·CSRF·고정 PCM WAV·최신 중앙 상태·사용량 한도 |
 
-비밀번호 로그인은 소켓 IP마다 5분에 30회, 입력 계정마다 5분에 10회로 제한한다. 현재 `X-Forwarded-For`를 신뢰하지 않으므로 reverse proxy 뒤에서는 여러 사용자가 프록시의 IP 한도를 공유할 수 있다. 운영 프록시를 정한 뒤 신뢰 범위와 실제 사용자별 제한을 검증한다.
+비밀번호 로그인은 유효한 폼·CSRF를 확인한 방문자 IP마다 5분에 30회, 입력 계정마다 5분에 10회로 제한한다. 앞단 입력 처리는 서버 전체에서 분당 300회로 제한한다. `TRUSTED_PROXY_IPS`에 지정한 정확한 소켓 IP의 유효한 단일 `CF-Connecting-IP`만 방문자 주소로 사용하며 `X-Forwarded-For`는 무시한다. NAS에서는 관찰한 프록시 peer `172.21.0.1`을 지정하고 서비스 포트를 loopback에 한정한다. 신뢰 목록이 비었거나 헤더·peer가 일치하지 않으면 소켓 IP를 사용한다.
 
 앱·음원·응답은 `no-store, private`로 제공하고 인증된 앱 복사본을 PWA 오프라인 캐시에 보관하지 않는다. 공개 `/sw.js`와 로그인 정리 스크립트는 해당 origin의 루트 `/sw.js` 등록과 `flagquiz-` cache만 정리한다. 학습 localStorage는 로그인·로그아웃 시 지우지 않는다. 현재 공개 GitHub Pages는 이전 공개 버전이며 새 서버 검증 후 전환해야 전체 앱 접근 제한이 완료된다.
 
@@ -71,7 +71,9 @@ node scripts/verify-private-state.mjs --source /var/lib/flagquiz/access.json
 node scripts/backup-private-state.mjs --source /var/lib/flagquiz/access.json --destination /var/backups/flagquiz
 ```
 
-Forgejo 일간 백업 workflow와 별도 대상 복원 검사는 구현했으며 실제 NAS 일정 실행은 배포 후 확인한다. 같은 NAS의 백업은 장비 전체 장애를 해결하지 못한다. 암호화된 외부 사본은 아직 설정하지 않았다. 복구 시 운영 서버를 멈추고 검증된 snapshot을 별도 volume에 복원·검사한 뒤 연결하며 기존 volume을 기본 삭제하지 않는다.
+Forgejo 일간 백업 workflow와 별도 대상 복원 검사는 구현했으며 실제 NAS 일정 실행은 배포 후 확인한다. 같은 NAS의 백업은 장비 전체 장애를 해결하지 못한다. 암호화된 외부 사본은 아직 설정하지 않았다. 복구는 별도 승인 후 운영 서버를 멈추고 검증된 snapshot을 별도 volume에 복원·검사하며 기존 volume을 기본 삭제하지 않는다.
+
+Snapshot을 그대로 연결하면 그 이후 로그아웃·로컬 차단·사용량 예약도 과거로 돌아간다. 복원 대상의 전체 세션을 폐기하고 최신 중앙 `disabled`·session generation·`flagquiz` 권한 및 로컬 `blockedEmails`와 대조한다. 이후 해제한 계정이 다시 자동 등록되지 않는지 확인하고, 현재 UTC 월·일의 누락된 사용량을 검증 가능한 기록으로 보수적으로 보정한다. 누락분을 확인할 수 없으면 한도 여유를 임의로 복구하지 않고 유료 호출을 보류한다. 이 검토와 별도 대상 검증이 끝날 때까지 운영 트래픽과 유료 음성 키를 연결하지 않는다.
 
 ## 검사와 남은 운영 확인
 
@@ -81,4 +83,4 @@ node --test tests/auth-backend.test.mjs tests/auth-tjid-http.test.mjs tests/tech
 
 검사는 실제 HTTP·JWT 서명·중앙 권한과 상태 장애·Origin/CSRF·세션 해제·로컬 차단·원자적 사용량·강제 종료 복구·별도 대상 백업 복원을 다루며 중앙 인증/Groq 응답은 격리한다. 기존 Groq 키로 대한민국 음원을 1회 전사하여 게임의 나라 판정까지 확인했다.
 
-운영 완료 조건은 실제 최고 관리자와 일반 TechJuiceID 계정 로그인, 비활성화·generation 변경·로컬 해제 후 재접속 차단, 서버 재시작 후 데이터 유지와 NAS backup/restore, 외부 HTTPS·음원·마이크·한도 응답, 이전 공개 주소 전환이다. 로컬 자동 검사와 NAS Node smoke만으로 이를 완료했다고 표시하지 않는다.
+NAS 전체 이미지 빌드와 엄격 검사, UID 1000·읽기 전용 루트의 격리 저장/백업/복원 검사는 통과했다. 운영 완료 조건은 실제 최고 관리자와 일반 TechJuiceID 계정 로그인, 비활성화·generation 변경·로컬 해제 후 재접속 차단, 운영 서버 재시작 후 데이터 유지와 NAS backup/restore, 외부 HTTPS·음원·마이크·한도 응답, 이전 공개 주소 전환이다. 자동 검사와 격리 컨테이너 검증만으로 실제 서비스 배포가 완료됐다고 표시하지 않는다.
