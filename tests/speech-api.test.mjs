@@ -34,6 +34,16 @@ test('서버는 PCM WAV 표본 수에서 실제 길이를 읽고 플레이어·�
   assert.equal(boundary.durationMs, 12000);
 });
 
+test('인증 대기 중 pause한 요청은 리스너 설치 후 재개하여 이미 도착한 WAV 전체를 읽는다', async () => {
+  const req = new PassThrough();
+  req.headers = { 'content-type': 'audio/wav', 'x-audio-duration-ms': '1000', 'x-player-id': '0', 'x-turn-id': '4' };
+  req.pause(); req.end(wav());
+  assert.equal(req.readableFlowing, false);
+  const result = await readSpeechInput(req, { timeoutMs: 100 });
+  assert.deepEqual(result.audio, wav()); assert.equal(result.durationMs, 1000);
+  assert.equal(req.listenerCount('data'), 0);
+});
+
 test('조작한 길이 헤더로 12초보다 긴 실제 음성을 유료 서비스에 전달할 수 없다', async () => {
   await assert.rejects(request(wav(12001)), code('audio_too_long'));
   await assert.rejects(request(wav(), { 'x-audio-duration-ms': '12000' }), code('invalid_audio'));

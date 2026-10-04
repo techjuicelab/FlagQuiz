@@ -64,6 +64,8 @@ function readBody(req, signal, timeoutMs) {
     if (signal?.aborted || req.aborted) { abort(); return; }
     req.on('data', data); req.on('end', end); req.on('error', failed); req.on('aborted', abort);
     signal?.addEventListener('abort', abort, { once: true });
+    // 인증을 기다리며 멈춰 둔 HTTP 본문은 모든 리스너를 설치한 뒤 읽기 시작한다.
+    req.resume();
   });
 }
 

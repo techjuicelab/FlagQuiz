@@ -21,7 +21,7 @@ WORKDIR /app
 COPY --from=build /app/_site ./_site
 COPY data/countries.js ./data/countries.js
 COPY server ./server
-COPY scripts/backup-private-state.mjs scripts/verify-private-state.mjs scripts/check-private-state.mjs ./scripts/
+COPY scripts/backup-private-state.mjs scripts/verify-private-state.mjs scripts/check-private-state.mjs scripts/check-private-config.mjs ./scripts/
 ENV HOST=0.0.0.0 PORT=8090 STATE_DIR=/var/lib/flagquiz STATIC_ROOT=/app/_site
 LABEL deployed-by=forgejo-actions
 RUN mkdir -p /var/lib/flagquiz /var/backups/flagquiz \

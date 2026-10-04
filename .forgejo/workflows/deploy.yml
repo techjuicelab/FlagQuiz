@@ -33,16 +33,25 @@ jobs:
           trap cleanup EXIT
           printf '%s\n' "$APP_ENV_FILE" > "$ENV_FILE"
           docker build --pull --label "org.opencontainers.image.revision=$GITHUB_SHA" -t "$APP:$TAG" .
-          # 설정과 이미지 실행 오류는 기존 앱을 교체하기 전에 검사한다.
-          docker run --rm --network none --env-file "$ENV_FILE" --entrypoint node "$APP:$TAG" \
-            --input-type=module -e 'import {readConfig} from "./server/auth-server.mjs"; const c=readConfig(); if(!c.ready||!c.groqApiKey)process.exit(1); console.log("운영 설정 검사 통과");'
+          export APP TAG
+          cd deploy
+          # 실제 배포와 같은 Compose 해석을 쓰고, 비밀 JSON은 저장하거나 출력하지 않는다.
+          if ! docker compose -p "$APP" -f compose.prod.yml config --quiet 2>/dev/null; then
+            printf '운영 설정 검사 실패\n' >&2
+            exit 1
+          fi
+          if ! docker compose -p "$APP" -f compose.prod.yml config --format json 2>/dev/null | \
+            docker run --rm -i --network none --read-only --user 1000:1000 --cap-drop ALL \
+              --security-opt no-new-privileges:true \
+              --tmpfs /var/lib/flagquiz:rw,noexec,nosuid,size=1m,mode=0700,uid=1000,gid=1000 \
+              --entrypoint node "$APP:$TAG" --no-warnings scripts/check-private-config.mjs; then
+            printf '운영 설정 검사 실패\n' >&2
+            exit 1
+          fi
           OLD_IMAGE=$(docker ps -a --filter "label=com.docker.compose.project=$APP" \
             --filter "label=com.docker.compose.service=web" --filter "label=deployed-by=forgejo-actions" \
             --format '{{.Image}}')
           [[ -z "$OLD_IMAGE" || "$OLD_IMAGE" =~ ^flagquiz:[0-9a-f]{12}$ ]] || exit 1
-          export APP TAG
-          cd deploy
-          docker compose -p "$APP" -f compose.prod.yml config --quiet
           if docker volume inspect flagquiz-data >/dev/null 2>&1; then
             STATE_ARGS=(--directory /var/lib/flagquiz)
             if [[ -z "$OLD_IMAGE" ]]; then STATE_ARGS+=(--allow-empty); fi
@@ -64,6 +73,21 @@ jobs:
               fi
               export DEPLOYMENT_SHA
               docker compose -p "$APP" -f compose.prod.yml --profile operations run --rm --no-deps backup
+            fi
+          else
+            # 기존 앱의 데이터는 조회 실패를 빈 첫 배포로 해석하지 않는다.
+            if [[ -n "$OLD_IMAGE" ]]; then
+              printf '운영 데이터 볼륨 확인 실패\n' >&2
+              exit 1
+            fi
+            # 목록 조회도 성공하고 정확한 이름이 없을 때만 새 볼륨 생성을 허용한다.
+            if ! VOLUME_NAMES=$(docker volume ls --filter 'name=^flagquiz-data$' --format '{{.Name}}' 2>/dev/null); then
+              printf '운영 데이터 볼륨 확인 실패\n' >&2
+              exit 1
+            fi
+            if [[ -n "$VOLUME_NAMES" ]]; then
+              printf '운영 데이터 볼륨 확인 실패\n' >&2
+              exit 1
             fi
           fi
           if docker compose -p "$APP" -f compose.prod.yml up -d --wait --wait-timeout 120 web; then

@@ -1,0 +1,134 @@
+/* GitHub Pages에는 로그인 서버로 이동하는 진입 화면과 이전 PWA 정리만 배포한다. */
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+export const NAS_URL = 'https://flagquiz.techjuicelab.space/';
+
+function entryScript(scopePath) {
+  return `/* 이전 공개 앱 캐시만 정리하고 온라인이면 새 로그인 서버로 이동한다. */
+(function () {
+  var destination = ${JSON.stringify(NAS_URL)};
+  var scope = new URL(${JSON.stringify(scopePath)}, location.origin);
+  var status = document.getElementById('entry-status');
+  var moving = false;
+  function text(value) { if (status) status.textContent = value; }
+  function clearOwnedCaches() {
+    if (!('caches' in window)) return Promise.resolve();
+    return Promise.resolve().then(function () { return caches.keys(); }).then(function (names) {
+      return Promise.all(names.filter(function (name) { return name.indexOf('flagquiz-') === 0; })
+        .map(function (name) { return caches.delete(name); }));
+    }).catch(function () {});
+  }
+  var cleanup = clearOwnedCaches();
+  function updateWorker() {
+    if (!navigator.serviceWorker) return Promise.resolve();
+    return Promise.resolve().then(function () {
+      return navigator.serviceWorker.register(new URL('sw.js', scope).href,
+        { scope: scope.href, updateViaCache: 'none' });
+    }).then(function (registration) {
+      return typeof registration.update === 'function' ? registration.update() : null;
+    }).catch(function () {});
+  }
+  function go() {
+    if (moving) return;
+    if (navigator.onLine === false) {
+      text('인터넷에 연결되면 새 주소로 이동해요. 아래 버튼으로도 열 수 있어요.');
+      return;
+    }
+    moving = true;
+    text('새 세계 놀이 주소로 이동하고 있어요.');
+    var timer;
+    // 저장소나 워커 등록이 응답하지 않아도 새 주소로 이동할 수 있어야 한다.
+    Promise.race([Promise.all([cleanup, updateWorker()]), new Promise(function (resolve) {
+      timer = setTimeout(resolve, 1000);
+    })]).then(function () {
+      clearTimeout(timer);
+      if (navigator.onLine === false) {
+        moving = false;
+        text('인터넷에 연결되면 새 주소로 이동해요. 아래 버튼으로도 열 수 있어요.');
+      } else location.replace(destination);
+    });
+  }
+  window.addEventListener('online', go);
+  go();
+})();
+`;
+}
+
+function entryHtml(scopePath) {
+  return `<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex"><meta name="referrer" content="no-referrer"><base href="${scopePath}">
+<title>세계 놀이 새 주소</title>
+<style>body{margin:0;padding:24px;background:#f6f7ff;color:#20253f;font:18px/1.6 system-ui,sans-serif}main{box-sizing:border-box;max-width:580px;margin:12vh auto;padding:32px;background:white;border-radius:24px}h1{font-size:clamp(25px,5vw,34px);line-height:1.3}a{display:inline-block;margin-top:12px;padding:12px 20px;background:#5551cf;color:white;border-radius:12px;font-weight:700;text-decoration:none}a:focus-visible{outline:3px solid #20253f;outline-offset:4px}.small{font-size:15px;color:#535970}@media(max-width:480px){body{padding:16px}main{margin:6vh auto;padding:24px}}</style>
+<script src="entry.js" defer></script></head><body><main>
+<h1>세계 놀이 주소가 바뀌었어요</h1>
+<p id="entry-status" role="status" aria-live="polite">새 주소에서 기존 TechJuice ID 계정으로 로그인해 주세요.</p>
+<a href="${NAS_URL}">새 주소에서 놀이 시작하기</a>
+<p class="small">이전에 사용하던 아이디 또는 이메일과 같은 비밀번호를 사용해요.</p>
+<noscript><p>위 버튼을 누르면 새 세계 놀이로 이동해요.</p></noscript>
+</main></body></html>
+`;
+}
+
+function retiredWorker(html, script) {
+  return `/* 같은 sw.js 경로로 이전 공개 PWA를 교체한다. 앱·음원은 캐시하지 않는다. */
+var ENTRY_HTML = ${JSON.stringify(html)};
+var ENTRY_SCRIPT = ${JSON.stringify(script)};
+var scope = new URL(self.registration.scope);
+function owned(url) { return url.origin === scope.origin && url.pathname.indexOf(scope.pathname) === 0; }
+function clearOwnedCaches() {
+  return Promise.resolve().then(function () { return caches.keys(); }).then(function (names) {
+    return Promise.all(names.filter(function (name) { return name.indexOf('flagquiz-') === 0; })
+      .map(function (name) { return caches.delete(name); }));
+  }).catch(function () {});
+}
+self.addEventListener('install', function (event) { event.waitUntil(self.skipWaiting()); });
+self.addEventListener('activate', function (event) {
+  event.waitUntil(clearOwnedCaches().then(function () { return self.clients.claim(); }).catch(function () {})
+    // 별도 하위 SW가 제어하는 창은 같은 URL 범위라도 이동시키지 않는다.
+    .then(function () { return self.clients.matchAll({ type: 'window', includeUncontrolled: false }); })
+    .then(function (clients) {
+      return Promise.all(clients.filter(function (client) { return owned(new URL(client.url)); })
+        .map(function (client) { return client.navigate(scope.href).catch(function () {}); }));
+    }));
+});
+self.addEventListener('fetch', function (event) {
+  var request = event.request, url = new URL(request.url);
+  if (!owned(url)) return;
+  if (request.mode === 'navigate') {
+    event.respondWith(Promise.resolve(new Response(ENTRY_HTML,
+      { headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' } })));
+  } else if (request.method === 'GET' && url.pathname === new URL('entry.js', scope).pathname) {
+    event.respondWith(Promise.resolve(new Response(ENTRY_SCRIPT,
+      { headers: { 'Content-Type': 'application/javascript; charset=utf-8', 'Cache-Control': 'no-store' } })));
+  } else {
+    event.respondWith(Promise.resolve(new Response('세계 놀이는 새 주소에서 로그인해 주세요.',
+      { status: 410, headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' } })));
+  }
+});
+`;
+}
+
+export async function buildGithubEntry({ outputDirectory = path.join(root, '_site'), repository = process.env.GITHUB_REPOSITORY || 'techjuicelab/FlagQuiz' } = {}) {
+  if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repository)) throw new Error('GitHub repository 경로를 확인하세요.');
+  if (!path.isAbsolute(outputDirectory) || path.basename(outputDirectory) !== '_site') throw new Error('Pages 산출 경로는 절대 경로의 _site여야 합니다.');
+  const [owner, repo] = repository.split('/');
+  if (owner === '.' || owner === '..' || repo === '.' || repo === '..') throw new Error('GitHub repository 경로를 확인하세요.');
+  const scopePath = repo.toLowerCase() === owner.toLowerCase() + '.github.io' ? '/' : '/' + repo + '/';
+  const html = entryHtml(scopePath), script = entryScript(scopePath);
+  // 산출 폴더만 교체한다. 원본 게임 파일과 기존 앱·Docker 빌드 명령은 바꾸지 않는다.
+  await fs.rm(outputDirectory, { recursive: true, force: true });
+  await fs.mkdir(outputDirectory, { recursive: true });
+  const files = { 'index.html': html, '404.html': html, 'entry.js': script, 'sw.js': retiredWorker(html, script) };
+  await Promise.all(Object.entries(files).map(([name, content]) => fs.writeFile(path.join(outputDirectory, name), content)));
+  return { outputDirectory, destination: NAS_URL, files: Object.keys(files) };
+}
+
+if (process.argv[1] && await fs.realpath(path.resolve(process.argv[1])) === fileURLToPath(import.meta.url)) {
+  if (process.argv.length !== 2) throw new Error('이 스크립트에는 인자를 전달하지 않습니다.');
+  await buildGithubEntry();
+  console.log('GitHub Pages 진입 파일 준비 완료: NAS 로그인 주소로 이동');
+}

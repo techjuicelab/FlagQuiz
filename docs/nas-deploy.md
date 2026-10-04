@@ -4,7 +4,9 @@ Forgejo `techjuice/flagquiz`의 `main`을 NAS에 배포한다. 기존 GitHub `or
 
 2026-10-03 NAS 전체 이미지 `flagquiz:build-check`(`d2b366557e36`)의 빌드와 Compose 구성 검사를 완료했다. 로컬 Node 테스트 541개가 통과했고, NAS에서는 540개 통과·macOS 전용 이미지 도구 검사 1개 제외·실패 0개였다. 기존 통합 10,028개와 엄격 검사 36개도 NAS에서 통과했다. 문서 근거 파일이 빠진 검증용 사본은 엄격 검사에서 종료 코드 1로 차단되는 것을 확인했다.
 
-NAS의 격리 컨테이너에서 UID 1000·읽기 전용 루트·빈 볼륨 보호·권한 회수·재시작 후 사용량과 세대 보존·백업·별도 대상 복원을 확인했다. 이 검사는 임시 합성 데이터로 수행했으며 운영 데이터 볼륨과 실제 서비스는 생성하지 않았다. 1Password CLI 조회 시간 초과로 런타임 비밀 주입이 대기 중이다. Forgejo 배포 run·DNS/Cloudflare 경로·외부 실제 계정 로그인·마이크·운영 예약 백업은 아직 확인 전이다. 운영자는 아래 확인을 마친 뒤 배포 SHA와 성공 시각을 기록한다.
+NAS의 격리 컨테이너에서 UID 1000·읽기 전용 루트·빈 볼륨 보호·권한 회수·재시작 후 사용량과 세대 보존·백업·별도 대상 복원을 확인했다. 이 검사는 임시 합성 데이터로 수행했으며 운영 데이터 볼륨과 실제 서비스는 생성하지 않았다. 1Password 런타임 주입으로 비공개 Forgejo 저장소와 배포 secret `APP_ENV_FILE`을 등록했다. Forgejo 배포 run·DNS/Cloudflare 경로·외부 실제 계정 로그인·마이크·운영 예약 백업은 아직 확인 전이다. 운영자는 아래 확인을 마친 뒤 배포 SHA와 성공 시각을 기록한다.
+
+후속 통합 검사에서는 Node 테스트 563개·빌드·엄격 검사가 통과했다. dotenv 해석과 데이터 볼륨 조회 실패 보호를 보완했고, 로그인 확인 중 멈춘 WAV 요청을 파서에서 재개하도록 수정했다. 실제 로컬 HTTP·WAV 파서·사용량 저장·공급자 어댑터 연결 검사를 통과했으며 이 검사에서 외부 공급자는 가짜 응답만 사용했다. 이 후속 변경의 운영 이미지·실제 계정·실제 유료 경로 확인은 Forgejo 배포 뒤에 수행한다.
 
 ## 운영 계약
 
@@ -47,7 +49,9 @@ STATE_DIR=/var/lib/flagquiz
 
 NAS의 기존 `cloudflared`는 host network로 실행 중이다. 2026-10-03 `cf-web`의 격리 컨테이너에 loopback 포트로 접속해 실제 peer `172.21.0.1`을 확인했다. `TRUSTED_PROXY_IPS`는 정확한 IP만 지정하며, 일치하는 peer의 유효한 단일 `CF-Connecting-IP`만 방문자 제한에 사용한다. `X-Forwarded-For`는 신뢰하지 않는다. 직접 LAN 접속으로 헤더를 위조하지 못하도록 published port를 `127.0.0.1`에 한정한다. 네트워크·터널 실행 방식 변경 시 peer를 다시 측정하고 설정도 함께 변경한다.
 
-워크플로는 `umask 077`로 절대 경로의 `deploy/.env`를 만들고 EXIT trap으로 삭제한다. Compose의 `web.environment`가 필요한 값만 읽으며 `HOST`, `PORT`, `STATE_DIR`, `STATIC_ROOT`는 컨테이너 계약으로 고정한다. `config --quiet`를 사용해 환경 값을 출력하지 않는다. 운영 파일 시스템은 읽기 전용이고 쓰기는 데이터 볼륨과 임시 `/tmp`에 한정한다. 음성 녹음 파일은 영속 저장하지 않는다.
+워크플로는 `umask 077`로 절대 경로의 `deploy/.env`를 만들고 EXIT trap으로 삭제한다. Compose의 `web.environment`가 필요한 값만 읽으며 `HOST`, `PORT`, `STATE_DIR`, `STATIC_ROOT`는 컨테이너 계약으로 고정한다. `config --quiet` 검사 후 `config --format json` 결과를 격리 검사 컨테이너의 stdin으로만 전달한다. 따옴표가 있는 dotenv도 실제 배포와 같은 해석을 적용하며 비밀 값·Compose 오류 원문은 저장하거나 출력하지 않는다. 검사 컨테이너는 네트워크와 운영 볼륨을 사용하지 않는다. 운영 파일 시스템은 읽기 전용이고 쓰기는 데이터 볼륨과 임시 `/tmp`에 한정한다. 음성 녹음 파일은 영속 저장하지 않는다.
+
+GitHub Pages는 NAS 접속과 로그인 확인을 마친 뒤 진입 페이지로 전환한다. `scripts/build-github-entry.mjs`는 전체 앱 대신 NAS 링크와 이전 PWA 정리용 service worker만 배포한다. 기존 `flagquiz-*` 캐시는 삭제하고 해당 Pages scope의 열린 창은 새 진입 화면으로 이동한다. 학습 기록을 저장한 localStorage는 변경하지 않는다. 완전히 오프라인인 구버전 설치에는 온라인으로 돌아와 새 worker를 받을 때까지 이 전환을 전달할 수 없다. NAS의 앱·Docker 빌드는 기존 `npm run build`를 유지한다.
 
 ## 배포와 실패 복귀
 
