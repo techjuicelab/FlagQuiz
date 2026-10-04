@@ -6,6 +6,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomBytes, createHmac, timingSafeEqual } from 'node:crypto';
 import { createGoogleOidc, IdentityError } from './lib/google-oidc.mjs';
+import { createTechJuiceId, TechJuiceIdError } from './lib/techjuice-id.mjs';
 import { openAccessStore, AccessError } from './lib/access-store.mjs';
 
 const repository = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -16,15 +17,20 @@ const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; ch
   '.webp': 'image/webp', '.mp3': 'audio/mpeg', '.wav': 'audio/wav', '.ico': 'image/x-icon' };
 
 export function readConfig(env = process.env) {
-  for (const name of ['PUBLIC_ORIGIN', 'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'SESSION_SECRET', 'STATE_DIR', 'STATIC_ROOT', 'GROQ_API_KEY', 'HOST', 'PORT']) {
+  for (const name of ['PUBLIC_ORIGIN', 'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'SESSION_SECRET', 'STATE_DIR', 'STATIC_ROOT', 'GROQ_API_KEY', 'HOST', 'PORT', 'TJID_SUPABASE_URL', 'TJID_SUPABASE_ANON_KEY']) {
     if (typeof env[name] === 'string' && /^["']?\s*op:\/\//i.test(env[name].trim())) {
       throw new Error('Unresolved 1Password reference in ' + name + '; start with op run');
     }
   }
   const config = { publicOrigin: env.PUBLIC_ORIGIN || '', clientId: env.GOOGLE_CLIENT_ID || '', clientSecret: env.GOOGLE_CLIENT_SECRET || '',
     sessionSecret: env.SESSION_SECRET || '', stateDirectory: env.STATE_DIR || '', staticRoot: path.resolve(env.STATIC_ROOT || path.join(repository, '_site')),
-    groqApiKey: env.GROQ_API_KEY || '', port: Number(env.PORT || 8080), host: env.HOST || '127.0.0.1' };
-  config.ready = Boolean(config.publicOrigin && config.clientId && config.clientSecret && config.sessionSecret && config.stateDirectory);
+    groqApiKey: env.GROQ_API_KEY || '', port: Number(env.PORT || 8080), host: env.HOST || '127.0.0.1',
+    authProvider: env.AUTH_PROVIDER || (env.TJID_SUPABASE_URL ? 'techjuice-id' : 'google'),
+    supabaseUrl: env.TJID_SUPABASE_URL || '', anonKey: env.TJID_SUPABASE_ANON_KEY || '', appSlug: env.TJID_APP_SLUG || 'flagquiz',
+    googleEnabled: env.TJID_GOOGLE_ENABLED === 'true' };
+  if (!['google', 'techjuice-id'].includes(config.authProvider)) throw new Error('AUTH_PROVIDER is invalid');
+  const identityReady = config.authProvider === 'techjuice-id' ? Boolean(config.supabaseUrl && config.anonKey) : Boolean(config.clientId && config.clientSecret);
+  config.ready = Boolean(config.publicOrigin && identityReady && config.sessionSecret && config.stateDirectory);
   if (!config.ready) return config;
   let origin;
   try { origin = new URL(config.publicOrigin); } catch { throw new Error('PUBLIC_ORIGIN must be an absolute origin'); }
@@ -37,6 +43,9 @@ export function readConfig(env = process.env) {
   config.stateDirectory = path.resolve(config.stateDirectory);
   if (config.stateDirectory === config.staticRoot || config.stateDirectory.startsWith(config.staticRoot + path.sep)) throw new Error('STATE_DIR must be outside STATIC_ROOT');
   if (!Number.isInteger(config.port) || config.port < 0 || config.port > 65535) throw new Error('PORT is invalid');
+  if (config.authProvider === 'techjuice-id' && !createTechJuiceId({ supabaseUrl: config.supabaseUrl, anonKey: config.anonKey, appSlug: config.appSlug }).ready) {
+    throw new Error('TechJuice ID configuration is invalid');
+  }
   return config;
 }
 
@@ -74,7 +83,7 @@ function json(res, status, value) {
 function redirect(res, target) { res.writeHead(303, { Location: target }).end(); }
 function safeError(res, error) {
   if (error instanceof AccessError) return json(res, error.status, { error: error.code });
-  if (error instanceof IdentityError) return json(res, error.code === 'identity-unavailable' ? 503 : 401, { error: 'login-failed' });
+  if (error instanceof IdentityError || error instanceof TechJuiceIdError) return json(res, error.code === 'identity-unavailable' ? 503 : 401, { error: 'login-failed' });
   return json(res, 503, { error: 'service-unavailable' });
 }
 async function readJson(req) {
@@ -86,34 +95,67 @@ async function readJson(req) {
     if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error(); return value;
   } catch { throw new AccessError(400, 'invalid-json'); }
 }
-function loginPage(res, error) {
+async function readForm(req) {
+  if ((req.headers['content-type'] || '').split(';')[0].trim().toLowerCase() !== 'application/x-www-form-urlencoded') throw new AccessError(415, 'form-required');
+  const chunks = []; let size = 0;
+  for await (const chunk of req) { size += chunk.length; if (size > 8192) throw new AccessError(413, 'body-too-large'); chunks.push(chunk); }
+  const form = new URLSearchParams(Buffer.concat(chunks).toString('utf8'));
+  for (const key of ['identifier', 'password', 'csrf']) if (form.getAll(key).length !== 1) throw new AccessError(400, 'invalid-form');
+  return { identifier: form.get('identifier'), password: form.get('password'), csrf: form.get('csrf') };
+}
+function loginPage(res, error, config, formToken) {
   const messages = { denied: '등록된 이메일만 이용할 수 있어요. 관리자에게 이메일 등록을 요청해 주세요.',
     failed: '로그인을 완료하지 못했어요. 다시 시도해 주세요.', unavailable: '로그인 서비스 준비 중이에요. 잠시 뒤 다시 시도해 주세요.',
     'hosted-account-required': 'Gmail 또는 Google Workspace 계정으로 로그인해 주세요.' };
+  if (config.authProvider === 'techjuice-id') {
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }).end('<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>세계 놀이 · TechJuice ID 로그인</title>' +
+      '<style>body{margin:0;background:#f2f7ee;color:#243c2b;font-family:system-ui,sans-serif;display:grid;min-height:100dvh;place-items:center}main{box-sizing:border-box;background:#fff;border-radius:24px;padding:32px;width:min(92vw,440px);box-shadow:0 12px 40px #243c2b14}h1{margin-top:0}label{display:block;margin:20px 0 8px;font-weight:600}input,button{box-sizing:border-box;font:inherit;border-radius:12px;padding:13px;width:100%}input{border:1px solid #a9bba9}button{border:0;background:#397749;color:#fff;margin-top:24px;font-weight:700;cursor:pointer}a{color:#275f38}p{line-height:1.6}.hint{color:#536558;font-size:14px}input:focus-visible,button:focus-visible,a:focus-visible{outline:3px solid #df9e2e;outline-offset:3px}</style></head><body><main>' +
+      '<h1>세계 놀이</h1><p>기존 TechJuice ID로 로그인해 주세요.</p>' +
+      (!config.ready ? '<p role="status">로그인 서비스 준비 중이에요. 잠시 뒤 다시 시도해 주세요.</p>' :
+        '<form method="post" action="/api/auth/password"><input type="hidden" name="csrf" value="' + formToken + '">' +
+        '<label for="identifier">아이디 또는 이메일</label><input id="identifier" name="identifier" autocomplete="username" required maxlength="254" autocapitalize="none" spellcheck="false">' +
+        '<label for="password">비밀번호</label><input id="password" name="password" type="password" autocomplete="current-password" required maxlength="1024"><button type="submit">로그인</button></form>' +
+        (config.googleEnabled ? '<p><a href="/api/auth/login">Google 계정으로 로그인</a></p>' : '')) +
+      (error ? '<p role="status">' + (error === 'denied' ? '이 계정은 세계 놀이를 이용할 수 없어요. 관리자에게 문의해 주세요.' : '로그인하지 못했어요. 아이디와 비밀번호를 확인해 주세요.') + '</p>' : '') +
+      '<p class="hint">다른 TechJuice 앱에서 사용하는 계정과 같아요.<br>비밀번호를 잊으셨다면 관리자에게 문의해 주세요.</p></main><script src="/auth-cleanup.js" defer></script></body></html>');
+    return;
+  }
   res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }).end('<!doctype html><html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">' +
     '<title>세계 놀이 · 로그인</title><main><h1>세계 놀이</h1><p>등록된 Gmail 또는 Google Workspace 계정으로 로그인해 주세요.</p>' +
     (messages[error] ? '<p role="status">' + messages[error] + '</p>' : '') +
     '<a href="/api/auth/login">Google 계정으로 로그인</a></main><script src="/auth-cleanup.js" defer></script></html>');
 }
 
-export async function createAuthServer({ config = readConfig(), fetchImpl = fetch, clock = Date.now, oidc: injectedOidc, speechModule: injectedSpeech } = {}) {
+export async function createAuthServer({ config = readConfig(), fetchImpl = fetch, clock = Date.now, oidc: injectedOidc, techjuiceId: injectedTechjuiceId, speechModule: injectedSpeech } = {}) {
   const store = config.ready ? await openAccessStore({ directory: config.stateDirectory, clock }) : null;
   const staticRoot = await fs.realpath(config.staticRoot).catch(() => config.staticRoot);
   if (store) {
     const stateRoot = await fs.realpath(config.stateDirectory);
     if (stateRoot === staticRoot || stateRoot.startsWith(staticRoot + path.sep)) { await store.close(); throw new Error('STATE_DIR must be outside STATIC_ROOT'); }
   }
-  const oidc = config.ready ? injectedOidc || createGoogleOidc({ clientId: config.clientId, clientSecret: config.clientSecret,
+  const tjid = config.ready && config.authProvider === 'techjuice-id' ? injectedTechjuiceId || createTechJuiceId({ supabaseUrl: config.supabaseUrl, anonKey: config.anonKey, appSlug: config.appSlug, fetchImpl, clock }) : null;
+  const oidc = config.ready && !tjid ? injectedOidc || createGoogleOidc({ clientId: config.clientId, clientSecret: config.clientSecret,
     redirectUri: config.publicOrigin + '/api/auth/callback', fetchImpl, clock }) : null;
   let speech = injectedSpeech, transcribe = null;
-  const pending = new Map(), rates = new Map(), speechUsers = new Set(); let activeSpeech = 0;
+  const pending = new Map(), rates = new Map(), speechUsers = new Set(), centralStates = new Map(); let activeSpeech = 0;
   function csrf(session) { return createHmac('sha256', config.sessionSecret).update('csrf.' + session.id).digest('base64url'); }
-  function sessionOf(req) {
+  async function sessionOf(req, fresh = false) {
     if (!store) return null;
     const data = unsign(cookies(req).get(COOKIE), 'session', config.sessionSecret);
-    return data && typeof data.id === 'string' && Number.isInteger(data.exp) && data.exp > clock() ? store.session(data.id) : null;
+    const session = data && typeof data.id === 'string' && Number.isInteger(data.exp) && data.exp > clock() ? store.session(data.id) : null;
+    if (!session || !tjid) return session;
+    let cached = centralStates.get(session.sub);
+    if (fresh || !cached || cached.until <= clock()) {
+      const state = await tjid.sessionState(session.sub);
+      if (!state) throw new AccessError(503, 'identity-unavailable');
+      cached = { state, until: clock() + 60000 };
+      if (centralStates.size >= 1000) for (const [sub, item] of centralStates) if (item.until <= clock()) centralStates.delete(sub);
+      if (centralStates.size < 1000 || centralStates.has(session.sub)) centralStates.set(session.sub, cached);
+    }
+    if (cached.state.disabled || cached.state.gen !== session.generation) { await store.revokeSession(session.id); return null; }
+    return store.session(session.id);
   }
-  function authorized(req) { const session = sessionOf(req); if (!session) throw new AccessError(401, 'login-required'); return session; }
+  async function authorized(req, fresh = false) { const session = await sessionOf(req, fresh); if (!session) throw new AccessError(401, 'login-required'); return session; }
   function sameOrigin(req, session) {
     if (req.headers.origin !== config.publicOrigin || !equal(req.headers['x-csrf-token'], csrf(session))) throw new AccessError(403, 'request-not-allowed');
     if (req.headers['sec-fetch-site'] && req.headers['sec-fetch-site'] !== 'same-origin') throw new AccessError(403, 'request-not-allowed');
@@ -128,7 +170,7 @@ export async function createAuthServer({ config = readConfig(), fetchImpl = fetc
   }
   async function staticFile(req, res, pathname) {
     if (!['GET', 'HEAD'].includes(req.method)) throw new AccessError(405, 'method-not-allowed');
-    if (!sessionOf(req)) {
+    if (!(await sessionOf(req))) {
       if (pathname === '/' || pathname === '/index.html') return redirect(res, '/login');
       throw new AccessError(401, 'login-required');
     }
@@ -169,7 +211,9 @@ export async function createAuthServer({ config = readConfig(), fetchImpl = fetc
       speech ||= await import('./speech.mjs');
       transcribe ||= speech.createTranscriber({ apiKey: config.groqApiKey, fetchImpl });
       const input = await speech.readSpeechInput(req, { signal: abort.signal });
-      const quota = await store.consumeSpeechQuota(session);
+      const current = tjid ? await authorized(req, true) : session;
+      if (current.id !== session.id) throw new AccessError(401, 'login-required');
+      const quota = await store.consumeSpeechQuota(current);
       const result = await transcribe(input, { signal: abort.signal });
       json(res, 200, { text: result.text, playerId: input.playerId, turnId: input.turnId, quota: { dailyUsed: quota.dailyUsed, dailyLimit: quota.dailyLimit } });
     } catch (error) {
@@ -191,22 +235,49 @@ export async function createAuthServer({ config = readConfig(), fetchImpl = fetc
       res.writeHead(200, { 'Content-Type': 'text/javascript; charset=utf-8', 'Content-Length': bytes.length });
       return res.end(req.method === 'HEAD' ? undefined : bytes);
     }
-    if (pathname === '/login' && req.method === 'GET') return loginPage(res, url.searchParams.get('error'));
+    if (pathname === '/login' && req.method === 'GET') {
+      const token = randomBytes(32).toString('base64url');
+      if (config.ready && tjid) res.setHeader('Set-Cookie', cookie(LOGIN_COOKIE, sign({ form: token, exp: clock() + LOGIN_MS }, 'login', config.sessionSecret), config, LOGIN_MS));
+      return loginPage(res, url.searchParams.get('error'), config, token);
+    }
+    if (pathname === '/api/auth/password' && req.method === 'POST') {
+      if (!tjid) throw new AccessError(503, 'auth-not-configured');
+      if (req.headers.origin !== config.publicOrigin || (req.headers['sec-fetch-site'] && req.headers['sec-fetch-site'] !== 'same-origin')) throw new AccessError(403, 'request-not-allowed');
+      rate('password:' + req.socket.remoteAddress, 30, 5 * 60 * 1000);
+      const form = await readForm(req);
+      const data = unsign(cookies(req).get(LOGIN_COOKIE), 'login', config.sessionSecret);
+      if (!data || !Number.isInteger(data.exp) || data.exp <= clock() || !equal(data.form, form.csrf)) throw new AccessError(403, 'invalid-login-state');
+      rate('account:' + createHmac('sha256', config.sessionSecret).update(form.identifier.trim().toLowerCase()).digest('hex'), 10, 5 * 60 * 1000);
+      res.setHeader('Set-Cookie', cookie(LOGIN_COOKIE, '', config));
+      const identity = await tjid.passwordGrant(form.identifier, form.password);
+      if (!identity) return redirect(res, '/login?error=failed');
+      const lifetime = Math.min(SESSION_MS, identity.expiresAt - clock());
+      if (!Number.isInteger(lifetime) || lifetime <= 0) return redirect(res, '/login?error=failed');
+      try {
+        const session = await store.createSession(identity, lifetime, { trustedCentralIdentity: true });
+        res.setHeader('Set-Cookie', [cookie(LOGIN_COOKIE, '', config), cookie(COOKIE, sign({ id: session.id, exp: session.expiresAt }, 'session', config.sessionSecret), config, lifetime)]);
+        return redirect(res, '/');
+      } catch (error) {
+        if (error instanceof AccessError && error.status === 403) return redirect(res, '/login?error=denied');
+        throw error;
+      }
+    }
     if (pathname === '/api/auth/session' && req.method === 'GET') {
-      const session = sessionOf(req);
+      const session = await sessionOf(req);
       return json(res, 200, session ? { authenticated: true, email: session.email, role: session.role, csrfToken: csrf(session), expiresAt: session.expiresAt }
         : { authenticated: false, configured: config.ready });
     }
     if (pathname === '/api/auth/login' && req.method === 'GET') {
       if (!config.ready) throw new AccessError(503, 'auth-not-configured');
       if (req.headers['sec-fetch-site'] === 'cross-site') throw new AccessError(403, 'request-not-allowed');
+      if (tjid && !config.googleEnabled) return redirect(res, '/login');
       rate('login:' + req.socket.remoteAddress, 10, 5 * 60 * 1000);
       for (const [id, data] of pending) if (data.expiresAt <= clock()) pending.delete(id);
       if (pending.size >= 1000) throw new AccessError(429, 'request-limit');
       const state = randomBytes(32).toString('base64url'), nonce = randomBytes(32).toString('base64url'), verifier = randomBytes(32).toString('base64url');
       pending.set(state, { nonce, verifier, expiresAt: clock() + LOGIN_MS });
       res.setHeader('Set-Cookie', cookie(LOGIN_COOKIE, sign({ state }, 'login', config.sessionSecret), config, LOGIN_MS));
-      return redirect(res, oidc.authorizationUrl({ state, nonce, verifier }));
+      return redirect(res, tjid ? tjid.authorizationUrl({ state, verifier, redirectUri: config.publicOrigin + '/api/auth/callback' }) : oidc.authorizationUrl({ state, nonce, verifier }));
     }
     if (pathname === '/api/auth/callback' && req.method === 'GET') {
       if (!config.ready) throw new AccessError(503, 'auth-not-configured');
@@ -217,9 +288,12 @@ export async function createAuthServer({ config = readConfig(), fetchImpl = fetc
       pending.delete(state);
       if (url.searchParams.has('error')) return redirect(res, '/login?error=failed');
       try {
-        const identity = await oidc.exchangeCode({ code: url.searchParams.get('code'), nonce: attempt.nonce, verifier: attempt.verifier });
-        const session = await store.createSession(identity, SESSION_MS);
-        res.setHeader('Set-Cookie', [cookie(LOGIN_COOKIE, '', config), cookie(COOKIE, sign({ id: session.id, exp: session.expiresAt }, 'session', config.sessionSecret), config, SESSION_MS)]);
+        const identity = tjid ? await tjid.exchangeCode({ code: url.searchParams.get('code'), verifier: attempt.verifier }) : await oidc.exchangeCode({ code: url.searchParams.get('code'), nonce: attempt.nonce, verifier: attempt.verifier });
+        if (!identity) throw new IdentityError('invalid-token');
+        const lifetime = tjid ? Math.min(SESSION_MS, identity.expiresAt - clock()) : SESSION_MS;
+        if (!Number.isInteger(lifetime) || lifetime <= 0) throw new IdentityError('expired-token');
+        const session = await store.createSession(identity, lifetime, { trustedCentralIdentity: Boolean(tjid) });
+        res.setHeader('Set-Cookie', [cookie(LOGIN_COOKIE, '', config), cookie(COOKIE, sign({ id: session.id, exp: session.expiresAt }, 'session', config.sessionSecret), config, lifetime)]);
         return redirect(res, '/');
       } catch (error) {
         if (error instanceof AccessError && error.status === 403) return redirect(res, '/login?error=denied');
@@ -229,23 +303,28 @@ export async function createAuthServer({ config = readConfig(), fetchImpl = fetc
       }
     }
     if (pathname === '/api/auth/logout' && req.method === 'POST') {
-      const session = authorized(req); sameOrigin(req, session); await store.revokeSession(session.id);
+      const session = await authorized(req); sameOrigin(req, session); await store.revokeSession(session.id);
       res.setHeader('Set-Cookie', cookie(COOKIE, '', config)); res.setHeader('Clear-Site-Data', '"cache"'); return json(res, 200, { ok: true });
     }
     if (pathname === '/api/admin/allowlist') {
-      const session = authorized(req); if (session.role !== 'superadmin') throw new AccessError(403, 'admin-required');
+      const session = await authorized(req, true); if (session.role !== 'superadmin') throw new AccessError(403, 'admin-required');
       if (req.method === 'GET') return json(res, 200, { members: store.list() });
       if (!['POST', 'DELETE'].includes(req.method)) throw new AccessError(405, 'method-not-allowed');
       sameOrigin(req, session); rate('admin:' + session.id, 30, 60 * 1000);
       const body = await readJson(req);
-      const result = req.method === 'POST' ? await store.add(body.email, session) : await store.remove(body.email, session);
+      const resolvedEmail = tjid && body.identifier ? await tjid.resolveIdentifier(body.identifier) : body.email || body.identifier;
+      const result = req.method === 'POST' ? await store.add(resolvedEmail, session) : await store.remove(resolvedEmail, session);
       return json(res, 200, result);
     }
-    if (pathname === '/api/speech' && req.method === 'POST') return speechRequest(req, res, authorized(req));
+    if (pathname === '/api/speech' && req.method === 'POST') return speechRequest(req, res, await authorized(req));
     if (pathname.startsWith('/api/')) throw new AccessError(404, 'not-found');
     return staticFile(req, res, pathname);
   }
-  const server = http.createServer((req, res) => { handle(req, res).catch(error => { if (res.headersSent) res.destroy(); else safeError(res, error); }); });
+  const server = http.createServer((req, res) => {
+    // 중앙 인증을 기다리는 동안 요청 본문이 먼저 소비되지 않도록 유지한다.
+    req.pause();
+    handle(req, res).catch(error => { if (res.headersSent) res.destroy(); else safeError(res, error); });
+  });
   server.requestTimeout = 15000; server.headersTimeout = 10000;
   return { server, store, config, async close() { await new Promise(resolve => server.close(resolve)); await store?.close(); } };
 }

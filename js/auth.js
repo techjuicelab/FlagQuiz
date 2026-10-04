@@ -43,9 +43,9 @@
     timer = null;
     var ui = FQ.ui, local = ['localhost', '127.0.0.1', '[::1]'].indexOf((global.location || {}).hostname) >= 0;
     ui.setMain('<section class="screen card auth-gate"><h2>초대받은 가족만 함께 놀아요</h2>' +
-      '<p role="status">' + ui.esc(message || '등록된 이메일의 Google 계정으로 로그인해 주세요.') + '</p>' +
-      '<a class="btn btn-primary" href="/api/auth/login">Google 계정으로 로그인</a>' +
-      '<p class="small muted">등록되지 않은 계정은 접속할 수 없어요.</p>' +
+      '<p role="status">' + ui.esc(message || '기존 TechJuice ID로 로그인해 주세요.') + '</p>' +
+      '<a class="btn btn-primary" href="/login">TechJuice ID로 로그인</a>' +
+      '<p class="small muted">세계 놀이 권한이 있는 TechJuice ID만 접속할 수 있어요.</p>' +
       (local ? '<p class="small muted"><a href="?preview=1">개발 미리보기 열기</a> · 로그인과 음성 API는 연결되지 않아요.</p>' : '') + '</section>');
   }
   function refresh(initial) {
@@ -99,12 +99,12 @@
     var host = ui.setMain('<section class="screen account-screen"><div class="screen-heading"><h2>가족 계정</h2>' +
       '<button class="btn btn-sm btn-ghost" id="account-home" type="button">놀이로</button></div>' +
       '<div class="card"><p><b>' + ui.esc(session.email) + '</b></p><p class="small muted">' +
-      (admin ? 'SuperAdmin · 초대 이메일을 관리할 수 있어요.' : '초대받은 가족 계정이에요.') + '</p>' +
+      (admin ? 'SuperAdmin · 초대 이메일을 관리할 수 있어요.' : 'TechJuice ID로 로그인한 가족 계정이에요.') + '</p>' +
       '<button class="btn btn-sm" id="account-logout" type="button">로그아웃</button></div>' +
-      (admin ? '<section class="card"><h3>접속할 수 있는 이메일</h3><form id="allowlist-form" class="allowlist-form">' +
-        '<label for="allowlist-email">초대할 이메일</label><input id="allowlist-email" type="email" autocomplete="email" required maxlength="254">' +
+      (admin ? '<section class="card"><h3>세계 놀이 계정 접근</h3><form id="allowlist-form" class="allowlist-form">' +
+        '<label for="allowlist-email">아이디 또는 이메일</label><input id="allowlist-email" type="text" autocomplete="username" required maxlength="254">' +
         '<button class="btn btn-primary" type="submit">추가하기</button></form>' +
-        '<p class="small muted">추가한 이메일의 Gmail 또는 Google Workspace 계정만 로그인할 수 있어요.</p><p id="allowlist-status" role="status"></p>' +
+        '<p class="small muted">기존 TechJuice ID의 세계 놀이 접근을 관리해요.</p><p id="allowlist-status" role="status"></p>' +
         '<ul id="allowlist-members" class="allowlist-members"></ul></section>' : '') + '</section>');
     ui.$('#account-home', host).addEventListener('click', options.onHome);
     ui.$('#account-logout', host).addEventListener('click', function () {
@@ -132,7 +132,7 @@
       if (busy) return;
       busy = true;
       status.textContent = '변경하고 있어요…';
-      api('/api/admin/allowlist', { method: method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email }) })
+      api('/api/admin/allowlist', { method: method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(method === 'POST' ? { identifier: email } : { email: email }) })
         .then(function () {
           if (!current()) return;
           ui.$('#allowlist-email', host).value = '';

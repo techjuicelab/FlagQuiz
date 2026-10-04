@@ -41,7 +41,7 @@ test('미인증·응답실패에는 모든 놀이가 잠기고 preview 쿼리도
     assert.equal(f.ready.length, 0);
     assert.equal(f.nodes['nav-home'].disabled, true);
     assert.equal(f.FQ.auth.session(), null);
-    assert.match(f.html.at(-1), /Google 계정으로 로그인/);
+    assert.match(f.html.at(-1), /TechJuice ID로 로그인/);
     assert.doesNotMatch(f.html.at(-1), /개발 미리보기 열기/);
   }
 });
@@ -72,7 +72,7 @@ test('관리자 이메일을 썼더라도 서버의 일반 사용자 역할이�
   await f.start();
   f.FQ.auth.account({ onHome() {} });
   assert.doesNotMatch(f.html.at(-1), /allowlist-form/);
-  assert.match(f.html.at(-1), /초대받은 가족 계정/);
+  assert.match(f.html.at(-1), /TechJuice ID로 로그인한 가족 계정/);
 });
 
 test('변경 요청은 현재 서버 세션 CSRF 토큰을 사용하고 화면에 이메일 HTML을 실행하지 않는다', async () => {

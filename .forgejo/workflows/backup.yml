@@ -1,0 +1,33 @@
+name: NAS 세계 놀이 데이터 백업
+
+on:
+  schedule:
+    - cron: '30 19 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: flagquiz-nas
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: deploy
+    steps:
+      - uses: actions/checkout@v4
+      - name: 비밀 없이 데이터 백업 및 별도 복원 검사
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$GITHUB_REF" == refs/heads/main ]] || exit 1
+          APP=${GITHUB_REPOSITORY##*/}
+          [[ "$APP" == flagquiz ]] || exit 1
+          TAG=latest
+          export APP TAG
+          docker image inspect "$APP:$TAG" >/dev/null
+          docker volume inspect flagquiz-data >/dev/null
+          DEPLOYMENT_SHA=$(docker image inspect --format '{{index .Config.Labels "org.opencontainers.image.revision"}}' "$APP:$TAG")
+          [[ "$DEPLOYMENT_SHA" =~ ^[0-9a-f]{40}$ ]] || exit 1
+          export DEPLOYMENT_SHA
+          cd deploy
+          docker compose -p "$APP" -f compose.prod.yml --profile operations \
+            run --rm --no-deps backup

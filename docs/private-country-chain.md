@@ -1,6 +1,6 @@
 # 나라 이어 말하기와 가족 인증 설계
 
-2026-10-03 기준 구현은 FlagQuiz 저장소에 적용했다. 요청에 등장한 `OpenNoType`가 별도 서비스인지 앱 이름인지 확인 중이며, 다른 저장소와 운영 서비스는 변경하지 않았다. 사용자 상호작용은 **현재 차례인 한 사람이 말하기**로 구현했다. 두 사람이 동시에 대화할 때 목소리만으로 A/B를 구분하는 기능은 포함하지 않는다.
+2026-10-03 기준 FlagQuiz에 나라 이어 말하기와 비공개 서버를 구현했다. 로그인은 기존 TechJuiceID의 아이디 또는 이메일·같은 비밀번호를 사용한다. 중앙 `flagquiz` 앱을 ‘세계 놀이’로 등록하고 기존 활성 계정 17개 모두에 앱 권한을 부여했다(`user` 16개, 기존 TECH 관리자 1개). 비활성·익명 계정은 제외했고 다른 앱 설정은 변경하지 않았다. 현재 차례인 한 사람이 말하고 다음 사람에게 넘긴다. 두 사람이 동시에 말할 때 목소리만으로 화자를 구분하는 기능은 포함하지 않는다.
 
 ## 놀이 흐름
 
@@ -16,43 +16,51 @@
 
 ```mermaid
 flowchart LR
-  P[가족의 브라우저] -->|Google 로그인| G[Google 계정]
-  G -->|code와 ID token 검증| S[비공개 Node 서버]
-  S --> A[허용 이메일과 세션]
+  P[가족의 브라우저] -->|기존 아이디 또는 이메일·비밀번호| S[비공개 FlagQuiz Node 서버]
+  S -->|중앙 계정 인증| I[TechJuiceID]
+  I -->|JWT와 계정 상태| S
+  S -->|검증 후 자동 등록| A[로컬 허용 목록·세션·차단 기록]
   S -->|인가된 요청만| W[앱과 정적 음원]
   P -->|현재 차례의 짧은 녹음| S
-  S -->|길이와 사용량 검사 후 STT| O[Groq 음성 전사]
-  O -->|인식한 나라 이름| S
+  S -->|길이·중앙 상태·사용량 검사 후 STT| G[Groq 음성 전사]
+  G -->|인식한 나라 이름| S
   S --> P
 ```
 
-STT는 음성을 글자로 인식하고 TTS는 글을 읽어 준다. 두 사람의 차례는 게임 상태로 구분하므로 현재 구현에서는 STT에 화자 분리를 요청하지 않는다. 나라 이름 TTS는 기존 정적 음원을 재사용한다. 가성비 기본 전사는 Groq의 `whisper-large-v3-turbo`로 연결하고 짧은 한국어·나라 이름 맞춤법 힌트를 사용한다. 요청당 최소 10초 과금, 시간당 $0.04이므로 현재 월 3,000회·회당 최대 12초 한도에서 전사 요금은 약 $0.40 이하로 계산된다(무료 크레딧·세금 제외, 2026-10-03 공식 요금 기준). 기존 대한민국 Sua 음원 1.41초를 실제 API로 한 번 전사해 게임의 나라 판정까지 성공했다. 실제 어린이 발화 정확도는 아직 검증하지 않았다. [Groq 공식 음성 전사·요금](https://console.groq.com/docs/speech-to-text).
+STT는 음성을 글자로 인식하고 TTS는 글을 읽어 준다. 두 사람의 차례는 게임 상태로 구분하며 STT에 화자 분리를 요청하지 않는다. 나라 이름 TTS는 기존 정적 음원을 재사용한다. 전사는 Groq `whisper-large-v3-turbo`, 한국어 `ko`와 짧은 나라 이름 맞춤법 힌트를 사용한다. 요청당 최소 10초·시간당 $0.04이므로 월 3,000회·회당 최대 12초 한도에서 전사 요금은 약 $0.40 이하로 계산된다(무료 크레딧·세금 제외, 2026-10-03 기준). 기존 대한민국 Sua 음원 1.41초를 실제 API로 한 번 전사해 게임의 나라 판정까지 성공했다. 실제 어린이 발화 정확도는 아직 검증하지 않았다. [Groq 공식 음성 전사·요금](https://console.groq.com/docs/speech-to-text).
 
-최초 구현의 OpenAI `gpt-4o-mini-transcribe`는 2027-02-26 종료 예정이어서 새 기본값에서 교체했다. [공식 종료 안내](https://developers.openai.com/api/docs/deprecations).
+## 계정과 접근 제한
 
-## 접근과 비용 제한
+- 기존 TechJuiceID의 비밀번호를 사용하고 FlagQuiz에 비밀번호를 추가 저장하지 않는다. 기존 7개 앱과 같은 계정을 쓰지만 세션 쿠키를 공유하거나 복사하지 않는다. 중앙 인증에는 공개/anon client key를 사용하며 runtime service-role key를 사용하지 않는다.
+- 서버가 중앙 native JWKS로 JWT 서명을 검증하고 issuer·audience·만료·인증된 비익명 role·`tj` 앱 권한·disabled를 확인한다. 중앙 최고 관리자가 아니면 `flagquiz`의 `admin`, `tester`, `user` 권한이 필요하다. 브라우저의 이메일·역할 입력으로 권한을 부여하지 않는다.
+- 중앙 검증을 통과한 계정은 로컬에 자동 등록하고 `sub`를 고정한다. 기존 활성 계정 전체의 중앙 앱 권한 부여는 완료했다. 아이디 계정의 합성 이메일도 중앙 계정 식별자로 받으며 Gmail/Workspace 전용 제한을 적용하지 않는다.
+- `techjuicelab@gmail.com`은 변경·삭제 불가능한 로컬 SuperAdmin이다. 이 계정만 아이디 또는 이메일을 등록·해제한다. 해제하면 기존 세션을 즉시 지우고 차단 기록을 남겨 중앙 계정의 자동 재등록을 막는다. 다시 추가하면 차단을 해제한다. 다른 중앙 관리자는 이 로컬 관리 권한을 자동으로 얻지 않는다.
+- FlagQuiz는 HttpOnly·SameSite=Lax·HTTPS Secure·host-only 세션 쿠키를 발급한다. 만료는 중앙 JWT 만료와 8시간 중 빠른 시점이며 보통 중앙 토큰 수명인 1시간을 넘지 않는다. 중앙 token/refresh token은 쿠키와 영속 저장소에 복사하지 않는다.
+- 로컬 허용 목록·세션은 매 요청 확인한다. 중앙 disabled·session generation은 기본 60초 캐시로 확인하고 관리 API와 유료 호출 직전에는 최신 상태를 조회한다. 중앙 계정 상태 조회가 실패하면 해당 접근을 닫고, 비활성화·generation 변경이면 세션을 폐기한다. 변경 요청은 같은 Origin과 CSRF 토큰을 요구한다.
+- 기본은 `AUTH_PROVIDER=techjuice-id`, `TJID_GOOGLE_ENABLED=false`다. Google 버튼은 중앙 Google 로그인 실제 검증 전까지 비활성화한다. 앱별 Google client secret이나 Google Cloud callback 추가는 현재 비밀번호 로그인에 필요하지 않다.
 
-- 브라우저가 제공한 이메일·역할을 권한으로 사용하지 않는다. Google의 서명과 대상 client, 만료, nonce, verified email을 서버에서 확인한다. 초기 이메일 소유권은 Gmail 또는 검증된 Google Workspace 계정만 수용한다.
-- `techjuicelab@gmail.com`은 고정 SuperAdmin이다. 실제 검증된 Google 계정에 연결한 후 관리자만 허용 이메일을 등록·해제한다. 메일 주소 대소문자는 구분하지 않는다. 관리자 지정과 삭제 금지는 서버 정책이다.
-- 앱·음원·API는 서버 세션과 현재 허용 목록을 통과해야 제공한다. 인증 쿠키는 HttpOnly·SameSite이며 HTTPS에서는 Secure다. 변경 요청은 같은 Origin과 CSRF 토큰을 요구한다.
-- 원본 녹음을 디스크에 저장하지 않는다. 브라우저에서 16kHz 단일 채널 WAV로 바꿔 보내고 서버가 실제 표본 수로 최대 12초를 검증한다.
-- 사용자당 하루 120회, 서비스 전체 월 3,000회, 사용자당 동시에 1회·전체 동시에 4회를 제한한다. 유료 호출 전에 영속 사용량을 예약하며 실패·취소를 자동 재시도하지 않는다. 이 한도는 최악의 경우 전체 월 600분의 전사 분량에 해당한다.
-- API 키·OAuth secret·세션 서명 키는 1Password에서 서버 실행 시 주입한다. `env/private.op.env`의 Google OAuth는 기존 `Private` 항목을 ID 기반 참조로 재사용한다. `FlagQuiz Private` 항목과 세션 서명 키는 생성했으며 Groq 키도 기존 `AI Automation` 항목을 재사용한다. 운영 주소·저장 경로는 등록이 남아 있다.
-- 서버 상태는 앱 정적 폴더 밖의 영속 디스크에 저장한다. SQLite OS 잠금으로 단일 서버를 보장하고 원자적 저장·손상 시 접근 차단을 사용한다.
+## 음성과 저장·백업
 
-## 운영 전환
+원본 녹음을 디스크에 저장하지 않는다. 브라우저가 16kHz·16bit·단일 채널 WAV로 바꿔 보내면 서버가 실제 표본 수로 최대 12초·2MiB를 검증한다. 사용량은 사용자당 UTC 하루 120회, 서비스 전체 UTC 월 3,000회이며 사용자당 동시에 한 요청·전체 네 요청을 허용한다. 유료 호출 전 영속 사용량을 예약하고 실패·취소를 자동 재시도하거나 환불하지 않는다. 최고 관리자도 같은 한도다.
 
-현재 GitHub Pages는 이전 공개 버전을 계속 제공한다. 새 서버의 실제 로그인과 음성 API 연결이 확인된 뒤 공개 Pages를 종료하거나 보호된 새 주소로 안내해야 전체 접근 제한 전환이 완료된다. 정적 GitHub Pages에 로그인 UI만 추가해 유료 API와 앱 전체가 보호됐다고 간주하지 않는다.
+세션 서명 키와 Groq 키는 1Password에서 서버 실행 시 주입한다. `env/private.op.env`는 중앙 연결·세션·Groq의 기존 참조를 사용하며 공개 설정 `PUBLIC_ORIGIN=https://flagquiz.techjuicelab.space`, `STATE_DIR=/var/lib/flagquiz`를 명시한다. 빈 1Password 운영 주소·저장 경로 필드를 채울 필요는 없다. 실제 런타임 주입 검사는 대기 중이며 미해결 `op://` 참조가 남으면 서버 시작을 거절한다. 허용 목록·중앙 계정 연결·차단 기록·세션 generation·사용량은 `_site` 밖의 `access.json`에 저장한다. 원자적 저장·손상 시 접근 차단을 적용하고 SQLite OS guard로 같은 저장 경로의 서버 한 프로세스만 허용한다.
 
-1. 사용할 서버와 HTTPS origin을 정한다. Node 24와 영속 volume을 사용한다. Dockerfile은 이 배포를 위한 구성이고 실제 container build/run은 Docker daemon이 없어 확인하지 못했다.
-2. 기존 Google Cloud 웹 OAuth client의 redirect URI 목록에 `PUBLIC_ORIGIN/api/auth/callback`을 추가하고 기존 앱의 URI는 유지한다. Google ID·Secret은 기존 1Password 항목을 재사용하며 복사·회전하지 않는다. Groq API 키도 기존 항목을 참조한다. `FlagQuiz Private`에 `public_origin`, `state_directory`를 설정하고 생성한 `session_secret`을 유지한다. 저장 경로는 절대 경로다.
-3. `npm run build`, `npm run start:private`로 실행한다. 서버가 `/health`에 `configured:true`를 반환해야 한다.
-4. 실제 SuperAdmin Google 계정으로 로그인하고 가족 이메일을 등록한다. 일반 사용자 접속, 해제한 사용자 재접속 차단, 관리자 권한 제한을 운영 주소에서 확인한다.
-5. 아이의 짧은 발화를 실제 API로 확인한다. 한 번의 시작으로 두 사람이 번갈아 이어갈 수 있는지, 지연·중복·읽어주기·수동 입력·마이크 종료를 iPhone/iPad에서 확인한다.
-6. 공개 주소와 기존 홈 화면 설치의 전환을 처리한다. 새 보호된 서버는 오프라인 앱 복사본을 저장하지 않으며, 해당 앱의 기존 캐시만 정리한다. 이미 열린 화면의 기록과 학습 localStorage는 삭제하지 않는다.
+NAS 상태는 `flagquiz-data` volume의 `/var/lib/flagquiz`에 두고 UID/GID `1000:1000`이 관리한다. 상태·백업 파일은 0600, 디렉터리는 0700이다. 별도 백업 작업은 상태 volume을 읽기 전용으로 열고 `flagquiz-backups`의 `/var/backups/flagquiz`에 저장한다. 로그인·Groq 키를 백업에 전달하지 않는다. 일간 14개·일요일 주간 8개·매월 1일 월간 12개를 유지하며, 매 snapshot을 별도 임시 대상에 복원하여 실제 새 프로세스 재시작·쓰기·잠금을 검사한 후 보관한다. 암호화된 NAS 외부 사본은 아직 설정하지 않았다.
 
-## 검증 범위
+## 운영 전환과 현재 확인 상태
 
-실제 HTTP, RSA 서명 검증, 권한·CSRF·만료·해제, 동일 저장소 동시 실행 방지, SIGKILL 복구, 사용량 원자적 예약, 게임과 클라우드 어댑터 연결을 자동 검사했다. 모바일 Chromium에서 네 나라 기록·한국/대한민국 중복·지도 중심 이동·가로 화면 넘침을 확인했다. 미설정 서버는 앱 JavaScript와 음성 API에 401을 반환하고 로그인 화면으로 이동하는 것을 브라우저에서 확인했다.
+배포 구성은 NAS 호스트 포트 `31015`, 컨테이너 내부 `8090`, `cf-web` 네트워크, Node.js 24이다. 외부 후보 주소는 `https://flagquiz.techjuicelab.space`이며 DNS·Cloudflare 연결은 아직 등록하지 않았다. NAS의 Node.js `v24.18.0` SQLite·fetch smoke는 통과했지만 커널 `4.4.302+`는 [Node.js 24 공식 지원 조건](https://github.com/nodejs/node/blob/v24.x/BUILDING.md)의 kernel 4.18 이상을 충족하지 않는다. smoke 결과가 공식 지원이나 운영 완료를 뜻하지 않는다.
 
-실제 1Password Google ID·Secret 주입 및 서버 설정 검사를 통과했고, 기존 Groq 키로 대한민국 음원을 1회 전사해 나라 판정까지 확인했다. 실제 Google 계정 로그인과 callback 등록, 운영 배포, 실제 iPhone/iPad 마이크 정확도·지연은 아직 검증하지 않았다. 자세한 실행 설정과 API 계약은 [서버 안내](../server/README.md)에 있다.
+현재 GitHub Pages는 이전 공개 버전을 제공한다. 비공개 서버의 실제 로그인·음성·재시작·HTTPS 확인 후 공개 주소를 종료하거나 새 주소로 안내해야 전체 접근 제한 전환이 완료된다. 새 서버는 인증된 앱·음원의 오프라인 캐시를 사용하지 않고 해당 origin의 루트 `/sw.js`와 `flagquiz-` cache만 정리한다. 학습 localStorage는 삭제하지 않는다.
+
+운영 전환에는 다음 확인이 남아 있다.
+
+1. 명시한 운영 origin에 DNS·Cloudflare를 연결하고 기존 중앙 인증·세션·Groq 참조를 해결해 NAS에 배포한다. `/health`의 `configured:true`를 확인하고 실제 로그인은 별도로 시험한다.
+2. 기존 아이디·이메일로 최고 관리자와 일반 계정이 접속하는지 확인한다. 중앙 비활성화·generation 변경, 로컬 해제·재등록과 관리자 권한 제한을 검증한다.
+3. 서버 재시작 후 허용 목록·차단·사용량이 유지되는지, NAS 일간 백업과 별도 volume 복원이 동작하는지 확인한다. 기본 undeploy로 데이터 volume을 삭제하지 않는다.
+4. 외부 HTTPS에서 아이의 짧은 발화, 두 사람의 연속 차례, 지연·중복·읽어주기·수동 입력·마이크 종료를 iPhone/iPad로 확인한다.
+5. 이전 공개 주소와 홈 화면 설치를 새 보호 주소로 전환한다.
+
+자동 검사에는 실제 HTTP·JWT 서명·중앙 권한과 장애·Origin/CSRF·만료·해제·자동 등록/차단·원자적 사용량·동시 서버 방지·SIGKILL 복구·별도 대상 백업 복원이 포함된다. 모바일 Chromium에서는 네 나라 기록·한국/대한민국 중복·지도 중심 이동·가로 화면 넘침을 확인했다. 미설정 서버가 앱 JavaScript와 음성 API를 막고 로그인 화면으로 이동하는 것도 로컬 브라우저에서 확인했다.
+
+중앙 앱 등록·기존 활성 계정 권한 부여, 실제 Groq 대한민국 음원 전사와 NAS Node smoke는 확인했다. 실제 TechJuiceID 로그인·외부 HTTPS·운영 배포·어린이 iPhone/iPad 마이크 정확도·지연은 아직 완료로 표시하지 않는다. 실행 설정과 API 계약은 [서버 안내](../server/README.md), 배포와 복구 절차는 [NAS 안내](nas-deploy.md)에 있다.

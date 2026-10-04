@@ -1,7 +1,13 @@
 .git
 .private-data
+env
 .env
 .env.*
 node_modules
 docs/artifacts
+docs/FlagQuiz-MLX-Audio-Pack.zip
+data/natural-earth
+deploy/.env
+**/.DS_Store
+**/*.log
 _site

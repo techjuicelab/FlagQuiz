@@ -14,7 +14,7 @@ const ownedDirectories = new Set();
 function deny(code = 'access-denied') { throw new AccessError(403, code); }
 function emailInput(value) { try { return normalizeEmail(value); } catch { throw new AccessError(400, 'invalid-email'); } }
 function isSubject(sub) { return typeof sub === 'string' && /^[\x21-\x7e]{1,255}$/.test(sub); }
-function emptyState() { return { version: 1, users: [{ email: SUPER_ADMIN_EMAIL, sub: null, createdAt: 0, createdBy: 'system' }], sessions: [], quota: { daily: {}, monthly: {} } }; }
+function emptyState() { return { version: 1, users: [{ email: SUPER_ADMIN_EMAIL, sub: null, createdAt: 0, createdBy: 'system' }], blockedEmails: [], sessions: [], quota: { daily: {}, monthly: {} } }; }
 function validState(state) {
   if (!state || state.version !== 1 || !Array.isArray(state.users) || state.users.length < 1 || state.users.length > QUOTAS.allowlist ||
       !Array.isArray(state.sessions) || state.sessions.length > 5000 || !state.quota ||
@@ -27,8 +27,18 @@ function validState(state) {
     emails.add(user.email);
   }
   if (!emails.has(SUPER_ADMIN_EMAIL)) return false;
+  if (state.blockedEmails !== undefined) {
+    if (!Array.isArray(state.blockedEmails)) return false;
+    const blocked = new Set();
+    for (const email of state.blockedEmails) {
+      try { if (normalizeEmail(email) !== email) return false; } catch { return false; }
+      if (email === SUPER_ADMIN_EMAIL || emails.has(email) || blocked.has(email)) return false;
+      blocked.add(email);
+    }
+  }
   for (const session of state.sessions) if (!/^[A-Za-z0-9_-]{43}$/.test(session.id) || !isSubject(session.sub) ||
-      !emails.has(session.email) || !Number.isInteger(session.expiresAt) || !Number.isInteger(session.createdAt)) return false;
+      !emails.has(session.email) || !Number.isInteger(session.expiresAt) || !Number.isInteger(session.createdAt) ||
+      (session.generation !== undefined && (!Number.isInteger(session.generation) || session.generation < 1))) return false;
   for (const [day, users] of Object.entries(state.quota.daily)) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || !users || typeof users !== 'object' || Array.isArray(users)) return false;
     for (const [sub, count] of Object.entries(users)) if (!isSubject(sub) || !Number.isInteger(count) || count < 0 || count > QUOTAS.userDaily) return false;
@@ -114,10 +124,18 @@ export async function openAccessStore({ directory, clock = Date.now }) {
   }
   function identityOf(session) { return { sub: session.sub, email: session.email, role: session.email === SUPER_ADMIN_EMAIL ? 'superadmin' : 'user' }; }
   return {
-    async createSession(identity, lifetime = 8 * 60 * 60 * 1000) {
+    async createSession(identity, lifetime = 8 * 60 * 60 * 1000, { trustedCentralIdentity = false } = {}) {
       const email = normalizeEmail(identity.email); if (!isSubject(identity.sub)) deny('invalid-subject');
+      const trusted = trustedCentralIdentity === true;
+      if (trusted && (!['admin', 'tester', 'user'].includes(identity.techjuiceRole) || !Number.isInteger(identity.generation) || identity.generation < 1)) deny('invalid-central-identity');
       return mutate(next => {
-        const user = next.users.find(item => item.email === email); if (!user) deny();
+        let user = next.users.find(item => item.email === email);
+        if (trusted && (next.blockedEmails || []).includes(email)) deny();
+        if (!user && trusted) {
+          if (next.users.length >= QUOTAS.allowlist) throw new AccessError(429, 'allowlist-limit');
+          user = { email, sub: null, createdAt: clock(), createdBy: 'central-identity' }; next.users.push(user);
+        }
+        if (!user) deny();
         if (user.sub !== null && user.sub !== identity.sub) deny('account-changed');
         user.sub = identity.sub; user.lastLoginAt = clock();
         next.sessions = next.sessions.filter(session => session.expiresAt > clock());
@@ -125,6 +143,7 @@ export async function openAccessStore({ directory, clock = Date.now }) {
         while (existing.length >= 5) { const old = existing.shift(); next.sessions = next.sessions.filter(session => session.id !== old.id); }
         if (next.sessions.length >= 5000) throw new AccessError(429, 'session-limit');
         const session = { id: randomBytes(32).toString('base64url'), sub: identity.sub, email, createdAt: clock(), expiresAt: clock() + lifetime };
+        if (trusted) session.generation = identity.generation;
         next.sessions.push(session); return { ...session, ...identityOf(session) };
       });
     },
@@ -139,6 +158,7 @@ export async function openAccessStore({ directory, clock = Date.now }) {
       email = emailInput(email);
       return mutate(next => {
         if (!activeSession(next, actor) || actor.email !== SUPER_ADMIN_EMAIL) deny('admin-required');
+        next.blockedEmails = (next.blockedEmails || []).filter(blocked => blocked !== email);
         if (next.users.some(user => user.email === email)) return { email, created: false };
         if (next.users.length >= QUOTAS.allowlist) throw new AccessError(429, 'allowlist-limit');
         next.users.push({ email, sub: null, createdAt: clock(), createdBy: actor.email }); return { email, created: true };
@@ -150,6 +170,7 @@ export async function openAccessStore({ directory, clock = Date.now }) {
         if (!activeSession(next, actor) || actor.email !== SUPER_ADMIN_EMAIL) deny('admin-required');
         if (email === SUPER_ADMIN_EMAIL) deny('immutable-superadmin');
         next.users = next.users.filter(user => user.email !== email);
+        next.blockedEmails ||= []; if (!next.blockedEmails.includes(email)) next.blockedEmails.push(email);
         next.sessions = next.sessions.filter(session => session.email !== email); return { email };
       });
     },
