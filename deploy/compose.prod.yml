@@ -19,6 +19,7 @@ services:
       TRUSTED_PROXY_IPS: "${TRUSTED_PROXY_IPS:-}"
       SESSION_SECRET: "${SESSION_SECRET:-}"
       GROQ_API_KEY: "${GROQ_API_KEY:-}"
+      TYPESAFE_API_KEY: "${TYPESAFE_API_KEY:-}"
       HOST: "0.0.0.0"
       PORT: "8090"
       STATE_DIR: /var/lib/flagquiz

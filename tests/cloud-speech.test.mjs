@@ -29,7 +29,7 @@ function fixture(options = {}) {
       if (options.decode) return options.decode.promise;
       if (options.decodeError) return Promise.reject(new Error('codec unavailable'));
       const length = options.longAudio ? 14 * 48000 : 48000;
-      return Promise.resolve({ length, sampleRate: 48000, numberOfChannels: 2, getChannelData: () => new Float32Array(length).fill(0.25) });
+      return Promise.resolve({ length, sampleRate: 48000, numberOfChannels: 2, getChannelData: () => new Float32Array(length).fill(options.sample ?? 0.25) });
     }
   }
   class Clock extends Date { static now() { return now; } }
@@ -43,11 +43,13 @@ function fixture(options = {}) {
       requests.push({ url, config });
       if (options.network) return options.network.promise;
       return { ok: options.status ? false : true, status: options.status || 200,
-        json: () => options.json ? options.json.promise : Promise.resolve({ text: options.text ?? '대한민국' }) };
+        json: () => options.json ? options.json.promise : Promise.resolve({ text: options.text ?? '대한민국',
+          playerId: config.headers['X-Player-Id'], turnId: config.headers['X-Turn-Id'],
+          mode: config.headers['X-Speech-Mode'], ...(options.response || {}) }) };
     }
   };
   vm.runInNewContext(source, { window, Date: Clock });
-  const adapter = window.FQ.cloudSpeech.create({ csrfToken: () => csrf, endpoint: options.endpoint });
+  const adapter = window.FQ.cloudSpeech.create({ csrfToken: () => csrf, endpoint: options.endpoint, mode: options.mode });
   const handlers = (playerId = 0, turnId = 4) => ({ playerId, turnId, onState: value => states.push(value), onResult: value => results.push(value), onError: value => errors.push(value) });
   function advance(ms) {
     const target = now + ms;
@@ -78,17 +80,69 @@ test('현재 플레이어·차례의 음성을 WAV로 바꿔 CSRF·세션과 함
     assert.equal(config.headers['X-CSRF-Token'], 'new-csrf');
     assert.equal(config.headers['X-Player-Id'], '0');
     assert.equal(config.headers['X-Turn-Id'], '4');
+    assert.equal(config.headers['X-Speech-Mode'], 'country-chain');
     assert.equal(config.headers['X-Audio-Duration-Ms'], '1000');
     assert.equal(config.body.type, 'audio/wav');
     assert.equal(config.headers.Authorization, undefined);
     const audio = Buffer.from(await config.body.arrayBuffer());
     assert.equal(validateSpeechInput({ audio, mimeType: 'audio/wav' }).durationMs, 1000);
     assert.equal(audio.readInt16LE(44), 8192);
-    assert.deepEqual(JSON.parse(JSON.stringify(f.results)), [{ text: '대한민국', playerId: '0', turnId: '4' }]);
+    assert.deepEqual(JSON.parse(JSON.stringify(f.results)), [{ text: '대한민국', playerId: '0', turnId: '4', mode: 'country-chain' }]);
     assert.equal(f.errors.length, 0);
     assert.ok(f.streams[0].track.stops > 0);
     assert.equal(f.contexts[0].closed, 1);
     assert.equal(f.timers.size, 0);
+  }
+});
+
+test('나라·수도·이어 말하기 모드는 같은 녹음 경로를 쓰고 시작 모드가 기본값보다 우선한다', async () => {
+  for (const mode of ['voice', 'capitalVoice', 'country-chain']) {
+    const f = fixture({ mode });
+    await f.adapter.start(f.handlers()); f.adapter.stop(); await flush();
+    assert.equal(f.requests[0].config.headers['X-Speech-Mode'], mode);
+    assert.equal(f.results[0].mode, mode);
+  }
+  const f = fixture({ mode: 'voice' });
+  await f.adapter.start({ ...f.handlers(), mode: 'capitalVoice' }); f.adapter.stop(); await flush();
+  assert.equal(f.requests[0].config.headers['X-Speech-Mode'], 'capitalVoice');
+  for (const mode of ['other', '', null, ['voice']]) {
+    const invalid = fixture();
+    await invalid.adapter.start({ ...invalid.handlers(), mode });
+    assert.equal(invalid.errors[0].code, 'configuration');
+    assert.equal(invalid.streams.length, 0); assert.equal(invalid.requests.length, 0);
+  }
+});
+
+test('수동으로 녹음을 끝내도 완전무음은 보내지 않고 조용한 목소리의 PCM은 제거하지 않는다', async () => {
+  const silent = fixture({ sample: 0 });
+  await silent.adapter.start(silent.handlers()); silent.adapter.stop(); await flush();
+  assert.equal(silent.requests.length, 0); assert.equal(silent.errors[0].code, 'no-speech');
+  const quiet = fixture({ sample: 0.0001 }); quiet.setLoud(0.001);
+  await quiet.adapter.start(quiet.handlers()); quiet.adapter.stop(); await flush();
+  assert.equal(quiet.requests.length, 1); assert.equal(quiet.results.length, 1);
+});
+
+test('응답의 플레이어·차례·모드가 다르면 채점하지 않고 모드 없는 기존 서버 응답은 받는다', async () => {
+  for (const response of [{ playerId: '1' }, { turnId: 'old-turn' }, { mode: 'capitalVoice' }, { playerId: undefined }, { turnId: undefined }]) {
+    const f = fixture({ mode: 'voice', response });
+    await f.adapter.start(f.handlers()); f.adapter.stop(); await flush();
+    assert.equal(f.results.length, 0); assert.equal(f.errors[0].code, 'service');
+    assert.equal(f.requests.length, 1);
+  }
+  const legacy = fixture({ mode: 'voice', response: { mode: undefined } });
+  await legacy.adapter.start(legacy.handlers()); legacy.adapter.stop(); await flush();
+  assert.equal(legacy.results.length, 1); assert.equal(legacy.results[0].mode, 'voice');
+});
+
+test('일간·월간 사용량과 서버 혼잡·분당 제한을 구분하고 자동 재전송하지 않는다', async () => {
+  for (const [serverCode, clientCode, message] of [
+    ['daily-speech-limit', 'quota', /오늘/], ['monthly-speech-limit', 'quota', /이번 달/],
+    ['speech-busy', 'busy', /잠시/], ['rate-limit', 'busy', /잠시/]
+  ]) {
+    const f = fixture({ status: 429, response: { error: serverCode } });
+    await f.adapter.start(f.handlers()); f.adapter.stop(); await flush();
+    assert.equal(f.errors[0].code, clientCode); assert.match(f.errors[0].message, message);
+    f.advance(60000); await flush(); assert.equal(f.requests.length, 1);
   }
 });
 
@@ -114,6 +168,20 @@ test('최대 12초에 녹음을 멈추고 종료 신호 지연으로 긴 원본�
   assert.equal(config.headers['X-Audio-Duration-Ms'], '12000');
   const audio = Buffer.from(await config.body.arrayBuffer());
   assert.equal(validateSpeechInput({ audio, mimeType: 'audio/wav' }).durationMs, 12000);
+});
+
+test('나라·수도 문제는 생각하는 사이 1.2초 쉼을 기다리고 2.2초 침묵 뒤 한 번만 전사한다', async () => {
+  for (const mode of ['voice', 'capitalVoice']) {
+    const f = fixture(); f.setLoud(0.1);
+    await f.adapter.start({ ...f.handlers(), mode });
+    f.advance(300); f.setLoud(0); f.advance(1200); await flush();
+    assert.equal(f.requests.length, 0);
+    assert.equal(f.adapter.isRecording(), true);
+    f.advance(1000); await flush();
+    assert.equal(f.requests.length, 1);
+    assert.equal(f.requests[0].config.headers['X-Speech-Mode'], mode);
+    assert.equal(f.results.length, 1);
+  }
 });
 
 test('마이크 권한 대기 중 취소하면 뒤늦게 열린 트랙도 닫고 녹음·요청을 시작하지 않는다', async () => {
@@ -184,7 +252,7 @@ test('응답 JSON 대기 중 다음 플레이어가 시작하면 이전 차례�
 });
 
 test('클라우드 시간 제한·사용량 제한·로그인 만료·변환 실패는 자동 유료 재시도 없이 수동 답변을 유지한다', async () => {
-  for (const [options, expected] of [[{ status: 429 }, 'quota'], [{ status: 401 }, 'auth-required'], [{ decodeError: true }, 'network'], [{ text: '' }, 'no-speech']]) {
+  for (const [options, expected] of [[{ status: 429, response: { error: 'daily-speech-limit' } }, 'quota'], [{ status: 401 }, 'auth-required'], [{ decodeError: true }, 'network'], [{ text: '' }, 'no-speech']]) {
     const f = fixture(options); await f.adapter.start(f.handlers(1, 7)); f.adapter.stop(); await flush();
     assert.equal(f.errors.length, 1); assert.equal(f.errors[0].code, expected);
     assert.equal(f.errors[0].turnId, '7'); assert.equal(f.errors[0].playerId, '1');

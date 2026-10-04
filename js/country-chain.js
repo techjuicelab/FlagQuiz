@@ -78,7 +78,11 @@
     function submit(text) {
       var before = turn;
       if (history.length === countries.length) return { status: 'complete', playerIndex: before, nextPlayerIndex: turn };
-      var result = match(text), country = result.country;
+      var resolved = FQ.spokenAnswer && FQ.spokenAnswer.resolve(text, { kind: 'country', countries: countries });
+      var result = resolved ? { status: resolved.status === 'answer' ? 'matched' :
+        resolved.reason === 'multiple-answers' || resolved.reason === 'ambiguous-alias' ? 'ambiguous' : 'unknown',
+        country: resolved.status === 'answer' ? countries.filter(function (item) { return item.code === resolved.code; })[0] : null } : match(text);
+      var country = result.country;
       var status = result.status === 'matched' ? (used[country.code] ? 'duplicate' : 'accepted') : result.status;
       var entry = null;
       if (status === 'accepted') {
@@ -193,7 +197,14 @@
           onResult: function (event) {
             if (!current(token)) return;
             if (event.playerId !== undefined && String(event.playerId) !== String(state.playerIndex) || event.turnId !== undefined && String(event.turnId) !== String(state.total)) return;
-            submit(event.text);
+            var resolved = FQ.speech && FQ.speech.resolveAnswer ? FQ.speech.resolveAnswer(event.text, 'country', event.resolution) : null;
+            if (resolved && resolved.status !== 'answer') {
+              cancelVoice(); continuous = false;
+              message('답을 하나만 다시 말해 주세요. 지금 차례에서 계속할 수 있어요.', true);
+              setVoiceState('idle', '마이크를 다시 누르거나 나라 이름을 글로 써요.');
+              return;
+            }
+            submit(resolved ? resolved.text : event.text);
           },
           onError: function (error) { voiceError(error, token); }
         });
@@ -234,7 +245,7 @@
         else if (result.status === 'complete') message('모든 나라를 함께 찾았어요! 새로 하기를 누르면 다시 시작해요.');
         else message('나라 이름을 찾지 못했어요. ' + result.player + ' 차례에서 다시 말하거나 글로 써요.', true);
         setVoiceState('idle');
-        scheduleListening(500);
+        continuous = false;
       }
       return result;
     }

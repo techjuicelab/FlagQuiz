@@ -14,7 +14,7 @@
     // 새 축 규칙(시간 초과 지나감·대결 없음·오늘의 도전 미집계)을 받으며, 한 판에는 각 나라가 한 번만 나온다.
     capital: { label: '수도 듣고 국기 찾기', kind: 'choice', hasOptions: true, axis: 'capital' },
     // 국기 보고 수도 말하기(D28): 국기와 나라 이름을 보고 수도를 말한다. 기록·도장은 수도 축과 같고 답은 수도 이름으로 채점한다(answer).
-    // speech 는 마이크·중간 결과 채점·맞히면 저절로 다음(D25)을 같이 쓰는 표시다.
+    // speech 는 마이크·최종 발화 판정·맞히면 저절로 다음(D25)을 같이 쓰는 표시다.
     capitalVoice: { label: '국기 보고 수도 말하기', kind: 'text', hasOptions: false, axis: 'capital', answer: 'capital', speech: true },
     typing:  { label: '이름 써서 맞히기', kind: 'text', hasOptions: false, axis: 'flag' },
     voice:   { label: '말로 답하기', kind: 'text', hasOptions: false, axis: 'flag', speech: true },

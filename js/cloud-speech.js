@@ -6,6 +6,8 @@
   var MAX_BYTES = 2 * 1024 * 1024;
   var RATE = 16000;
 
+  function validMode(mode) { return mode === 'voice' || mode === 'capitalVoice' || mode === 'country-chain'; }
+
   function supported() {
     var host = global.location && global.location.hostname;
     var secure = global.isSecureContext || host === 'localhost' || host === '127.0.0.1';
@@ -35,13 +37,19 @@
     for (var ch = 0; ch < decoded.numberOfChannels; ch++) channels.push(decoded.getChannelData(ch));
     if (!channels.length) throw { code: 'no-speech' };
     // 선형 보간으로 16kHz 단일 채널을 만든다. 파일의 표본 수가 서버의 시간 상한이다.
+    var hasAudio = false;
     for (var n = 0; n < count; n++) {
       var position = n * decoded.sampleRate / RATE;
       var a = Math.floor(position), b = Math.min(a + 1, decoded.length - 1), fraction = position - a, sample = 0;
       for (var c = 0; c < channels.length; c++) sample += channels[c][a] * (1 - fraction) + channels[c][b] * fraction;
       sample = Math.max(-1, Math.min(1, sample / channels.length));
-      view.setInt16(44 + n * 2, Math.round(sample * (sample < 0 ? 32768 : 32767)), true);
+      var pcm = Math.round(sample * (sample < 0 ? 32768 : 32767));
+      if (!isFinite(pcm)) pcm = 0;
+      if (pcm !== 0) hasAudio = true;
+      view.setInt16(44 + n * 2, pcm, true);
     }
+    // 수동 종료도 완전무음을 보내지 않는다. 작은 아이 목소리를 RMS 문턱으로 다시 제거하지 않는다.
+    if (!hasAudio) throw { code: 'no-speech' };
     return { blob: new global.Blob([buffer], { type: 'audio/wav' }), durationMs: Math.round(count / RATE * 1000) };
   }
 
@@ -64,7 +72,7 @@
     }
     function state(session, phase) {
       session.phase = phase;
-      emit(session, 'onState', { state: phase, playerId: session.playerId, turnId: session.turnId });
+      emit(session, 'onState', { state: phase, playerId: session.playerId, turnId: session.turnId, mode: session.mode });
     }
     function clearTimers(session) {
       ['permissionTimer', 'recordTimer', 'levelTimer', 'stopTimer', 'processingTimer', 'networkTimer'].forEach(function (key) {
@@ -91,7 +99,7 @@
       if (!live(session)) return;
       release(session);
       state(session, 'idle');
-      emit(session, 'onError', { code: code, message: message, playerId: session.playerId, turnId: session.turnId });
+      emit(session, 'onError', { code: code, message: message, playerId: session.playerId, turnId: session.turnId, mode: session.mode });
       if (current === session) current = null;
     }
     function cancel() {
@@ -130,22 +138,32 @@
         var response = await global.fetch(endpoint.href, {
           method: 'POST', credentials: 'same-origin', signal: session.request.signal,
           headers: { 'Content-Type': 'audio/wav', 'X-Audio-Duration-Ms': String(input.durationMs),
-            'X-Player-Id': session.playerId, 'X-Turn-Id': session.turnId, 'X-CSRF-Token': token }, body: input.blob
+            'X-Player-Id': session.playerId, 'X-Turn-Id': session.turnId, 'X-Speech-Mode': session.mode, 'X-CSRF-Token': token }, body: input.blob
         });
         if (!live(session)) return;
         var result = await response.json();
         if (!live(session)) return;
         if (!response.ok) {
-          var safeCode = response.status === 401 || response.status === 403 ? 'auth-required' : response.status === 429 ? 'quota' : 'service';
-          error(session, safeCode, safeCode === 'auth-required' ? '로그인을 확인해 주세요. 지금 차례는 글자로 답할 수 있어요.' :
-            safeCode === 'quota' ? '오늘의 말하기 사용량을 다 썼어요. 지금 차례는 글자로 답해 주세요.' : '말하기 연결이 어려워요. 지금 차례는 글자로 답해 주세요.');
+          var serverCode = result && typeof result.error === 'string' ? result.error : '';
+          var quota = serverCode === 'daily-speech-limit' || serverCode === 'monthly-speech-limit';
+          var safeCode = response.status === 401 || response.status === 403 ? 'auth-required' :
+            response.status === 429 ? (quota ? 'quota' : 'busy') : response.status === 400 && serverCode === 'no_speech' ? 'no-speech' : 'service';
+          var message = safeCode === 'auth-required' ? '로그인을 확인해 주세요. 지금 차례는 글자로 답할 수 있어요.' :
+            safeCode === 'quota' ? (serverCode === 'monthly-speech-limit' ? '이번 달의 말하기 사용량을 다 썼어요. 지금 차례는 글자로 답해 주세요.' :
+              '오늘의 말하기 사용량을 다 썼어요. 지금 차례는 글자로 답해 주세요.') :
+            safeCode === 'busy' ? '말하기 요청이 잠시 몰렸어요. 잠시 뒤 마이크를 다시 누르거나 글자로 답해 주세요.' :
+            safeCode === 'no-speech' ? '목소리가 들리지 않았어요. 다시 말하거나 글자로 답해 주세요.' :
+            '말하기 연결이 어려워요. 지금 차례는 글자로 답해 주세요.';
+          error(session, safeCode, message);
           return;
         }
         if (!result || typeof result.text !== 'string' || result.text.length > 500) throw { code: 'service' };
+        if (result.playerId !== session.playerId || result.turnId !== session.turnId ||
+            result.mode !== undefined && result.mode !== session.mode) throw { code: 'service' };
         var text = result.text.trim();
         if (!text) { error(session, 'no-speech', '목소리가 들리지 않았어요. 다시 말하거나 글자로 답해 주세요.'); return; }
         release(session); state(session, 'idle');
-        emit(session, 'onResult', { text: text, playerId: session.playerId, turnId: session.turnId });
+        emit(session, 'onResult', { text: text, resolution: result.resolution, playerId: session.playerId, turnId: session.turnId, mode: session.mode });
         if (current === session) current = null;
       } catch (failure) {
         if (!live(session)) return;
@@ -174,7 +192,8 @@
       for (var i = 0; i < samples.length; i++) sum += samples[i] * samples[i];
       var now = Date.now();
       if (Math.sqrt(sum / samples.length) > 0.012) { session.heard = true; session.lastLoud = now; }
-      if (session.heard && now - session.lastLoud >= 1200) { stop(); return; }
+      var quietMs = session.mode === 'country-chain' ? 1200 : 2200;
+      if (session.heard && now - session.lastLoud >= quietMs) { stop(); return; }
       if (!session.heard && now - session.started >= 5000) {
         error(session, 'no-speech', '목소리가 들리지 않았어요. 다시 말하거나 글자로 답해 주세요.'); return;
       }
@@ -184,8 +203,10 @@
     async function start(handlers) {
       cancel();
       var h = handlers || {};
-      var session = { handlers: h, playerId: String(h.playerId), turnId: String(h.turnId), phase: 'requesting', chunks: [], cancelled: false };
+      var mode = h.mode === undefined ? (opts.mode === undefined ? 'country-chain' : opts.mode) : h.mode;
+      var session = { handlers: h, playerId: String(h.playerId), turnId: String(h.turnId), mode: mode, phase: 'requesting', chunks: [], cancelled: false };
       current = session;
+      if (!validMode(mode)) { error(session, 'configuration', '말하기 놀이를 확인할 수 없어요. 같은 문제에서 글자로 답해 주세요.'); return; }
       if (!supported() || ![session.playerId, session.turnId].every(function (id) { return /^[a-zA-Z0-9_-]{1,80}$/.test(id) && id !== 'undefined'; })) {
         error(session, 'unsupported', '이 기기에서는 클라우드 말하기를 쓸 수 없어요. 지금 차례는 글자로 답해 주세요.'); return;
       }
@@ -207,7 +228,7 @@
         session.recorder.ondataavailable = function (event) {
           if (!live(session) || !event.data || !event.data.size) return;
           session.bytes = (session.bytes || 0) + event.data.size;
-          if (session.bytes > MAX_BYTES) { error(session, 'size', '녹음이 너무 커요. 나라 이름을 짧게 말해 주세요.'); return; }
+          if (session.bytes > MAX_BYTES) { error(session, 'size', '녹음이 너무 커요. 답을 짧게 말해 주세요.'); return; }
           session.chunks.push(event.data);
         };
         session.recorder.onstop = function () { if (live(session)) upload(session); };

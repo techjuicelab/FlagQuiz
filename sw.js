@@ -41,6 +41,7 @@ var SHELL = [
   './js/map.js',
   './js/progress.js',
   './js/quiz.js',
+  './js/spoken-answer.js',
   './js/badges.js',
   './js/screens.js',
   './js/app.js',
