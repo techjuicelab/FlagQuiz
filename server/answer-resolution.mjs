@@ -40,8 +40,8 @@ async function loadRules() {
 
 function canonical(country, kind) { return kind === 'capital' ? country.capital : country.ko; }
 
-function validatedCandidates(rules, list, text, kind) {
-  if (!Array.isArray(list) || list.length < 2 || list.length > 253) return null;
+function validatedCandidates(rules, list, text, kind, minimum = 2) {
+  if (!Array.isArray(list) || list.length < minimum || list.length > 253) return null;
   const roster = new Map(rules.countries.map(country => [country.code, country]));
   const seen = new Set(), result = [], utterance = normalize(text);
   for (const candidate of list) {
@@ -102,7 +102,7 @@ export function createAnswerResolver({ apiKey = '', fetchImpl = globalThis.fetch
   const key = typeof apiKey === 'string' ? apiKey.trim() : '';
   const configured = Boolean(key && !/^["']?\s*op:\/\//i.test(key));
   const timeout = Number.isFinite(timeoutMs) && timeoutMs > 0 ? Math.min(timeoutMs, MAX_JEV_TIMEOUT_MS) : MAX_JEV_TIMEOUT_MS;
-  return async function resolve(input, { signal } = {}) {
+  return async function resolve(input, { signal, beforeSemantic } = {}) {
     const text = input?.text, mode = input?.mode === undefined ? 'country-chain' : input.mode;
     if (typeof text !== 'string' || !text.trim() || text.length > 500 || !['voice', 'capitalVoice', 'country-chain'].includes(mode)) return retry();
     if (signal?.aborted) return retry('cancelled');
@@ -113,10 +113,22 @@ export function createAnswerResolver({ apiKey = '', fetchImpl = globalThis.fetch
     if (signal?.aborted) return retry('cancelled');
     if (!object(result) || !['answer', 'retry', 'giveup'].includes(result.status)) return retry();
     const baseline = { status: result.status, code: result.code || null, text: result.text || '', reason: result.reason || 'unknown', source: 'rules' };
-    if (result.status !== 'retry' || !configured || !ELIGIBLE_REASONS.has(result.reason) || blockedUtterance(text) || !committedUtterance(text) ||
-        typeof rules.canUseSemantic !== 'function' || !rules.canUseSemantic(text, result)) return baseline;
-    const candidates = validatedCandidates(rules, result.candidates, text, kind);
+    const confirmed = result.status === 'answer';
+    if (!configured || (!confirmed && (result.status !== 'retry' || !ELIGIBLE_REASONS.has(result.reason) || blockedUtterance(text) || !committedUtterance(text) ||
+        typeof rules.canUseSemantic !== 'function' || !rules.canUseSemantic(text, result)))) return baseline;
+    let candidates = validatedCandidates(rules, result.candidates, text, kind, confirmed ? 1 : 2);
+    if (confirmed) {
+      const country = rules.countries.find(country => country.code === result.code);
+      if (!country || canonical(country, kind) !== result.text) return baseline;
+      // 순수 규칙이 전체 목록에서 유일하게 찾은 발음 별칭도 하나의 실제 답 후보로 확인한다.
+      if (!candidates && result.reason === 'name-match' && Array.isArray(result.candidates) && result.candidates.length === 1 &&
+          result.candidates[0].code === country.code && result.candidates[0].name === result.text) candidates = [{ code: country.code, name: result.text }];
+      if (!candidates || !candidates.some(candidate => candidate.code === result.code)) return baseline;
+    }
     if (!candidates) return baseline;
+    // 유료 선택 직전의 권한 회수는 일반 모델 장애 fallback으로 삼키지 않는다.
+    if (typeof beforeSemantic === 'function') await beforeSemantic({ signal });
+    if (signal?.aborted) return retry('cancelled');
     const body = requestBody(text, kind, candidates), controller = new AbortController();
     let abortWait;
     const aborted = new Promise((resolve, reject) => { abortWait = () => reject(new Error('Answer selection cancelled')); });
@@ -138,6 +150,8 @@ export function createAnswerResolver({ apiKey = '', fetchImpl = globalThis.fetch
       if (!choice || choice === 'unresolved' || choice === 'giveup') return baseline;
       const candidate = candidates.find(item => item.code === choice);
       if (!candidate) return baseline;
+      // 명시적으로 고른 답은 모델이 다른 앞선 후보로 바꾸지 못한다.
+      if (confirmed && candidate.code !== result.code) return baseline;
       return { status: 'answer', code: candidate.code, text: candidate.name, reason: 'final-selection', source: 'jev' };
     } catch { return baseline; }
     finally { clearTimeout(timer); signal?.removeEventListener('abort', abort); }

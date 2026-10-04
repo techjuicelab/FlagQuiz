@@ -93,7 +93,7 @@
 
   var CONTINENTS = ['all', '아시아', '유럽', '아프리카', '북아메리카', '남아메리카', '오세아니아'];
   var COUNTS = [5, 10, 20, 'all'];
-  // 모든 놀이에서 맞힌 이름을 짧게 듣고 넘어간다. 소리나 마이크 종료 알림이 빠져도 진행한다.
+  // 모든 질문형 놀이에서 정답은 이름, 오답·건너뛰기는 설명을 듣고 넘어간다. 종료 알림이 빠져도 진행한다.
   var AUTO_NEXT_AFTER_SPEECH = 900;
   var AUTO_NEXT_SILENT = 1800;
   var AUTO_NEXT_VOICE_WATCHDOG = 7000;
@@ -122,7 +122,7 @@
     speechNeedsConnection: false,
     artTimer: null,
     questionGeneration: 0,
-    autoNextTimer: null,   // 정답 뒤 저절로 다음 문제로 가는 예약
+    autoNextTimer: null,   // 답 안내 뒤 저절로 다음 문제로 가는 예약
     feedbackResume: null,
     feedbackSpeak: null,
     giftTimer: null,
@@ -243,7 +243,12 @@
     enterCapitalScreen('country-chain');
     var account = FQ.auth && FQ.auth.session();
     var voice = FQ.cloudSpeech && account && !account.preview ?
-      FQ.cloudSpeech.create({ mode: 'country-chain', csrfToken: FQ.auth.csrfToken }) : null;
+      FQ.cloudSpeech.create({ mode: 'country-chain', csrfToken: FQ.auth.csrfToken,
+        beforeRecord: function (onDone) {
+          if (audio.cueListening) return audio.cueListening(onDone);
+          onDone();
+        }
+      }) : null;
     state.countryChain = FQ.countryChain.start({ players: store.settings().players,
       onHome: renderHome, voice: voice,
       onVoiceError: function (error) {
@@ -1861,11 +1866,10 @@
       return state.feedbackGeneration === generation && state.game === g &&
         g.current() === q && state.answered && !doc.hidden;
     }
-    // 선물 유무와 놀이 방식에 관계없이 정답은 자동 진행하고, 오답은 설명 카드에 머문다.
-    var autoNext = !!res.correct;
-    var quickAnswerSpeech = autoNext ? { lines: [isCapitalQ ? c.capital : c.ko], opts: feedbackSpeech.opts } : feedbackSpeech;
+    // 정답은 이름만 짧게, 오답·포기·건너뛰기는 전체 설명을 읽고 모든 놀이에서 자동 진행한다.
+    var quickAnswerSpeech = res.correct ? { lines: [isCapitalQ ? c.capital : c.ko], opts: feedbackSpeech.opts } : feedbackSpeech;
     function scheduleAutoNext(request, delay) {
-      if (!autoNext || !feedbackCurrent() || request !== narrationRequest) return;
+      if (!feedbackCurrent() || request !== narrationRequest) return;
       if (state.autoNextTimer) global.clearTimeout(state.autoNextTimer);
       state.autoNextTimer = global.setTimeout(function () {
         state.autoNextTimer = null;
@@ -1877,7 +1881,7 @@
       if (!feedbackCurrent() || request !== narrationRequest || narrationFinished === request) return;
       narrationFinished = request;
       clearVoiceWatchdog();
-      if (failed && !autoNext) nudgeReplay();
+      if (failed && !res.correct) nudgeReplay();
       scheduleAutoNext(request, AUTO_NEXT_AFTER_SPEECH);
     }
     function narrate(request, replaying, requestedSpeech) {
@@ -1890,24 +1894,21 @@
     }
     function beginFeedback(request, replaying, requestedSpeech) {
       if (!feedbackCurrent() || request !== narrationRequest) return;
-      if (autoNext) {
-        // 마이크 해제 완료 알림이 빠져도 이 예약으로 다음 문제에 진행한다.
-        // 읽어주기 재시도도 같은 보호를 쓰되, 직접 고른 상세 설명은 더 오래 들을 수 있다.
-        clearVoiceWatchdog();
-        if (store.settings().speak) {
-          voiceWatchdog = global.setTimeout(function () {
-            voiceWatchdog = null;
-            if (!feedbackCurrent() || request !== narrationRequest) return;
-            audio.stopSpeaking();
-            finishNarration(request, false);
-          }, replaying ? AUTO_NEXT_VOICE_WATCHDOG * 3 : AUTO_NEXT_VOICE_WATCHDOG);
-        } else scheduleAutoNext(request, AUTO_NEXT_SILENT);
-      }
+      // 마이크 해제·음악·읽기 종료 알림이 빠져도 진행한다. 오답과 다시 듣기는 전체 설명 시간을 준다.
+      clearVoiceWatchdog();
+      if (store.settings().speak) {
+        voiceWatchdog = global.setTimeout(function () {
+          voiceWatchdog = null;
+          if (!feedbackCurrent() || request !== narrationRequest) return;
+          audio.stopSpeaking();
+          finishNarration(request, false);
+        }, replaying || !res.correct ? AUTO_NEXT_VOICE_WATCHDOG * 3 : AUTO_NEXT_VOICE_WATCHDOG);
+      } else scheduleAutoNext(request, AUTO_NEXT_SILENT);
       FQ.speech.stopAnd(function () {
         if (!feedbackCurrent() || request !== narrationRequest || narrationFinished === request) return;
-        if (autoNext || replaying) {
+        if (res.correct || replaying) {
           var feedbackSettings = store.settings();
-          if (autoNext && !replaying && !correctMusicPlayed && feedbackSettings.sound && feedbackSettings.correctMusic) {
+          if (res.correct && !replaying && !correctMusicPlayed && feedbackSettings.sound && feedbackSettings.correctMusic) {
             correctMusicPlayed = true;
             // 음악과 이름은 별도 플레이어에서 시작한다. 음악 종료를 기다리지 않고 문제를 이어 간다.
             playMusic('correct');
@@ -1920,13 +1921,13 @@
         playMusic(event, function () { narrate(request, replaying, requestedSpeech); });
       });
     }
-    state.feedbackResume = autoNext ? function () {
+    state.feedbackResume = function () {
       if (!feedbackCurrent()) return;
       cancelNarration();
       audio.stopSpeaking();
       beginFeedback(narrationRequest, false);
-    } : null;
-    state.feedbackSpeak = autoNext ? function (button) {
+    };
+    state.feedbackSpeak = function (button) {
       if (!feedbackCurrent()) return;
       if (!store.settings().speak) {
         store.updateSettings({ speak: true });
@@ -1935,7 +1936,7 @@
       button.classList.remove('needs-tap');
       button.textContent = button.getAttribute('data-label') || '🔊 들어보기';
       replayFeedback({ lines: speechFromButton(button), opts: feedbackSpeech.opts });
-    } : null;
+    };
 
     // 정답 카드(시안 PhoneAnswer): 정오답이 같은 카드다. 폰에서 국기 전폭, 이름 34px, 노란 상자(그림 이름·상식 / 국기 특징),
     // 🔊 설명 다시 듣기 56px, '다음 나라 →' 64px.
@@ -1971,7 +1972,7 @@
           ? '<button class="btn btn-listen btn-listen-soft" id="replay" type="button">🔊 설명 다시 듣기</button>'
           : '<button class="btn btn-listen btn-listen-soft" id="speak-on" type="button">🔇 읽어주기가 꺼져 있어요 · 켜고 듣기</button>') +
         '<button class="btn btn-primary btn-big btn-go" id="next" type="button">' +
-          (g.isLast() ? '오늘 여행 보기 →' : autoNext ? '바로 다음 문제 →' : '다음 나라 →') +
+          (g.isLast() ? '오늘 여행 보기 →' : '바로 다음 문제 →') +
         '</button>' +
       '</div>';
 
@@ -2008,15 +2009,10 @@
     }
     var next = ui.$('#next');
     next.addEventListener('click', goNext);
-    if (autoNext || isMapQ) {
-      // 자동 진행 중에는 확인 버튼 대신 정답 카드의 시작부터 보여 준다.
-      area.setAttribute('tabindex', '-1');
-      area.focus({ preventScroll: true });
-      area.scrollIntoView({ block: 'start', behavior: 'smooth' });
-    } else {
-      next.focus();
-      next.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-    }
+    // 자동 진행 중에는 정답 카드의 시작부터 보여 준다. 다음 단추로 먼저 넘어갈 수도 있다.
+    area.setAttribute('tabindex', '-1');
+    area.focus({ preventScroll: true });
+    area.scrollIntoView({ block: 'start', behavior: 'smooth' });
     if (res.chest) showChest(c, res);
     beginFeedback(narrationRequest, false);
   }

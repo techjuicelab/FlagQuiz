@@ -7,7 +7,7 @@ import vm from 'node:vm';
 const legacySource = fs.readFileSync(new URL('../js/audio.js', import.meta.url), 'utf8');
 const source = fs.readFileSync(new URL('../js/recorded-audio.js', import.meta.url), 'utf8');
 
-function setup({ ready = true, legacy = false, online = true } = {}) {
+function setup({ ready = true, legacy = false, online = true, audioContext } = {}) {
   let now = 0;
   let nextTimer = 1;
   const timers = new Map();
@@ -37,6 +37,7 @@ function setup({ ready = true, legacy = false, online = true } = {}) {
   }
   const sandbox = {
     Audio: FakeAudio,
+    AudioContext: audioContext,
     navigator: { onLine: online },
     addEventListener(name, callback) { (events[name] ||= []).push(callback); },
     Date: class extends Date { constructor(...args) { super(...(args.length ? args : [now])); } static now() { return now; } },
@@ -87,6 +88,91 @@ function setup({ ready = true, legacy = false, online = true } = {}) {
   };
 }
 const flush = async () => { await Promise.resolve(); await Promise.resolve(); };
+
+function listeningCueFixture(options = {}) {
+  const contexts = [], oscillators = [], gains = [];
+  let resolveResume, rejectResume;
+  class Context {
+    constructor() { this.state = options.suspended ? 'suspended' : 'running'; this.currentTime = 5; this.destination = {}; contexts.push(this); }
+    resume() {
+      if (options.resumeThrows) throw new Error('audio unavailable');
+      return new Promise((resolve, reject) => { resolveResume = () => { this.state = 'running'; resolve(); }; rejectResume = reject; });
+    }
+    createOscillator() {
+      if (options.oscillatorThrows) throw new Error('audio unavailable');
+      const oscillator = {
+        frequency: { setValueAtTime(value, time) { oscillator.frequencyValue = value; oscillator.frequencyAt = time; } },
+        connect() {}, disconnect() { this.disconnected = true; },
+        start(time) { this.startedAt = time; }, stop(time) { (this.stops ||= []).push(time); }
+      };
+      oscillators.push(oscillator); return oscillator;
+    }
+    createGain() {
+      const gain = { values: [], gain: {
+        setValueAtTime(value, time) { gain.values.push({ value, time }); },
+        linearRampToValueAtTime(value, time) { gain.values.push({ value, time }); }
+      }, connect() {}, disconnect() { this.disconnected = true; } };
+      gains.push(gain); return gain;
+    }
+  }
+  const f = setup({ ready: options.recorded === true, legacy: true, audioContext: Context });
+  return { ...f, contexts, oscillators, gains, resolveResume: () => resolveResume(), rejectResume: () => rejectResume(new Error('private audio detail')) };
+}
+
+test('녹음 준비 비프는 두 오디오 엔진에서 45ms 작게 재생하고 실제 종료 후에만 완료된다', () => {
+  for (const recorded of [false, true]) {
+    const f = listeningCueFixture({ recorded }); let ended = 0;
+    f.audio.cueListening(() => ended++);
+    assert.equal(f.oscillators.length, 1);
+    const beep = f.oscillators[0];
+    assert.equal(beep.type, 'sine');
+    assert.equal(beep.frequencyValue, 880);
+    assert.ok(Math.abs(beep.stops[0] - beep.startedAt - 0.045) < 0.000001);
+    assert.ok(Math.max(...f.gains[0].values.map(entry => entry.value)) <= 0.03);
+    assert.equal(ended, 0, '비프가 끝나기 전에 마이크 표본을 받지 않는다');
+    const lateEnd = beep.onended; lateEnd(); lateEnd(); f.advance(1000);
+    assert.equal(ended, 1); assert.equal(beep.disconnected, true); assert.equal(f.gains[0].disconnected, true);
+    assert.equal(f.timers.size, 0); assert.equal(f.players.length, 0); assert.equal(f.utterances.length, 0); assert.equal(f.fetches.length, 0);
+  }
+});
+
+test('소리 OFF와 Web Audio 미지원은 준비 비프 없이 즉시 녹음을 계속한다', () => {
+  for (const recorded of [false, true]) {
+    const f = listeningCueFixture({ recorded }); let ended = 0;
+    f.audio.setEnabled(false); f.audio.cueListening(() => ended++);
+    assert.equal(ended, 1); assert.equal(f.contexts.length, 0); assert.equal(f.timers.size, 0);
+  }
+  const unsupported = setup({ ready: false, legacy: true }); let ended = 0;
+  unsupported.audio.cueListening(() => ended++);
+  assert.equal(ended, 1); assert.equal(unsupported.timers.size, 0);
+});
+
+test('준비 비프의 재생 실패·종료 누락은 한 번만 완료하여 마이크를 막지 않는다', async () => {
+  for (const options of [{ oscillatorThrows: true }, { suspended: true, resumeThrows: true }]) {
+    const throwing = listeningCueFixture(options); let throwsDone = 0;
+    throwing.audio.cueListening(() => throwsDone++); assert.equal(throwsDone, 1); assert.equal(throwing.timers.size, 0);
+  }
+  const rejected = listeningCueFixture({ suspended: true }); let rejectedDone = 0;
+  rejected.audio.cueListening(() => rejectedDone++); rejected.rejectResume(); await flush();
+  assert.equal(rejectedDone, 1); assert.equal(rejected.oscillators.length, 0); assert.equal(rejected.timers.size, 0);
+  const missingEnd = listeningCueFixture(); let missingDone = 0;
+  missingEnd.audio.cueListening(() => missingDone++); const lateEnd = missingEnd.oscillators[0].onended;
+  missingEnd.advance(250); lateEnd(); assert.equal(missingDone, 1); assert.equal(missingEnd.oscillators[0].stops.length, 2);
+  assert.equal(missingEnd.timers.size, 0);
+});
+
+test('재생 허가가 늦게 끝나거나 준비 비프를 취소해도 새 화면에 늦은 소리를 내지 않는다', async () => {
+  const pending = listeningCueFixture({ suspended: true }); let pendingDone = 0;
+  pending.audio.cueListening(() => pendingDone++); pending.advance(250); pending.resolveResume(); await flush();
+  assert.equal(pendingDone, 1); assert.equal(pending.oscillators.length, 0);
+  const canceled = listeningCueFixture({ suspended: true }); let canceledDone = 0;
+  const cancel = canceled.audio.cueListening(() => canceledDone++); cancel(); canceled.resolveResume(); await flush(); canceled.advance(1000);
+  assert.equal(canceledDone, 0); assert.equal(canceled.oscillators.length, 0); assert.equal(canceled.timers.size, 0);
+  const playing = listeningCueFixture(); let playingDone = 0;
+  const stop = playing.audio.cueListening(() => playingDone++); const lateEnd = playing.oscillators[0].onended;
+  stop(); lateEnd(); playing.advance(1000);
+  assert.equal(playingDone, 0); assert.equal(playing.oscillators[0].disconnected, true); assert.equal(playing.timers.size, 0);
+});
 
 // play()의 Promise와 미디어 이벤트는 다른 순서로 도착할 수 있다.
 test('Sua 문장을 하나의 요소에서 순차 재생하며 원음 속도를 유지한다', async () => {

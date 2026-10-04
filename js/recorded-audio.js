@@ -7,6 +7,7 @@
   var FQ = (global.FQ = global.FQ || {});
   // 선택한 목소리의 전체 음원이 준비되기 전에는 기존 읽어주기를 교체하지 않는다.
   if (!FQ.voiceManifest || FQ.voiceManifest.ready !== true) return;
+  var createListeningCue = FQ.audio && FQ.audio.createListeningCue;
   var ctx = null;
   var enabled = true;
   var speakEnabled = true;
@@ -30,6 +31,8 @@
     try { ctx = new C(); } catch (e) { ctx = null; }
     return ctx;
   }
+  var cueListening = createListeningCue ? createListeningCue(ac, function () { return enabled; }) :
+    function (onDone) { if (typeof onDone === 'function') onDone(); };
 
   /**
    * 사용자가 화면을 처음 만질 때 소리를 깨운다.
@@ -435,6 +438,8 @@
     setEnabled: setEnabled,
     setSpeakEnabled: setSpeakEnabled,
     unlock: unlock,
-    primeSpeech: primeSpeech
+    primeSpeech: primeSpeech,
+    createListeningCue: createListeningCue,
+    cueListening: cueListening
   };
 })(window);

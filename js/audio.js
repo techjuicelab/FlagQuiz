@@ -39,6 +39,60 @@
     return ctx;
   }
 
+  // 실제 마이크 준비 뒤에만 불린다. 비프 종료 전에는 녹음 표본을 받지 않는다.
+  function createListeningCue(getContext, isEnabled) {
+    return function (onDone) {
+      var finished = false, timer = null, a = null, oscillator = null, gain = null;
+      function finish(notify, stopSound) {
+        if (finished) return;
+        finished = true;
+        if (timer !== null) global.clearTimeout(timer);
+        if (oscillator) {
+          oscillator.onended = null;
+          if (stopSound) { try { oscillator.stop(a.currentTime); } catch (e) {} }
+          try { oscillator.disconnect(); } catch (e) {}
+        }
+        if (gain) { try { gain.disconnect(); } catch (e) {} }
+        if (notify && typeof onDone === 'function') onDone();
+      }
+      function cancel() { finish(false, true); }
+      function playCue() {
+        if (finished) return;
+        if (!isEnabled() || a.state !== 'running') { finish(true, true); return; }
+        try {
+          var t = a.currentTime;
+          oscillator = a.createOscillator();
+          gain = a.createGain();
+          oscillator.type = 'sine';
+          oscillator.frequency.setValueAtTime(880, t);
+          gain.gain.setValueAtTime(0, t);
+          gain.gain.linearRampToValueAtTime(0.025, t + 0.005);
+          gain.gain.linearRampToValueAtTime(0, t + 0.045);
+          oscillator.connect(gain);
+          gain.connect(a.destination);
+          oscillator.onended = function () { finish(true, false); };
+          oscillator.start(t);
+          oscillator.stop(t + 0.045);
+        } catch (e) { finish(true, true); }
+      }
+      try {
+        if (!isEnabled()) { finish(true, true); return cancel; }
+        a = getContext();
+        if (!a || a.state === 'closed') { finish(true, true); return cancel; }
+        // 재생 허가·종료 이벤트가 오지 않아도 듣기를 계속하고 늦은 비프를 막는다.
+        timer = global.setTimeout(function () { finish(true, true); }, 250);
+        if (a.state !== 'running') {
+          if (!a.resume) { finish(true, true); return cancel; }
+          var resumed = a.resume();
+          if (resumed && resumed.then) resumed.then(playCue, function () { finish(true, true); });
+          else playCue();
+        } else playCue();
+      } catch (e) { finish(true, true); }
+      return cancel;
+    };
+  }
+  var cueListening = createListeningCue(ac, function () { return enabled; });
+
   /**
    * 사용자가 화면을 처음 만질 때 소리를 깨운다.
    * 아이폰·아이패드는 손가락 조작 중에 한 번 소리를 내 봐야 그다음부터 소리가 난다.
@@ -351,6 +405,8 @@
     setEnabled: setEnabled,
     setSpeakEnabled: setSpeakEnabled,
     unlock: unlock,
-    primeSpeech: primeSpeech
+    primeSpeech: primeSpeech,
+    createListeningCue: createListeningCue,
+    cueListening: cueListening
   };
 })(window);

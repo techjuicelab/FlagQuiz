@@ -32,15 +32,68 @@ function fixture(options = {}) {
   return { resolve, calls };
 }
 
-test('명확한 답·포기와 명백한 재질문은 Jev를 호출하지 않는다', async () => {
+test('Jev 미설정의 명확한 답·포기와 명백한 재질문은 외부 호출 없이 유지한다', async () => {
   for (const result of [
     { status: 'answer', code: 'kr', text: '대한민국', reason: 'single-answer', candidates: candidates.slice(1) },
     { status: 'giveup', code: null, text: '', reason: 'explicit-giveup', candidates: [] },
     ...['negation', 'uncertain', 'quoted', 'help-request', 'unknown', 'invalid-input', 'ambiguous-alias'].map(reason => retry({ reason }))
   ]) {
-    const f = fixture({ rules: rules(result) });
+    const f = fixture({ rules: rules(result), apiKey: result.status === 'answer' ? '' : undefined });
     const actual = await f.resolve(input);
     assert.equal(actual.status, result.status); assert.equal(actual.source, 'rules'); assert.equal(f.calls.length, 0);
+  }
+});
+
+test('키 미설정의 반복한 스웨덴 답은 서버 규칙으로 결정하고 추가 선택 API를 호출하지 않는다', async () => {
+  let calls = 0;
+  const resolve = createAnswerResolver({ fetchImpl: async () => {
+    calls++; throw new Error('명확한 같은 답은 외부 선택 요청이 필요 없다');
+  } });
+  for (const mode of ['voice', 'country-chain']) {
+    const actual = await resolve({ text: '다시. 스웨덴. 스웨덴. 그는.', mode, target: '덴마크' });
+    assert.deepEqual(actual, { status: 'answer', code: 'se', text: '스웨덴', reason: 'repeated-answer', source: 'rules' });
+  }
+  const capital = await resolve({ text: '다시. 스톡홀름. 스톡홀름. 그는.', mode: 'capitalVoice' });
+  assert.equal(capital.code, 'se'); assert.equal(capital.text, '스톡홀름'); assert.equal(capital.source, 'rules');
+  assert.equal(calls, 0);
+});
+
+test('Jev 설정 시 명확한 실제 답도 전사 후보 안에서 확인하며 현재 문제의 정답을 보내지 않는다', async () => {
+  const calls = [], before = [];
+  const resolve = createAnswerResolver({ apiKey: 'fixture-typesafe-never-real', fetchImpl: async (url, config) => {
+    calls.push(JSON.parse(config.body));
+    return { ok: true, json: async () => ({ model: JEV_MODEL, answers: { final_selection: {
+      type: 'choice', choice: 'se', confidence: 0.985, probabilities: { se: 0.99, unresolved: 0.005, giveup: 0.005 }
+    } } }) };
+  } });
+  for (const mode of ['voice', 'country-chain', 'capitalVoice']) {
+    const text = mode === 'capitalVoice' ? '다시. 스톡홀름. 스톡홀름. 그는.' : '다시. 스웨덴. 스웨덴. 그는.';
+    const actual = await resolve({ text, mode, target: '일본', answer: '일본', question: '일본 국기' }, {
+      beforeSemantic: async () => { before.push('fresh-authorization'); }
+    });
+    assert.equal(actual.status, 'answer'); assert.equal(actual.code, 'se'); assert.equal(actual.source, 'jev');
+    assert.deepEqual(Object.keys(calls.at(-1).questions.final_selection.criteria).sort(), ['giveup', 'se', 'unresolved']);
+    assert.doesNotMatch(JSON.stringify(calls.at(-1)), /일본|target|quiz_question/);
+  }
+  assert.equal(calls.length, 3); assert.equal(before.length, 3);
+});
+
+test('Jev 호출 직전 권한 오류는 공급자 요청 전에 중단하고 규칙 답으로 삼키지 않는다', async () => {
+  const f = fixture();
+  await assert.rejects(f.resolve(input, { beforeSemantic: async () => { throw new Error('access-revoked'); } }), /access-revoked/);
+  assert.equal(f.calls.length, 0);
+});
+
+test('명확한 답 검증의 모델 실패·다른 앞선 후보 선택은 원래 답을 보존하고 재시도하지 않는다', async () => {
+  const baseline = { status: 'answer', code: 'kr', text: '대한민국', reason: 'explicit-correction', candidates };
+  for (const options of [
+    { response: response('jp', { probabilities: { jp: 0.985, kr: 0.005, unresolved: 0.005, giveup: 0.005 } }) },
+    { fetch: async () => { throw new Error('fixture-upstream-failed'); } },
+    { response: response('kr', { confidence: 0.1 }) }
+  ]) {
+    const f = fixture({ rules: rules(baseline), ...options });
+    const actual = await f.resolve({ text: '일본 아니고 대한민국', mode: 'voice', target: '일본' });
+    assert.equal(actual.code, 'kr'); assert.equal(actual.source, 'rules'); assert.equal(f.calls.length, 1);
   }
 });
 

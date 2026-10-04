@@ -75,10 +75,11 @@
       emit(session, 'onState', { state: phase, playerId: session.playerId, turnId: session.turnId, mode: session.mode });
     }
     function clearTimers(session) {
-      ['permissionTimer', 'recordTimer', 'rotationTimer', 'levelTimer', 'stopTimer', 'processingTimer', 'networkTimer'].forEach(function (key) {
+      ['permissionTimer', 'readyTimer', 'recordTimer', 'rotationTimer', 'levelTimer', 'stopTimer', 'processingTimer', 'networkTimer'].forEach(function (key) {
         if (session[key]) global.clearTimeout(session[key]);
         session[key] = null;
       });
+      if (session.finishReady) session.finishReady();
     }
     function stopTracks(stream) {
       if (stream && stream.getTracks) stream.getTracks().forEach(function (track) { track.stop(); });
@@ -161,6 +162,29 @@
       if (session.request) session.request.abort();
       session.request = null; enableTracks(session.stream, true);
       beginRecording(session, true);
+    }
+
+    function beforeRecord(session) {
+      return new Promise(function (resolve) {
+        var completed = false;
+        function done() {
+          if (completed) return;
+          completed = true;
+          global.clearTimeout(session.readyTimer); session.readyTimer = null; session.finishReady = null;
+          var cleanup = session.readyCleanup; session.readyCleanup = null;
+          if (typeof cleanup === 'function') { try { cleanup(); } catch (failure) {} }
+          resolve();
+        }
+        session.finishReady = done;
+        session.readyTimer = global.setTimeout(done, 500);
+        try {
+          var pending = opts.beforeRecord(done);
+          if (typeof pending === 'function') {
+            if (completed) { try { pending(); } catch (failure) {} }
+            else session.readyCleanup = pending;
+          } else if (pending && pending.then) pending.then(done, done);
+        } catch (failure) { done(); }
+      });
     }
 
     async function upload(session) {
@@ -271,28 +295,24 @@
       for (var i = 0; i < samples.length; i++) sum += samples[i] * samples[i];
       var now = Date.now();
       var rms = Math.sqrt(sum / samples.length);
-      if (!session.continuous) {
-        if (rms > 0.012) { session.heard = true; session.lastLoud = now; }
+      // 작은 목소리도 배경보다 커진 소리가 이어지면 받는다. 단발은 짧은 나라 단어를 더 촘촘히 확인한다.
+      if (session.noiseFloor === undefined) session.noiseFloor = Math.min(rms, 0.015);
+      var threshold = Math.max(0.003, session.noiseFloor * 1.5);
+      if (rms > threshold) {
+        if (session.candidateSince === null) session.candidateSince = now;
+        if (now - session.candidateSince >= (session.continuous ? 150 : 100)) session.heard = true;
+        if (session.heard) session.lastLoud = now;
       } else {
-        // 배경 대비 증가가 150ms 이어질 때 발화로 본다. 정숙한 곳에서는 작은 목소리도 받는다.
-        if (session.noiseFloor === undefined) session.noiseFloor = Math.min(rms, 0.015);
-        var threshold = Math.max(0.003, session.noiseFloor * 1.5);
-        if (rms > threshold) {
-          if (session.candidateSince === null) session.candidateSince = now;
-          if (now - session.candidateSince >= 150) session.heard = true;
-          if (session.heard) session.lastLoud = now;
-        } else {
-          session.candidateSince = null;
-          if (!session.heard) session.noiseFloor = session.noiseFloor * 0.9 + Math.min(rms, 0.015) * 0.1;
-        }
-        if (!session.heard && session.candidateSince === null && now - session.started >= 4000) { rotate(session); return; }
+        session.candidateSince = null;
+        if (!session.heard) session.noiseFloor = session.noiseFloor * 0.9 + Math.min(rms, 0.015) * 0.1;
       }
-      var quietMs = session.mode === 'country-chain' ? 1200 : 2200;
-      if (session.heard && now - session.lastLoud >= quietMs) { stop(); return; }
+      if (session.continuous && !session.heard && session.candidateSince === null && now - session.started >= 4000) { rotate(session); return; }
+      // 녹음 길이 상한과 별개로, 세 놀이 모두 200ms 조용해지면 하나의 답변으로 마친다.
+      if (session.heard && now - session.lastLoud >= 200) { stop(); return; }
       if (!session.continuous && !session.heard && now - session.started >= 5000) {
         error(session, 'no-speech', '목소리가 들리지 않았어요. 다시 말하거나 글자로 답해 주세요.'); return;
       }
-      session.levelTimer = global.setTimeout(function () { levels(session); }, 100);
+      session.levelTimer = global.setTimeout(function () { levels(session); }, 20);
     }
 
     function beginRecording(session, announce) {
@@ -382,6 +402,12 @@
         }
         if (!usableMicrophone(session.microphone)) throw { code: 'recording' };
         global.clearTimeout(session.permissionTimer); session.permissionTimer = null;
+        // 준비 비프는 마이크를 열어 둔 채 음소거해서 답변에 섞이지 않게 한다.
+        enableTracks(session.stream, false);
+        if (typeof opts.beforeRecord === 'function') {
+          await beforeRecord(session);
+          if (!live(session)) return;
+        }
         session.mime = mime(); enableTracks(session.stream, true);
         beginRecording(session, true);
       } catch (failure) {

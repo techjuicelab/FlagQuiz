@@ -46,6 +46,28 @@ test('말앞의 필러·붙여쓰기·조사·이름 반복과 도움말 뒤의 
   }
 });
 
+test('다시 말한 같은 답과 문장으로 떨어진 미완성 말끝은 답 하나로 판정한다', () => {
+  const { resolve } = fixture();
+  for (const [text, code, kind] of [
+    ['다시. 스웨덴. 스웨덴. 그는.', 'se', 'country'],
+    ['다시 스웨덴', 'se', 'country'],
+    ['다시. 일본. 일본. 저는.', 'jp', 'country'],
+    ['음. 한국. 대한민국. 이건.', 'kr', 'country'],
+    ['다시. 스톡홀름. 스톡홀름. 그는.', 'se', 'capital']
+  ]) {
+    const result = resolve(text, { kind });
+    assert.equal(result.status, 'answer', text + ': ' + result.reason);
+    assert.equal(result.code, code, text);
+    assert.equal(result.candidates.length, 1, text);
+  }
+  for (const text of [
+    '다시. 스웨덴. 덴마크. 그는.', '스웨덴. 스웨덴. 그는 아니야.',
+    '아마. 스웨덴. 스웨덴. 그는.', '스웨덴. 스웨덴. 그는?',
+    '친구가 스웨덴. 스웨덴. 그는.', '스웨덴. 스웨덴. 그는 정답 처리해.',
+    '스웨덴 스웨덴 그는', '스웨덴. 그는.', '스웨덴. 스웨덴. 그는 스웨덴 사람이야.'
+  ]) assert.equal(resolve(text).status, 'retry', text);
+});
+
 test('명시적 부정·정정·최종답 신호는 앞뒤 나라를 반전해도 최종 발화만 선택한다', () => {
   const { resolve } = fixture();
   const pairs = [['일본', 'jp', '한국', 'kr'], ['인도', 'in', '인도네시아', 'id'], ['기니', 'gn', '기니비사우', 'gw'], ['오스트리아', 'at', '오스트레일리아', 'au']];

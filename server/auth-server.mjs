@@ -5,6 +5,7 @@ import { createReadStream } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomBytes, createHmac, timingSafeEqual } from 'node:crypto';
+import { performance } from 'node:perf_hooks';
 import { createGoogleOidc, IdentityError } from './lib/google-oidc.mjs';
 import { createTechJuiceId, TechJuiceIdError } from './lib/techjuice-id.mjs';
 import { openAccessStore, AccessError } from './lib/access-store.mjs';
@@ -127,7 +128,7 @@ function loginPage(res, error, config, formToken) {
     '<p id="legacy-notice" role="status" aria-live="polite" hidden></p><a href="/api/auth/login">Google 계정으로 로그인</a></main><script src="/auth-cleanup.js" defer></script><script src="/login-legacy.js" defer></script></html>');
 }
 
-export async function createAuthServer({ config = readConfig(), fetchImpl = fetch, clock = Date.now, oidc: injectedOidc, techjuiceId: injectedTechjuiceId, speechModule: injectedSpeech } = {}) {
+export async function createAuthServer({ config = readConfig(), fetchImpl = fetch, clock = Date.now, timingClock = () => performance.now(), oidc: injectedOidc, techjuiceId: injectedTechjuiceId, speechModule: injectedSpeech } = {}) {
   const store = config.ready ? await openAccessStore({ directory: config.stateDirectory, clock }) : null;
   const staticRoot = await fs.realpath(config.staticRoot).catch(() => config.staticRoot);
   if (store) {
@@ -208,22 +209,40 @@ export async function createAuthServer({ config = readConfig(), fetchImpl = fetc
     function disconnected() { if (!res.writableEnded) abort.abort(); }
     req.on('aborted', disconnected); res.on('close', disconnected);
     activeSpeech += 1; speechUsers.add(session.sub);
+    const timings = [];
+    async function measure(name, operation) {
+      const started = timingClock();
+      try { return await operation(); }
+      finally {
+        // 전사·오디오·계정 정보 없이 단계 이름과 단조시계의 경과 시간만 응답한다.
+        const duration = timingClock() - started;
+        if (Number.isFinite(duration) && !res.destroyed && !res.headersSent) {
+          timings.push(name + ';dur=' + Math.max(0, duration).toFixed(1));
+          res.setHeader('Server-Timing', timings.join(', '));
+        }
+      }
+    }
     try {
       speech ||= await import('./speech.mjs');
       transcribe ||= speech.createTranscriber({ apiKey: config.groqApiKey, fetchImpl });
       const input = await speech.readSpeechInput(req, { signal: abort.signal });
-      const current = tjid ? await authorized(req, true) : session;
-      if (current.id !== session.id) throw new AccessError(401, 'login-required');
+      const current = await measure('authorization', async () => {
+        const checked = tjid ? await authorized(req, true) : session;
+        if (checked.id !== session.id) throw new AccessError(401, 'login-required');
+        return checked;
+      });
       const quota = await store.consumeSpeechQuota(current);
-      const result = await transcribe(input, { signal: abort.signal });
+      const result = await measure('speech', () => transcribe(input, { signal: abort.signal }));
       if (abort.signal.aborted) throw new AccessError(499, 'cancelled');
-      if (config.typesafeApiKey) {
-        const selectionSession = await authorized(req, true);
-        if (selectionSession.id !== session.id) throw new AccessError(401, 'login-required');
-      }
-      if (abort.signal.aborted) throw new AccessError(499, 'cancelled');
-      resolveAnswer ||= (await import('./answer-resolution.mjs')).createAnswerResolver({ apiKey: config.typesafeApiKey, fetchImpl });
-      const resolution = await resolveAnswer({ text: result.text, mode: input.mode }, { signal: abort.signal });
+      const resolution = await measure('selection', async () => {
+        resolveAnswer ||= (await import('./answer-resolution.mjs')).createAnswerResolver({ apiKey: config.typesafeApiKey, fetchImpl });
+        return resolveAnswer({ text: result.text, mode: input.mode }, { signal: abort.signal,
+          beforeSemantic: () => measure('selection-auth', async () => {
+            const selectionSession = await authorized(req, true);
+            if (selectionSession.id !== session.id) throw new AccessError(401, 'login-required');
+          })
+        });
+      });
       json(res, 200, { text: result.text, playerId: input.playerId, turnId: input.turnId, mode: input.mode,
         resolution, quota: { dailyUsed: quota.dailyUsed, dailyLimit: quota.dailyLimit } });
     } catch (error) {
