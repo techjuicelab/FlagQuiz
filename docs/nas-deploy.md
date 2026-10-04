@@ -22,6 +22,16 @@ NAS loopback과 외부 HTTPS에서 `/health`가 정상이고 DNS·Cloudflare 경
 
 실제 기기 마이크와 브라우저 놀이 화면, 예약 백업의 첫 실행과 실패 알림, NAS 외부 암호화 사본은 아직 확인하지 않았다. 후속 재배포·기기·백업 검증은 해당 SHA와 UTC 시각을 별도로 기록한다.
 
+## 2026-10-04 빠른 말하기 후속 배포
+
+Forgejo deploy run `584`는 commit `b919a3e83eda4717ff030e33d679f05d6f5624c4`, run `585`는 commit `57810302aa60beb912500fe822e144f921676f9f`의 운영 배포를 완료했다. 준비 비프, 말끝 200ms 무음 감지, JEV 최종 선택 확인과 오답 설명 후 자동 진행을 반영했고, 후속 배포에서는 나라 이름만 말한 경우도 확정 답으로 판별하도록 JEV 안내를 보완했다. GitHub [PR #15](https://github.com/techjuicelab/FlagQuiz/pull/15)와 [PR #16](https://github.com/techjuicelab/FlagQuiz/pull/16)의 병합도 완료했다.
+
+후속 배포 뒤 기존 검증 세션으로 인증된 접근이 유지됨을 확인했다. 운영 `js/app.js`, `js/cloud-speech.js`, `js/spoken-answer.js`, `js/audio.js`, `js/recorded-audio.js` 다섯 파일은 모두 HTTP `200`, `no-store`, 배포 원본과의 바이트 일치를 확인했다. 세션·계정 정보와 비밀 값은 증거 문서에 기록하지 않는다.
+
+합성 음성으로 음성 나라 퀴즈(`voice`), 수도 말하기(`capitalVoice`), 나라 이어 말하기(`country-chain`)의 실제 운영 API를 검사했고, 세 결과 모두 `source: "jev"`로 최종 답을 확인했다. CLI에서 측정한 실제 API 왕복 시간은 나라 퀴즈 `1167ms`, 수도 말하기 `1241ms`, 나라 이어 말하기 `943ms`였다.
+
+별도의 Chrome 가상 오실레이터·실제 MediaRecorder·PCM WAV 검사에서는 준비 비프 뒤 녹음 시작과 합성 신호 종료부터 전송 시작까지 `234ms`를 확인했다. 이 브라우저 처리 시간과 위 CLI 왕복 시간을 합친 약 `1.18~1.48초`는 서로 다른 검사를 합산한 전체 지연의 **추정치**다. 로그인된 실제 브라우저에서 사용자 말끝부터 JEV 최종 결과까지 직접 측정한 값이 아니며, 물리 마이크와 실제 기기 발화도 아직 검증하지 않았다. 현재 증거로는 사용자 목표인 말끝 이후 `0.5~1초`를 충족했다고 판정할 수 없다.
+
 ## 운영 계약
 
 | 항목 | 값 |
