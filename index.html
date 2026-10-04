@@ -24,6 +24,7 @@
   <header class="topbar">
     <div class="brand"><span class="brand-mark" aria-hidden="true"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="4" ry="9"/><path d="M3 12h18"/></svg></span><h1>세계 국기 퀴즈</h1></div>
     <button class="btn btn-sm btn-ghost" id="nav-settings" type="button"><svg class="ui-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m10 3-.6 2.2-2 .9-2-.6-2 3.5 1.5 1.6v2.8L3.4 15l2 3.5 2-.6 2 .9L10 21h4l.6-2.2 2-.9 2 .6 2-3.5-1.5-1.6v-2.8L20.6 9l-2-3.5-2 .6-2-.9L14 3Z"/><circle cx="12" cy="12" r="3"/></svg><span>설정</span></button>
+    <button class="btn btn-sm btn-ghost" id="nav-account" type="button" hidden>가족 계정</button>
   </header>
   <nav class="primary-nav" aria-label="주요 화면">
     <button id="nav-home" type="button" aria-current="page"><svg class="ui-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 10 9-7 9 7v10H3Z"/><path d="M9 20v-7h6v7"/></svg><span>놀이</span></button>
@@ -32,6 +33,7 @@
   </nav>
 
   <p id="connection-note" class="connection-note small" role="status" hidden></p>
+  <section id="legacy-record-note" class="card small" role="status" hidden></section>
 
   <main id="main" tabindex="-1">
     <div id="boot" class="card">국기 자료를 불러오는 중이에요…</div>
@@ -59,6 +61,9 @@
   </div>
 </div>
 
+<script src="login-legacy.js"></script>
+<script src="js/legacy-records.js"></script>
+<script src="js/legacy-boot.js"></script>
 <script src="js/util.js"></script>
 <script src="js/storage.js"></script>
 <script src="js/features.js"></script>
@@ -81,6 +86,9 @@
 <script src="js/badges.js"></script>
 <script src="js/screens.js"></script>
 <script src="js/offline.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/cloud-speech.js"></script>
+<script src="js/country-chain.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

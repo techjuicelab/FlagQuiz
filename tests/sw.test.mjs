@@ -1085,7 +1085,12 @@ test('실제 배포 원장의 국기·그림·수아 음성·음악을 빠짐없
   assert.ok(items.filter(item => item.group === 'art').length >= 342);
   assert.ok(items.filter(item => item.group === 'audio').length >= 1319);
   assert.ok(items.some(item => item.url.startsWith('./audio/music/')));
-  for (const item of items) assert.ok(fs.existsSync(new URL('.' + item.url, import.meta.url)), item.url);
+  assert.ok(items.some(item => item.url === './login-legacy.js'));
+  for (const item of items) {
+    // build-site가 server 원본을 배포 루트로 복사하는 항목도 실제 파일 존재를 검사한다.
+    const sourcePath = item.url === './login-legacy.js' ? '../server/login-legacy.js' : '.' + item.url;
+    assert.ok(fs.existsSync(new URL(sourcePath, import.meta.url)), item.url);
+  }
 });
 
 test('캐시를 읽을 수 없으면 준비 완료 대신 저장소 오류를 알린다', async () => {

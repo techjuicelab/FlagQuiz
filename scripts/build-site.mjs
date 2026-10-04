@@ -71,6 +71,7 @@ for (const file of files) {
   await fs.mkdir(path.dirname(path.join(output, file)), { recursive: true });
   await fs.copyFile(path.join(root, file), path.join(output, file));
 }
+await fs.copyFile(path.join(root, 'server/login-legacy.js'), path.join(output, 'login-legacy.js'));
 // 캐시 우선 셸은 내용이 바뀔 때마다 새 버킷에 설치한다. 빌드할 때 버전을 계산해
 // 수동 버전 갱신을 빠뜨려도 이전 화면과 새 스크립트가 섞이지 않게 한다.
 const shellHash = createHash('sha256');
@@ -83,7 +84,7 @@ async function hashShell(folder) {
   }
 }
 for (const folder of ['assets', 'css', 'js', 'data']) await hashShell(folder);
-for (const file of ['index.html', 'manifest.webmanifest', 'sw.js']) {
+for (const file of ['index.html', 'manifest.webmanifest', 'sw.js', 'login-legacy.js']) {
   shellHash.update(file + '\0').update(await fs.readFile(path.join(output, file)));
 }
 const workerPath = path.join(output, 'sw.js');

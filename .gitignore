@@ -5,6 +5,7 @@ node_modules/
 .env.*
 !*.op.env
 _site/
+.private-data/
 
 # 로컬 검토 보고서와 API 사용량·재생 검증 자료
 docs/review-2026-09-10.md

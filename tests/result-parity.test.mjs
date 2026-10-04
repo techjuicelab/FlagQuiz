@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const source = fs.readFileSync(new URL('app.test.mjs', import.meta.url), 'utf8');
-const start = source.indexOf('function fixture()');
+const start = source.indexOf('function fixture(');
 const end = source.indexOf('let passed=0;');
 assert.ok(start >= 0 && end > start, '앱 흐름 fixture를 찾을 수 있어야 한다');
 const fixture = new Function('fs', 'vm', 'path', 'root', 'assert', source.slice(start, end) + '\nreturn fixture;')(fs, vm, path, root, assert);

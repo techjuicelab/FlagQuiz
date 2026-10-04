@@ -280,5 +280,25 @@
       }).join('') + '</div></div>';
   }
 
-  FQ.map = { chooseOptions: chooseOptions, render: render, study: study, describe: describe, fits: fits, MIN_WIDTH: MIN_WIDTH };
+  /* 번갈아 말하기의 기록 지도. 퀴즈 보기와 달리 모든 나라의 실제 위치를 누적한다. */
+  function collection(countries, options) {
+    var opts = options || {}, seen = {}, list = [];
+    (countries || []).forEach(function (country) {
+      if (coord(country) && !seen[country.code]) { seen[country.code] = true; list.push(country); }
+    });
+    return '<div class="chain-map-scroll" role="region" aria-label="말한 나라가 쌓이는 세계지도. 좌우로 움직여 볼 수 있어요." tabindex="0">' +
+      '<div class="chain-map-canvas">' +
+      '<svg class="map-context-land" viewBox="0 0 2000 1000" preserveAspectRatio="xMidYMid meet" aria-hidden="true" focusable="false">' +
+      land() + equator(worldView()) + '</svg>' + continentLabels(worldView(), null, [], 'world') +
+      list.map(function (country) {
+        var p = coord(country), owner = opts.owners && opts.owners[country.code] === 1 ? 1 : 0;
+        var active = country.code === opts.activeCode;
+        return '<button type="button" class="chain-map-marker chain-owner-' + owner + (active ? ' is-active' : '') +
+          '" data-chain-country="' + esc(country.code) + '" aria-label="' + esc(country.ko + ' 위치 보기') +
+          '" aria-pressed="' + active + '" title="' + esc(country.ko) + '" style="' +
+          percent((p[0] + 180) / 360 * 100, (90 - p[1]) / 180 * 100) + '"><span aria-hidden="true"></span></button>';
+      }).join('') + '</div></div>';
+  }
+
+  FQ.map = { chooseOptions: chooseOptions, render: render, study: study, collection: collection, describe: describe, fits: fits, MIN_WIDTH: MIN_WIDTH };
 })(window);
