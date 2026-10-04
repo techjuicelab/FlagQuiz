@@ -4,6 +4,8 @@ Node.js 24 이상으로 `_site`를 로그인 뒤에서 제공한다. Google OAut
 
 운영에서는 HTTPS 도메인을 이 서버의 reverse proxy에 연결하고 `STATE_DIR`를 서버 재시작 후에도 남는 로컬 디스크 또는 Docker volume에 연결한다. 동일 `STATE_DIR`는 서버 프로세스 하나만 사용한다. GitHub Pages의 정적 파일 배포는 서버 세션으로 보호할 수 없으므로 공개 배포를 종료하고 비공개 서버 주소를 사용해야 한다.
 
+로그인 시작은 서버가 직접 본 소켓 IP마다 5분에 10회로 제한한다. Reverse proxy 뒤에서는 여러 사용자의 소켓 IP가 프록시 IP 하나가 되어 이 한도를 공유할 수 있다. 현재 서버는 `X-Forwarded-For`를 신뢰하지 않는다. 운영 프록시를 정한 뒤 신뢰할 프록시 범위와 실제 사용자 IP별 제한을 검증하고 조정해야 한다.
+
 ## 시작 설정
 
 `PUBLIC_ORIGIN`은 실제 HTTPS origin이고 경로를 붙이지 않는다. Google Cloud의 웹 OAuth client에 다음 redirect URI를 정확히 등록한다.

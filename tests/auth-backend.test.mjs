@@ -278,6 +278,28 @@ test('로그인 요청은 IP 별 한도를 적용하고 인증되지 않은 API 
   const response = await f.request('/api/auth/session', { headers: { Origin: 'https://attacker.test' } }); assert.equal(response.headers.get('access-control-allow-origin'), null);
 });
 
+test('로그인 제한에 만료된 IP 10,000개가 쌓여도 새 IP 를 허용하고 활성 IP 의 한도는 유지한다', async t => {
+  let now = time; const f = await httpFixture(t, { clock: () => now });
+  // 실제 HTTP 요청에서 서로 다른 소켓 주소를 모사한다. 운영 코드에는 헤더 신뢰 경로를 추가하지 않는다.
+  f.app.server.prependListener('request', req => {
+    Object.defineProperty(req.socket, 'remoteAddress', { value: req.headers['x-test-peer'], configurable: true });
+  });
+  async function startLogin(peer) {
+    const response = await f.request('/api/auth/login', { headers: { 'X-Test-Peer': peer } });
+    await response.text(); return response.status;
+  }
+  for (let start = 0; start < 10000; start += 100) {
+    const statuses = await Promise.all(Array.from({ length: 100 }, (_, offset) => startLogin('198.18.' + Math.floor((start + offset) / 256) + '.' + (start + offset) % 256)));
+    assert.ok(statuses.every(status => status === 303 || status === 429));
+  }
+  const freshPeer = '198.19.255.1';
+  assert.equal(await startLogin(freshPeer), 429, '활성 항목이 가득 차면 새 IP 를 차단한다');
+  now += 11 * 60 * 1000;
+  for (let n = 0; n < 10; n++) assert.equal(await startLogin(freshPeer), 303, '만료 항목을 정리한 뒤 로그인 요청을 다시 받는다');
+  assert.equal(await startLogin(freshPeer), 429, '살아 있는 IP 의 10회 한도는 초기화하지 않는다');
+  assert.equal(await startLogin('198.19.255.2'), 303, '다른 새 IP 도 만료 항목에 막히지 않는다');
+});
+
 test('관리자 JSON 을 기다리는 중 로그아웃하거나 세션이 만료되면 add/remove 둘 다 현재 권한으로 다시 차단한다', async t => {
   for (const method of ['POST', 'DELETE']) for (const revoke of ['logout', 'expire']) {
     let now = time; const f = await httpFixture(t, { clock: () => now }), admin = await f.login(), session = await f.session(admin.cookie);

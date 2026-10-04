@@ -120,7 +120,7 @@ export async function createAuthServer({ config = readConfig(), fetchImpl = fetc
   }
   function rate(key, limit, interval) {
     const time = clock();
-    if (rates.size > 10000) for (const [id, item] of rates) if (item.until <= time) rates.delete(id);
+    if (rates.size >= 10000) for (const [id, item] of rates) if (item.until <= time) rates.delete(id);
     if (!rates.has(key) && rates.size >= 10000) throw new AccessError(429, 'request-limit');
     let entry = rates.get(key);
     if (!entry || entry.until <= time) { entry = { count: 0, until: time + interval }; rates.set(key, entry); }
