@@ -1,0 +1,107 @@
+name: NAS에 세계 놀이 배포
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: flagquiz-nas
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: deploy
+    steps:
+      - uses: actions/checkout@v4
+      - name: 검증한 이미지 배포
+        shell: bash
+        env:
+          APP_ENV_FILE: ${{ secrets.APP_ENV_FILE }}
+          DOCKER_BUILDKIT: "0"
+        run: |
+          set -euo pipefail
+          [[ "$GITHUB_REF" == refs/heads/main ]] || exit 1
+          APP=${GITHUB_REPOSITORY##*/}
+          [[ "$APP" == flagquiz ]] || exit 1
+          [[ "$GITHUB_SHA" =~ ^[0-9a-f]{40}$ ]] || exit 1
+          TAG=${GITHUB_SHA:0:12}
+          [[ -n "$APP_ENV_FILE" ]] || exit 1
+          umask 077
+          ENV_FILE="$PWD/deploy/.env"
+          cleanup() { rm -f "$ENV_FILE"; }
+          trap cleanup EXIT
+          printf '%s\n' "$APP_ENV_FILE" > "$ENV_FILE"
+          docker build --pull --label "org.opencontainers.image.revision=$GITHUB_SHA" -t "$APP:$TAG" .
+          export APP TAG
+          cd deploy
+          # 실제 배포와 같은 Compose 해석을 쓰고, 비밀 JSON은 저장하거나 출력하지 않는다.
+          if ! docker compose -p "$APP" -f compose.prod.yml config --quiet 2>/dev/null; then
+            printf '운영 설정 검사 실패\n' >&2
+            exit 1
+          fi
+          if ! docker compose -p "$APP" -f compose.prod.yml config --format json 2>/dev/null | \
+            docker run --rm -i --network none --read-only --user 1000:1000 --cap-drop ALL \
+              --security-opt no-new-privileges:true \
+              --tmpfs /var/lib/flagquiz:rw,noexec,nosuid,size=1m,mode=0700,uid=1000,gid=1000 \
+              --entrypoint node "$APP:$TAG" --no-warnings scripts/check-private-config.mjs; then
+            printf '운영 설정 검사 실패\n' >&2
+            exit 1
+          fi
+          OLD_IMAGE=$(docker ps -a --filter "label=com.docker.compose.project=$APP" \
+            --filter "label=com.docker.compose.service=web" --filter "label=deployed-by=forgejo-actions" \
+            --format '{{.Image}}')
+          [[ -z "$OLD_IMAGE" || "$OLD_IMAGE" =~ ^flagquiz:[0-9a-f]{12}$ ]] || exit 1
+          if docker volume inspect flagquiz-data >/dev/null 2>&1; then
+            STATE_ARGS=(--directory /var/lib/flagquiz)
+            if [[ -z "$OLD_IMAGE" ]]; then STATE_ARGS+=(--allow-empty); fi
+            SOURCE_STATUS=0
+            docker run --rm --network none --read-only --user 1000:1000 --cap-drop ALL \
+              --security-opt no-new-privileges:true \
+              --mount type=volume,source=flagquiz-data,target=/var/lib/flagquiz,readonly \
+              --entrypoint node "$APP:$TAG" scripts/check-private-state.mjs "${STATE_ARGS[@]}" \
+              || SOURCE_STATUS=$?
+            [[ "$SOURCE_STATUS" == 0 || "$SOURCE_STATUS" == 3 ]] || exit "$SOURCE_STATUS"
+            if [[ "$SOURCE_STATUS" == 3 ]]; then
+              [[ -z "$OLD_IMAGE" ]] || exit 1
+              printf '기존 운영 앱이 없고 데이터가 완전히 비어 있어 새 데이터를 초기화합니다.\n'
+            else
+              DEPLOYMENT_SHA=unknown
+              if [[ -n "$OLD_IMAGE" ]]; then
+                DEPLOYMENT_SHA=$(docker image inspect --format '{{index .Config.Labels "org.opencontainers.image.revision"}}' "$OLD_IMAGE")
+                [[ "$DEPLOYMENT_SHA" =~ ^[0-9a-f]{40}$ ]] || exit 1
+              fi
+              export DEPLOYMENT_SHA
+              docker compose -p "$APP" -f compose.prod.yml --profile operations run --rm --no-deps backup
+            fi
+          else
+            # 기존 앱의 데이터는 조회 실패를 빈 첫 배포로 해석하지 않는다.
+            if [[ -n "$OLD_IMAGE" ]]; then
+              printf '운영 데이터 볼륨 확인 실패\n' >&2
+              exit 1
+            fi
+            # 목록 조회도 성공하고 정확한 이름이 없을 때만 새 볼륨 생성을 허용한다.
+            if ! VOLUME_NAMES=$(docker volume ls --filter 'name=^flagquiz-data$' --format '{{.Name}}' 2>/dev/null); then
+              printf '운영 데이터 볼륨 확인 실패\n' >&2
+              exit 1
+            fi
+            if [[ -n "$VOLUME_NAMES" ]]; then
+              printf '운영 데이터 볼륨 확인 실패\n' >&2
+              exit 1
+            fi
+          fi
+          if docker compose -p "$APP" -f compose.prod.yml up -d --wait --wait-timeout 120 web; then
+            docker tag "$APP:$TAG" "$APP:latest"
+            printf '배포 완료: %s:%s\n' "$APP" "$TAG"
+          else
+            if [[ -n "$OLD_IMAGE" ]]; then
+              TAG=${OLD_IMAGE#flagquiz:}
+              export TAG
+              docker compose -p "$APP" -f compose.prod.yml up -d --wait --wait-timeout 120 web
+              printf '새 배포 실패, 이전 이미지로 복귀: %s\n' "$OLD_IMAGE" >&2
+            else
+              docker compose -p "$APP" -f compose.prod.yml stop web
+              printf '첫 배포 실패, 운영 서비스를 중지했습니다.\n' >&2
+            fi
+            exit 1
+          fi

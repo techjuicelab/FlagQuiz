@@ -1,0 +1,88 @@
+services:
+  web:
+    image: "${APP:?APP is required}:${TAG:?TAG is required}"
+    restart: unless-stopped
+    user: "1000:1000"
+    init: true
+    labels:
+      deployed-by: forgejo-actions
+    ports:
+      - "127.0.0.1:31015:8090"
+    # 백업 프로필은 비밀 없이 실행해야 하므로 운영 서비스에만 환경을 전달한다.
+    environment:
+      AUTH_PROVIDER: "${AUTH_PROVIDER:-techjuice-id}"
+      PUBLIC_ORIGIN: "${PUBLIC_ORIGIN:-}"
+      TJID_SUPABASE_URL: "${TJID_SUPABASE_URL:-}"
+      TJID_SUPABASE_ANON_KEY: "${TJID_SUPABASE_ANON_KEY:-}"
+      TJID_APP_SLUG: "${TJID_APP_SLUG:-}"
+      TJID_GOOGLE_ENABLED: "${TJID_GOOGLE_ENABLED:-false}"
+      TRUSTED_PROXY_IPS: "${TRUSTED_PROXY_IPS:-}"
+      SESSION_SECRET: "${SESSION_SECRET:-}"
+      GROQ_API_KEY: "${GROQ_API_KEY:-}"
+      HOST: "0.0.0.0"
+      PORT: "8090"
+      STATE_DIR: /var/lib/flagquiz
+      STATIC_ROOT: /app/_site
+    volumes:
+      - flagquiz-data:/var/lib/flagquiz
+    networks:
+      - cf-web
+    read_only: true
+    tmpfs:
+      - /tmp:size=32m,mode=1777,noexec,nosuid
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 768m
+    stop_grace_period: 30s
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8090/health',{signal:AbortSignal.timeout(3000)}).then(async r=>{const h=await r.json();process.exit(r.ok&&h.ok===true&&h.configured===true?0:1)}).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  backup:
+    profiles:
+      - operations
+    image: "${APP:?APP is required}:${TAG:?TAG is required}"
+    user: "1000:1000"
+    init: true
+    labels:
+      deployed-by: forgejo-actions
+    entrypoint: ["node", "scripts/backup-private-state.mjs"]
+    command: ["--source", "/var/lib/flagquiz/access.json", "--destination", "/var/backups/flagquiz"]
+    environment:
+      DEPLOYMENT_SHA: "${DEPLOYMENT_SHA:-unknown}"
+    volumes:
+      - flagquiz-data:/var/lib/flagquiz:ro
+      - flagquiz-backups:/var/backups/flagquiz
+    network_mode: none
+    read_only: true
+    tmpfs:
+      - /tmp:size=32m,mode=1777,noexec,nosuid
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 256m
+
+volumes:
+  flagquiz-data:
+    name: flagquiz-data
+    labels:
+      deployed-by: forgejo-actions
+  flagquiz-backups:
+    name: flagquiz-backups
+    labels:
+      deployed-by: forgejo-actions
+
+networks:
+  cf-web:
+    external: true

@@ -691,3 +691,46 @@ h3 { font-size: 1.1rem; }
 .result-gift-list { display: flex; flex-wrap: wrap; gap: 12px; }
 .result-gift { display: flex; flex-direction: column; align-items: center; gap: 4px; width: 88px; text-align: center; font-size: .78rem; }
 .result-gift .gift-sprite { width: 80px; border-radius: 8px; background-color: var(--card-2); }
+
+/* 가족 계정과 두 사람이 함께 모으는 나라 기록. */
+.auth-gate { max-width: 540px; margin: 40px auto; text-align: center; }
+.account-screen { max-width: 680px; margin: auto; }
+.allowlist-form { display: grid; gap: 10px; }
+.allowlist-form input { min-width: 0; width: 100%; min-height: 48px; padding: 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); color: var(--text); }
+.allowlist-members { list-style: none; padding: 0; }
+.allowlist-members li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 0; border-top: 1px solid var(--line); }
+.allowlist-members span { overflow-wrap: anywhere; }
+.chain-home-card { display: flex; align-items: center; gap: 14px; width: 100%; text-align: left; cursor: pointer; color: var(--text); }
+.chain-home-card > span { display: grid; flex: 1; gap: 6px; }
+.chain-home-card b { font-size: 1.1rem; }
+.chain-home-card > span > span { color: var(--text-soft); font-size: .85rem; }
+.chain-screen { display: grid; gap: 16px; min-width: 0; }
+.chain-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; }
+.chain-head h1 { margin: 0; font-size: 1.3rem; }
+.chain-players { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.chain-player { padding: 12px; border: 2px solid var(--line); border-radius: 14px; background: var(--card); overflow-wrap: anywhere; }
+.chain-player.is-current { border-color: var(--accent); background: var(--accent-bg); }
+.chain-player--1.is-current { border-color: #b86400; background: #fff3dd; color: #563000; }
+.chain-player strong, .chain-player span { display: block; }
+.chain-turn { margin: 0; font-size: 1.2rem; font-weight: 700; }
+.chain-entry { display: grid; gap: 12px; }
+.chain-input-form { display: flex; flex-wrap: wrap; gap: 8px; }
+.chain-input-form label { flex-basis: 100%; }
+.chain-input-form input { flex: 1; min-width: 120px; width: 100%; min-height: 48px; padding: 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); color: var(--text); }
+.chain-voice-controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.chain-feedback { min-height: 1.5em; margin: 0; color: var(--accent); font-weight: 650; }
+.chain-feedback.is-warning { color: #a14800; }
+.chain-map, .chain-country-detail { min-width: 0; }
+.chain-country-detail { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.chain-country-detail img { width: 80px; height: 54px; object-fit: contain; }
+.chain-country-detail h2, .chain-country-detail p { margin: 4px 0; }
+.chain-history-list { display: flex; flex-wrap: wrap; gap: 8px; padding: 0; list-style: none; max-height: 360px; overflow-y: auto; }
+.chain-country-button { display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); color: var(--text); text-align: left; cursor: pointer; }
+.chain-country-button img { width: 30px; height: 22px; object-fit: contain; }
+.chain-country-button.chain-owner--0 { border-left: 4px solid #1559d5; }
+.chain-country-button.chain-owner--1 { border-left: 4px solid #b86400; }
+.chain-country-button.is-selected { outline: 2px solid var(--accent); outline-offset: 1px; }
+#nav-account { white-space: nowrap; }
+@media (min-width: 1000px) { #nav-account { margin-top: 20px; } }
+@media (max-width: 480px) { .topbar { flex-wrap: wrap; } #nav-account { margin-left: auto; } }
+@media (prefers-color-scheme: dark) { .chain-feedback.is-warning { color: #ffc074; } }

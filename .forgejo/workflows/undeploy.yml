@@ -1,0 +1,27 @@
+name: NAS 세계 놀이 중지 (데이터 보존)
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: flagquiz-nas
+  cancel-in-progress: false
+
+jobs:
+  undeploy:
+    runs-on: deploy
+    steps:
+      - name: 해당 앱 컨테이너와 이미지만 제거
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$GITHUB_REF" == refs/heads/main ]] || exit 1
+          APP=${GITHUB_REPOSITORY##*/}
+          [[ "$APP" == flagquiz ]] || exit 1
+          docker ps -aq --filter "label=com.docker.compose.project=$APP" \
+            --filter "label=deployed-by=forgejo-actions" | xargs -r docker stop --time 30
+          docker ps -aq --filter "label=com.docker.compose.project=$APP" \
+            --filter "label=deployed-by=forgejo-actions" | xargs -r docker rm
+          docker image ls "$APP" --filter "label=deployed-by=forgejo-actions" --format '{{.Repository}}:{{.Tag}}' \
+            | sort -u | xargs -r docker image rm
+          printf '앱 컨테이너와 이미지 제거 완료. flagquiz-data와 flagquiz-backups는 보존했습니다.\n'

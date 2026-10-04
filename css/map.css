@@ -1,4 +1,12 @@
 /* 지도는 문제의 주인공이다. 세계 지도는 2:1, 지역 지도는 4:3으로 지형 비율을 보존한다. */
+.chain-map-scroll { max-width: 100%; overflow-x: auto; overscroll-behavior-x: contain; border: 1px solid var(--line); border-radius: 14px; }
+.chain-map-canvas { --map-water: #eef5fb; --map-land: #c1cfdd; --map-label: #45566d; position: relative; min-width: 760px; width: 100%; aspect-ratio: 2 / 1; background: var(--map-water); }
+.chain-map-marker { position: absolute; z-index: 2; transform: translate(-50%, -50%); width: 44px; height: 44px; min-height: 44px; border: 0; padding: 0; background: transparent; border-radius: 50%; cursor: pointer; }
+.chain-map-marker > span { display: block; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 9px; height: 9px; border-radius: 50%; background: #1559d5; border: 2px solid white; box-shadow: 0 0 0 1px #1559d5; }
+.chain-map-marker.chain-owner-1 > span { background: #b86400; box-shadow: 0 0 0 1px #b86400; }
+.chain-map-marker.is-active { z-index: 3; }
+.chain-map-marker.is-active > span { width: 16px; height: 16px; box-shadow: 0 0 0 5px rgb(21 89 213 / 20%); }
+.chain-map-marker:focus-visible { z-index: 4; outline: 3px solid #1559d5; }
 .map-board, .map-context-canvas {
   --map-water: #eef5fb;
   --map-land: #c1cfdd;
@@ -187,6 +195,7 @@
   .map-screen .map-continent-label { font-size: 1rem; }
 }
 @media (prefers-color-scheme: dark) {
+  .chain-map-canvas { --map-water: #151f2d; --map-land: #53657d; --map-label: #d5e0ed; }
   .map-board, .map-context-canvas { --map-water: #151f2d; --map-land: #53657d; --map-label: #d5e0ed; --map-point: #93b7ff; --map-halo: #172234; }
   .map-dot { color: #152137; }
   .map-pin.is-correct { --map-point: #88dca9; }

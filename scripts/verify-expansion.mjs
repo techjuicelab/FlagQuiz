@@ -1,6 +1,7 @@
 /* 국기 퀴즈 확장 과제 검사기 — 의존성 0, node 내장 모듈만 쓴다.
  *   node scripts/verify-expansion.mjs          기본 검사
  *   node scripts/verify-expansion.mjs --deep    느린 검사까지 (빌드 실행·변이 주입)
+ *   node scripts/verify-expansion.mjs --strict  완료 판정 실패도 종료 코드 1
  *
  * 상태는 셋뿐이다.
  *   통과   — 검사했고 문제가 없다
@@ -10,7 +11,7 @@
  * 파일이 없을 때 조용히 통과시키지 않는다. 파일이 없으면 '미구현',
  * 파일은 있는데 내용이 틀리면 '실패'다. 이 구분이 이 스크립트의 전부다.
  *
- * 종료 코드: 금지 사항(guardrail) 위반이 하나라도 있으면 1, 그 밖에는 0.
+ * 종료 코드: 금지 사항(guardrail) 위반 또는 --strict의 완료 판정 실패가 있으면 1.
  * 미구현은 0이다 — 아직 안 한 일이 CI를 막아서는 안 된다.
  */
 import fs from 'node:fs';
@@ -23,6 +24,7 @@ import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DEEP = process.argv.includes('--deep');
+const STRICT = process.argv.includes('--strict');
 
 /* ──────────────────────────── 작은 검사 틀 ──────────────────────────── */
 
@@ -529,7 +531,7 @@ const BASE_JS_FILES = [
 export function verifyMapScriptScope(t, actual) {
   const extra = actual.filter((file) => !BASE_JS_FILES.includes(file));
   // 지도 확장 이후 승인된 오프라인 전체 저장 UI도 명시적으로 허용한다.
-  const allowed = ['features.js', 'map.js', 'offline.js'];
+  const allowed = ['features.js', 'map.js', 'offline.js', 'auth.js', 'cloud-speech.js', 'country-chain.js'];
   const unexpected = extra.filter((file) => !allowed.includes(file));
   t.ok(unexpected.length === 0, 'js/ 에 승인 범위 밖의 새 파일이 들어왔다', unexpected.join(', '));
   const missing = BASE_JS_FILES.filter((file) => !actual.includes(file));
@@ -1900,15 +1902,15 @@ function render(section, title, rows) {
 let head = '';
 try { head = git(['rev-parse', '--short', 'HEAD']).trim(); } catch { head = '(git 없음)'; }
 
-console.log('국기 퀴즈 확장 검사 — node scripts/verify-expansion.mjs' + (DEEP ? ' --deep' : ''));
+console.log('국기 퀴즈 확장 검사 — node scripts/verify-expansion.mjs' + (DEEP ? ' --deep' : '') + (STRICT ? ' --strict' : ''));
 console.log('저장소: ' + root + '   HEAD: ' + head);
 console.log('상태는 셋이다 — ✅ 통과 / ❌ 실패 / ⬜ 미구현 (미구현은 실패가 아니다)');
 
 const guards = results.filter((r) => r.severity === 'guardrail');
 const accepts = results.filter((r) => r.severity === 'acceptance');
 
-render('1', '금지 사항 — 위반하면 되돌릴 수 없다 (이것만 종료 코드 1)', guards);
-render('2', '완료 판정 — 과제별 수용 검사 (실패해도 종료 코드 0)', accepts);
+render('1', '금지 사항 — 위반하면 종료 코드 1', guards);
+render('2', '완료 판정 — 과제별 수용 검사 (' + (STRICT ? '실패하면 종료 코드 1' : '실패해도 종료 코드 0') + ')', accepts);
 
 const tally = (rows) => ({
   [PASS]: rows.filter((r) => r.status === PASS).length,
@@ -1931,7 +1933,7 @@ if (g[FAIL] > 0) {
   console.log('\n  ✅ 금지 사항 위반 없음 — 되돌릴 수 없는 종류의 사고는 없다.');
 }
 if (a[FAIL] > 0) {
-  console.log('  ⚠ 완료 판정 실패 ' + a[FAIL] + '건 — CI 는 막지 않지만 그대로 배포하면 아이 화면에서 드러난다.');
+  console.log('  ⚠ 완료 판정 실패 ' + a[FAIL] + '건 — ' + (STRICT ? '엄격 검사에서 배포를 중단한다.' : 'CI 는 막지 않지만 그대로 배포하면 아이 화면에서 드러난다.'));
   for (const r of accepts.filter((r) => r.status === FAIL)) console.log('     · [' + r.id + '] ' + r.label);
 }
 if (all[SKIP] > 0) {
@@ -1952,5 +1954,5 @@ for (const line of [
   '⑤ 새 버킷의 모든 읽기가 (r.x || 0) 으로 방어됐는가 · export 핸들러가 stats() 를 다시 부르지 않는가.'
 ]) console.log('  ' + line);
 
-process.exit(g[FAIL] > 0 ? 1 : 0);
+process.exit(g[FAIL] > 0 || (STRICT && a[FAIL] > 0) ? 1 : 0);
 }
