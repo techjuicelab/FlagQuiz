@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { PassThrough } from 'node:stream';
-import { createTranscriber, readSpeechInput, validateSpeechInput, SpeechError, MAX_AUDIO_BYTES } from '../server/speech.mjs';
+import { createTranscriber, readSpeechInput, validateSpeechInput, SpeechError, MAX_AUDIO_BYTES, MAX_PROMPT_BYTES } from '../server/speech.mjs';
 
 function wav(durationMs = 1000) {
   const samples = Math.round(durationMs * 16);
@@ -72,27 +72,61 @@ test('업로드 취소와 시간 제한은 대기 중인 메모리 버퍼를 폐
   assert.equal(slow.listenerCount('data'), 0);
 });
 
-test('OpenAI 요청은 서버 고정 모델·한국어·나라 사전을 쓰고 WAV를 한 번만 전송한다', async () => {
+test('Groq 요청은 서버 고정 모델·한국어·짧은 맞춤법 안내를 쓰고 WAV를 한 번만 전송한다', async () => {
   const calls = [];
-  const transcribe = createTranscriber({ apiKey: 'test-secret', fetchImpl: async (url, options) => {
+  const transcribe = createTranscriber({ apiKey: 'test-secret', model: 'client-selected-model', countryNames: ['x'.repeat(5000)], fetchImpl: async (url, options) => {
     calls.push({ url, options }); return { ok: true, json: async () => ({ text: '  대한민국  ', extra: 'private' }) };
   } });
   assert.equal(transcribe.ready, true);
-  assert.equal(transcribe.model, 'gpt-4o-mini-transcribe');
+  assert.equal(transcribe.model, 'whisper-large-v3-turbo');
   assert.deepEqual(await transcribe(input()), { text: '대한민국' });
   assert.equal(calls.length, 1);
   const { url, options } = calls[0];
-  assert.equal(url, 'https://api.openai.com/v1/audio/transcriptions');
+  assert.equal(url, 'https://api.groq.com/openai/v1/audio/transcriptions');
   assert.equal(options.headers.Authorization, 'Bearer test-secret');
-  assert.equal(options.body.get('model'), 'gpt-4o-mini-transcribe');
+  assert.equal(options.body.get('model'), 'whisper-large-v3-turbo');
   assert.equal(options.body.get('language'), 'ko');
   assert.equal(options.body.get('response_format'), 'json');
-  assert.match(options.body.get('prompt'), /대한민국/);
-  assert.match(options.body.get('prompt'), /짐바브웨/);
+  const prompt = options.body.get('prompt');
+  assert.match(prompt, /한국어 나라 이름/);
+  assert.match(prompt, /대한민국/);
+  assert.match(prompt, /미국, 영국, 중국, 일본/);
+  assert.doesNotMatch(prompt, /짐바브웨|x{10}/);
+  assert.ok(Buffer.byteLength(prompt, 'utf8') <= MAX_PROMPT_BYTES);
+  assert.equal(MAX_PROMPT_BYTES, 160);
+  assert.ok(MAX_PROMPT_BYTES < 224);
   const file = options.body.get('file');
   assert.equal(file.type, 'audio/wav');
   assert.equal(file.name, 'country.wav');
   assert.deepEqual(Buffer.from(await file.arrayBuffer()), input().audio);
+});
+
+test('기본 키는 GROQ_API_KEY만 사용하고 다른 공급자의 키로 대체하지 않는다', async () => {
+  const previousGroq = process.env.GROQ_API_KEY;
+  const previousOpenAI = process.env.OPENAI_API_KEY;
+  let calls = 0;
+  const fetchImpl = async (url, options) => {
+    calls++;
+    assert.equal(url, 'https://api.groq.com/openai/v1/audio/transcriptions');
+    assert.equal(options.headers.Authorization, 'Bearer test-groq-secret');
+    return { ok: true, json: async () => ({ text: '일본' }) };
+  };
+  try {
+    process.env.OPENAI_API_KEY = 'test-other-provider-secret';
+    delete process.env.GROQ_API_KEY;
+    const missing = createTranscriber({ fetchImpl });
+    assert.equal(missing.ready, false);
+    await assert.rejects(missing(input()), code('speech_unavailable'));
+    assert.equal(calls, 0);
+    process.env.GROQ_API_KEY = 'test-groq-secret';
+    const configured = createTranscriber({ fetchImpl });
+    assert.equal(configured.ready, true);
+    assert.deepEqual(await configured(input()), { text: '일본' });
+    assert.equal(calls, 1);
+  } finally {
+    if (previousGroq === undefined) delete process.env.GROQ_API_KEY; else process.env.GROQ_API_KEY = previousGroq;
+    if (previousOpenAI === undefined) delete process.env.OPENAI_API_KEY; else process.env.OPENAI_API_KEY = previousOpenAI;
+  }
 });
 
 test('키 없음·무효 음성·미리 취소한 요청은 유료 호출을 만들지 않는다', async () => {
@@ -110,7 +144,7 @@ test('키 없음·무효 음성·미리 취소한 요청은 유료 호출을 만
 
 test('미해결 1Password 참조는 공백 유무와 관계없이 준비되지 않은 키로 처리하고 외부 호출하지 않는다', async () => {
   let calls = 0;
-  for (const apiKey of ['op://Private/OpenAI/api-key', '  op://Private/OpenAI/api-key  ', '"op://Private/OpenAI/api-key"', "'op://Private/OpenAI/api-key'", '  ']) {
+  for (const apiKey of ['op://Private/Groq/api-key', '  op://Private/Groq/api-key  ', '"op://Private/Groq/api-key"', "'op://Private/Groq/api-key'", '  ']) {
     const transcribe = createTranscriber({ apiKey, fetchImpl: async () => { calls++; return { ok: true, json: async () => ({ text: '일본' }) }; } });
     assert.equal(transcribe.ready, false);
     await assert.rejects(transcribe(input()), code('speech_unavailable'));

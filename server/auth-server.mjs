@@ -16,14 +16,14 @@ const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; ch
   '.webp': 'image/webp', '.mp3': 'audio/mpeg', '.wav': 'audio/wav', '.ico': 'image/x-icon' };
 
 export function readConfig(env = process.env) {
-  for (const name of ['PUBLIC_ORIGIN', 'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'SESSION_SECRET', 'STATE_DIR', 'STATIC_ROOT', 'OPENAI_API_KEY', 'HOST', 'PORT']) {
+  for (const name of ['PUBLIC_ORIGIN', 'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'SESSION_SECRET', 'STATE_DIR', 'STATIC_ROOT', 'GROQ_API_KEY', 'HOST', 'PORT']) {
     if (typeof env[name] === 'string' && /^["']?\s*op:\/\//i.test(env[name].trim())) {
       throw new Error('Unresolved 1Password reference in ' + name + '; start with op run');
     }
   }
   const config = { publicOrigin: env.PUBLIC_ORIGIN || '', clientId: env.GOOGLE_CLIENT_ID || '', clientSecret: env.GOOGLE_CLIENT_SECRET || '',
     sessionSecret: env.SESSION_SECRET || '', stateDirectory: env.STATE_DIR || '', staticRoot: path.resolve(env.STATIC_ROOT || path.join(repository, '_site')),
-    openaiApiKey: env.OPENAI_API_KEY || '', port: Number(env.PORT || 8080), host: env.HOST || '127.0.0.1' };
+    groqApiKey: env.GROQ_API_KEY || '', port: Number(env.PORT || 8080), host: env.HOST || '127.0.0.1' };
   config.ready = Boolean(config.publicOrigin && config.clientId && config.clientSecret && config.sessionSecret && config.stateDirectory);
   if (!config.ready) return config;
   let origin;
@@ -158,7 +158,7 @@ export async function createAuthServer({ config = readConfig(), fetchImpl = fetc
   }
   async function speechRequest(req, res, session) {
     sameOrigin(req, session);
-    if (!config.openaiApiKey) throw new AccessError(503, 'speech-not-configured');
+    if (!config.groqApiKey) throw new AccessError(503, 'speech-not-configured');
     if (speechUsers.has(session.sub) || activeSpeech >= 4) throw new AccessError(429, 'speech-busy');
     rate('speech:' + session.sub, 20, 60 * 1000);
     const abort = new AbortController();
@@ -167,7 +167,7 @@ export async function createAuthServer({ config = readConfig(), fetchImpl = fetc
     activeSpeech += 1; speechUsers.add(session.sub);
     try {
       speech ||= await import('./speech.mjs');
-      transcribe ||= speech.createTranscriber({ apiKey: config.openaiApiKey, fetchImpl });
+      transcribe ||= speech.createTranscriber({ apiKey: config.groqApiKey, fetchImpl });
       const input = await speech.readSpeechInput(req, { signal: abort.signal });
       const quota = await store.consumeSpeechQuota(session);
       const result = await transcribe(input, { signal: abort.signal });

@@ -21,12 +21,14 @@ flowchart LR
   S --> A[허용 이메일과 세션]
   S -->|인가된 요청만| W[앱과 정적 음원]
   P -->|현재 차례의 짧은 녹음| S
-  S -->|길이와 사용량 검사 후 STT| O[OpenAI 음성 전사]
+  S -->|길이와 사용량 검사 후 STT| O[Groq 음성 전사]
   O -->|인식한 나라 이름| S
   S --> P
 ```
 
-STT는 음성을 글자로 인식하고 TTS는 글을 읽어 준다. 두 사람의 차례는 게임 상태로 구분하므로 현재 구현에서는 STT에 화자 분리를 요청하지 않는다. 나라 이름 TTS는 기존 정적 음원을 재사용한다. OpenAI 전사는 서버의 `gpt-4o-mini-transcribe` 어댑터로 연결하고 한국어·나라 이름 힌트를 사용한다. 실제 서비스 연결은 아직 수행하지 않았다. [공식 음성 전사 API](https://developers.openai.com/api/reference/resources/audio/subresources/transcriptions/methods/create).
+STT는 음성을 글자로 인식하고 TTS는 글을 읽어 준다. 두 사람의 차례는 게임 상태로 구분하므로 현재 구현에서는 STT에 화자 분리를 요청하지 않는다. 나라 이름 TTS는 기존 정적 음원을 재사용한다. 가성비 기본 전사는 Groq의 `whisper-large-v3-turbo`로 연결하고 짧은 한국어·나라 이름 맞춤법 힌트를 사용한다. 요청당 최소 10초 과금, 시간당 $0.04이므로 현재 월 3,000회·회당 최대 12초 한도에서 전사 요금은 약 $0.40 이하로 계산된다(무료 크레딧·세금 제외, 2026-10-03 공식 요금 기준). 기존 대한민국 Sua 음원 1.41초를 실제 API로 한 번 전사해 게임의 나라 판정까지 성공했다. 실제 어린이 발화 정확도는 아직 검증하지 않았다. [Groq 공식 음성 전사·요금](https://console.groq.com/docs/speech-to-text).
+
+최초 구현의 OpenAI `gpt-4o-mini-transcribe`는 2027-02-26 종료 예정이어서 새 기본값에서 교체했다. [공식 종료 안내](https://developers.openai.com/api/docs/deprecations).
 
 ## 접근과 비용 제한
 
@@ -35,7 +37,7 @@ STT는 음성을 글자로 인식하고 TTS는 글을 읽어 준다. 두 사람�
 - 앱·음원·API는 서버 세션과 현재 허용 목록을 통과해야 제공한다. 인증 쿠키는 HttpOnly·SameSite이며 HTTPS에서는 Secure다. 변경 요청은 같은 Origin과 CSRF 토큰을 요구한다.
 - 원본 녹음을 디스크에 저장하지 않는다. 브라우저에서 16kHz 단일 채널 WAV로 바꿔 보내고 서버가 실제 표본 수로 최대 12초를 검증한다.
 - 사용자당 하루 120회, 서비스 전체 월 3,000회, 사용자당 동시에 1회·전체 동시에 4회를 제한한다. 유료 호출 전에 영속 사용량을 예약하며 실패·취소를 자동 재시도하지 않는다. 이 한도는 최악의 경우 전체 월 600분의 전사 분량에 해당한다.
-- API 키·OAuth secret·세션 서명 키는 1Password에서 서버 실행 시 주입한다. 저장소의 `env/private.op.env`는 아직 연결되지 않은 참조 템플릿이다.
+- API 키·OAuth secret·세션 서명 키는 1Password에서 서버 실행 시 주입한다. `env/private.op.env`의 Google OAuth는 기존 `Private` 항목을 ID 기반 참조로 재사용한다. `FlagQuiz Private` 항목과 세션 서명 키는 생성했으며 Groq 키도 기존 `AI Automation` 항목을 재사용한다. 운영 주소·저장 경로는 등록이 남아 있다.
 - 서버 상태는 앱 정적 폴더 밖의 영속 디스크에 저장한다. SQLite OS 잠금으로 단일 서버를 보장하고 원자적 저장·손상 시 접근 차단을 사용한다.
 
 ## 운영 전환
@@ -43,7 +45,7 @@ STT는 음성을 글자로 인식하고 TTS는 글을 읽어 준다. 두 사람�
 현재 GitHub Pages는 이전 공개 버전을 계속 제공한다. 새 서버의 실제 로그인과 음성 API 연결이 확인된 뒤 공개 Pages를 종료하거나 보호된 새 주소로 안내해야 전체 접근 제한 전환이 완료된다. 정적 GitHub Pages에 로그인 UI만 추가해 유료 API와 앱 전체가 보호됐다고 간주하지 않는다.
 
 1. 사용할 서버와 HTTPS origin을 정한다. Node 24와 영속 volume을 사용한다. Dockerfile은 이 배포를 위한 구성이고 실제 container build/run은 Docker daemon이 없어 확인하지 못했다.
-2. Google Cloud 웹 OAuth client에 `PUBLIC_ORIGIN/api/auth/callback`을 등록한다. 1Password `FlagQuiz Private` 항목에 `google_client_id`, `google_client_secret`, `session_secret`, `openai_api_key`, `public_origin`, `state_directory`를 설정한다. 저장 경로는 절대 경로다.
+2. 기존 Google Cloud 웹 OAuth client의 redirect URI 목록에 `PUBLIC_ORIGIN/api/auth/callback`을 추가하고 기존 앱의 URI는 유지한다. Google ID·Secret은 기존 1Password 항목을 재사용하며 복사·회전하지 않는다. Groq API 키도 기존 항목을 참조한다. `FlagQuiz Private`에 `public_origin`, `state_directory`를 설정하고 생성한 `session_secret`을 유지한다. 저장 경로는 절대 경로다.
 3. `npm run build`, `npm run start:private`로 실행한다. 서버가 `/health`에 `configured:true`를 반환해야 한다.
 4. 실제 SuperAdmin Google 계정으로 로그인하고 가족 이메일을 등록한다. 일반 사용자 접속, 해제한 사용자 재접속 차단, 관리자 권한 제한을 운영 주소에서 확인한다.
 5. 아이의 짧은 발화를 실제 API로 확인한다. 한 번의 시작으로 두 사람이 번갈아 이어갈 수 있는지, 지연·중복·읽어주기·수동 입력·마이크 종료를 iPhone/iPad에서 확인한다.
@@ -53,4 +55,4 @@ STT는 음성을 글자로 인식하고 TTS는 글을 읽어 준다. 두 사람�
 
 실제 HTTP, RSA 서명 검증, 권한·CSRF·만료·해제, 동일 저장소 동시 실행 방지, SIGKILL 복구, 사용량 원자적 예약, 게임과 클라우드 어댑터 연결을 자동 검사했다. 모바일 Chromium에서 네 나라 기록·한국/대한민국 중복·지도 중심 이동·가로 화면 넘침을 확인했다. 미설정 서버는 앱 JavaScript와 음성 API에 401을 반환하고 로그인 화면으로 이동하는 것을 브라우저에서 확인했다.
 
-실제 Google 계정 로그인, OpenAI 유료 호출, 운영 배포, 실제 iPhone/iPad 마이크 정확도·지연은 아직 검증하지 않았다. 자세한 실행 설정과 API 계약은 [서버 안내](../server/README.md)에 있다.
+실제 1Password Google ID·Secret 주입 및 서버 설정 검사를 통과했고, 기존 Groq 키로 대한민국 음원을 1회 전사해 나라 판정까지 확인했다. 실제 Google 계정 로그인과 callback 등록, 운영 배포, 실제 iPhone/iPad 마이크 정확도·지연은 아직 검증하지 않았다. 자세한 실행 설정과 API 계약은 [서버 안내](../server/README.md)에 있다.

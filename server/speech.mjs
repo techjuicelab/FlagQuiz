@@ -1,11 +1,13 @@
 /* 음성은 메모리에서만 처리한다. 인증과 사용량 예약은 호출하는 서버가 먼저 맡는다. */
-import fs from 'node:fs';
-import vm from 'node:vm';
-
 export const MAX_AUDIO_BYTES = 2 * 1024 * 1024;
 export const MAX_DURATION_MS = 12000;
+export const MAX_PROMPT_BYTES = 160;
 const SAMPLE_RATE = 16000;
-const ENDPOINT = 'https://api.openai.com/v1/audio/transcriptions';
+const ENDPOINT = 'https://api.groq.com/openai/v1/audio/transcriptions';
+const MODEL = 'whisper-large-v3-turbo';
+// Whisper의 byte-level BPE는 UTF-8 바이트를 합친다. 내용은 최대 160토큰으로, 224토큰 한도에 여유를 둔다.
+const COUNTRY_PROMPT = '한국어 나라 이름 놀이. 나라 이름: 대한민국, 미국, 영국, 중국, 일본.';
+if (Buffer.byteLength(COUNTRY_PROMPT, 'utf8') > MAX_PROMPT_BYTES) throw new Error('나라 이름 안내가 너무 길어요.');
 
 export class SpeechError extends Error {
   constructor(status, code, message) { super(message); this.name = 'SpeechError'; this.status = status; this.code = code; }
@@ -83,19 +85,8 @@ export async function readSpeechInput(req, { signal, timeoutMs = 10000 } = {}) {
   return input;
 }
 
-function countryPrompt(countryNames) {
-  if (!countryNames) {
-    const context = { window: {} };
-    vm.runInNewContext(fs.readFileSync(new URL('../data/countries.js', import.meta.url), 'utf8'), context, { timeout: 1000 });
-    countryNames = context.window.FQ.countries.map(country => country.ko);
-  }
-  const names = countryNames.filter(name => typeof name === 'string').map(name => name.replace(/[\r\n<>]/g, '')).filter(Boolean);
-  return ('한국어로 나라 이름을 번갈아 말하는 놀이입니다. 들린 말만 옮겨 주세요. 나라 이름 예: ' + [...new Set(names)].join(', ')).slice(0, 4000);
-}
-
-export function createTranscriber({ apiKey = process.env.OPENAI_API_KEY, model = 'gpt-4o-mini-transcribe', fetchImpl = globalThis.fetch, timeoutMs = 20000, countryNames } = {}) {
+export function createTranscriber({ apiKey = process.env.GROQ_API_KEY, fetchImpl = globalThis.fetch, timeoutMs = 20000 } = {}) {
   const ready = typeof apiKey === 'string' && apiKey.trim().length > 0 && !/^['"]?op:\/\//.test(apiKey.trim());
-  const prompt = countryPrompt(countryNames);
   async function transcribe(rawInput, { signal } = {}) {
     if (!ready) throw new SpeechError(503, 'speech_unavailable', '클라우드 말하기가 아직 준비되지 않았어요. 글자로 답해 주세요.');
     const input = validateSpeechInput(rawInput);
@@ -108,7 +99,7 @@ export function createTranscriber({ apiKey = process.env.OPENAI_API_KEY, model =
     try {
       const body = new FormData();
       body.set('file', new Blob([input.audio], { type: 'audio/wav' }), 'country.wav');
-      body.set('model', model); body.set('language', 'ko'); body.set('response_format', 'json'); body.set('prompt', prompt);
+      body.set('model', MODEL); body.set('language', 'ko'); body.set('response_format', 'json'); body.set('prompt', COUNTRY_PROMPT);
       const response = await fetchImpl(ENDPOINT, { method: 'POST', headers: { Authorization: 'Bearer ' + apiKey }, body, signal: controller.signal });
       if (!response.ok) throw new SpeechError(502, 'speech_failed', '목소리를 알아듣지 못했어요. 다시 말하거나 글자로 답해 주세요.');
       const result = await response.json();
@@ -123,6 +114,6 @@ export function createTranscriber({ apiKey = process.env.OPENAI_API_KEY, model =
     } finally { clearTimeout(timer); signal?.removeEventListener('abort', abort); }
   }
   transcribe.ready = ready;
-  transcribe.model = model;
+  transcribe.model = MODEL;
   return transcribe;
 }

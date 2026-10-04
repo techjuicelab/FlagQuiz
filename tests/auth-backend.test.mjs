@@ -1,4 +1,4 @@
-/* 실제 HTTP·서명·디스크 저장을 검사한다. Google/OpenAI 유료 호출은 가짜 응답으로 격리한다. */
+/* 실제 HTTP·서명·디스크 저장을 검사한다. Google/Groq 유료 호출은 가짜 응답으로 격리한다. */
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
@@ -44,7 +44,7 @@ async function httpFixture(t, extra = {}) {
   await fs.writeFile(path.join(staticRoot, 'clip.mp3'), '0123456789'); await fs.writeFile(path.join(directory, 'secret.json'), 'server-only');
   await fs.symlink(path.join(directory, 'secret.json'), path.join(staticRoot, 'leak.json'));
   const env = { PUBLIC_ORIGIN: 'http://127.0.0.1', GOOGLE_CLIENT_ID: clientId, GOOGLE_CLIENT_SECRET: 'private-secret', SESSION_SECRET: 'a'.repeat(64),
-    STATE_DIR: path.join(directory, 'state'), STATIC_ROOT: staticRoot, OPENAI_API_KEY: 'test-key-never-real', ...extra.env };
+    STATE_DIR: path.join(directory, 'state'), STATIC_ROOT: staticRoot, GROQ_API_KEY: 'test-key-never-real', ...extra.env };
   let identity = { email: SUPER_ADMIN_EMAIL, sub: 'google-admin-sub' }, exchanges = 0;
   const oidc = { authorizationUrl({ state, nonce: requestNonce, verifier }) {
     assert.ok(requestNonce.length >= 43); assert.ok(verifier.length >= 43);
@@ -220,7 +220,7 @@ test('서버 설정은 HTTPS·강한 서명 키·웹 루트 밖 영속 경로만
 
 test('op run 없이 남은 참조 문자열은 필수·선택 설정 모두에서 값 노출 없이 서버 시작을 거절한다', () => {
   const base = { PUBLIC_ORIGIN: 'https://quiz.test', GOOGLE_CLIENT_ID: clientId, GOOGLE_CLIENT_SECRET: 'secret', SESSION_SECRET: 's'.repeat(64), STATE_DIR: '/private/state', STATIC_ROOT: '/private/site' };
-  for (const name of ['PUBLIC_ORIGIN', 'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'SESSION_SECRET', 'STATE_DIR', 'STATIC_ROOT', 'OPENAI_API_KEY', 'HOST', 'PORT']) {
+  for (const name of ['PUBLIC_ORIGIN', 'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'SESSION_SECRET', 'STATE_DIR', 'STATIC_ROOT', 'GROQ_API_KEY', 'HOST', 'PORT']) {
     for (const value of ['op://test-vault/test-item/test-field', '  op://test-vault/test-item/test-field ', '"op://test-vault/test-item/test-field"']) {
       assert.throws(() => readConfig({ ...base, [name]: value }), error => {
         assert.match(error.message, /Unresolved 1Password reference/); assert.match(error.message, new RegExp(name));
@@ -228,7 +228,7 @@ test('op run 없이 남은 참조 문자열은 필수·선택 설정 모두에�
       });
     }
   }
-  assert.throws(() => readConfig({ OPENAI_API_KEY: 'op://test-vault/test-item/test-field' }), /Unresolved 1Password reference/);
+  assert.throws(() => readConfig({ GROQ_API_KEY: 'op://test-vault/test-item/test-field' }), /Unresolved 1Password reference/);
   assert.equal(readConfig({}).ready, false, '빈 설정은 인증을 열지 않고 준비 상태만 보여 준다');
 });
 
@@ -340,7 +340,7 @@ test('로그인 cleanup 은 루트의 FlagQuiz worker 와 flagquiz- 캐시만 �
 test('유료 음성 요청은 로그인·CSRF·키·입력 검사를 먼저 하고 quota 를 저장한 후에만 호출한다', async t => {
   const events = []; let f;
   const speechModule = { readSpeechInput: async () => { events.push('input'); return { audio: Buffer.from('test'), playerId: '2', turnId: 'turn-1' }; },
-    createTranscriber: () => async () => { const persisted = JSON.parse(await fs.readFile(path.join(f.env.STATE_DIR, 'access.json'), 'utf8')); assert.equal(persisted.quota.monthly['2026-10'], 1); events.push('paid'); return { text: '대한민국' }; } };
+    createTranscriber: ({ apiKey }) => { assert.equal(apiKey, f.env.GROQ_API_KEY); return async () => { const persisted = JSON.parse(await fs.readFile(path.join(f.env.STATE_DIR, 'access.json'), 'utf8')); assert.equal(persisted.quota.monthly['2026-10'], 1); events.push('paid'); return { text: '대한민국' }; }; } };
   f = await httpFixture(t, { speechModule }); const admin = await f.login(), session = await f.session(admin.cookie);
   assert.equal((await f.request('/api/speech', { method: 'POST' })).status, 401);
   assert.equal((await f.request('/api/speech', { method: 'POST', headers: { Cookie: admin.cookie, Origin: f.base, 'X-CSRF-Token': 'bad' } })).status, 403);
@@ -348,16 +348,18 @@ test('유료 음성 요청은 로그인·CSRF·키·입력 검사를 먼저 하�
   const response = await f.request('/api/speech', { method: 'POST', headers: { Cookie: admin.cookie, Origin: f.base, 'X-CSRF-Token': session.csrfToken } });
   assert.equal(response.status, 200); assert.deepEqual(events, ['input', 'paid']);
   assert.deepEqual(await response.json(), { text: '대한민국', playerId: '2', turnId: 'turn-1', quota: { dailyUsed: 1, dailyLimit: 120 } });
-  const missing = await httpFixture(t, { env: { OPENAI_API_KEY: '' }, speechModule }); const other = await missing.login(), otherSession = await missing.session(other.cookie);
+  const missing = await httpFixture(t, { env: { GROQ_API_KEY: '', OPENAI_API_KEY: 'legacy-key-never-real' }, speechModule }); const other = await missing.login(), otherSession = await missing.session(other.cookie);
   assert.equal((await missing.request('/api/speech', { method: 'POST', headers: { Cookie: other.cookie, Origin: missing.base, 'X-CSRF-Token': otherSession.csrfToken } })).status, 503);
   assert.equal(events.length, 2); assert.deepEqual(JSON.parse(await fs.readFile(path.join(missing.env.STATE_DIR, 'access.json'), 'utf8')).quota.monthly, {});
 });
 
-test('유료 호출 실패는 quota 를 환불하지 않으며 원시 provider 오류·비밀은 응답에 노출하지 않는다', async t => {
+test('Groq 호출 실패는 자동 재시도·quota 환불 없이 원시 provider 오류·비밀을 응답에 숨긴다', async t => {
+  let calls = 0;
   const f = await httpFixture(t, { speechModule: { readSpeechInput: async () => ({ playerId: '1', turnId: 'turn-1' }),
-    createTranscriber: () => async () => { throw new Error('private-provider-token'); } } });
+    createTranscriber: () => async () => { calls++; throw new Error('private-groq-token'); } } });
   const admin = await f.login(), session = await f.session(admin.cookie);
   const response = await f.request('/api/speech', { method: 'POST', headers: { Cookie: admin.cookie, Origin: f.base, 'X-CSRF-Token': session.csrfToken } });
   assert.equal(response.status, 503); assert.deepEqual(await response.json(), { error: 'service-unavailable' });
+  assert.equal(calls, 1, '실패한 유료 인식은 자동으로 다시 호출하지 않는다');
   assert.equal(JSON.parse(await fs.readFile(path.join(f.env.STATE_DIR, 'access.json'), 'utf8')).quota.monthly['2026-10'], 1);
 });
