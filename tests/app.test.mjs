@@ -2032,21 +2032,28 @@ test('실제 최종 STT 답에만 음성 출처가 붙고 글자·보기·오프
 });
 for(const destination of ['home','settings','dex','stats'])for(const phase of ['recording','transcribing','name-read','next-listen'])test(`나라 이어 말하기 ${phase}에서 실제 nav-${destination}은 녹음을 취소하고 새 판으로 돌아온다`,()=>{
   // 앱 경로·누적 지도·나라 화면·도감·기록은 제품 코드를 사용하고 마이크 장치만 모사한다.
-  const f=fixture({chain:true}),state=f.c.FQ.test.state,sessions=[];
+  const f=fixture({chain:true}),state=f.c.FQ.test.state,sessions=[],cancellations=[];
   let cancels=0,stops=0,adapterOptions;
   f.c.FQ.storage.updateSettings({players:['민규','아빠'],speak:phase==='name-read',sound:false,homeMusic:false});
   f.c.FQ.app.boot();
   f.c.FQ.auth={session:()=>({preview:false}),isPreview:()=>false,csrfToken:()=> 'test-csrf'};
-  const adapter={supported:()=>true,cancel(){cancels++;},stop(){stops++;},start(options){sessions.push(options);options.onState({state:'recording'});return Promise.resolve();}};
+  const adapter={supported:()=>true,cancel(options){cancels++;cancellations.push(options?.keepMicrophone===true);},stop(){stops++;},start(options){sessions.push(options);options.onState({state:'recording'});return Promise.resolve();}};
   f.c.FQ.cloudSpeech={create(options){adapterOptions=options;return adapter;}};
   state.game=f.c.FQ.quiz.createGame({mode:'voice',only:['kr']});
   f.c.FQ.app.countryChain();
   const previous=state.countryChain;
   assert.equal(state.screen,'country-chain');assert.equal(state.game,null);assert.equal(adapterOptions.csrfToken,f.c.FQ.auth.csrfToken);
   previous.submit('한국');
+  if(phase==='name-read'){
+    assert.equal(f.node('#chain-mic').disabled,true);assert.match(f.node('#chain-mic').innerHTML,/이름 읽는 중/);
+    f.clickDelegated('[data-chain-mic]',f.node('#chain-mic'));
+    assert.equal(sessions.length,0,'첫 수동 답의 이름 읽기 중에는 녹음을 열지 않는다');
+    f.finishVoice();assert.equal(f.node('#chain-mic').disabled,false);
+    assert.equal(f.node('#chain-pause').hidden,true);assert.match(f.node('#chain-mic').innerHTML,/말하기 시작/);
+  }
   f.clickDelegated('[data-chain-mic]',f.node('#chain-mic'));
   const microphone=sessions.at(-1);
-  assert.equal(microphone.playerId,1);assert.equal(microphone.turnId,1);
+  assert.equal(microphone.playerId,1);assert.equal(microphone.turnId,1);assert.equal(microphone.continuous,true);
   if(phase==='transcribing'){
     f.clickDelegated('[data-chain-mic]',f.node('#chain-mic'));assert.equal(stops,1);
     microphone.onState({state:'finishing'});microphone.onState({state:'transcribing'});
@@ -2054,12 +2061,18 @@ for(const destination of ['home','settings','dex','stats'])for(const phase of ['
     microphone.onResult({text:'일본',playerId:'1',turnId:'1'});
     assert.equal(previous.snapshot().total,2);
     assert.ok([...f.timers.values()].some(timer=>timer.delay===(phase==='name-read'?7000:300)));
+    assert.equal(f.node('#chain-mic').disabled,true);assert.equal(f.node('#chain-pause').hidden,false);
+    assert.match(f.node('#chain-mic').innerHTML,phase==='name-read'?/이름 읽는 중/:/듣기 준비 중/);
+    const starts=sessions.length;f.clickDelegated('[data-chain-mic]',f.node('#chain-mic'));
+    assert.equal(sessions.length,starts,'이름 읽기와 다음 듣기 대기 중에는 녹음을 새로 열지 않는다');
+    assert.equal(cancellations.at(-1),true,'정상 답 뒤에는 다음 차례를 위해 마이크를 보관한다');
   }
   const before=JSON.stringify(previous.snapshot()),count=sessions.length,cancelled=cancels;
   const reading=f.voiceOptions.at(-1),failure=f.playbackFailures.at(-1),visibility=(f.events.visibilitychange||[]).length;
   f.node('#nav-'+destination).click();
   assert.equal(state.screen,destination);assert.equal(state.countryChain,null);assert.equal(state.game,null);
   assert.ok(cancels>cancelled,'실제 경로 이동이 마이크 요청을 취소한다');
+  assert.equal(cancellations.at(-1),false,'홈·설정·도감·기록 이동은 보관한 마이크도 완전히 닫는다');
   assert.equal((f.events.visibilitychange||[]).length,visibility-1,'나라 화면의 문서 이벤트도 해제한다');
   assert.equal(f.timers.size,0,'나라 이름 읽기와 다음 녹음 예약을 남기지 않는다');
   microphone.onResult({text:'미국',playerId:'1',turnId:'1'});microphone.onState({state:'recording'});microphone.onError({message:'old request'});

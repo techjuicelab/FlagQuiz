@@ -120,22 +120,30 @@
       try { if (speaking && FQ.audio && FQ.audio.stopSpeaking) FQ.audio.stopSpeaking(); } catch (error) { /* 읽기 취소 실패가 다음 입력을 막지 않게 한다. */ }
       speaking = false;
     }
-    function cancelVoice() {
+    function cancelVoice(keepMicrophone) {
       generation += 1;
-      try { if (voice && voice.cancel) voice.cancel(); } catch (error) { /* 취소 실패가 글 입력을 막지 않게 한다. */ }
+      try { if (voice && voice.cancel) voice.cancel(keepMicrophone ? { keepMicrophone: true } : undefined); } catch (error) { /* 취소 실패가 글 입력을 막지 않게 한다. */ }
       voiceState = 'idle';
     }
     function current(token) { return alive && token === generation && !doc.hidden; }
     function voiceAvailable() { return !!(voice && voice.start && (!voice.supported || voice.supported())); }
+    function updateVoiceControls() {
+      var mic = element('chain-mic'), pause = element('chain-pause');
+      mic.disabled = game.snapshot().complete || speaking || !(voiceState === 'recording' || voiceState === 'idle' && !continuous);
+      var label = speaking ? '이름 읽는 중' : ({ recording: '말했어요', requesting: '마이크 준비 중', waiting: '듣기 준비 중',
+        speaking: '이름 읽는 중', finishing: '녹음 정리 중', transcribing: '나라 이름 확인 중' }[voiceState] || (continuous ? '듣기 준비 중' : '말하기 시작'));
+      mic.innerHTML = ui.icon('mic') + '<span>' + label + '</span>';
+      pause.hidden = !continuous && !speaking;
+      mic.setAttribute('aria-pressed', voiceState === 'recording' ? 'true' : 'false');
+    }
     function setVoiceState(state, message) {
       if (!alive) return;
-      voiceState = state;
-      var mic = element('chain-mic'), pause = element('chain-pause');
-      mic.disabled = state === 'requesting' || state === 'finishing' || state === 'transcribing' || game.snapshot().complete;
-      mic.innerHTML = ui.icon('mic') + '<span>' + (state === 'recording' ? '말했어요' : '말하기 시작') + '</span>';
-      pause.hidden = !continuous;
-      mic.setAttribute('aria-pressed', state === 'recording' ? 'true' : 'false');
-      element('chain-voice-state').textContent = message || ({ requesting: '마이크를 켜고 있어요.', recording: '듣고 있어요. 나라 이름을 하나 말해요.', finishing: '녹음을 정리하고 있어요.', transcribing: '말한 나라 이름을 확인하고 있어요.', idle: '마이크를 누르고 나라 이름을 하나 말해요. 글로 써도 좋아요.' }[state] || '');
+      voiceState = speaking ? 'speaking' : state === 'idle' && continuous ? 'waiting' : state;
+      updateVoiceControls();
+      element('chain-voice-state').textContent = message || ({ requesting: '마이크를 켜고 있어요.', recording: '듣고 있어요. 나라 이름을 하나 말해요.',
+        waiting: '듣기를 이어갈 준비를 하고 있어요.', speaking: '나라 이름을 읽고 있어요. 다 읽으면 듣기를 이어가요.',
+        finishing: '녹음을 정리하고 있어요.', transcribing: '말한 나라 이름을 확인하고 있어요.',
+        idle: '마이크를 누르고 나라 이름을 하나 말해요. 글로 써도 좋아요.' }[voiceState] || '');
     }
     function message(text, warning) {
       var node = element('chain-feedback');
@@ -156,7 +164,7 @@
       }).join('');
       element('chain-turn').textContent = state.complete ? '모든 나라를 함께 찾았어요!' : state.currentPlayer + ' 차례예요. 나라 이름을 하나 말해요.';
       element('chain-input').disabled = state.complete;
-      element('chain-mic').disabled = state.complete || voiceState === 'requesting' || voiceState === 'finishing' || voiceState === 'transcribing';
+      updateVoiceControls();
       element('chain-history-title').textContent = '함께 찾은 나라 · ' + state.total + '개';
       element('chain-map').innerHTML = FQ.map && FQ.map.collection ? FQ.map.collection(state.countries, { activeCode: selectedCode, owners: owners }) : '<p class="muted">지도 자료를 준비하고 있어요.</p>';
       var scroller = ui.$('.chain-map-scroll', m), marker = scroller && ui.$('.chain-map-marker.is-active', scroller);
@@ -170,36 +178,40 @@
     function scheduleListening(delay) {
       clearTimer();
       var token = generation;
-      if (!continuous || game.snapshot().complete) return;
+      if (!continuous || game.snapshot().complete) { setVoiceState('idle'); return; }
+      setVoiceState('waiting');
       timer = global.setTimeout(function () { timer = null; if (current(token)) beginListening(); }, delay);
     }
     function voiceError(error, token) {
       if (!current(token)) return;
-      cancelVoice();
       continuous = false;
+      cancelVoice();
+      stopReading();
       setVoiceState('idle', (error && error.message || '지금은 마이크로 들을 수 없어요.') + ' 같은 차례에서 글로 쓰거나 마이크를 다시 눌러요.');
       if (options.onVoiceError) options.onVoiceError(error);
     }
     function beginListening() {
       if (!alive || doc.hidden || !continuous || game.snapshot().complete) return;
-      stopReading();
-      cancelVoice();
       if (!voiceAvailable()) {
         continuous = false;
+        cancelVoice();
+        stopReading();
         setVoiceState('idle', '이 기기에서는 마이크를 사용할 수 없어요. 같은 차례에서 나라 이름을 글로 써요.');
         return;
       }
+      cancelVoice(continuous);
+      stopReading();
       var token = generation, state = game.snapshot();
       setVoiceState('requesting');
       try {
-        var pending = voice.start({ playerId: state.playerIndex, turnId: state.total,
+        var pending = voice.start({ continuous: true, playerId: state.playerIndex, turnId: state.total,
           onState: function (event) { if (current(token)) setVoiceState(event.state); },
           onResult: function (event) {
             if (!current(token)) return;
             if (event.playerId !== undefined && String(event.playerId) !== String(state.playerIndex) || event.turnId !== undefined && String(event.turnId) !== String(state.total)) return;
             var resolved = FQ.speech && FQ.speech.resolveAnswer ? FQ.speech.resolveAnswer(event.text, 'country', event.resolution) : null;
             if (resolved && resolved.status !== 'answer') {
-              cancelVoice(); continuous = false;
+              continuous = false; cancelVoice();
               message('답을 하나만 다시 말해 주세요. 지금 차례에서 계속할 수 있어요.', true);
               setVoiceState('idle', '마이크를 다시 누르거나 나라 이름을 글로 써요.');
               return;
@@ -215,44 +227,48 @@
       if (!speak || !FQ.audio || !FQ.audio.say || FQ.audio.canSpeak && !FQ.audio.canSpeak()) { scheduleListening(300); return; }
       var token = generation, finished = false;
       speaking = true;
-      function done() {
+      setVoiceState('speaking');
+      function finish(stopAudio) {
         if (finished || !current(token)) return;
         finished = true;
-        speaking = false;
         clearTimer();
+        if (stopAudio) stopReading();
+        else speaking = false;
         scheduleListening(300);
       }
+      function done() { finish(false); }
       // 읽기가 조용히 멈춰도 다음 사람의 마이크를 끝없이 기다리게 하지 않는다.
-      timer = global.setTimeout(function () { if (current(token)) { stopReading(); done(); } }, 7000);
+      timer = global.setTimeout(function () { finish(true); }, 7000);
       try { FQ.audio.say([country.ko], { onEnd: done }, done); } catch (error) { done(); }
     }
     function submit(text) {
       if (!alive) return { status: 'inactive' };
+      cancelVoice(continuous);
       stopReading();
-      cancelVoice();
       var result = game.submit(text);
       if (result.status === 'accepted') {
+        if (result.complete) { continuous = false; cancelVoice(); }
         selectedCode = result.country.code;
         element('chain-input').value = '';
         render();
         message(result.complete ? '모든 나라를 함께 찾았어요! 새로 하기를 누르면 다시 시작해요.' : result.country.ko + '! 이제 ' + result.nextPlayer + ' 차례예요.');
-        if (result.complete) continuous = false;
         setVoiceState('idle', continuous ? '나라 이름을 듣고 다음 사람이 말해요.' : undefined);
         readName(result.country);
       } else {
+        continuous = false;
+        cancelVoice();
         if (result.status === 'duplicate') message(result.country.ko + '은(는) ' + result.previous.player + '이(가) 이미 말했어요. ' + result.player + ' 차례에서 다른 나라를 말해요.', true);
         else if (result.status === 'ambiguous') message('여러 나라 이름이 들렸어요. ' + result.player + ' 차례에서 하나만 말해요.', true);
         else if (result.status === 'complete') message('모든 나라를 함께 찾았어요! 새로 하기를 누르면 다시 시작해요.');
         else message('나라 이름을 찾지 못했어요. ' + result.player + ' 차례에서 다시 말하거나 글로 써요.', true);
         setVoiceState('idle');
-        continuous = false;
       }
       return result;
     }
     function pauseListening() {
       continuous = false;
-      stopReading();
       cancelVoice();
+      stopReading();
       setVoiceState('idle', '듣기를 멈췄어요. 같은 차례에서 글로 쓰거나 마이크를 다시 눌러요.');
     }
     function visibility() { if (doc.hidden && alive) pauseListening(); }
@@ -260,8 +276,8 @@
       if (!alive) return;
       alive = false;
       continuous = false;
-      stopReading();
       cancelVoice();
+      stopReading();
       doc.removeEventListener('visibilitychange', visibility);
     }
     ui.on(m, '[data-chain-form]', 'submit', function (event) { event.preventDefault(); if (alive) submit(element('chain-input').value); });
@@ -271,6 +287,7 @@
         try { if (voice && voice.stop) voice.stop(); } catch (error) { voiceError(error, generation); }
         return;
       }
+      if (continuous || speaking || voiceState !== 'idle') return;
       if (FQ.audio && FQ.audio.unlock) FQ.audio.unlock();
       continuous = true;
       beginListening();
