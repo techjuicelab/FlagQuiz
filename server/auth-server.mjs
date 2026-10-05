@@ -17,6 +17,19 @@ const SESSION_MS = 8 * 60 * 60 * 1000, LOGIN_MS = 10 * 60 * 1000;
 const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8',
   '.json': 'application/json; charset=utf-8', '.webmanifest': 'application/manifest+json', '.svg': 'image/svg+xml', '.png': 'image/png',
   '.webp': 'image/webp', '.mp3': 'audio/mpeg', '.wav': 'audio/wav', '.ico': 'image/x-icon' };
+// 홈 화면 설치기의 쿠키 없는 조회에는 설치 정보와 이 아이콘만 공개한다.
+const PUBLIC_INSTALL_ASSETS = new Map([
+  ['/manifest.webmanifest', '/manifest.webmanifest'],
+  ['/assets/favicon.svg', '/assets/favicon.svg'], ['/assets/icon.svg', '/assets/icon.svg'],
+  ['/assets/icon-180.png', '/assets/icon-180.png'], ['/assets/icon-192.png', '/assets/icon-192.png'],
+  ['/assets/icon-512.png', '/assets/icon-512.png'], ['/assets/icon-maskable-512.png', '/assets/icon-maskable-512.png'],
+  ['/apple-touch-icon.png', '/assets/icon-180.png'], ['/apple-touch-icon-precomposed.png', '/assets/icon-180.png']
+]);
+const INSTALL_METADATA = '<meta name="theme-color" content="#F5F6F8">' +
+  '<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml"><link rel="manifest" href="/manifest.webmanifest">' +
+  '<link rel="apple-touch-icon" sizes="180x180" href="/assets/icon-180.png"><link rel="apple-touch-icon" sizes="192x192" href="/assets/icon-192.png">' +
+  '<meta name="apple-mobile-web-app-title" content="국기 퀴즈"><meta name="apple-mobile-web-app-capable" content="yes">' +
+  '<meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default">';
 
 export function readConfig(env = process.env) {
   for (const name of ['PUBLIC_ORIGIN', 'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'SESSION_SECRET', 'STATE_DIR', 'STATIC_ROOT', 'GROQ_API_KEY', 'TYPESAFE_API_KEY', 'HOST', 'PORT', 'TJID_SUPABASE_URL', 'TJID_SUPABASE_ANON_KEY', 'TRUSTED_PROXY_IPS']) {
@@ -110,7 +123,7 @@ function loginPage(res, error, config, formToken) {
     failed: '로그인을 완료하지 못했어요. 다시 시도해 주세요.', unavailable: '로그인 서비스 준비 중이에요. 잠시 뒤 다시 시도해 주세요.',
     'hosted-account-required': 'Gmail 또는 Google Workspace 계정으로 로그인해 주세요.' };
   if (config.authProvider === 'techjuice-id') {
-    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }).end('<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>세계 놀이 · TechJuice ID 로그인</title>' +
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }).end('<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>세계 놀이 · TechJuice ID 로그인</title>' + INSTALL_METADATA +
       '<style>body{margin:0;background:#f2f7ee;color:#243c2b;font-family:system-ui,sans-serif;display:grid;min-height:100dvh;place-items:center}main{box-sizing:border-box;background:#fff;border-radius:24px;padding:32px;width:min(92vw,440px);box-shadow:0 12px 40px #243c2b14}h1{margin-top:0}label{display:block;margin:20px 0 8px;font-weight:600}input,button{box-sizing:border-box;font:inherit;border-radius:12px;padding:13px;width:100%}input{border:1px solid #a9bba9}button{border:0;background:#397749;color:#fff;margin-top:24px;font-weight:700;cursor:pointer}a{color:#275f38}p{line-height:1.6}.hint{color:#536558;font-size:14px}input:focus-visible,button:focus-visible,a:focus-visible{outline:3px solid #df9e2e;outline-offset:3px}</style></head><body><main>' +
       '<h1>세계 놀이</h1><p>기존 TechJuice ID로 로그인해 주세요.</p><p id="legacy-notice" class="hint" role="status" aria-live="polite" hidden></p>' +
       (!config.ready ? '<p role="status">로그인 서비스 준비 중이에요. 잠시 뒤 다시 시도해 주세요.</p>' :
@@ -122,10 +135,10 @@ function loginPage(res, error, config, formToken) {
       '<p class="hint">다른 TechJuice 앱에서 사용하는 계정과 같아요.<br>비밀번호를 잊으셨다면 관리자에게 문의해 주세요.</p></main><script src="/auth-cleanup.js" defer></script><script src="/login-legacy.js" defer></script></body></html>');
     return;
   }
-  res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }).end('<!doctype html><html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">' +
-    '<title>세계 놀이 · 로그인</title><main><h1>세계 놀이</h1><p>등록된 Gmail 또는 Google Workspace 계정으로 로그인해 주세요.</p>' +
+  res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }).end('<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">' +
+    '<title>세계 놀이 · 로그인</title>' + INSTALL_METADATA + '</head><body><main><h1>세계 놀이</h1><p>등록된 Gmail 또는 Google Workspace 계정으로 로그인해 주세요.</p>' +
     (messages[error] ? '<p role="status">' + messages[error] + '</p>' : '') +
-    '<p id="legacy-notice" role="status" aria-live="polite" hidden></p><a href="/api/auth/login">Google 계정으로 로그인</a></main><script src="/auth-cleanup.js" defer></script><script src="/login-legacy.js" defer></script></html>');
+    '<p id="legacy-notice" role="status" aria-live="polite" hidden></p><a href="/api/auth/login">Google 계정으로 로그인</a></main><script src="/auth-cleanup.js" defer></script><script src="/login-legacy.js" defer></script></body></html>');
 }
 
 export async function createAuthServer({ config = readConfig(), fetchImpl = fetch, clock = Date.now, timingClock = () => performance.now(), oidc: injectedOidc, techjuiceId: injectedTechjuiceId, speechModule: injectedSpeech } = {}) {
@@ -172,10 +185,12 @@ export async function createAuthServer({ config = readConfig(), fetchImpl = fetc
   }
   async function staticFile(req, res, pathname) {
     if (!['GET', 'HEAD'].includes(req.method)) throw new AccessError(405, 'method-not-allowed');
-    if (!(await sessionOf(req))) {
+    const installAsset = req.url.split('?')[0] === pathname ? PUBLIC_INSTALL_ASSETS.get(pathname) : null;
+    if (!installAsset && !(await sessionOf(req))) {
       if (pathname === '/' || pathname === '/index.html') return redirect(res, '/login');
       throw new AccessError(401, 'login-required');
     }
+    if (installAsset) pathname = installAsset;
     let decoded; try { decoded = decodeURIComponent(pathname); } catch { throw new AccessError(400, 'invalid-path'); }
     if (decoded.includes('\0') || decoded.includes('\\') || decoded.split('/').some(part => part.startsWith('.'))) throw new AccessError(404, 'not-found');
     const relative = decoded.endsWith('/') ? decoded + 'index.html' : decoded;
@@ -184,6 +199,8 @@ export async function createAuthServer({ config = readConfig(), fetchImpl = fetc
     let real, stat;
     try { real = await fs.realpath(file); stat = await fs.stat(real); } catch { throw new AccessError(404, 'not-found'); }
     if (!real.startsWith(staticRoot + path.sep) || !stat.isFile()) throw new AccessError(404, 'not-found');
+    // 공개 아이콘을 다른 보호 파일로 연결하는 symlink는 허용하지 않는다.
+    if (installAsset && real !== path.resolve(staticRoot, '.' + relative)) throw new AccessError(404, 'not-found');
     const type = TYPES[path.extname(real).toLowerCase()]; if (!type) throw new AccessError(404, 'not-found');
     const headers = { 'Content-Type': type, 'Accept-Ranges': 'bytes' };
     let status = 200, start = 0, end = stat.size - 1;
