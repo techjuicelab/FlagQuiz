@@ -15,7 +15,7 @@
     '최종정답은', '최종답은', '마지막답은', '최종정답', '최종답', '마지막답',
     '정답은', '정답이', '정답', '제답은', '내답은', '답은', '답', '정정할게요', '정정할게', '정정',
     '아맞다', '맞다', '그러니까', '그러면', '잠깐만요', '잠깐만', '잠깐', '잠시만', '다시',
-    '이국기는', '국기는', '수도는', '이게뭐였죠', '이게뭐였지', '이게뭐지', '뭐였죠', '뭐였지', '뭐지', '뭐', '어느나라지', '무슨나라지',
+    '이국기는', '국기는', '수도는', '이게뭐였죠', '이게뭐였지', '이게뭐지', '이게맞나', '뭐였죠', '뭐였지', '뭐지', '뭐', '어느나라지', '무슨나라지',
     '이거는', '이건요', '이건', '이거', '이게', '그거', '그건', '아빠', '엄마', '저기',
     'theansweris', 'myansweris', 'finalansweris', 'answeris', 'actually', 'correction', 'itis', 'its',
     '음', '어', '아', '오', '네', '응', 'um', 'uh', 'oh', 'well', 'yes'
@@ -73,6 +73,104 @@
     // 인도네시아의 인도, 기니비사우의 기니, 긴 수도 별칭 안의 짧은 이름을 억제한다.
     found = found.filter(function (span) {
       return !found.some(function (other) { return other.start < span.end && other.end > span.start && other.end - other.start > span.end - span.start; });
+    });
+    found.sort(function (a, b) { return a.start - b.start || b.end - a.end; });
+    return found;
+  }
+
+  function sound(value) { return FQ.util.soundKey(FQ.util.compareKey(value)); }
+  function slip(length) { return length <= 4 ? 0 : length <= 6 ? 1 : length <= 10 ? 2 : length <= 15 ? 3 : 4; }
+
+  function pronunciationDistance(said, name) {
+    var util = FQ.util, saidKey = sound(said), nameKey = sound(name), allowed = slip(nameKey.length);
+    if (Math.abs(saidKey.length - nameKey.length) <= allowed) {
+      var distance = util.editDistance(saidKey, nameKey);
+      if (distance <= allowed) return distance / nameKey.length;
+    }
+    // 긴 이름의 안쪽 음절을 생략해도 앞·뒤 소리와 충분한 실제 음절은 남아 있어야 한다.
+    var missing = name.length - said.length;
+    if (name.length < 4 || said.length < 3 || missing < 1 || missing > 2 || said.length / name.length < 2 / 3 ||
+        sound(said[0]) !== sound(name[0]) || sound(said[said.length - 1]) !== sound(name[name.length - 1])) return null;
+    var best = Infinity;
+    function align(i, j, omitted, changed) {
+      if (changed > 1 || omitted > missing) return;
+      if (i === said.length && j === name.length) { if (omitted === missing) best = Math.min(best, changed); return; }
+      if (i < said.length && j < name.length) {
+        var difference = util.editDistance(sound(said[i]), sound(name[j]));
+        if (difference <= 1) align(i + 1, j + 1, omitted, changed + difference);
+      }
+      if (j > 0 && j < name.length - 1) align(i, j + 1, omitted + 1, changed);
+    }
+    align(0, 0, 0, 0);
+    return best === Infinity ? null : (missing * 2 + best) / nameKey.length;
+  }
+
+  function spokenMentions(text, names, raw) {
+    var exact = mentions(text, names), util = FQ.util;
+    if (!util || !util.soundKey || names[text]) return exact;
+    var fragments = Object.create(null), firstSounds = Object.create(null), positions = Object.create(null), edgeDistances = Object.create(null), reserved = [], reservedCounts = [0];
+    PREFIX.concat(SUFFIX, ['아니고', '아니라', '아니야', '아니에요', '아니다', '말고', '말구', '아니면',
+      '또는', '혹은', '인지', '일까', '인가요', '아마', '혹시', '몰라요', '몰라', '모르겠어요', '모르겠네', '모르겠다']).forEach(function (word) {
+      if (word.length < 2) return;
+      var start = text.indexOf(word);
+      while (start !== -1) {
+        var end = start + word.length;
+        if (!exact.some(function (span) { return start < span.end && end > span.start; })) reserved.push({ start: start, end: end });
+        start = text.indexOf(word, start + 1);
+      }
+    });
+    // 분리해서 말한 짧은 필러를 이름의 첫 음절로 소비하지 않는다(음 가보네 → 음바바네 방지).
+    // 실제 전체 이름·별칭은 위의 exact 판정이 먼저 처리하므로 음바바네 같은 이름은 보존된다.
+    var offset = 0;
+    String(raw || '').normalize('NFC').replace(/[\p{L}\p{N}]+/gu, function (word) {
+      var value = compact(word), end = offset + value.length;
+      if (PREFIX.indexOf(value) !== -1 && !exact.some(function (span) { return offset < span.end && end > span.start; })) {
+        reserved.push({ start: offset, end: end });
+      }
+      offset = end;
+      return word;
+    });
+    var blocked = [];
+    reserved.forEach(function (span) { for (var p = span.start; p < span.end; p++) blocked[p] = true; });
+    for (var position = 0; position < text.length; position++) {
+      var initial = firstSounds[position] = sound(text[position]);
+      if (!blocked[position]) (positions[initial] || (positions[initial] = [])).push(position);
+      reservedCounts[position + 1] = reservedCounts[position] + (blocked[position] ? 1 : 0);
+    }
+    function edgeDistance(a, b) {
+      var key = a + ':' + b;
+      if (!(key in edgeDistances)) edgeDistances[key] = util.editDistance(a, b);
+      return edgeDistances[key];
+    }
+    Object.keys(names).forEach(function (name) {
+      if (!/^[가-힣]{2,20}$/.test(name)) return;
+      var first = sound(name[0]), last = sound(name[name.length - 1]), distances = Object.create(null), starts = [];
+      Object.keys(positions).forEach(function (initial) { if (edgeDistance(initial, first) <= 1) starts = starts.concat(positions[initial]); });
+      for (var s = 0; s < starts.length; s++) {
+        var start = starts[s];
+        for (var length = Math.max(2, name.length - 2); length <= name.length + 1 && start + length <= text.length; length++) {
+          var end = start + length, fragment = text.slice(start, end);
+          if (reservedCounts[end] !== reservedCounts[start] || !/^[가-힣]+$/.test(fragment) || edgeDistance(firstSounds[end - 1], last) > 1 || fragment === name) continue;
+          if (!(fragment in distances)) distances[fragment] = pronunciationDistance(fragment, name);
+          var score = distances[fragment];
+          if (score === null) continue;
+          // 실제 다른 이름은 우선한다. 인도→인도네시야처럼 긴 이름 앞부분에 포함된 경우만 이어 본다.
+          if (exact.some(function (span) {
+            if (span.start >= end || span.end <= start) return false;
+            return !(span.start === start && span.end < end && name.indexOf(text.slice(span.start, span.end)) === 0);
+          })) continue;
+          var key = start + ':' + end, group = fragments[key] || (fragments[key] = { start: start, end: end, entries: [], phonetic: true });
+          names[name].forEach(function (entry) {
+            if (!group.entries.some(function (item) { return item.code === entry.code; })) group.entries.push(entry);
+          });
+        }
+      }
+    });
+    // 유효한 생략음과 유사음이 서로 다른 이름이면 어느 쪽도 거리 점수로 지워 추측하지 않는다.
+    var found = exact.concat(Object.keys(fragments).map(function (key) { return fragments[key]; }));
+    // 분절된 긴 이름이 짧은 이름·조각을 감싸면 완성한 후보를 남긴다. 후보끼리 경합하면 entries를 보존한다.
+    found = found.filter(function (span) {
+      return !found.some(function (other) { return other.start <= span.start && other.end >= span.end && other.end - other.start > span.end - span.start; });
     });
     found.sort(function (a, b) { return a.start - b.start || b.end - a.end; });
     return found;
@@ -158,12 +256,12 @@
     return sentences.length > 1 && compact(sentences[sentences.length - 1]) === suffix;
   }
 
-  function resolve(raw, options) {
+  function resolveCore(raw, options, withPronunciation) {
     options = options || {};
     var kind = options.kind === 'capital' ? 'capital' : 'country';
     if (typeof raw !== 'string' || raw.length > MAX_TEXT || !raw.trim()) return result('retry', 'invalid-input', []);
     var countries = Array.isArray(options.countries) ? options.countries : FQ.countries || [];
-    var text = compact(raw), spans = mentions(text, entries(countries, kind));
+    var text = compact(raw), names = entries(countries, kind), spans = withPronunciation ? spokenMentions(text, names, raw) : mentions(text, names);
     var candidates = candidateList(spans);
     if (manipulation(raw, text)) return result('retry', 'unsafe-instruction', candidates);
     // 앞에서 다른 사람의 답을 언급했어도 뒤의 명시적 자기 답은 별도 문장으로 해석한다.
@@ -178,6 +276,7 @@
     if (pass(text)) return result('giveup', 'explicit-giveup', candidates);
     if (!spans.length) {
       if (terminalUnknown(text)) return result('giveup', 'explicit-giveup', []);
+      if (wordsOnly(text, PREFIX.concat(SUFFIX, ['가', '는', '를', '하고']))) return result('retry', help(text) ? 'help-request' : 'unknown', []);
       var fallback = bareFallback(raw, text, kind, countries);
       if (fallback) return result('answer', 'name-match', [fallback], fallback);
       return result('retry', help(text) ? 'help-request' : 'unknown', []);
@@ -223,7 +322,22 @@
       return result('answer', 'explicit-correction', candidates, spans[spans.length - 1].entries[0]);
     }
     if (unresolved) return result('retry', alternative ? 'uncertain' : complex ? 'unsupported-structure' : 'multiple-answers', candidates);
-    return result('answer', corrected ? 'explicit-correction' : spans.length > 1 ? 'repeated-answer' : 'single-answer', candidates, chosen);
+    return result('answer', corrected ? 'explicit-correction' : spans.some(function (span) { return span.phonetic; }) ? 'phonetic-match' : spans.length > 1 ? 'repeated-answer' : 'single-answer', candidates, chosen);
+  }
+
+  function resolve(raw, options) {
+    // 이미 명확한 실제 이름·정정·포기는 유지하고, 해석하지 못한 말에만 발음 보완을 적용한다.
+    var exact = resolveCore(raw, options, false);
+    if (exact.status !== 'retry' && exact.reason !== 'name-match') return exact;
+    if (typeof raw === 'string' && wordsOnly(compact(raw), PREFIX.concat(SUFFIX, ['가', '는', '를', '하고']))) return exact;
+    var pronounced = resolveCore(raw, options, true);
+    if (exact.status === 'answer' && exact.reason === 'name-match') {
+      if (pronounced.candidates.some(function (candidate) { return candidate.code !== exact.code; })) {
+        return result('retry', 'ambiguous-alias', pronounced.candidates);
+      }
+      if (pronounced.status !== 'answer') return exact;
+    }
+    return pronounced;
   }
 
   function canUseSemantic(raw, resolved) {

@@ -152,6 +152,84 @@ test('명확한 답 검증의 모델 실패·다른 앞선 후보 선택은 원�
   }
 });
 
+const pronunciationCountries = [
+  { code: 'pt', ko: '포르투갈', capital: '리스본' },
+  { code: 'es', ko: '스페인', capital: '마드리드' },
+  { code: 'se', ko: '스웨덴', capital: '스톡홀름' }
+];
+function pronunciationRules(result) {
+  return { countries: pronunciationCountries, resolve: () => result, canUseSemantic: () => false };
+}
+function certainChoice(code, alternatives = []) {
+  return { model: JEV_MODEL, answers: { final_selection: { type: 'choice', choice: code, confidence: 1,
+    probabilities: Object.fromEntries([...alternatives, code, 'unresolved', 'giveup'].map(name => [name, name === code ? 1 : 0]))
+  } } };
+}
+
+test('유일한 불완전 나라·수도 발음도 원래 전사와 정규 후보 안에서 Jev로 확인한다', async () => {
+  for (const [text, mode, code, name] of [
+    ['뭐.. 이게 맞나. 포르.. 갈', 'voice', 'pt', '포르투갈'],
+    ['뭐.. 이게 맞나. 포르.. 갈', 'country-chain', 'pt', '포르투갈'],
+    ['어.. 스톡.. 름', 'capitalVoice', 'se', '스톡홀름']
+  ]) {
+    const baseline = { status: 'answer', code, text: name, reason: 'phonetic-match', candidates: [{ code, name }] };
+    const f = fixture({ rules: pronunciationRules(baseline), response: certainChoice(code) });
+    let fresh = 0;
+    const actual = await f.resolve({ text, mode, target: '숨겨진 현재 정답', question: '숨겨진 현재 문제' }, {
+      beforeSemantic: async () => fresh++
+    });
+    assert.deepEqual(actual, { status: 'answer', code, text: name, reason: 'final-selection', source: 'jev' });
+    assert.equal(f.calls.length, 1); assert.equal(fresh, 1);
+    const payload = JSON.parse(f.calls[0].config.body), question = payload.questions.final_selection;
+    assert.deepEqual(payload.state, { utterance: text });
+    assert.deepEqual(Object.keys(question.criteria).sort(), [code, 'giveup', 'unresolved'].sort());
+    assert.match(question.instructions, /incomplete pronunciation/);
+    assert.match(question.criteria[code], /full canonical spelling need not appear/);
+    assert.doesNotMatch(JSON.stringify(payload), /숨겨진 현재|target|quiz_question/);
+  }
+});
+
+test('완전한 앞선 이름을 불완전한 최종 이름으로 정정해도 실제 두 후보 안에서 확인한다', async () => {
+  const baseline = { status: 'answer', code: 'pt', text: '포르투갈', reason: 'explicit-correction',
+    candidates: [{ code: 'es', name: '스페인' }, { code: 'pt', name: '포르투갈' }] };
+  const f = fixture({ rules: pronunciationRules(baseline), response: certainChoice('pt', ['es']) });
+  const actual = await f.resolve({ text: '스페인 아니고 포르.. 갈', mode: 'voice', target: '스페인' });
+  assert.equal(actual.code, 'pt'); assert.equal(actual.source, 'jev'); assert.equal(f.calls.length, 1);
+  const payload = JSON.parse(f.calls[0].config.body);
+  assert.deepEqual(Object.keys(payload.questions.final_selection.criteria).sort(), ['es', 'giveup', 'pt', 'unresolved']);
+  assert.deepEqual(payload.state, { utterance: '스페인 아니고 포르.. 갈' });
+});
+
+test('불완전 발음의 확정 답은 모델 장애·불확실·앞선 이름 선택 때문에 철회하지 않는다', async () => {
+  const baseline = { status: 'answer', code: 'pt', text: '포르투갈', reason: 'explicit-correction',
+    candidates: [{ code: 'es', name: '스페인' }, { code: 'pt', name: '포르투갈' }] };
+  for (const options of [
+    { response: certainChoice('es', ['pt']) },
+    { response: certainChoice('unresolved', ['es', 'pt']) },
+    { response: { model: JEV_MODEL, answers: { final_selection: { type: 'choice', choice: 'pt', confidence: 0.5,
+      probabilities: { es: 0.1, pt: 0.6, unresolved: 0.3, giveup: 0 } } } } },
+    { fetch: async () => { throw new Error('fixture-provider-secret'); } }
+  ]) {
+    const f = fixture({ rules: pronunciationRules(baseline), ...options });
+    const result = await f.resolve({ text: '스페인 아니고 포르.. 갈', mode: 'voice' });
+    assert.deepEqual(result, { status: 'answer', code: 'pt', text: '포르투갈', reason: 'explicit-correction', source: 'rules' });
+    assert.equal(f.calls.length, 1); assert.doesNotMatch(JSON.stringify(result), /fixture-provider-secret/);
+  }
+});
+
+test('모호하거나 부정한 발음 조각은 확정하지 않고 원문에 없는 별도 후보도 모델로 보내지 않는다', async () => {
+  for (const reason of ['unknown', 'ambiguous-alias', 'negation', 'uncertain', 'help-request']) {
+    const f = fixture({ rules: pronunciationRules(retry({ reason, candidates: [{ code: 'pt', name: '포르투갈' }] })) });
+    assert.equal((await f.resolve({ text: '포르..', mode: 'voice' })).status, 'retry'); assert.equal(f.calls.length, 0);
+  }
+  for (const extra of [{ code: 'se', name: '스웨덴' }, { code: 'es', name: '스웨덴' }, { code: 'zz', name: '어딘가' }]) {
+    const f = fixture({ rules: pronunciationRules({ status: 'answer', code: 'pt', text: '포르투갈', reason: 'phonetic-match',
+      candidates: [{ code: 'pt', name: '포르투갈' }, extra] }) });
+    const result = await f.resolve({ text: '포르.. 갈', mode: 'voice' });
+    assert.equal(result.source, 'rules'); assert.equal(f.calls.length, 0);
+  }
+});
+
 test('단순 후보 나열·불확실·질문·인용·주입은 높은 confidence여도 Jev 호출 전에 막는다', async () => {
   for (const text of [
     '일본 대한민국', '일본 아니면 대한민국을 정답으로 할래', '일본인지 대한민국인지 최종 선택',
@@ -319,6 +397,64 @@ test('shared helper가 확인한 할게·정할게·할게요 최종 선택도 �
     const result = await resolve({ text, mode: 'voice' });
     assert.equal(result.status, 'answer'); assert.equal(result.code, expectedCode); assert.equal(result.source, 'jev'); assert.equal(calls, 1);
   }
+});
+
+test('실제 shared matcher의 불완전 발음은 세 모드에서 원문·정규 후보만으로 Jev 확인을 통과한다', async () => {
+  for (const [text, mode, code, name] of [
+    ['뭐.. 이게 맞나. 포르.. 갈', 'voice', 'pt', '포르투갈'],
+    ['음 포도칼', 'country-chain', 'pt', '포르투갈'],
+    ['음 스톡 름', 'capitalVoice', 'se', '스톡홀름'],
+    ['스페인 아니고 포르 갈', 'voice', 'pt', '포르투갈'],
+    ['포르투갈 아니고 스페인', 'voice', 'es', '스페인'],
+    ['오만', 'voice', 'om', '오만']
+  ]) {
+    const calls = []; let fresh = 0;
+    // rules를 주입하지 않고 운영과 같은 VM 자료·판정기를 사용한다.
+    const resolve = createAnswerResolver({ apiKey: 'fixture-typesafe-never-real', fetchImpl: async (_url, config) => {
+      const payload = JSON.parse(config.body); calls.push(payload);
+      const criteria = payload.questions.final_selection.criteria;
+      assert.deepEqual(payload.state, { utterance: text }); assert.ok(Object.hasOwn(criteria, code));
+      assert.doesNotMatch(JSON.stringify(payload), /숨겨진 현재|target|answer_code|quiz_question/);
+      return { ok: true, json: async () => certainChoice(code, Object.keys(criteria).filter(key => ![code, 'unresolved', 'giveup'].includes(key))) };
+    } });
+    const actual = await resolve({ text, mode, target: '숨겨진 현재 문제 정답', answer: '숨겨진 현재 문제 정답',
+      question: '숨겨진 현재 국기' }, { beforeSemantic: async () => fresh++ });
+    assert.deepEqual(actual, { status: 'answer', code, text: name, reason: 'final-selection', source: 'jev' }, text);
+    assert.equal(calls.length, 1, text); assert.equal(fresh, 1, text);
+  }
+});
+
+test('실제 shared matcher의 최종 답은 Jev fallback에서도 유지하고 불완전한 앞선 이름으로 되돌리지 않는다', async () => {
+  for (const [text, expectedCode, expectedName, reason, expectedCalls] of [
+    ['뭐.. 이게 맞나. 포르.. 갈', 'pt', '포르투갈', 'phonetic-match', 1],
+    ['음 포도칼', 'pt', '포르투갈', 'phonetic-match', 1],
+    ['포르 갈 아니고 스페인', 'es', '스페인', 'explicit-correction', 0]
+  ]) {
+    for (const outcome of ['unresolved', 'failure']) {
+      let calls = 0;
+      const resolve = createAnswerResolver({ apiKey: 'fixture-typesafe-never-real', fetchImpl: async (_url, config) => {
+        calls++;
+        if (outcome === 'failure') throw new Error('fixture-upstream-unavailable');
+        const criteria = JSON.parse(config.body).questions.final_selection.criteria;
+        return { ok: true, json: async () => certainChoice('unresolved', Object.keys(criteria).filter(key => !['unresolved', 'giveup'].includes(key))) };
+      } });
+      const actual = await resolve({ text, mode: 'voice', target: '포르투갈' });
+      assert.deepEqual(actual, { status: 'answer', code: expectedCode, text: expectedName, reason, source: 'rules' }, text);
+      assert.equal(calls, expectedCalls, text);
+    }
+  }
+});
+
+test('실제 shared matcher의 모호한 조각·질문·부정·빈 답은 Jev 호출 없이 재질문한다', async () => {
+  let calls = 0;
+  const resolve = createAnswerResolver({ apiKey: 'fixture-typesafe-never-real', fetchImpl: async () => {
+    calls++; throw new Error('명확하지 않은 이름에는 외부 호출이 없어야 한다');
+  } });
+  for (const text of ['음 캄디아', '포', '음', '음 포르 갈 아니야', '음 포르 갈 맞나?', '음 포르 갈 또는 스페인']) {
+    const actual = await resolve({ text, mode: 'voice', target: '포르투갈' });
+    assert.equal(actual.status, 'retry', text); assert.equal(actual.source, 'rules', text);
+  }
+  assert.equal(calls, 0);
 });
 
 test('운영 이미지처럼 원본 js 없이 _site에만 브라우저 코드가 있어도 서버 판정이 동작한다', async t => {
