@@ -35,8 +35,8 @@ STT는 음성을 글자로 인식하고 TTS는 글을 읽어 준다. 두 사람�
 - 서버가 중앙 native JWKS로 JWT 서명을 검증하고 issuer·audience·만료·인증된 비익명 role·`tj` 앱 권한·disabled를 확인한다. 중앙 최고 관리자가 아니면 `flagquiz`의 `admin`, `tester`, `user` 권한이 필요하다. 브라우저의 이메일·역할 입력으로 권한을 부여하지 않는다.
 - 중앙 검증을 통과한 계정은 로컬에 자동 등록하고 `sub`를 고정한다. 기존 활성 계정 전체의 중앙 앱 권한 부여는 완료했다. 아이디 계정의 합성 이메일도 중앙 계정 식별자로 받으며 Gmail/Workspace 전용 제한을 적용하지 않는다.
 - `techjuicelab@gmail.com`은 변경·삭제 불가능한 로컬 SuperAdmin이다. 이 계정만 아이디 또는 이메일을 등록·해제한다. 해제하면 기존 세션을 즉시 지우고 차단 기록을 남겨 중앙 계정의 자동 재등록을 막는다. 다시 추가하면 차단을 해제한다. 다른 중앙 관리자는 이 로컬 관리 권한을 자동으로 얻지 않는다.
-- FlagQuiz는 HttpOnly·SameSite=Lax·HTTPS Secure·host-only 세션 쿠키를 발급한다. 만료는 중앙 JWT 만료와 8시간 중 빠른 시점이며 보통 중앙 토큰 수명인 1시간을 넘지 않는다. 중앙 token/refresh token은 쿠키와 영속 저장소에 복사하지 않는다.
-- 로컬 허용 목록·세션은 매 요청 확인한다. 중앙 disabled·session generation은 기본 60초 캐시로 확인하고 관리 API와 유료 호출 직전에는 최신 상태를 조회한다. 중앙 계정 상태 조회가 실패하면 해당 접근을 닫고, 비활성화·generation 변경이면 세션을 폐기한다. 변경 요청은 같은 Origin과 CSRF 토큰을 요구한다.
+- FlagQuiz는 HttpOnly·SameSite=Lax·HTTPS Secure·host-only 세션 쿠키를 발급한다. TechJuiceID 로그인은 새 중앙 JWT의 유효성을 확인한 뒤 앱 세션을 별도로 30일 유지한다. 로그인 시점부터 고정 30일이며 접속할 때마다 연장하지 않는다. 세션 식별자·만료 시각의 서명 쿠키는 이 기기의 브라우저에, 같은 세션은 NAS의 `access.json`에 보관하므로 브라우저 재실행과 서버 재시작 뒤에도 유지된다. 중앙 token/refresh token·비밀번호는 쿠키·localStorage·영속 저장소에 복사하지 않는다. 호환용 직접 Google 로그인은 기존 8시간이다. 기존 짧은 세션이 만료되면 한 번 다시 로그인해야 새 30일 쿠키를 받는다.
+- 로컬 허용 목록·세션은 매 요청 확인한다. 중앙 disabled·session generation은 기본 60초 캐시로 확인하고 관리 API와 유료 호출 직전에는 최신 상태를 조회한다. 중앙 계정 상태 조회가 실패하면 해당 접근을 닫고, 비활성화·generation 변경이면 세션을 폐기한다. 로그아웃·로컬 접근 해제는 즉시 해당 세션을 폐기한다. 중앙 앱 역할 변경은 다음 로그인부터 반영되므로 기존 기기도 회수하려면 중앙 전체 기기 로그아웃으로 generation을 올리거나 로컬 접근 해제를 함께 적용한다. 변경 요청은 같은 Origin과 CSRF 토큰을 요구한다.
 - 기본은 `AUTH_PROVIDER=techjuice-id`, `TJID_GOOGLE_ENABLED=false`다. Google 버튼은 중앙 Google 로그인 실제 검증 전까지 비활성화한다. 앱별 Google client secret이나 Google Cloud callback 추가는 현재 비밀번호 로그인에 필요하지 않다.
 
 ## 음성과 저장·백업

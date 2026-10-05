@@ -13,7 +13,7 @@ import { clientIp, parseTrustedProxyIPs } from './lib/proxy-ip.mjs';
 
 const repository = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const COOKIE = 'flagquiz_session', LOGIN_COOKIE = 'flagquiz_login';
-const SESSION_MS = 8 * 60 * 60 * 1000, LOGIN_MS = 10 * 60 * 1000;
+const SESSION_MS = 8 * 60 * 60 * 1000, TJID_SESSION_MS = 30 * 24 * 60 * 60 * 1000, LOGIN_MS = 10 * 60 * 1000;
 const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8',
   '.json': 'application/json; charset=utf-8', '.webmanifest': 'application/manifest+json', '.svg': 'image/svg+xml', '.png': 'image/png',
   '.webp': 'image/webp', '.mp3': 'audio/mpeg', '.wav': 'audio/wav', '.ico': 'image/x-icon' };
@@ -129,7 +129,7 @@ function loginPage(res, error, config, formToken) {
       (!config.ready ? '<p role="status">로그인 서비스 준비 중이에요. 잠시 뒤 다시 시도해 주세요.</p>' :
         '<form method="post" action="/api/auth/password"><input type="hidden" name="csrf" value="' + formToken + '">' +
         '<label for="identifier">아이디 또는 이메일</label><input id="identifier" name="identifier" autocomplete="username" required maxlength="254" autocapitalize="none" spellcheck="false">' +
-        '<label for="password">비밀번호</label><input id="password" name="password" type="password" autocomplete="current-password" required maxlength="1024"><button type="submit">로그인</button></form>' +
+        '<label for="password">비밀번호</label><input id="password" name="password" type="password" autocomplete="current-password" required maxlength="1024"><button type="submit">로그인</button></form><p class="hint">이 기기에서 로그인 상태를 30일 동안 유지해요.</p>' +
         (config.googleEnabled ? '<p><a href="/api/auth/login">Google 계정으로 로그인</a></p>' : '')) +
       (error ? '<p role="status">' + (error === 'denied' ? '이 계정은 세계 놀이를 이용할 수 없어요. 관리자에게 문의해 주세요.' : '로그인하지 못했어요. 아이디와 비밀번호를 확인해 주세요.') + '</p>' : '') +
       '<p class="hint">다른 TechJuice 앱에서 사용하는 계정과 같아요.<br>비밀번호를 잊으셨다면 관리자에게 문의해 주세요.</p></main><script src="/auth-cleanup.js" defer></script><script src="/login-legacy.js" defer></script></body></html>');
@@ -284,6 +284,7 @@ export async function createAuthServer({ config = readConfig(), fetchImpl = fetc
     if (pathname === '/login' && req.method === 'GET') {
       // 폼 POST의 Origin을 보존하고 외부 사이트에는 Referer를 보내지 않는다.
       res.setHeader('Referrer-Policy', 'same-origin');
+      if (await sessionOf(req)) return redirect(res, '/');
       const token = randomBytes(32).toString('base64url');
       if (config.ready && tjid) res.setHeader('Set-Cookie', cookie(LOGIN_COOKIE, sign({ form: token, exp: clock() + LOGIN_MS }, 'login', config.sessionSecret), config, LOGIN_MS));
       return loginPage(res, url.searchParams.get('error'), config, token);
@@ -301,8 +302,9 @@ export async function createAuthServer({ config = readConfig(), fetchImpl = fetc
       res.setHeader('Set-Cookie', cookie(LOGIN_COOKIE, '', config));
       const identity = await tjid.passwordGrant(form.identifier, form.password);
       if (!identity) return redirect(res, '/login?error=failed');
-      const lifetime = Math.min(SESSION_MS, identity.expiresAt - clock());
-      if (!Number.isInteger(lifetime) || lifetime <= 0) return redirect(res, '/login?error=failed');
+      if (!Number.isSafeInteger(identity.expiresAt) || identity.expiresAt <= clock()) return redirect(res, '/login?error=failed');
+      // 중앙 JWT는 로그인 증명에만 사용한다. 이후 계정 상태·세대는 sessionOf에서 계속 확인한다.
+      const lifetime = TJID_SESSION_MS;
       try {
         const session = await store.createSession(identity, lifetime, { trustedCentralIdentity: true });
         res.setHeader('Set-Cookie', [cookie(LOGIN_COOKIE, '', config), cookie(COOKIE, sign({ id: session.id, exp: session.expiresAt }, 'session', config.sessionSecret), config, lifetime)]);
@@ -340,8 +342,8 @@ export async function createAuthServer({ config = readConfig(), fetchImpl = fetc
       try {
         const identity = tjid ? await tjid.exchangeCode({ code: url.searchParams.get('code'), verifier: attempt.verifier }) : await oidc.exchangeCode({ code: url.searchParams.get('code'), nonce: attempt.nonce, verifier: attempt.verifier });
         if (!identity) throw new IdentityError('invalid-token');
-        const lifetime = tjid ? Math.min(SESSION_MS, identity.expiresAt - clock()) : SESSION_MS;
-        if (!Number.isInteger(lifetime) || lifetime <= 0) throw new IdentityError('expired-token');
+        if (tjid && (!Number.isSafeInteger(identity.expiresAt) || identity.expiresAt <= clock())) throw new IdentityError('expired-token');
+        const lifetime = tjid ? TJID_SESSION_MS : SESSION_MS;
         const session = await store.createSession(identity, lifetime, { trustedCentralIdentity: Boolean(tjid) });
         res.setHeader('Set-Cookie', [cookie(LOGIN_COOKIE, '', config), cookie(COOKIE, sign({ id: session.id, exp: session.expiresAt }, 'session', config.sessionSecret), config, lifetime)]);
         return redirect(res, '/');
