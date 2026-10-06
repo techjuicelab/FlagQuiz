@@ -2443,4 +2443,38 @@ test('실제 다른 나라가 둘 등장하는 반복 전사는 질문의 정답
   }
 });
 
+for(const mode of ['voice','capitalVoice'])test(`${mode}은 무음 대기를 유지하고 녹음 구간 재시작 뒤 실제 듣기 표시를 복원한다`,()=>{
+  const f=fixture(),cloud=cloudFixture(f),a=startMode(f,mode,['kr','jp'],{speak:false,timer:0}),q=a.state.game.current(),session=cloud.sessions[0];
+  assert.equal(session.continuous,true,'일반 말하기도 짧은 무음에서 자동 종료하지 않는다');
+  cloud.phase(session,'recording');assert.equal(f.node('#mic').attrs['aria-pressed'],'true');
+  cloud.phase(session,'requesting');assert.match(f.node('#listen-state').textContent,/준비/);f.advance(30000);
+  assert.equal(a.state.listenOn,true);assert.equal(a.state.game.current(),q);assert.equal(a.state.answered,false);
+  cloud.phase(session,'recording');assert.equal(f.node('#mic').attrs['aria-pressed'],'true');
+  assert.match(f.node('#listen-state').textContent,/듣고 있어요/);
+  assert.equal(cloud.sessions.length,1,'새 유료 요청 없이 같은 세션의 로컬 대기를 유지한다');
+});
+
+for(const action of ['typed-focus','pause'])test(`수도 말하기 힌트를 듣는 중 ${action}은 낭독 뒤 마이크 자동 재개를 취소한다`,()=>{
+  const f=fixture(),cloud=cloudFixture(f),a=startMode(f,'capitalVoice',['kr','jp'],{speak:true,timer:10}),q=a.state.game.current();
+  cloud.phase(cloud.sessions[0],'recording');f.node('#hint').click();f.advance(0);
+  assert.equal(f.spoken.length,1);const ending=f.voiceOptions.at(-1).onEnd;
+  if(action==='typed-focus')f.node('#answer-input').handlers.focus();else a.toggleMic();
+  assert.equal(a.state.listenOn,false);
+  ending();ending();f.advance(8000);
+  assert.equal(cloud.sessions.length,1,'글 입력이나 멈춤을 고른 뒤에는 힌트 종료가 마이크를 되살리지 않는다');
+  assert.equal(a.state.game.current(),q);assert.equal(a.state.answered,false);assert.equal(a.state.listenOn,false);
+  assert.equal(a.state.timerId,null,'수도 놀이에 제한 시간을 새로 만들지 않는다');
+});
+
+test('수도 말하기 힌트의 낭독 종료 신호가 없어도 같은 문제의 듣기를 한 번만 복구한다',()=>{
+  const f=fixture(),cloud=cloudFixture(f),a=startMode(f,'capitalVoice',['kr','jp'],{speak:true,timer:0}),q=a.state.game.current();
+  cloud.phase(cloud.sessions[0],'recording');f.node('#hint').click();f.advance(0);
+  assert.equal(cloud.sessions.length,1);const ending=f.voiceOptions.at(-1).onEnd;
+  assert.equal(f.node('#mic').attrs['aria-pressed'],'false','힌트를 읽는 동안 실제 마이크 표시도 꺼야 한다');
+  f.advance(6999);assert.equal(cloud.sessions.length,1);f.advance(1);
+  assert.equal(cloud.sessions.length,2,'누락된 TTS 완료 이벤트가 말하기를 영원히 멈추게 해서는 안 된다');
+  assert.equal(a.state.game.current(),q);assert.equal(a.state.answered,false);
+  ending();f.advance(8000);assert.equal(cloud.sessions.length,2,'이전 힌트의 늦은 종료는 추가 녹음을 열지 않는다');
+});
+
 console.log('앱 흐름 회귀 검사 '+passed+'건 통과');

@@ -128,6 +128,30 @@ test('활성 요청의 start 중복 호출은 새 녹음이나 유료 요청을 
   assert.equal(String(f.sessions[0].turnId), '4');
 });
 
+test('나라·수도 말하기는 기본으로 계속 기다리고 명시한 단발 듣기만 종료 제한을 적용한다', () => {
+  for (const mode of ['voice', 'capitalVoice']) {
+    for (const continuous of [undefined, true, false]) {
+      const f = setup(), h = handlers(mode);
+      if (continuous !== undefined) h.value.continuous = continuous;
+      f.speech.start(h.value);
+      assert.equal(f.sessions[0].continuous, continuous !== false,
+        mode + ': 아이가 답을 생각하는 동안 5초 무음으로 마이크가 꺼지지 않아야 한다');
+    }
+  }
+});
+
+test('말소리가 없어 같은 요청에서 다시 녹음하면 마이크 시작 상태를 다시 알린다', () => {
+  const f = setup(), h = handlers(); f.speech.start(h.value); const session = f.sessions[0];
+  session.onState({ state: 'recording' });
+  session.onState({ state: 'finishing' });
+  session.onState({ state: 'transcribing' });
+  session.onState({ state: 'recording' });
+  session.onState({ state: 'recording' });
+  assert.equal(h.events.filter(event => event[0] === 'start').length, 2,
+    '전사 대기로 꺼진 마이크 표시가 실제 녹음 재개 시 다시 켜져야 한다');
+  assert.equal(f.speech.isListening(), true);
+});
+
 test('마이크 중단 뒤 새 차례를 열면 이전 결과·상태·오류가 현재 화면에 전달되지 않는다', () => {
   const f = setup(), old = handlers(), fresh = handlers('capitalVoice', 5);
   f.speech.start(old.value); const previous = f.sessions[0]; f.speech.abort(); f.speech.start(fresh.value);

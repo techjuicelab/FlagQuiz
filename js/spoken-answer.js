@@ -18,7 +18,7 @@
     '이국기는', '국기는', '수도는', '이게뭐였죠', '이게뭐였지', '이게뭐지', '뭐였죠', '뭐였지', '뭐지', '뭐', '어느나라지', '무슨나라지',
     '이거는', '이건요', '이건', '이거', '이게', '그거', '그건', '아빠', '엄마', '저기',
     'theansweris', 'myansweris', 'finalansweris', 'answeris', 'actually', 'correction', 'itis', 'its',
-    '음', '어', '아', '오', '네', '응', 'um', 'uh', 'oh', 'well', 'yes'
+    '으음', '음', '어', '아', '오', '에', '네', '응', '그', 'um', 'uh', 'oh', 'well', 'yes'
   ];
   var SUFFIX = [
     '이라고생각해요', '라고생각해요', '이라고생각해', '라고생각해', '인것같아요', '인거같아요',
@@ -133,16 +133,47 @@
   }
 
   function bareFallback(raw, text, kind, countries) {
-    if (!FQ.quiz || !FQ.quiz.findCountry || !/^[\p{L}\p{N}]+[.!。！]?$/u.test(raw.trim()) || text.length > 40 ||
+    if (!FQ.quiz || !FQ.quiz.findCountry || !/^[\p{L}\p{N}\s.,!。！…]+$/u.test(raw.trim()) || text.length > 80 ||
         negative(text) || help(text) || uncertainty(text) || /(?:and|or|but|그리고|정정|생각해|마지막|최종)/.test(text)) return null;
-    var found = FQ.quiz.findCountry(raw, kind);
+    // 전체 이름 한 덩어리만 비교한다. 필러·조사를 떼어도 일반 문장 안의 낱말은 추출하지 않는다.
+    var forms = [text], stripped = text, changed = true;
+    function add(value) { if (forms.indexOf(value) === -1) forms.push(value); }
+    while (changed) {
+      changed = false;
+      for (var p = 0; p < PREFIX.length; p++) {
+        if (stripped.indexOf(PREFIX[p]) === 0 && stripped.length > PREFIX[p].length + 1) {
+          stripped = stripped.slice(PREFIX[p].length); add(stripped); changed = true; break;
+        }
+      }
+    }
+    // 아일랜드의 '아'처럼 이름 자체도 필러로 시작한다. 중간 단계의 이름을 함께 보존한다.
+    forms.slice().forEach(function (value) {
+      stripped = value; changed = true;
+      while (changed) {
+        changed = false;
+        for (var s = 0; s < SUFFIX.length; s++) {
+          if (stripped.endsWith(SUFFIX[s]) && stripped.length > SUFFIX[s].length + 1) {
+            stripped = stripped.slice(0, -SUFFIX[s].length); add(stripped); changed = true; break;
+          }
+        }
+      }
+    });
+    var matches = forms.map(function (value) {
+      return singleNameFallback(value, kind, countries);
+    }).filter(Boolean);
+    if (!matches.length || matches.some(function (entry) { return entry.code !== matches[0].code; })) return null;
+    return matches[0];
+  }
+
+  function singleNameFallback(text, kind, countries) {
+    var found = FQ.quiz.findCountry(text, kind);
     if (!found && FQ.quiz.checkText) {
-      var keys = FQ.quiz.candidateKeys ? FQ.quiz.candidateKeys(raw) : null;
+      var keys = FQ.quiz.candidateKeys ? FQ.quiz.candidateKeys(text) : null;
       var likely = keys && FQ.quiz.soundsLike ? countries.filter(function (country) {
         var entry = kind === 'capital' ? FQ.quiz.entryFor(country, kind) : country;
         return FQ.quiz.soundsLike(entry, keys, kind);
       }) : countries;
-      var matched = likely.filter(function (country) { return FQ.quiz.checkText(country, raw, kind).correct; });
+      var matched = likely.filter(function (country) { return FQ.quiz.checkText(country, text, kind).correct; });
       if (matched.length === 1) found = matched[0];
     }
     if (!found || !countries.some(function (country) { return country.code === found.code; })) return null;
@@ -164,6 +195,11 @@
     if (typeof raw !== 'string' || raw.length > MAX_TEXT || !raw.trim()) return result('retry', 'invalid-input', []);
     var countries = Array.isArray(options.countries) ? options.countries : FQ.countries || [];
     var text = compact(raw), spans = mentions(text, entries(countries, kind));
+    // 몰타+이에요 안의 '타이'처럼 조사 경계를 가로지른 별칭은 완전한 이름과 경쟁하지 않는다.
+    var wrapped = spans.filter(function (span) {
+      return span.entries.length === 1 && wordsOnly(text.slice(0, span.start), PREFIX) && wordsOnly(text.slice(span.end), SUFFIX);
+    });
+    if (wrapped.length === 1 && spans.every(function (span) { return span.start < wrapped[0].end && span.end > wrapped[0].start; })) spans = wrapped;
     var candidates = candidateList(spans);
     if (manipulation(raw, text)) return result('retry', 'unsafe-instruction', candidates);
     // 앞에서 다른 사람의 답을 언급했어도 뒤의 명시적 자기 답은 별도 문장으로 해석한다.
@@ -186,13 +222,14 @@
     if (spans.some(function (span, i) { return i && span.start < spans[i - 1].end; })) return result('retry', 'ambiguous-alias', candidates);
     var prefix = text.slice(0, spans[0].start), suffix = text.slice(spans[spans.length - 1].end);
     // 사우디아라처럼 완전한 짧은 별칭(사우디) 뒤를 더 말한 긴 이름의 앞부분만 보완한다.
-    if (spans.length === 1 && !prefix && suffix && spans[0].entries.length === 1 && countries.some(function (country) {
+    if (spans.length === 1 && wordsOnly(prefix, PREFIX) && suffix && !wordsOnly(suffix, SUFFIX) && spans[0].entries.length === 1 && countries.some(function (country) {
       if (country.code !== spans[0].entries[0].code) return false;
       var entry = kind === 'capital' && FQ.quiz && FQ.quiz.entryFor ? FQ.quiz.entryFor(country, kind) : country;
-      return (entry.aliases || []).concat([entry.ko, entry.en]).some(function (name) { var key = compact(name); return key.length > text.length && key.indexOf(text) === 0; });
+      var nameText = text.slice(prefix.length);
+      return (entry.aliases || []).concat([entry.ko, entry.en]).some(function (name) { var key = compact(name); return key.length > nameText.length && key.indexOf(nameText.replace(/(?:이요|요)$/, '')) === 0; });
     })) {
       var completed = bareFallback(raw, text, kind, countries);
-      if (completed) return result('answer', 'name-match', candidates, completed);
+      if (completed && completed.code === spans[0].entries[0].code) return result('answer', 'name-match', candidates, completed);
     }
     if (kind === 'capital') {
       var contextual = mentions(prefix, entries(countries, 'country'));

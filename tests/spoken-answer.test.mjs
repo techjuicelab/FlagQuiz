@@ -46,6 +46,65 @@ test('말앞의 필러·붙여쓰기·조사·이름 반복과 도움말 뒤의 
   }
 });
 
+test('인식 회귀: 말머리·띄어쓰기 뒤에도 유일한 발음 닮은꼴과 긴 이름 앞부분을 보존한다', () => {
+  const { resolve } = fixture();
+  for (const [said, code] of [
+    ['음 캐냐', 'ke'], ['정답은 캐냐예요', 'ke'], ['구바 요', 'cu'], ['음 패루', 'pe'],
+    ['사우디 아라', 'sa'], ['음 사우디 아라요', 'sa'], ['정답은 브라찔이요', 'br']
+  ]) {
+    const answer = resolve(said);
+    assert.equal(answer.status, 'answer', said + ': ' + answer.reason);
+    assert.equal(answer.code, code, said);
+  }
+});
+
+test('발음 보완에도 질문·부정·여러 후보·일반 문장의 일부를 답으로 만들지 않는다', () => {
+  const { resolve } = fixture();
+  for (const said of ['음 캐냐?', '캐냐 아니야', '캐냐 또는 패루', '캐냐 패루', '캐냐라고 했어',
+    '캐냐에서 살고 있어요', '음 캐냐 아마', '정답은 오스트', '하나 주세요',
+    '네 네할 요', '네 네할예요', '에 네할 요', '에 네할예요']) {
+    assert.equal(resolve(said).status, 'retry', said);
+  }
+});
+
+test('기존 말머리·말끝 조합은 나라와 수도 전체 목록에서 이름을 바꾸지 않는다', () => {
+  const { FQ, resolve } = fixture();
+  const heads = ['어 ', '아 ', '음 ', '어… ', '으음 ', '저기 ', '에… ', '어 그 '];
+  const tails = ['', '요', '이요', '이에요', '입니다'];
+  for (const kind of ['country', 'capital']) {
+    FQ.countries.forEach((country, index) => {
+      const entry = FQ.quiz.entryFor(country, kind);
+      const said = heads[index % heads.length] + entry.ko + tails[index % tails.length];
+      assert.equal(resolve(said, { kind }).code, country.code, kind + ': ' + said);
+    });
+  }
+});
+
+test('이름의 첫 글자가 필러와 같아도 조사 뒤에서 다른 나라로 보완하지 않는다', () => {
+  const { resolve } = fixture();
+  for (const [said, code] of [['에 네팔 요', 'np'], ['네 네팔 요', 'np'], ['아 아일랜드 요', 'ie'], ['그 아일랜드 요', 'ie']]) {
+    assert.equal(resolve(said).code, code, said);
+  }
+});
+
+test('발음 보완 중에도 실제 나라 이름의 첫 음절을 말머리로 버리지 않는다', () => {
+  const { resolve } = fixture();
+  for (const [name, code] of [['아일랜두', 'ie'], ['그레나타', 'gd'], ['에콰돌', 'ec'], ['오스트리야', 'at'], ['아르메니야', 'am']]) {
+    for (const said of ['음 ' + name + ' 요', '정답은 ' + name + '예요']) {
+      assert.equal(resolve(said).code, code, said);
+    }
+  }
+});
+
+test('몰타 뒤의 조사와 겹친 태국 별칭을 별도 수도·나라 후보로 잘라내지 않는다', () => {
+  const { resolve } = fixture();
+  for (const said of ['몰타이에요', '음 몰타이에요', '정답은 몰타이에요']) {
+    assert.equal(resolve(said).code, 'mt', said);
+  }
+  assert.equal(resolve('몰타 타이').status, 'retry');
+  assert.equal(resolve('타이').code, 'th');
+});
+
 test('다시 말한 같은 답과 문장으로 떨어진 미완성 말끝은 답 하나로 판정한다', () => {
   const { resolve } = fixture();
   for (const [text, code, kind] of [
@@ -170,7 +229,7 @@ test('단일 낱말의 발음 유사성은 전체 나라에서 유일한 후보�
   for (const [said, code] of [['캐냐', 'ke'], ['구바', 'cu'], ['브라찔', 'br'], ['사우디아라', 'sa'], ['오스트레일리', 'au']]) {
     assert.equal(resolve(said).code, code, said);
   }
-  for (const said of ['음 캐냐', '캐냐 아니고 구바', '캐냐인지 모르겠어요', '오스트', '한국 캐냐']) assert.equal(resolve(said).status, 'retry', said);
+  for (const said of ['캐냐 아니고 구바', '캐냐인지 모르겠어요', '오스트', '한국 캐냐']) assert.equal(resolve(said).status, 'retry', said);
 });
 
 test('선택 의사가 있는 복잡한 문장만 optional 의미 해석에 보내고 질문·부정·인용·조작은 차단한다', () => {

@@ -1061,21 +1061,53 @@
     if (state.cancelFeedbackVoice) state.cancelFeedbackVoice();
     stopMusic();
     var generation = state.feedbackGeneration;
-    var cancelled = false;
-    state.cancelFeedbackVoice = function () { cancelled = true; };
+    var spokenGame = state.game;
+    var spokenQuestion = spokenGame && spokenGame.current();
+    var resumesMic = !!(after && spokenQuestion && speechMode(spokenQuestion.mode) && !state.answered);
+    var cancelled = false, completed = false, watchdog = null;
+    var listeningAttempt;
+    function clearWatchdog() {
+      if (watchdog !== null) global.clearTimeout(watchdog);
+      watchdog = null;
+    }
+    state.cancelFeedbackVoice = function () { cancelled = true; clearWatchdog(); };
+    if (resumesMic) {
+      // 힌트 읽기는 같은 문제의 별도 요청이다. 읽는 사이 글 입력·멈춤을 고르면 재개하지 않는다.
+      listeningAttempt = ++state.speechAttempt;
+      state.listenOn = true;
+      pauseSpeechTimer(true);
+      var mic = ui.$('#mic');
+      if (mic) {
+        mic.classList.remove('listening');
+        mic.setAttribute('aria-pressed', 'false');
+      }
+      setListenState('이름을 듣고 있어요. 다 들으면 다시 말해 주세요.', '');
+    }
     function nameCurrent() {
-      return !cancelled && generation === state.feedbackGeneration && !doc.hidden;
+      return !cancelled && generation === state.feedbackGeneration && !doc.hidden &&
+        (!resumesMic || listeningAttempt === state.speechAttempt && state.listenOn &&
+          state.game === spokenGame && spokenGame.current() === spokenQuestion && !state.answered);
+    }
+    function finish(failed, stopAudio) {
+      if (completed || !nameCurrent()) return;
+      completed = true;
+      clearWatchdog();
+      if (stopAudio) audio.stopSpeaking();
+      if (failed) {
+        t.classList.add('needs-tap');
+        t.textContent = '🔊 다시 눌러서 듣기';
+      }
+      if (after) after();
     }
     t.classList.remove('needs-tap');
     t.textContent = label;
     audio.stopSpeaking();
+    // 문제 안의 이름·힌트 읽기도 완료 이벤트 누락 때문에 마이크가 영원히 닫히면 안 된다.
+    if (resumesMic) watchdog = global.setTimeout(function () { finish(true, true); }, AUTO_NEXT_VOICE_WATCHDOG);
     FQ.speech.stopAnd(function () {
-      if (!nameCurrent()) return;
-      audio.say(lines, { onEnd: function () { if (nameCurrent() && after) after(); } }, function () {
-        if (!nameCurrent()) return;
-        t.classList.add('needs-tap');
-        t.textContent = '🔊 다시 눌러서 듣기';
-        if (after) after();
+      if (completed || !nameCurrent()) return;
+      audio.say(lines, { onEnd: function () { finish(false, false); } }, function () {
+        finish(true, false);
       });
     });
   }

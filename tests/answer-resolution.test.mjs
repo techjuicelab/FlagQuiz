@@ -14,6 +14,17 @@ const countries = [
 ];
 const candidates = [{ code: 'jp', name: '일본' }, { code: 'kr', name: '대한민국' }];
 const input = { text: '일본을 생각했다가 대한민국을 최종 답으로 할래.', mode: 'voice' };
+
+test('서버 공유 판정도 말머리·띄어쓰기와 유일한 발음 보완을 함께 보존한다', async () => {
+  const resolve = createAnswerResolver({ fetchImpl: async () => { throw new Error('키 없는 공유 판정은 외부 호출하지 않는다'); } });
+  for (const [text, code] of [['음 캐냐', 'ke'], ['정답은 캐냐예요', 'ke'], ['구바 요', 'cu'], ['음 사우디 아라요', 'sa']]) {
+    for (const mode of ['voice', 'country-chain']) {
+      const result = await resolve({ text, mode });
+      assert.equal(result.status, 'answer', text + ': ' + result.reason);
+      assert.equal(result.code, code); assert.equal(result.source, 'rules');
+    }
+  }
+});
 const retry = (overrides = {}) => ({ status: 'retry', code: null, text: '', reason: 'unsupported-structure', candidates, ...overrides });
 function rules(result = retry()) { return { countries, resolve: () => result, canUseSemantic: () => true }; }
 function response(choice = 'kr', overrides = {}) {

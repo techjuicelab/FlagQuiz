@@ -53,7 +53,7 @@
     }
     releaseVersion++;
     var current = { handlers: h, mode: h.mode || 'voice', playerId: String(h.playerId === undefined ? 0 : h.playerId),
-      turnId: String(h.turnId === undefined ? ++sequence : h.turnId), started: false };
+      turnId: String(h.turnId === undefined ? ++sequence : h.turnId), phase: null };
     session = current;
     try {
       if (!engine) engine = FQ.cloudSpeech.create({
@@ -63,13 +63,16 @@
           done();
         }
       });
-      var pending = engine.start({ mode: current.mode, playerId: current.playerId, turnId: current.turnId,
+      // 문제 제한시간은 화면에서 관리한다. 아이가 생각하는 무음만으로 말하기를 끄지 않는다.
+      var pending = engine.start({ mode: current.mode, playerId: current.playerId, turnId: current.turnId, continuous: h.continuous !== false,
         onState: function (event) {
           if (!live(current, event) || event.state === 'idle') return;
+          var previousPhase = current.phase;
+          current.phase = event.state;
           if (h.state) h.state(event.state);
           if (!live(current)) return;
-          if (event.state === 'recording' && !current.started) {
-            current.started = true;
+          // 무음 파일을 버리고 다시 듣는 경우에도 실제 녹음 상태로 마이크 표시를 복원한다.
+          if (event.state === 'recording' && previousPhase !== 'recording') {
             if (h.start) h.start();
           }
         },
