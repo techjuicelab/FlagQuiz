@@ -5,7 +5,7 @@
   var MAX_MS = 12000;
   var MAX_BYTES = 2 * 1024 * 1024;
   var RATE = 16000;
-  var END_SILENCE_MS = 650;
+  var QUIET_MS = 800;
   var MIN_VOICE_MS = 100;
 
   function validMode(mode) { return mode === 'voice' || mode === 'capitalVoice' || mode === 'country-chain'; }
@@ -297,35 +297,57 @@
       for (var i = 0; i < samples.length; i++) sum += samples[i] * samples[i];
       var now = Date.now();
       var rms = Math.sqrt(sum / samples.length);
-      // 첫 분석 표본에 답변이 이미 시작됐을 수 있다. 소리가 짧게 이어진 뒤 작아지면
-      // 첫 목소리도 발화로 남긴다. 일정하게 계속되는 배경음은 이 조건을 통과하지 않는다.
+      var elapsed = Math.min(40, Math.max(0, now - session.lastLevelAt));
+      session.lastLevelAt = now;
+      // 첫 표본에 답변이 이미 시작됐을 수 있다. 초기 소리가 잦아든 뒤 발화 시간을 확인한다.
+      // 연속 듣기는 긴 첫 답변도 보존하고, 명시적 단발 듣기는 짧고 작은 첫 소리만 소급한다.
       if (session.noiseFloor === undefined) {
         session.noiseFloor = Math.min(rms, 0.015);
-        if (rms > 0.003) session.startupSound = { since: now, last: now, level: rms };
+        if (rms > 0.003 && (session.continuous || rms <= 0.01) && rms <= session.noiseFloor * 1.5) {
+          session.initialVoice = { peak: rms, duration: 0, last: now };
+        }
       }
-      if (session.startupSound && !session.heard) {
-        var initial = session.startupSound;
-        if (rms < initial.level * 0.55) {
-          if (initial.last - initial.since >= MIN_VOICE_MS) {
-            session.heard = true; session.lastLoud = initial.last;
-          }
-          session.startupSound = null;
-        } else initial.last = now;
-      }
-      // 작은 목소리도 배경보다 커진 소리가 이어지면 받는다. 짧은 나라 단어는 모든 모드에서 같은 기준이다.
+      if (now - session.started <= 500) session.noiseFloor = Math.min(session.noiseFloor, rms);
       var threshold = Math.max(0.003, session.noiseFloor * 1.5);
-      if (rms > threshold) {
-        if (session.candidateSince === null) session.candidateSince = now;
-        if (now - session.candidateSince >= MIN_VOICE_MS) session.heard = true;
-        if (session.heard) session.lastLoud = now;
-      } else {
-        session.candidateSince = null;
-        if (!session.heard) session.noiseFloor = session.noiseFloor * 0.9 + Math.min(rms, 0.015) * 0.1;
+      if (session.initialVoice && !session.heard) {
+        if (rms >= Math.max(0.003, session.initialVoice.peak * 0.5)) {
+          session.initialVoice.duration += elapsed; session.initialVoice.last = now;
+          session.initialVoice.peak = Math.max(session.initialVoice.peak, rms);
+        } else {
+          if (session.continuous || (session.initialVoice.duration <= 800 && session.initialVoice.peak <= 0.01)) {
+            if (session.initialVoice.duration >= MIN_VOICE_MS) {
+              session.heard = true; session.lastLoud = session.initialVoice.last;
+              session.noiseFloor = Math.min(session.noiseFloor, rms);
+            } else if (session.initialVoice.duration > 0) {
+              // 짧은 첫 음절만으로는 인정하지 않는다. 직후 음절이 오면 누적 후보에 합친다.
+              session.candidateMs = Math.max(session.candidateMs, session.initialVoice.duration);
+              session.candidateLast = session.initialVoice.last;
+              if (session.candidateSince === null) session.candidateSince = session.initialVoice.last - session.initialVoice.duration;
+            }
+          }
+          session.initialVoice = null;
+        }
       }
-      if (session.heard) session.startupSound = null;
-      if (session.continuous && !session.heard && !session.startupSound && session.candidateSince === null && now - session.started >= 4000) { rotate(session); return; }
-      // 어린이가 낱말 사이에서 잠깐 쉬어도 이름을 끝까지 듣는다.
-      if (session.heard && now - session.lastLoud >= END_SILENCE_MS) { stop(); return; }
+      if (session.heard) {
+        // 발화가 확인된 뒤에는 작은 마지막 음절도 유지한다. 진입 문턱은 따로 높게 둔다.
+        if (rms > Math.max(0.0015, session.noiseFloor * 1.2)) session.lastLoud = now;
+        session.initialVoice = null;
+      } else if (rms > threshold) {
+        if (session.candidateSince === null) session.candidateSince = now;
+        session.candidateMs += elapsed; session.candidateLast = now;
+        if (session.candidateMs >= MIN_VOICE_MS) {
+          session.heard = true; session.lastLoud = now; session.initialVoice = null;
+        }
+      } else {
+        // 자음 사이의 짧은 공백은 유성음 시간을 누적한다. 단독 클릭은 100ms에 못 미쳐 버린다.
+        if (session.candidateLast === null || now - session.candidateLast > 80) {
+          session.candidateSince = null; session.candidateMs = 0; session.candidateLast = null;
+        }
+        session.noiseFloor = session.noiseFloor * 0.9 + Math.min(rms, 0.015) * 0.1;
+      }
+      if (session.continuous && !session.heard && !session.initialVoice && session.candidateSince === null && now - session.started >= 4000) { rotate(session); return; }
+      // 단어 안의 500ms 쉼을 남기면서, 세 놀이 모두 말끝 뒤 800ms 안에 녹음을 마친다.
+      if (session.heard && now - session.lastLoud >= QUIET_MS) { stop(); return; }
       if (!session.continuous && !session.heard && now - session.started >= 5000) {
         error(session, 'no-speech', '목소리가 들리지 않았어요. 다시 말하거나 글자로 답해 주세요.'); return;
       }
@@ -336,8 +358,9 @@
       if (!live(session)) return;
       var segment = (session.segment || 0) + 1; session.segment = segment;
       session.chunks = []; session.bytes = 0; session.heard = false; session.candidateSince = null;
-      session.startupSound = null;
+      session.candidateMs = 0; session.candidateLast = null; session.initialVoice = null;
       session.rotating = false; session.started = Date.now();
+      session.lastLevelAt = session.started;
       var recorder;
       try { recorder = new global.MediaRecorder(session.stream, session.mime ? { mimeType: session.mime, audioBitsPerSecond: 32000 } : { audioBitsPerSecond: 32000 }); }
       catch (failure) { error(session, 'recording', '녹음이 어려워요. 지금 차례는 글자로 답해 주세요.'); return; }

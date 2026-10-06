@@ -229,7 +229,38 @@ test('단일 낱말의 발음 유사성은 전체 나라에서 유일한 후보�
   for (const [said, code] of [['캐냐', 'ke'], ['구바', 'cu'], ['브라찔', 'br'], ['사우디아라', 'sa'], ['오스트레일리', 'au']]) {
     assert.equal(resolve(said).code, code, said);
   }
-  for (const said of ['캐냐 아니고 구바', '캐냐인지 모르겠어요', '오스트', '한국 캐냐']) assert.equal(resolve(said).status, 'retry', said);
+  assert.equal(resolve('음 캐냐').code, 'ke');
+  assert.equal(resolve('캐냐 아니고 구바').code, 'cu');
+  for (const said of ['캐냐인지 모르겠어요', '오스트', '한국 캐냐']) assert.equal(resolve(said).status, 'retry', said);
+});
+
+test('분절된 이름과 긴 이름의 내부 음절 생략은 현재 정답 없이 전체 목록에서 찾는다', () => {
+  const { FQ, resolve } = fixture();
+  for (const [said, code, kind] of [
+    ['뭐.. 이게 맞나. 포르.. 갈', 'pt', 'country'], ['음.. 포르 갈이요', 'pt', 'country'],
+    ['포도칼', 'pt', 'country'], ['코스 리카', 'cr', 'country'], ['아르 티나', 'ar', 'country'],
+    ['크로 티아', 'hr', 'country'], ['스톡 름', 'se', 'capital'], ['쿠알 룸푸르', 'my', 'capital'],
+    ['스페인 아니고 포르 갈', 'pt', 'country'], ['포르 갈 말고 스페인', 'es', 'country'],
+    ['도쿄 아니고 스톡 름', 'se', 'capital']
+  ]) {
+    const found = resolve(said, { kind, target: FQ.quiz.byCode('jp') });
+    assert.equal(found.status, 'answer', said + ': ' + found.reason);
+    assert.equal(found.code, code, said);
+    assert.deepEqual(found, resolve(said, { kind, target: FQ.quiz.byCode('kr') }), said);
+  }
+});
+
+test('발음 후보가 경합하거나 이름 조각 뒤에 부정·질문·다른 답이 있으면 추정하지 않는다', () => {
+  const { resolve } = fixture();
+  for (const said of ['포르 갈 아니야', '포르 갈인가요?', '아마 포르 갈', '포르 갈 스페인',
+    '포르 갈인지 스페인인지', '포르 갈 또는 스페인', '포르', '스위', '스웨', '오스트', '하나만 더']) {
+    assert.equal(resolve(said).status, 'retry', said);
+  }
+  const countries = [{ code: 'a', ko: '가나다라마', aliases: [] }, { code: 'b', ko: '가나바라마', aliases: [] }];
+  const collision = resolve('가나 라마', { countries });
+  assert.equal(collision.status, 'retry');
+  assert.equal(collision.code, null);
+  assert.deepEqual(collision.candidates.map(candidate => candidate.code).sort(), ['a', 'b']);
 });
 
 test('선택 의사가 있는 복잡한 문장만 optional 의미 해석에 보내고 질문·부정·인용·조작은 차단한다', () => {
@@ -276,7 +307,10 @@ test('단독 도움말은 재답변, 명시적 포기와 넘어가기는 종료�
     assert.equal(result.code, null);
   }
   for (const said of ['뭐지 일본', '모르겠는데 한국', '몰랐는데 미국']) assert.equal(resolve(said).status, 'answer', said);
-  for (const said of ['안녕하세요', '음 그러니까', '하나만 더', '또 할래']) assert.equal(resolve(said).status, 'retry', said);
+  for (const said of ['안녕하세요', '음 그러니까', '하나만 더', '또 할래', '아빠가', '엄마가', '음 아빠가']) {
+    assert.equal(resolve(said).status, 'retry', said);
+    assert.equal(resolve(said, { kind: 'capital' }).status, 'retry', said);
+  }
 });
 
 test('현재 정답을 받아도 결과가 달라지지 않으며 후보 roster와 입력 크기를 지킨다', () => {

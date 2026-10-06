@@ -146,10 +146,10 @@ test('일간·월간 사용량과 서버 혼잡·분당 제한을 구분하고 �
   }
 });
 
-test('말소리 뒤 650ms 조용해지면 저절로 녹음을 마치고 무음만 있으면 유료 요청하지 않는다', async () => {
+test('말소리 뒤 800ms 조용해지면 저절로 녹음을 마치고 무음만 있으면 유료 요청하지 않는다', async () => {
   const spoken = fixture(); spoken.setLoud(0.1);
   await spoken.adapter.start(spoken.handlers());
-  spoken.advance(300); spoken.setLoud(0); spoken.advance(700);
+  spoken.advance(300); spoken.setLoud(0); spoken.advance(800);
   await flush();
   assert.equal(spoken.requests.length, 1);
   assert.equal(spoken.results.length, 1);
@@ -170,14 +170,14 @@ test('최대 12초에 녹음을 멈추고 종료 신호 지연으로 긴 원본�
   assert.equal(validateSpeechInput({ audio, mimeType: 'audio/wav' }).durationMs, 12000);
 });
 
-test('지연 회귀: 세 말하기 모드는 650ms 침묵 뒤 한 번만 전사한다', async () => {
+test('지연 회귀: 세 말하기 모드는 800ms 침묵 뒤 한 번만 전사한다', async () => {
   for (const mode of ['voice', 'capitalVoice', 'country-chain']) {
     const f = fixture(); f.setLoud(0.1);
     await f.adapter.start({ ...f.handlers(), mode });
-    f.advance(300); f.setLoud(0); f.advance(620); await flush();
+    f.advance(300); f.setLoud(0); f.advance(760); await flush();
     assert.equal(f.requests.length, 0);
     assert.equal(f.adapter.isRecording(), true);
-    f.advance(80); await flush();
+    f.advance(60); await flush();
     assert.equal(f.requests.length, 1);
     assert.equal(f.requests[0].config.headers['X-Speech-Mode'], mode);
     assert.equal(f.results.length, 1);
@@ -189,8 +189,8 @@ test('지연 회귀: 긴 수도 이름 중간 150ms 쉼은 녹음을 끝내지 �
   await f.adapter.start(f.handlers()); f.advance(300); f.setLoud(0.08); f.advance(1100);
   f.setLoud(0); f.advance(150); await flush();
   assert.equal(f.adapter.isRecording(), true); assert.equal(f.requests.length, 0);
-  f.setLoud(0.08); f.advance(500); f.setLoud(0); f.advance(620); await flush();
-  assert.equal(f.requests.length, 0); f.advance(80); await flush();
+  f.setLoud(0.08); f.advance(500); f.setLoud(0); f.advance(760); await flush();
+  assert.equal(f.requests.length, 0); f.advance(60); await flush();
   assert.equal(f.requests.length, 1); assert.equal(f.results[0].text, '스리자야와르데네푸라코테');
 });
 
@@ -199,7 +199,7 @@ test('지연 회귀: 모든 모드에서 연속 듣기의 작은 RMS0.006 목소
     const f = fixture({ mode, sample: 0.006 }); await f.adapter.start({ ...f.handlers(), continuous: true });
     // 샘플 주기와 다른 시각에 말해도 짧은 단어를 놓치지 않는다.
     f.advance(503); f.setLoud(0.006); f.advance(spokenMs); f.setLoud(0);
-    f.advance(700); await flush();
+    f.advance(820); await flush();
     assert.equal(f.requests.length, 1, mode + ' ' + spokenMs);
     const bytes = Buffer.from(await f.requests[0].config.body.arrayBuffer());
     assert.equal(bytes.readInt16LE(44), Math.round(0.006 * 32767));
@@ -230,13 +230,37 @@ test('잘림 회귀: 나라·수도 이름 도중 300ms 쉬어도 같은 답변�
   }
 });
 
-test('빠른 인식 회귀: 말끝 뒤 700ms 안에 업로드하고 실제 발화 길이나 앞선 무음 대기로 늦어지지 않는다', async () => {
+test('통합 회귀: 모든 연속 모드는 짧은 두 음절 사이 40ms 쉼을 발화 시간에 누적한다', async () => {
+  for (const mode of ['voice', 'capitalVoice', 'country-chain']) for (const quietBefore of [0, 300]) {
+    const f = fixture({ mode }); if (quietBefore === 0) f.setLoud(0.006);
+    await f.adapter.start({ ...f.handlers(), continuous: true });
+    f.advance(quietBefore); f.setLoud(0.006); f.advance(80); f.setLoud(0); f.advance(40);
+    f.setLoud(0.009); f.advance(80); f.setLoud(0); f.advance(820); await flush();
+    assert.equal(f.requests.length, 1, mode + ' 선행 무음 ' + quietBefore);
+    assert.equal(f.results.length, 1); assert.equal(f.errors.length, 0); f.adapter.cancel();
+  }
+});
+
+test('통합 회귀: 모든 연속 모드는 작아진 마지막 음절 뒤부터 800ms를 기다린다', async () => {
+  for (const mode of ['voice', 'capitalVoice', 'country-chain']) {
+    const f = fixture({ mode }); await f.adapter.start({ ...f.handlers(), continuous: true });
+    f.advance(300); f.setLoud(0.03); f.advance(400);
+    f.setLoud(0.0018); f.advance(450); f.setLoud(0); f.advance(760); await flush();
+    assert.equal(f.adapter.isRecording(), true); assert.equal(f.requests.length, 0, mode + ' 작은 꼬리 발화 뒤의 대기');
+    f.advance(60); await flush();
+    assert.equal(f.requests.length, 1); assert.equal(f.results.length, 1); assert.equal(f.errors.length, 0);
+    f.adapter.cancel();
+  }
+});
+
+test('빠른 인식 회귀: 말끝 뒤 820ms 안에 업로드하고 실제 발화 길이나 앞선 무음 대기로 늦어지지 않는다', async () => {
   for (const mode of ['voice', 'capitalVoice', 'country-chain']) for (const quietBefore of [300, 2500]) for (const spokenMs of [300, 500, 1800]) {
     const f = fixture({ mode, sample: 0.006 }); await f.adapter.start(f.handlers());
     f.advance(quietBefore); const onset = quietBefore; f.setLoud(0.006); f.advance(spokenMs); f.setLoud(0);
-    f.advance(700); await flush();
+    f.advance(820); await flush();
     assert.equal(f.requests.length, 1, mode + ' ' + quietBefore + ' ' + spokenMs);
-    assert.ok(f.requests[0].at - (onset + spokenMs) <= 700, mode + ' 기기 내 말끝→업로드');
+    assert.ok(f.requests[0].at - (onset + spokenMs) >= 760, mode + ' 말이 끝나기 전 성급한 업로드 금지');
+    assert.ok(f.requests[0].at - (onset + spokenMs) <= 820, mode + ' 기기 내 말끝→업로드');
     assert.equal(f.requests[0].config.headers['X-Speech-Mode'], mode);
     f.advance(60000); await flush(); assert.equal(f.requests.length, 1);
   }
@@ -246,15 +270,15 @@ test('빠른 인식 회귀: 나라 단어 뒤 150ms 쉼과 계속한 자기수�
   const f = fixture({ mode: 'voice', text: '포르투갈 아니고 스페인' }); await f.adapter.start(f.handlers());
   f.advance(300); f.setLoud(0.08); f.advance(350); f.setLoud(0); f.advance(150); await flush();
   assert.equal(f.adapter.isRecording(), true); assert.equal(f.requests.length, 0);
-  f.setLoud(0.08); f.advance(1100); f.setLoud(0); f.advance(620); await flush();
-  assert.equal(f.requests.length, 0); f.advance(80); await flush();
+  f.setLoud(0.08); f.advance(1100); f.setLoud(0); f.advance(760); await flush();
+  assert.equal(f.requests.length, 0); f.advance(60); await flush();
   assert.equal(f.requests.length, 1); assert.equal(f.results[0].text, '포르투갈 아니고 스페인');
 });
 
-test('빠른 인식 회귀: 650ms를 넘긴 쉼은 완결 단위로 종료하며 늦은 소리로 자동 재요청하지 않는다', async () => {
+test('빠른 인식 회귀: 800ms를 넘긴 쉼은 완결 단위로 종료하며 늦은 소리로 자동 재요청하지 않는다', async () => {
   for (const mode of ['voice', 'capitalVoice', 'country-chain']) {
     const f = fixture({ mode, text: '기니' }); await f.adapter.start({ ...f.handlers(), continuous: mode === 'country-chain' });
-    f.advance(300); f.setLoud(0.08); f.advance(500); f.setLoud(0); f.advance(700); await flush();
+    f.advance(300); f.setLoud(0.08); f.advance(500); f.setLoud(0); f.advance(820); await flush();
     assert.equal(f.requests.length, 1); assert.equal(f.results.length, 1); assert.equal(f.adapter.isRecording(), false);
     f.setLoud(0.08); f.advance(1000); await flush(); assert.equal(f.requests.length, 1);
     f.adapter.cancel(); assert.equal(f.timers.size, 0);

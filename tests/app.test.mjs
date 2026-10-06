@@ -1449,7 +1449,7 @@ test('국기 보고 수도 말하기는 공부 카드 없이 바로 시작하고
   assert.doesNotMatch(html.slice(0,html.indexOf('id="answer-area"')),/서울/,'문제 무대에는 수도 이름이 없다');
   assert.match(html,/id="mic"/);assert.match(html,/placeholder="수도 이름을 써 보세요"/);assert.doesNotMatch(html,/timer-chip/);
   assert.equal(f.c.listening,true,'퀴즈 시작 흐름에서 마이크를 연다');
-  f.c.callbacks.start();assert.match(f.node('#listen-state').textContent,/수도 이름을 끝까지/);
+  f.c.callbacks.start();assert.match(f.node('#listen-state').textContent,/수도 이름을/);
   // 나라 이름(대한민국)은 수도가 아니라 흘려듣고, 서울은 정답.
   f.c.callbacks.result(['대한민국']);assert.equal(a.state.answered,false);
   f.c.listening=false;a.toggleMic();f.c.callbacks.start();f.c.callbacks.result(['서울']);assert.equal(a.state.answered,true);assert.equal(a.state.game.correct,1);

@@ -480,7 +480,7 @@
       return '<div class="notice">📴 인터넷 없이도 놀 수 있어요. 이름을 듣고 국기를 누르는 놀이로 이어져요.</div>';
     }
     var reason = FQ.speech.unavailableReason();
-    if (!reason) return '<div class="notice">🎤 “듣고 있어요”가 나오면 <b>' + answerWhat(mode) + '을 끝까지 말해 주세요.</b> 마이크 사용을 물어보면 “허용”을 눌러 주세요. 말을 마치면 이름을 확인해요. 말하기에는 인터넷 연결이 필요해요.</div>';
+    if (!reason) return '<div class="notice">🎤 “듣고 있어요”가 나오면 <b>' + answerWhat(mode) + '을 편하게 말해 주세요.</b> 마이크 사용을 물어보면 “허용”을 눌러 주세요. 말을 마치면 이름을 확인해요. 말하기에는 인터넷 연결이 필요해요.</div>';
     return '<div class="notice">⚠️ ' + esc(reason) +
       (FQ.speech.blocked() ? '<br>말하기 대신 <b>이름 써서 맞히기</b>로도 즐길 수 있어요.' : '') + '</div>';
   }
@@ -1560,7 +1560,7 @@
         pauseSpeechTimer(false);
         mic.classList.add('listening');
         mic.setAttribute('aria-pressed', 'true');
-        setListenState('듣고 있어요. ' + what + '을 끝까지 말해 주세요!', 'on');
+        setListenState('듣고 있어요. ' + what + '을 편하게 말해 주세요!', 'on');
       },
       result: function (alts, metadata) {
         if (!current()) return;
