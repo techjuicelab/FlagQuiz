@@ -12,7 +12,8 @@ async function fixture(t) {
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   for (const folder of ['scripts/lib', 'server', 'js', 'assets', 'css', 'flags', 'images', 'data', 'audio/sua', 'audio/music', '_site']) await fs.mkdir(path.join(root, folder), { recursive: true });
   await fs.copyFile(build, path.join(root, 'scripts/build-site.mjs'));
-  for (const file of ['scripts/lib/art-gate.mjs', 'scripts/check-images.mjs', 'scripts/prepare-images.mjs', 'js/features.js', 'server/login-legacy.js']) await fs.copyFile(new URL('../' + file, import.meta.url), path.join(root, file));
+  for (const file of ['scripts/lib/art-gate.mjs', 'scripts/check-images.mjs', 'scripts/prepare-images.mjs', 'js/features.js',
+    'js/streaming-speech.js', 'js/speech-pcm-worklet.js', 'js/speech-engine.js', 'server/login-legacy.js']) await fs.copyFile(new URL('../' + file, import.meta.url), path.join(root, file));
   for (const file of ['index.html', 'sw.js', 'manifest.webmanifest', 'data/countries.js', 'data/subjects.js', 'data/confusion-groups.js', 'data/map-coords.js', 'data/map-shapes.js']) await fs.writeFile(path.join(root, file), file);
   await fs.writeFile(path.join(root, 'data/countries.js'), 'window.FQ.countries=[{code:"kr"}];');
   // 그림 원장도 파일도 없는 최소 저장소다. 보류로 적어야 그림 게이트가 음악 검사를 가로막지 않는다.
@@ -46,6 +47,9 @@ test('검증된 음악 16개만 배포하고 원본·제작 문서·목록 밖 �
   assert.equal((await fs.readdir(path.join(env.root, '_site/audio/music'))).length, 16);
   for (const clip of env.manifest.clips) assert.deepEqual(await fs.readFile(path.join(env.root, '_site', clip.src)), await fs.readFile(path.join(env.root, clip.src)));
   assert.deepEqual(await fs.readFile(path.join(env.root, '_site/login-legacy.js')), await fs.readFile(path.join(env.root, 'server/login-legacy.js')));
+  for (const file of ['js/streaming-speech.js', 'js/speech-pcm-worklet.js', 'js/speech-engine.js']) {
+    assert.deepEqual(await fs.readFile(path.join(env.root, '_site', file)), await fs.readFile(path.join(env.root, file)));
+  }
   await assert.rejects(fs.access(path.join(env.root, '_site/previous-release')));
 });
 
@@ -69,6 +73,24 @@ test('셸 파일이 바뀌면 배포 워커의 캐시 버전도 바뀌고 같은
   assert.deepEqual(await fs.readFile(path.join(env.root, '_site/login-legacy.js')), await fs.readFile(path.join(env.root, 'server/login-legacy.js')));
   const third = await read();
   assert.equal((await env.run()).status, 0); assert.equal(await read(), third);
+  let previous = third;
+  for (const file of ['js/streaming-speech.js', 'js/speech-pcm-worklet.js', 'js/speech-engine.js']) {
+    await fs.appendFile(path.join(env.root, file), '\n/* 스트리밍 셸 변경 검사 */\n');
+    assert.equal((await env.run()).status, 0);
+    const current = await read(); assert.notEqual(current, previous, file);
+    assert.deepEqual(await fs.readFile(path.join(env.root, '_site', file)), await fs.readFile(path.join(env.root, file)));
+    assert.equal((await env.run()).status, 0); assert.equal(await read(), current);
+    previous = current;
+  }
+});
+
+test('스트리밍 캡처3개 중 빠진 파일이 있으면 기존 배포 묶음을 보존하고 거부한다', async t => {
+  for (const file of ['js/streaming-speech.js', 'js/speech-pcm-worklet.js', 'js/speech-engine.js']) {
+    const env = await fixture(t); await fs.rm(path.join(env.root, file));
+    const result = await env.run();
+    assert.notEqual(result.status, 0); assert.match(result.stderr, /ENOENT/);
+    assert.equal(await fs.readFile(path.join(env.root, '_site/previous-release'), 'utf8'), 'preserve on validation failure');
+  }
 });
 
 test('미완성·중복·경로탈출·해시불일치·빠진파일·잘못된event는 기존 배포 묶음을 보존하고 거부한다', async t => {

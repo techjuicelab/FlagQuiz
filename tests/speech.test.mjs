@@ -37,6 +37,7 @@ function setup(options = {}) {
   for (const file of ['js/util.js', 'data/countries.js', 'js/quiz.js', 'js/spoken-answer.js']) {
     vm.runInNewContext(fs.readFileSync(new URL('../' + file, import.meta.url), 'utf8'), { window });
   }
+  vm.runInNewContext(fs.readFileSync(new URL('../js/speech-engine.js', import.meta.url), 'utf8'), { window });
   vm.runInNewContext(source, { window });
   const advance = ms => {
     const until = now + ms; let ticks = 0;
@@ -274,4 +275,30 @@ test('미지원 문장 끝의 선택 표현으로도 앞에서 부정한 후보�
   const resolution = f.speech.resolveAnswer(raw, 'country', { source: 'jev', status: 'answer', code: 'pt', text: '포르투갈', reason: 'final-selection' });
   assert.notEqual(resolution.code, 'pt');
   assert.ok(resolution.status === 'retry' || resolution.status === 'answer' && resolution.code === 'es');
+});
+
+test('부분 전사는 현재 세션에만 표시하고 최종 결과 전에는 채점·종료하지 않는다', () => {
+  const f = setup(), h = handlers(), partials = [];
+  h.value.partial = text => partials.push(text);
+  f.speech.start(h.value); const first = f.sessions[0];
+  first.onPartial({ text: ' 인도 ', playerId: '0', turnId: '4', mode: 'voice' });
+  assert.deepEqual(partials, ['인도']); assert.equal(h.events.length, 0); assert.equal(f.speech.isListening(), true);
+  for (const event of [{ text: '일본', playerId: '1' }, { text: '일본', turnId: 'old' },
+    { text: '일본', mode: 'capitalVoice' }, { text: '   ' }, { text: null }]) first.onPartial(event);
+  assert.deepEqual(partials, ['인도']);
+  first.onResult({ text: '인도네시아' });
+  first.onPartial({ text: '늦은 부분 전사' });
+  assert.deepEqual(partials, ['인도']);
+  assert.deepEqual(h.events.filter(event => event[0] === 'result'), [['result', ['인도네시아']]]);
+  f.speech.start(handlers('voice', 5).value); f.speech.abort();
+  first.onPartial({ text: '이전 차례' }); assert.deepEqual(partials, ['인도']);
+});
+
+test('말하기 facade는 공통 엔진 선택 경로를 사용한다', () => {
+  const f = setup(), h = handlers(); let creates = 0;
+  f.window.FQ.speechEngine = { supported: () => true, create(options) {
+    creates++; assert.equal(typeof options.csrfToken, 'function'); return f.adapter;
+  } };
+  f.window.FQ.cloudSpeech.create = () => { throw new Error('factory를 우회했다'); };
+  assert.equal(f.speech.start(h.value), true); assert.equal(creates, 1); assert.equal(f.sessions.length, 1);
 });

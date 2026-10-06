@@ -435,3 +435,21 @@ test('플레이어 이름과 입력은 화면에 HTML로 실행되지 않는다'
   assert.doesNotMatch(f.node('#chain-players').innerHTML, /<img|<script/);
   assert.doesNotMatch(f.node('#chain-history').innerHTML, /<script/);
 });
+
+test('나라 이어 말하기는 부분 전사를 표시만 하고 확정된 문장으로만 차례를 바꾼다', () => {
+  const f = fixture(), screen = f.c.FQ.countryChain.start({ voice: f.voice, speak: false });
+  f.click('#chain-mic'); const first = f.sessions[0];
+  first.onPartial({ text: '<b>인도</b>', playerId: '0', turnId: '0', mode: 'country-chain' });
+  assert.equal(f.node('#chain-heard').textContent, '<b>인도</b>');
+  assert.equal(screen.snapshot().total, 0); assert.equal(screen.snapshot().playerIndex, 0);
+  first.onPartial({ text: '다른 차례', playerId: '1', turnId: '0' });
+  first.onPartial({ text: '다른 모드', playerId: '0', turnId: '0', mode: 'voice' });
+  assert.equal(f.node('#chain-heard').textContent, '<b>인도</b>');
+  first.onResult({ text: '인도네시아', playerId: '0', turnId: '0', mode: 'country-chain' });
+  assert.equal(screen.snapshot().total, 1); assert.equal(screen.snapshot().history[0].code, 'id');
+  assert.equal(f.node('#chain-heard').textContent, '인도네시아');
+  first.onPartial({ text: '늦은 부분 전사' }); assert.equal(f.node('#chain-heard').textContent, '인도네시아');
+  f.runTimer(300); assert.equal(f.node('#chain-heard').textContent, '');
+  screen.cleanup(); f.sessions[1].onPartial({ text: '종료된 화면' });
+  assert.equal(f.node('#chain-heard').textContent, '');
+});

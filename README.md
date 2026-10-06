@@ -17,7 +17,7 @@
 ## 바로 시작하기
 
 ### 1) TechJuice ID 가족용 서버
-Node.js 24 이상과 1Password의 TechJuice ID·음성 API 설정이 필요합니다. [서버 실행 안내](server/README.md)에 따라 설정 후 `npm run build`와 `npm run start:private`를 실행하세요. 파일을 직접 열거나 정적 호스팅만으로 실행하면 로그인 서비스를 이용할 수 없습니다.
+Node.js 24 이상과 1Password의 TechJuice ID·음성 API 설정이 필요합니다. `npm ci --ignore-scripts`로 의존성을 설치하고 [서버 실행 안내](server/README.md)에 따라 설정 후 `npm run build`와 `npm run start:private`를 실행하세요. 파일을 직접 열거나 정적 호스팅만으로 실행하면 로그인 서비스를 이용할 수 없습니다.
 
 ### 2) 게임 화면을 개발 미리보기로 열기
 Node.js가 설치돼 있다면:

@@ -2,7 +2,9 @@
   "name": "flagquiz",
   "version": "1.0.0",
   "private": true,
-  "engines": { "node": ">=24.0.0" },
+  "engines": {
+    "node": ">=24.0.0"
+  },
   "description": "아이와 함께 세계 국기와 나라 이름을 배우는 한국어 국기 맞히기 게임",
   "scripts": {
     "start": "node scripts/serve.mjs",
@@ -26,5 +28,8 @@
     "images:contact": "node scripts/image-ledger.mjs contact",
     "images:report": "node scripts/image-ledger.mjs report --status --budget"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "ws": "8.22.0"
+  }
 }

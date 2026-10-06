@@ -40,6 +40,36 @@ async function loadRules() {
 
 function canonical(country, kind) { return kind === 'capital' ? country.capital : country.ko; }
 
+// 불변 final 토큰의 완전한 이름만 조기 확정한다. 인도/인도네시아 같은 접두 이름은 endpoint까지 기다린다.
+export async function createInstantAnswerResolver() {
+  const rules = await loadRules(), indexes = new Map();
+  for (const kind of ['country', 'capital']) {
+    const names = new Map();
+    for (const country of rules.countries) {
+      const entry = rules.entryFor(country, kind);
+      for (const value of [entry.ko, entry.en, ...(entry.aliases || [])]) {
+        const name = normalize(value);
+        if (!name) continue;
+        const codes = names.get(name) || new Set(); codes.add(country.code); names.set(name, codes);
+      }
+    }
+    const safe = new Map();
+    for (const [name, codes] of names) {
+      if (codes.size !== 1) continue;
+      const code = [...codes][0];
+      if ([...names].some(([other, otherCodes]) => other !== name && other.startsWith(name) && [...otherCodes].some(value => value !== code))) continue;
+      const country = rules.countries.find(item => item.code === code);
+      safe.set(name, { status: 'answer', code, text: canonical(country, kind), reason: 'confirmed-name', source: 'rules' });
+    }
+    indexes.set(kind, safe);
+  }
+  return input => {
+    if (typeof input?.text !== 'string' || input.text.length > 500 || blockedUtterance(input.text) ||
+        !['voice', 'capitalVoice', 'country-chain'].includes(input.mode)) return null;
+    return indexes.get(input.mode === 'capitalVoice' ? 'capital' : 'country').get(normalize(input.text)) || null;
+  };
+}
+
 function exactlyMentioned(rules, country, text, kind) {
   const entry = rules.entryFor ? rules.entryFor(country, kind) : kind === 'capital' ?
     { ko: country.capital, en: country.capitalEn, aliases: [country.capital] } : country;

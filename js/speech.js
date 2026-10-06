@@ -1,4 +1,4 @@
-/* 말로 답하기의 공통 NAS STT 연결. 녹음과 전사는 cloud-speech.js가 담당한다. */
+/* 말로 답하기의 공통 NAS STT 연결. 녹음과 전사는 선택한 어댑터가 담당한다. */
 (function (global) {
   'use strict';
   var FQ = (global.FQ = global.FQ || {});
@@ -7,7 +7,8 @@
   var releaseVersion = 0;
   var sequence = 0;
 
-  function supported() { return !!(FQ.cloudSpeech && FQ.cloudSpeech.supported()); }
+  function factory() { return FQ.speechEngine || FQ.cloudSpeech; }
+  function supported() { var selected = factory(); return !!(selected && selected.supported()); }
   function isApple() {
     var nav = global.navigator || {};
     return /iPhone|iPad|iPod/.test(nav.userAgent || '') || /Macintosh/.test(nav.userAgent || '') && nav.maxTouchPoints > 1;
@@ -56,7 +57,7 @@
       turnId: String(h.turnId === undefined ? ++sequence : h.turnId), phase: null };
     session = current;
     try {
-      if (!engine) engine = FQ.cloudSpeech.create({
+      if (!engine) engine = factory().create({
         csrfToken: function () { return FQ.auth && FQ.auth.csrfToken() || ''; },
         beforeRecord: function (done) {
           if (FQ.audio && FQ.audio.cueListening) return FQ.audio.cueListening(done);
@@ -75,6 +76,10 @@
           if (event.state === 'recording' && previousPhase !== 'recording') {
             if (h.start) h.start();
           }
+        },
+        onPartial: function (event) {
+          if (!live(current, event) || !event || typeof event.text !== 'string' || !event.text.trim()) return;
+          if (h.partial) h.partial(event.text.trim());
         },
         onResult: function (event) {
           if (!live(current, event)) return;

@@ -4,7 +4,7 @@ Node.js 24 이상으로 `_site`를 로그인 뒤에서 제공한다. NAS 구성�
 
 2026-10-03 기준 중앙 `flagquiz` 앱을 ‘세계 놀이’로 등록하고 기존 활성 계정 17개 모두에 앱 권한을 부여했다(`user` 16개, 기존 TECH 관리자 1개). 비활성·익명 계정은 제외했고 다른 앱 설정은 변경하지 않았다. [NAS 최초 성공 운영 기록](../docs/nas-deploy.md#최초-성공-운영-기록)에 실제 배포, DNS·Cloudflare·외부 HTTPS, 중앙 관리자·일반 계정 로그인, 운영 Groq 전사, 백업·별도 복원 및 재시작 후 상태 유지 검증이 있다. 외부 주소는 `https://flagquiz.techjuicelab.space`, NAS loopback 포트는 `31015`다. `/health`의 `configured:true`는 설정 검사를 뜻하며 실제 로그인이나 전사 성공을 보장하지 않는다.
 
-국기 보고 나라 말하기(`voice`)·국기 보고 수도 말하기(`capitalVoice`)·나라 이어 말하기(`country-chain`)를 모두 같은 NAS Groq STT로 연결한다. 후속 run `585`에서 세 모드의 실제 Groq → Jev 합성 전사 성공을 확인했으며 실제 iPhone/iPad 어린이 발화 정확도·지연은 별도 검증 대상이다. [말하기 설계와 검증 범위](../docs/spoken-stt.md)를 참고한다.
+국기 보고 나라 말하기(`voice`)·국기 보고 수도 말하기(`capitalVoice`)·나라 이어 말하기(`country-chain`)는 NAS가 허용하고 기기가 지원하면 Soniox 스트리밍으로 연결해 확정 이름을 즉시 채점한다. 키 미설정·기기 미지원이면 기존 Groq 파일 전사를 선택한다. 실제 iPhone/iPad 어린이 발화 정확도·지연은 별도 검증 대상이다. [말하기 설계와 검증 범위](../docs/spoken-stt.md), [스트리밍 계약](../docs/streaming-speech-design.md)을 참고한다.
 
 ## 시작 설정
 
@@ -19,11 +19,13 @@ NAS용 [Compose](../deploy/compose.prod.yml)는 `AUTH_PROVIDER=techjuice-id`, `T
 | `SESSION_SECRET` | 최소 32바이트의 서버 세션 서명 키 |
 | `STATE_DIR` | 정적 폴더 밖의 절대 경로. NAS에서는 `/var/lib/flagquiz` |
 | `GROQ_API_KEY` | 서버 전용 전사 키. 없으면 수동 입력으로 놀이 가능 |
+| `SONIOX_API_KEY` | 선택 설정, 서버 전용 실시간 인식 키. 설정되고 AudioWorklet을 지원하면 녹음 중 이름 확정 |
 | `TYPESAFE_API_KEY` | 선택 설정, 기본값은 비어 있음. 서버 전용 Jev 최종 선택 보조 키 |
 
 비밀은 1Password에서 실행 시 주입한다. `env/private.op.env`에서 중앙 연결·세션·Groq 값은 기존 참조를 사용하고, 비밀이 아닌 `PUBLIC_ORIGIN=https://flagquiz.techjuicelab.space`와 `STATE_DIR=/var/lib/flagquiz`는 명시한다. `FlagQuiz Private`의 빈 운영 주소·저장 경로 필드를 채울 필요는 없다. `npm run start:private`가 `op run`으로 참조를 해결한다. NAS에서는 1Password에서 해결한 배포용 사본을 Forgejo의 `APP_ENV_FILE` secret으로 전달한 운영 기록이 있다. 중앙 인증에는 service-role key나 앱 전용 Google client secret을 전달하지 않는다. 환경 변수에 `op://`가 문자 그대로 남으면 시작을 거절하고 오류에 참조나 비밀 값을 출력하지 않는다.
 
 ```sh
+npm ci --ignore-scripts
 npm run build
 npm run start:private
 ```

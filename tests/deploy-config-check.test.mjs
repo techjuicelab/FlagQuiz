@@ -62,7 +62,7 @@ test('실제 readConfig와 같은 URL·인증·경로·포트·프록시 규칙�
     { STATE_DIR: 'relative' }, { STATE_DIR: '/app/_site/private' }, { PORT: '70000' },
     { TRUSTED_PROXY_IPS: '172.19.0.0/16' }, { TJID_SUPABASE_URL: 'https://identity.test/path' },
     { TJID_SUPABASE_ANON_KEY: 'sb_secret_forbidden' }, { TJID_APP_SLUG: 'FlagQuiz' },
-    { GROQ_API_KEY: 'op://fixture/secret/key' }, { SESSION_SECRET: '"op://fixture/secret/session"' }
+    { GROQ_API_KEY: 'op://fixture/secret/key' }, { SONIOX_API_KEY: 'op://fixture/secret/key' }, { SESSION_SECRET: '"op://fixture/secret/session"' }
   ]) rejected(document(overrides));
 });
 

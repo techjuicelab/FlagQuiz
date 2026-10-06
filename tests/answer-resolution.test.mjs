@@ -4,7 +4,25 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { createAnswerResolver, resolveSpokenAnswer, JEV_MODEL, MAX_JEV_TIMEOUT_MS } from '../server/answer-resolution.mjs';
+import { createAnswerResolver, createInstantAnswerResolver, resolveSpokenAnswer, JEV_MODEL, MAX_JEV_TIMEOUT_MS } from '../server/answer-resolution.mjs';
+
+test('불변 전사의 완전한 나라·수도 이름은 녹음 종료 없이 확정한다', async () => {
+  const resolve = await createInstantAnswerResolver();
+  for (const [text, mode, code] of [['대한민국', 'voice', 'kr'], ['프랑스.', 'country-chain', 'fr'], ['서울', 'capitalVoice', 'kr']]) {
+    const result = resolve({ text, mode });
+    assert.equal(result.status, 'answer'); assert.equal(result.code, code); assert.equal(result.source, 'rules');
+  }
+});
+
+test('접두 이름·부정·문장·발음 추정·현재 정답 단서는 조기 확정하지 않는다', async () => {
+  const resolve = await createInstantAnswerResolver();
+  for (const text of ['인도', '기니', '일본 아니고', '일본?', '일본 말고 대한민국', '정답은 대한민국', '캐냐', '대', '']) {
+    assert.equal(resolve({ text, mode: 'voice', expectedAnswer: 'kr' }), null, text);
+  }
+  for (const text of ['다카', '빈']) assert.equal(resolve({ text, mode: 'capitalVoice' }), null, text);
+  assert.equal(resolve({ text: '인도네시아', mode: 'voice' }).code, 'id');
+  assert.equal(resolve({ text: '대한민국', mode: 'invalid' }), null);
+});
 import { readConfig } from '../server/auth-server.mjs';
 
 const countries = [

@@ -1,6 +1,7 @@
 FROM node:24-bookworm-slim AS build
 WORKDIR /app
-COPY package.json README.md .gitignore Dockerfile ./
+COPY package.json package-lock.json README.md .gitignore Dockerfile ./
+RUN npm ci --omit=dev --ignore-scripts
 COPY .github ./.github
 COPY .forgejo ./.forgejo
 COPY deploy ./deploy
@@ -21,6 +22,7 @@ RUN npm test && npm run build && npm run verify -- --strict
 
 FROM node:24-bookworm-slim
 WORKDIR /app
+COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/_site ./_site
 COPY data/countries.js ./data/countries.js
 COPY server ./server

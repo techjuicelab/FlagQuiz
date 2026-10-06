@@ -242,8 +242,9 @@
     if (!FQ.countryChain) return;
     enterCapitalScreen('country-chain');
     var account = FQ.auth && FQ.auth.session();
-    var voice = FQ.cloudSpeech && account && !account.preview ?
-      FQ.cloudSpeech.create({ mode: 'country-chain', csrfToken: FQ.auth.csrfToken,
+    var speechFactory = FQ.speechEngine || FQ.cloudSpeech;
+    var voice = speechFactory && account && !account.preview ?
+      speechFactory.create({ mode: 'country-chain', csrfToken: FQ.auth.csrfToken,
         beforeRecord: function (onDone) {
           if (audio.cueListening) return audio.cueListening(onDone);
           onDone();
@@ -1561,6 +1562,11 @@
         mic.classList.add('listening');
         mic.setAttribute('aria-pressed', 'true');
         setListenState('듣고 있어요. ' + what + '을 편하게 말해 주세요!', 'on');
+      },
+      partial: function (text) {
+        if (!current()) return;
+        var heard = ui.$('#heard');
+        if (heard) heard.textContent = text;
       },
       result: function (alts, metadata) {
         if (!current()) return;

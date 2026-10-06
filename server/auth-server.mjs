@@ -10,6 +10,9 @@ import { createGoogleOidc, IdentityError } from './lib/google-oidc.mjs';
 import { createTechJuiceId, TechJuiceIdError } from './lib/techjuice-id.mjs';
 import { openAccessStore, AccessError } from './lib/access-store.mjs';
 import { clientIp, parseTrustedProxyIPs } from './lib/proxy-ip.mjs';
+import { attachSpeechWebSocket } from './speech-websocket.mjs';
+import { createRealtimeTranscriber } from './realtime-speech.mjs';
+import { createInstantAnswerResolver } from './answer-resolution.mjs';
 
 const repository = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const COOKIE = 'flagquiz_session', LOGIN_COOKIE = 'flagquiz_login';
@@ -32,14 +35,14 @@ const INSTALL_METADATA = '<meta name="theme-color" content="#F5F6F8">' +
   '<meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default">';
 
 export function readConfig(env = process.env) {
-  for (const name of ['PUBLIC_ORIGIN', 'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'SESSION_SECRET', 'STATE_DIR', 'STATIC_ROOT', 'GROQ_API_KEY', 'TYPESAFE_API_KEY', 'HOST', 'PORT', 'TJID_SUPABASE_URL', 'TJID_SUPABASE_ANON_KEY', 'TRUSTED_PROXY_IPS']) {
+  for (const name of ['PUBLIC_ORIGIN', 'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'SESSION_SECRET', 'STATE_DIR', 'STATIC_ROOT', 'GROQ_API_KEY', 'SONIOX_API_KEY', 'TYPESAFE_API_KEY', 'HOST', 'PORT', 'TJID_SUPABASE_URL', 'TJID_SUPABASE_ANON_KEY', 'TRUSTED_PROXY_IPS']) {
     if (typeof env[name] === 'string' && /^["']?\s*op:\/\//i.test(env[name].trim())) {
       throw new Error('Unresolved 1Password reference in ' + name + '; start with op run');
     }
   }
   const config = { publicOrigin: env.PUBLIC_ORIGIN || '', clientId: env.GOOGLE_CLIENT_ID || '', clientSecret: env.GOOGLE_CLIENT_SECRET || '',
     sessionSecret: env.SESSION_SECRET || '', stateDirectory: env.STATE_DIR || '', staticRoot: path.resolve(env.STATIC_ROOT || path.join(repository, '_site')),
-    groqApiKey: env.GROQ_API_KEY || '', typesafeApiKey: env.TYPESAFE_API_KEY || '', port: Number(env.PORT || 8080), host: env.HOST || '127.0.0.1',
+    groqApiKey: env.GROQ_API_KEY || '', sonioxApiKey: env.SONIOX_API_KEY || '', typesafeApiKey: env.TYPESAFE_API_KEY || '', port: Number(env.PORT || 8080), host: env.HOST || '127.0.0.1',
     authProvider: env.AUTH_PROVIDER || (env.TJID_SUPABASE_URL ? 'techjuice-id' : 'google'),
     supabaseUrl: env.TJID_SUPABASE_URL || '', anonKey: env.TJID_SUPABASE_ANON_KEY || '', appSlug: env.TJID_APP_SLUG || 'flagquiz',
     googleEnabled: env.TJID_GOOGLE_ENABLED === 'true', trustedProxyIPs: parseTrustedProxyIPs(env.TRUSTED_PROXY_IPS) };
@@ -141,7 +144,7 @@ function loginPage(res, error, config, formToken) {
     '<p id="legacy-notice" role="status" aria-live="polite" hidden></p><a href="/api/auth/login">Google 계정으로 로그인</a></main><script src="/auth-cleanup.js" defer></script><script src="/login-legacy.js" defer></script></body></html>');
 }
 
-export async function createAuthServer({ config = readConfig(), fetchImpl = fetch, clock = Date.now, timingClock = () => performance.now(), oidc: injectedOidc, techjuiceId: injectedTechjuiceId, speechModule: injectedSpeech } = {}) {
+export async function createAuthServer({ config = readConfig(), fetchImpl = fetch, clock = Date.now, timingClock = () => performance.now(), oidc: injectedOidc, techjuiceId: injectedTechjuiceId, speechModule: injectedSpeech, realtimeTranscriber: injectedRealtime } = {}) {
   const store = config.ready ? await openAccessStore({ directory: config.stateDirectory, clock }) : null;
   const staticRoot = await fs.realpath(config.staticRoot).catch(() => config.staticRoot);
   if (store) {
@@ -183,6 +186,13 @@ export async function createAuthServer({ config = readConfig(), fetchImpl = fetc
     if (!entry || entry.until <= time) { entry = { count: 0, until: time + interval }; rates.set(key, entry); }
     if (entry.count >= limit) throw new AccessError(429, 'request-limit'); entry.count += 1;
   }
+  function claimSpeech(session) {
+    if (speechUsers.has(session.sub) || activeSpeech >= 4) throw new AccessError(429, 'speech-busy');
+    rate('speech:' + session.sub, 20, 60 * 1000);
+    activeSpeech += 1; speechUsers.add(session.sub);
+    let released = false;
+    return () => { if (!released) { released = true; activeSpeech -= 1; speechUsers.delete(session.sub); } };
+  }
   async function staticFile(req, res, pathname) {
     if (!['GET', 'HEAD'].includes(req.method)) throw new AccessError(405, 'method-not-allowed');
     const installAsset = req.url.split('?')[0] === pathname ? PUBLIC_INSTALL_ASSETS.get(pathname) : null;
@@ -220,12 +230,10 @@ export async function createAuthServer({ config = readConfig(), fetchImpl = fetc
   async function speechRequest(req, res, session) {
     sameOrigin(req, session);
     if (!config.groqApiKey) throw new AccessError(503, 'speech-not-configured');
-    if (speechUsers.has(session.sub) || activeSpeech >= 4) throw new AccessError(429, 'speech-busy');
-    rate('speech:' + session.sub, 20, 60 * 1000);
+    const release = claimSpeech(session);
     const abort = new AbortController();
     function disconnected() { if (!res.writableEnded) abort.abort(); }
     req.on('aborted', disconnected); res.on('close', disconnected);
-    activeSpeech += 1; speechUsers.add(session.sub);
     const timings = [];
     async function measure(name, operation) {
       const started = timingClock();
@@ -266,13 +274,14 @@ export async function createAuthServer({ config = readConfig(), fetchImpl = fetc
       if (speech?.SpeechError && error instanceof speech.SpeechError) json(res, error.status, { error: error.code });
       else throw error;
     } finally {
-      activeSpeech -= 1; speechUsers.delete(session.sub); req.off('aborted', disconnected); res.off('close', disconnected);
+      release(); req.off('aborted', disconnected); res.off('close', disconnected);
     }
   }
   async function handle(req, res) {
     res.setHeader('Cache-Control', 'no-store, private'); res.setHeader('Pragma', 'no-cache'); res.setHeader('Vary', 'Cookie');
     res.setHeader('X-Content-Type-Options', 'nosniff'); res.setHeader('Referrer-Policy', 'no-referrer');
-    res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self' blob: data:; connect-src 'self'; worker-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'");
+    const websocketOrigin = config.publicOrigin ? config.publicOrigin.replace(/^http/, 'ws') : '';
+    res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self' blob: data:; connect-src 'self'" + (websocketOrigin ? ' ' + websocketOrigin : '') + "; worker-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'");
     const url = new URL(req.url, 'http://localhost'); const pathname = url.pathname;
     if (pathname === '/health' && req.method === 'GET') return json(res, 200, { ok: true, configured: config.ready });
     if ((pathname === '/sw.js' || pathname === '/auth-cleanup.js' || pathname === '/login-legacy.js') && ['GET', 'HEAD'].includes(req.method)) {
@@ -316,7 +325,7 @@ export async function createAuthServer({ config = readConfig(), fetchImpl = fetc
     }
     if (pathname === '/api/auth/session' && req.method === 'GET') {
       const session = await sessionOf(req);
-      return json(res, 200, session ? { authenticated: true, email: session.email, role: session.role, csrfToken: csrf(session), expiresAt: session.expiresAt }
+      return json(res, 200, session ? { authenticated: true, email: session.email, role: session.role, csrfToken: csrf(session), expiresAt: session.expiresAt, speechStreaming: Boolean(config.sonioxApiKey && realtime.ready) }
         : { authenticated: false, configured: config.ready });
     }
     if (pathname === '/api/auth/login' && req.method === 'GET') {
@@ -378,7 +387,25 @@ export async function createAuthServer({ config = readConfig(), fetchImpl = fetc
     handle(req, res).catch(error => { if (res.headersSent) res.destroy(); else safeError(res, error); });
   });
   server.requestTimeout = 15000; server.headersTimeout = 10000;
-  return { server, store, config, async close() { await new Promise(resolve => server.close(resolve)); await store?.close(); } };
+  const instant = config.sonioxApiKey ? await createInstantAnswerResolver() : () => null;
+  const realtime = injectedRealtime || createRealtimeTranscriber({ apiKey: config.sonioxApiKey });
+  const stream = attachSpeechWebSocket(server, {
+    origin: () => config.publicOrigin, isConfigured: () => Boolean(config.ready && config.sonioxApiKey && realtime.ready),
+    getSession: authorized,
+    validateCsrf(req, session, token) {
+      sameOrigin({ headers: { ...req.headers, 'x-csrf-token': token } }, session);
+    },
+    claimSpeech, consumeQuota: session => store.consumeSpeechQuota(session), createTranscriber: () => realtime,
+    resolveInstant: instant,
+    async resolveFinal(input, signal, session, req) {
+      resolveAnswer ||= (await import('./answer-resolution.mjs')).createAnswerResolver({ apiKey: config.typesafeApiKey, fetchImpl });
+      return resolveAnswer(input, { signal, beforeSemantic: async () => {
+        const current = await authorized(req, true);
+        if (current.id !== session.id) throw new AccessError(401, 'login-required');
+      } });
+    }
+  });
+  return { server, store, config, async close() { await stream.close(); await new Promise(resolve => server.close(resolve)); await store?.close(); } };
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

@@ -239,7 +239,7 @@ test('서버 설정은 HTTPS·강한 서명 키·웹 루트 밖 영속 경로만
 
 test('op run 없이 남은 참조 문자열은 필수·선택 설정 모두에서 값 노출 없이 서버 시작을 거절한다', () => {
   const base = { PUBLIC_ORIGIN: 'https://quiz.test', GOOGLE_CLIENT_ID: clientId, GOOGLE_CLIENT_SECRET: 'secret', SESSION_SECRET: 's'.repeat(64), STATE_DIR: '/private/state', STATIC_ROOT: '/private/site' };
-  for (const name of ['PUBLIC_ORIGIN', 'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'SESSION_SECRET', 'STATE_DIR', 'STATIC_ROOT', 'GROQ_API_KEY', 'HOST', 'PORT']) {
+  for (const name of ['PUBLIC_ORIGIN', 'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'SESSION_SECRET', 'STATE_DIR', 'STATIC_ROOT', 'GROQ_API_KEY', 'SONIOX_API_KEY', 'HOST', 'PORT']) {
     for (const value of ['op://test-vault/test-item/test-field', '  op://test-vault/test-item/test-field ', '"op://test-vault/test-item/test-field"']) {
       assert.throws(() => readConfig({ ...base, [name]: value }), error => {
         assert.match(error.message, /Unresolved 1Password reference/); assert.match(error.message, new RegExp(name));

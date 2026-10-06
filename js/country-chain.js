@@ -109,6 +109,7 @@
       '<div class="chain-players" id="chain-players"></div><p class="chain-turn" id="chain-turn" aria-live="polite"></p>' +
       '<section class="chain-entry" aria-label="나라 이름 말하기"><div class="chain-voice-controls"><button type="button" class="btn btn-primary" id="chain-mic" data-chain-mic>' + ui.icon('mic') + '<span>말하기 시작</span></button><button type="button" class="btn btn-ghost" id="chain-pause" data-chain-pause hidden>듣기 멈추기</button></div>' +
       '<p class="small muted" id="chain-voice-state" role="status">마이크를 누르고 나라 이름을 하나 말해요. 글로 써도 좋아요.</p>' +
+      '<p class="heard" id="chain-heard" aria-live="polite"></p>' +
       '<form class="chain-input-form" data-chain-form><label class="sr-only" for="chain-input">나라 이름</label><input class="text-input" id="chain-input" name="country" placeholder="나라 이름을 써도 좋아요" autocomplete="off" maxlength="100"><button class="btn" type="submit">말하기</button></form>' +
       '<p class="chain-feedback" id="chain-feedback" role="status" aria-live="polite">아직 말하지 않은 나라를 자유롭게 말해요.</p></section>' +
       '<section class="chain-map" aria-label="함께 찾은 나라 지도" id="chain-map"></section><article class="chain-country-detail" id="chain-detail"></article>' +
@@ -202,13 +203,24 @@
       cancelVoice(continuous);
       stopReading();
       var token = generation, state = game.snapshot();
+      element('chain-heard').textContent = '';
       setVoiceState('requesting');
+      function belongs(event) {
+        return current(token) && event &&
+          (event.playerId === undefined || String(event.playerId) === String(state.playerIndex)) &&
+          (event.turnId === undefined || String(event.turnId) === String(state.total)) &&
+          (event.mode === undefined || event.mode === 'country-chain');
+      }
       try {
-        var pending = voice.start({ continuous: true, playerId: state.playerIndex, turnId: state.total,
-          onState: function (event) { if (current(token)) setVoiceState(event.state); },
+        var pending = voice.start({ mode: 'country-chain', continuous: true, playerId: state.playerIndex, turnId: state.total,
+          onState: function (event) { if (belongs(event)) setVoiceState(event.state); },
+          onPartial: function (event) {
+            if (!belongs(event) || typeof event.text !== 'string' || !event.text.trim()) return;
+            element('chain-heard').textContent = event.text.trim();
+          },
           onResult: function (event) {
-            if (!current(token)) return;
-            if (event.playerId !== undefined && String(event.playerId) !== String(state.playerIndex) || event.turnId !== undefined && String(event.turnId) !== String(state.total)) return;
+            if (!belongs(event)) return;
+            element('chain-heard').textContent = typeof event.text === 'string' ? event.text.trim() : '';
             var resolved = FQ.speech && FQ.speech.resolveAnswer ? FQ.speech.resolveAnswer(event.text, 'country', event.resolution) : null;
             if (resolved && resolved.status !== 'answer') {
               continuous = false; cancelVoice();

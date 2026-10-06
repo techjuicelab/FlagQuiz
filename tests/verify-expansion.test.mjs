@@ -90,6 +90,31 @@ test('공개 helper source 매핑은 단일 파일이며 다른 이름이나 사
   assert.ok((await problems(verifyMapScriptScope, actual.concat('other-legacy.js'))).length > 0);
 });
 
+test('스트리밍3개는 셸·빌드·로더에 등록하고 AudioWorklet만 일반 script에서 제외한다', async () => {
+  const html = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  const buildSrc = fs.readFileSync(new URL('../scripts/build-site.mjs', import.meta.url), 'utf8');
+  const run = fs.readFileSync(new URL('../tests/run.mjs', import.meta.url), 'utf8');
+  const loader = /for \(const file of \[([^\]]*)\]/.exec(run)[1];
+  const files = ['js/streaming-speech.js', 'js/speech-pcm-worklet.js', 'js/speech-engine.js'];
+  const shell = files.map(file => './' + file);
+  for (const file of files) {
+    const context = { html, buildSrc, loader, shell };
+    assert.deepEqual(await problems(verifyScriptRegistration, file, context), []);
+    for (const patch of [{ shell: shell.filter(item => item !== './' + file) },
+      { loader: loader.replace("'" + file + "'", '') }]) {
+      assert.ok((await problems(verifyScriptRegistration, file, { ...context, ...patch })).length > 0);
+    }
+  }
+  assert.ok((await problems(verifyScriptRegistration, 'js/speech-pcm-worklet.js', { html: html +
+    '<script src="js/speech-pcm-worklet.js"></script>', buildSrc, loader, shell })).length > 0);
+  for (const file of ['js/streaming-speech.js', 'js/speech-engine.js']) {
+    assert.ok((await problems(verifyScriptRegistration, file, { html: html.replace('<script src="' + file + '"></script>', ''),
+      buildSrc, loader, shell })).length > 0);
+  }
+  assert.ok(html.indexOf('<script src="js/streaming-speech.js"></script>') < html.indexOf('<script src="js/speech-engine.js"></script>'));
+  assert.ok(html.indexOf('<script src="js/speech-engine.js"></script>') < html.indexOf('<script src="js/speech.js"></script>'));
+});
+
 function voiceAssets() {
   const context = { window: {} };
   for (const file of ['data/countries.js', 'js/voice-manifest.js']) {

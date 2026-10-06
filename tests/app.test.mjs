@@ -105,17 +105,18 @@ function fixture({ chain = false } = {}) {
 }
 
 // 실제 speech facade를 앱·채점 엔진에 연결한다. 외부 마이크·HTTP만 cloud 경계에서 모사한다.
-function cloudFixture(f) {
+function cloudFixture(f, { streaming = false } = {}) {
   const sessions=[],factories=[];
   let cancels=0,stops=0;
   const adapter={supported:()=>true,
     start(handlers){sessions.push(handlers);f.c.listening=true;return Promise.resolve();},
     stop(){stops++;return true;},cancel(){cancels++;f.c.listening=false;},isRecording:()=>false};
-  f.c.FQ.auth={session:()=>({preview:false}),isPreview:()=>false,csrfToken:()=> 'test-csrf',start(options){options.onReady();}};
+  f.c.FQ.auth={session:()=>({preview:false,speechStreaming:streaming}),isPreview:()=>false,csrfToken:()=> 'test-csrf',start(options){options.onReady();}};
   f.c.navigator.onLine=true;f.c.isSecureContext=true;
-  f.c.FQ.cloudSpeech={supported:()=>true,create(options){factories.push(options);return adapter;}};
+  f.c.FQ.cloudSpeech={supported:()=>true,create(options){factories.push({...options,engine:'cloud'});return adapter;}};
+  if(streaming)f.c.FQ.streamingSpeech={supported:()=>true,create(options){factories.push({...options,engine:'stream'});return adapter;}};
   for(const key of ['SpeechRecognition','webkitSpeechRecognition'])Object.defineProperty(f.c,key,{get(){throw new Error('브라우저 STT를 사용하면 안 된다');}});
-  vm.runInContext(fs.readFileSync(path.join(root,'js/speech.js'),'utf8'),f.c,{filename:'js/speech.js'});
+  for(const file of ['js/speech-engine.js','js/speech.js'])vm.runInContext(fs.readFileSync(path.join(root,file),'utf8'),f.c,{filename:file});
   return {sessions,factories,adapter,get cancels(){return cancels;},get stops(){return stops;},
     phase(session,state){session.onState({state,playerId:String(session.playerId),turnId:String(session.turnId)});},
     result(session,text,resolution){f.c.listening=false;session.onState({state:'idle'});session.onResult({text,playerId:String(session.playerId),turnId:String(session.turnId),resolution});},
@@ -2475,6 +2476,45 @@ test('수도 말하기 힌트의 낭독 종료 신호가 없어도 같은 문제
   assert.equal(cloud.sessions.length,2,'누락된 TTS 완료 이벤트가 말하기를 영원히 멈추게 해서는 안 된다');
   assert.equal(a.state.game.current(),q);assert.equal(a.state.answered,false);
   ending();f.advance(8000);assert.equal(cloud.sessions.length,2,'이전 힌트의 늦은 종료는 추가 녹음을 열지 않는다');
+});
+
+test('나라·수도 말하기는 부분 전사를 보여 주되 최종 결과 전에 점수와 문제를 바꾸지 않는다',()=>{
+  for(const mode of ['voice','capitalVoice']) {
+    const f=fixture(),cloud=cloudFixture(f),a=startMode(f,mode,['kr'],{speak:false,timer:0}),q=a.state.game.current(),session=cloud.sessions[0];
+    cloud.phase(session,'recording');
+    session.onPartial({text:mode==='voice'?'대한':'서',playerId:session.playerId,turnId:session.turnId,mode});
+    assert.equal(f.node('#heard').textContent,mode==='voice'?'대한':'서');
+    assert.equal(a.state.answered,false);assert.equal(a.state.game.correct,0);assert.equal(a.state.game.current(),q);
+    cloud.result(session,mode==='voice'?'대한민국':'서울');
+    assert.equal(a.state.answered,true);assert.equal(a.state.game.correct,1);
+    session.onPartial({text:'이전 차례'});assert.equal(f.node('#heard').textContent,mode==='voice'?'대한민국':'서울');
+  }
+});
+
+test('서버 허용 스트리밍은 세 말하기 화면까지 연결되고 실패 뒤 파일 전사를 자동 시작하지 않는다',()=>{
+  for(const mode of ['voice','capitalVoice','country-chain']) {
+    const f=fixture({chain:mode==='country-chain'}),stream=cloudFixture(f,{streaming:true});
+    if(mode==='country-chain') {
+      f.c.FQ.app.countryChain();f.clickDelegated('[data-chain-mic]',f.node('#chain-mic'));
+    } else startMode(f,mode,['kr'],{speak:false,timer:0});
+    assert.equal(stream.factories.length,1);assert.equal(stream.factories[0].engine,'stream');
+    const session=stream.sessions[0];stream.phase(session,'recording');
+    session.onPartial({text:mode==='capitalVoice'?'서':'대한',playerId:session.playerId,turnId:session.turnId,mode});
+    assert.equal(f.node(mode==='country-chain'?'#chain-heard':'#heard').textContent,mode==='capitalVoice'?'서':'대한');
+    stream.error(session,'network');f.advance(60000);
+    assert.equal(stream.factories.length,1);assert.equal(stream.sessions.length,1,'실패 뒤 유료 fallback을 자동 요청하지 않는다');
+  }
+});
+
+test('나라 이어 말하기 진입도 공통 엔진 선택 경로로 어댑터를 만든다',()=>{
+  const f=fixture({chain:true});let options;
+  f.c.FQ.auth={session:()=>({preview:false,speechStreaming:true}),csrfToken:()=> 'csrf'};
+  const adapter={supported:()=>true,cancel(){},start(){}};
+  f.c.FQ.speechEngine={supported:()=>true,create(config){options=config;return adapter;}};
+  f.c.FQ.cloudSpeech={create(){throw new Error('factory를 우회했다');}};
+  f.c.FQ.app.countryChain();
+  assert.equal(options.mode,'country-chain');assert.equal(options.csrfToken(),'csrf');
+  assert.ok(f.c.FQ.test.state.countryChain);
 });
 
 console.log('앱 흐름 회귀 검사 '+passed+'건 통과');

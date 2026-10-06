@@ -531,7 +531,7 @@ const BASE_JS_FILES = [
 export function verifyMapScriptScope(t, actual) {
   const extra = actual.filter((file) => !BASE_JS_FILES.includes(file));
   // 지도 확장 이후 승인된 오프라인 전체 저장 UI도 명시적으로 허용한다.
-  const allowed = ['features.js', 'map.js', 'offline.js', 'auth.js', 'cloud-speech.js', 'country-chain.js', 'spoken-answer.js', 'legacy-records.js', 'legacy-boot.js'];
+  const allowed = ['features.js', 'map.js', 'offline.js', 'auth.js', 'cloud-speech.js', 'streaming-speech.js', 'speech-pcm-worklet.js', 'speech-engine.js', 'country-chain.js', 'spoken-answer.js', 'legacy-records.js', 'legacy-boot.js'];
   const unexpected = extra.filter((file) => !allowed.includes(file));
   t.ok(unexpected.length === 0, 'js/ 에 승인 범위 밖의 새 파일이 들어왔다', unexpected.join(', '));
   const missing = BASE_JS_FILES.filter((file) => !actual.includes(file));
@@ -560,7 +560,9 @@ const SCRIPT_SOURCES = { 'login-legacy.js': 'server/login-legacy.js' };
 function scriptSource(file) { return Object.hasOwn(SCRIPT_SOURCES, file) ? SCRIPT_SOURCES[file] : file; }
 
 export function verifyScriptRegistration(t, file, { html, shell, buildSrc, loader }) {
-  t.ok(html.includes('<script src="' + file + '"></script>'), 'index.html 에 새 script 등록이 없다', file);
+  if (file === 'js/speech-pcm-worklet.js') {
+    t.ok(!html.includes('<script src="' + file + '"></script>'), 'AudioWorklet 전용 파일을 일반 script로 실행하면 안 된다', file);
+  } else t.ok(html.includes('<script src="' + file + '"></script>'), 'index.html 에 새 script 등록이 없다', file);
   t.ok(shell.includes('./' + file), 'sw.js SHELL 에 새 script 등록이 없다', file);
   const source = scriptSource(file);
   t.ok(loader.includes("'" + source + "'"), 'tests/run.mjs 로더에 실제 source 등록이 없다', source);

@@ -62,6 +62,10 @@ const artSet = checkArtSet(root, fq.subjects, fq.countries.map(c => c.code), fq.
 const artFiles = checkImages({root});
 const artErrors = [...artSet.errors, ...artFiles.errors];
 if (artErrors.length) throw new Error('그림 배포 검사 실패:\n' + artErrors.join('\n'));
+// 스트리밍 캡처 파일이 빠진 상태로 기존 배포 묶음을 교체하지 않는다.
+for (const file of ['js/streaming-speech.js', 'js/speech-pcm-worklet.js', 'js/speech-engine.js']) {
+  await fs.access(path.join(root, file));
+}
 await fs.rm(output, { recursive: true, force: true });
 await fs.mkdir(output, { recursive: true });
 for (const folder of ['assets', 'css', 'flags', 'js', 'images']) {

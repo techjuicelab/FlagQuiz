@@ -58,13 +58,16 @@ sandbox.window = sandbox;
 sandbox.global = sandbox;
 vm.createContext(sandbox);
 
-for (const file of ['server/login-legacy.js', 'js/legacy-records.js', 'js/legacy-boot.js', 'js/util.js', 'js/storage.js', 'js/features.js', 'data/countries.js', 'data/subjects.js', 'data/confusion-groups.js', 'data/map-coords.js', 'data/map-shapes.js', 'js/map.js', 'js/progress.js', 'js/quiz.js', 'js/spoken-answer.js', 'js/offline.js', 'js/auth.js', 'js/cloud-speech.js', 'js/country-chain.js']) {
+for (const file of ['server/login-legacy.js', 'js/legacy-records.js', 'js/legacy-boot.js', 'js/util.js', 'js/storage.js', 'js/features.js', 'data/countries.js', 'data/subjects.js', 'data/confusion-groups.js', 'data/map-coords.js', 'data/map-shapes.js', 'js/map.js', 'js/progress.js', 'js/quiz.js', 'js/spoken-answer.js', 'js/offline.js', 'js/auth.js', 'js/cloud-speech.js', 'js/streaming-speech.js', 'js/speech-pcm-worklet.js', 'js/speech-engine.js', 'js/country-chain.js']) {
   const full = path.join(root, file);
   if (!fs.existsSync(full)) {
     console.error('✗ 파일이 없어요: ' + file);
     process.exit(1);
   }
-  vm.runInContext(fs.readFileSync(full, 'utf8'), sandbox, { filename: file });
+  const source = fs.readFileSync(full, 'utf8');
+  // AudioWorklet 전용 파일은 일반 window에서 실행하지 않고 문법만 확인한다.
+  if (file === 'js/speech-pcm-worklet.js') new vm.Script(source, { filename: file });
+  else vm.runInContext(source, sandbox, { filename: file });
 }
 
 /** 유엔 회원국 193 + 바티칸. 목록이 바뀌면 여기도 함께 고쳐야 한다. */
