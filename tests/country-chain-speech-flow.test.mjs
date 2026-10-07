@@ -462,3 +462,18 @@ test('통합: 활성 트랙의 ended 이벤트·누락된 이벤트 모두 오�
     assert.equal(f.game.snapshot().playerIndex, 0);
   }
 });
+
+test('통합: 읽기가 끝나자마자 다음 친구가 250ms 말해도 기존 300ms 공백에 사라지지 않는다', async t => {
+  const f = fixture({ responses: ['대한민국', '일본'] }); t.after(() => f.game.cleanup());
+  f.setLoud(0.1); f.click('[data-chain-mic]'); await flush();
+  await f.advance(300); f.setLoud(0); await f.advance(1200);
+  assert.equal(f.game.snapshot().total, 1); assert.equal(f.requests.length, 1);
+  f.finishSpeech(); await flush();
+  f.setLoud(0.1); await f.advance(250); f.setLoud(0); await f.advance(1400);
+  assert.equal(f.requests.length, 2, '읽기 종료 뒤 즉시 시작한 상대 발화도 실제 WAV로 전사해야 한다');
+  assert.ok(f.requests[1].inputVoiceDurationMs >= 200, '다음 친구 발화의 앞부분을 보존한다');
+  assert.equal(f.requests[1].config.headers['X-Player-Id'], '1');
+  assert.equal(f.requests[1].config.headers['X-Turn-Id'], '1');
+  assert.deepEqual(Array.from(f.game.snapshot().scores), [1, 1]);
+  assert.equal(f.streams.length, 1); assert.equal(f.contexts.length, 1);
+});

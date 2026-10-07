@@ -247,7 +247,7 @@
       speechFactory.create({ mode: 'country-chain', csrfToken: FQ.auth.csrfToken,
         beforeRecord: function (onDone) {
           if (audio.cueListening) return audio.cueListening(onDone);
-          onDone();
+          onDone(false);
         }
       }) : null;
     state.countryChain = FQ.countryChain.start({ players: store.settings().players,
@@ -1110,7 +1110,7 @@
       audio.say(lines, { onEnd: function () { finish(false, false); } }, function () {
         finish(true, false);
       });
-    });
+    }, { keepMicrophone: resumesMic });
   }
 
   /* =================== 퀴즈 화면 =================== */
@@ -1530,7 +1530,7 @@
     mic.classList.remove('listening');
     mic.setAttribute('aria-label', '듣기 멈추기');
     mic.setAttribute('aria-pressed', 'false');
-    setListenState('마이크를 준비하고 있어요…', '');
+    setListenState('마이크를 준비하고 있어요. 비프음이 끝나면 말해 주세요.', '');
     var tip = ui.$('#listen-tip');
     if (tip) tip.textContent = '모르겠으면 “몰라요” 나 “이게 뭐야?” 라고 말해도 돼요';
     function readyToRetry() {
@@ -1572,7 +1572,7 @@
       state: function (phase) {
         if (!current()) return;
         pauseSpeechTimer(phase !== 'recording');
-        if (phase === 'requesting') setListenState('마이크를 준비하고 있어요…', '');
+        if (phase === 'requesting') setListenState('마이크를 준비하고 있어요. 비프음이 끝나면 말해 주세요.', '');
         if (phase === 'finishing' || phase === 'transcribing') {
           mic.classList.remove('listening');
           mic.setAttribute('aria-pressed', 'false');
@@ -1978,7 +1978,7 @@
         var event = res.levelUp ? 'level' : res.newSticker ? 'sticker' :
           res.correct && store.settings().correctMusic ? 'correct' : 'discovery';
         playMusic(event, function () { narrate(request, replaying, requestedSpeech); });
-      });
+      }, { keepMicrophone: speechMode(q.mode) });
     }
     state.feedbackResume = function () {
       if (!feedbackCurrent()) return;

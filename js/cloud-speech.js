@@ -81,7 +81,7 @@
         if (session[key]) global.clearTimeout(session[key]);
         session[key] = null;
       });
-      if (session.finishReady) session.finishReady();
+      if (session.finishReady) session.finishReady(false);
     }
     function stopTracks(stream) {
       if (stream && stream.getTracks) stream.getTracks().forEach(function (track) { track.stop(); });
@@ -169,23 +169,24 @@
     function beforeRecord(session) {
       return new Promise(function (resolve) {
         var completed = false;
-        function done() {
+        function done(played) {
           if (completed) return;
           completed = true;
           global.clearTimeout(session.readyTimer); session.readyTimer = null; session.finishReady = null;
           var cleanup = session.readyCleanup; session.readyCleanup = null;
           if (typeof cleanup === 'function') { try { cleanup(); } catch (failure) {} }
-          resolve();
+          resolve(played !== false);
         }
         session.finishReady = done;
-        session.readyTimer = global.setTimeout(done, 500);
+        session.readyTimer = global.setTimeout(function () { done(false); }, 1000);
         try {
           var pending = opts.beforeRecord(done);
           if (typeof pending === 'function') {
             if (completed) { try { pending(); } catch (failure) {} }
             else session.readyCleanup = pending;
-          } else if (pending && pending.then) pending.then(done, done);
-        } catch (failure) { done(); }
+          } else if (pending && pending.then) pending.then(done, function () { done(false); });
+          else if (pending === false) done(false);
+        } catch (failure) { done(false); }
       });
     }
 
@@ -446,8 +447,9 @@
         // 준비 비프는 마이크를 열어 둔 채 음소거해서 답변에 섞이지 않게 한다.
         enableTracks(session.stream, false);
         if (typeof opts.beforeRecord === 'function') {
-          await beforeRecord(session);
+          var cuePlayed = await beforeRecord(session);
           if (!live(session)) return;
+          if (!cuePlayed) { error(session, 'recording', '마이크 준비음을 재생하지 못했어요. 다시 누르거나 글자로 답해 주세요.'); return; }
         }
         session.mime = mime(); enableTracks(session.stream, true);
         beginRecording(session, true);

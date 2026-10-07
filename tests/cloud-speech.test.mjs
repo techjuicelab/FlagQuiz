@@ -313,13 +313,52 @@ test('준비 비프 회귀: 취소는 대기도 해제하며 늦은 비프 완�
   assert.equal(f.contexts[0].closed, 1); assert.equal(f.requests.length, 0); assert.equal(f.timers.size, 0);
 });
 
-test('준비 비프 회귀: 비프 예외·거부·완료 누락도 녹음을 잠그지 않는다', async () => {
-  for (const beforeRecord of [() => { throw new Error('no audio'); }, () => Promise.reject(new Error('blocked')), () => {}]) {
-    const f = fixture({ beforeRecord }); const start = f.adapter.start(f.handlers()); await flush();
-    f.advance(500); await start;
-    assert.equal(f.recorders.length, 1); assert.equal(f.adapter.isRecording(), true); f.adapter.cancel();
-    assert.equal(f.requests.length, 0); assert.equal(f.timers.size, 0);
+test('준비 비프 실패·거부·예외·미완료는 녹음과 업로드 없이 준비음 오류 한 번으로 끝낸다', async () => {
+  for (const behavior of ['false', 'reject', 'throw', 'never']) {
+    let late;
+    const f = fixture({ beforeRecord(done) {
+      late = done;
+      if (behavior === 'false') done(false);
+      if (behavior === 'reject') return Promise.reject(new Error('private cue rejection'));
+      if (behavior === 'throw') throw new Error('private cue failure');
+    } });
+    const start = f.adapter.start({ ...f.handlers(), continuous: true }); await flush();
+    f.advance(1000); await start;
+    assert.equal(f.recorders.length, 0, behavior + ': 비프 실패 뒤 조용히 녹음을 시작하지 않는다');
+    assert.equal(f.adapter.isRecording(), false); assert.equal(f.errors.length, 1); assert.equal(f.errors[0].code, 'recording');
+    assert.match(f.errors[0].message, /준비음/); assert.doesNotMatch(f.errors[0].message, /private/);
+    assert.equal(f.streams[0].track.stops, 1); assert.equal(f.contexts[0].closed, 1);
+    late(true); f.advance(60000); await flush();
+    assert.equal(f.recorders.length, 0); assert.equal(f.errors.length, 1); assert.equal(f.requests.length, 0); assert.equal(f.timers.size, 0);
   }
+});
+
+test('긴 준비 비프는 500ms를 넘어도 실제 완료 뒤에만 녹음하고 취소·늦은 완료를 무시한다', async () => {
+  let done, cleaned = 0;
+  const f = fixture({ beforeRecord(callback) { done = callback; return () => cleaned++; } });
+  const start = f.adapter.start({ ...f.handlers(), continuous: true }); await flush();
+  f.advance(600); await flush();
+  assert.equal(f.recorders.length, 0); assert.equal(f.streams[0].track.enabled, false);
+  done(true); await start; assert.equal(f.recorders.length, 1); assert.equal(f.streams[0].track.enabled, true); assert.equal(cleaned, 1);
+  f.adapter.cancel(); assert.equal(f.timers.size, 0);
+  const cancelled = fixture({ beforeRecord(callback) { done = callback; return () => cleaned++; } });
+  const waiting = cancelled.adapter.start(cancelled.handlers()); await flush(); cancelled.adapter.cancel(); await waiting;
+  done(true); cancelled.advance(60000); await flush();
+  assert.equal(cancelled.recorders.length, 0); assert.equal(cancelled.errors.length, 0); assert.equal(cleaned, 2);
+  assert.equal(cancelled.streams[0].track.stops, 1); assert.equal(cancelled.requests.length, 0); assert.equal(cancelled.timers.size, 0);
+});
+
+test('최종 결과 callback의 보관 취소 재진입도 마이크를 닫지 않고 다음 차례에서 재사용한다', async () => {
+  const f = fixture({ beforeRecord(done) { done(true); } });
+  const handlers = f.handlers(), onResult = handlers.onResult;
+  handlers.onResult = event => { onResult(event); f.adapter.cancel({ keepMicrophone: true }); };
+  f.setLoud(0.1); await f.adapter.start({ ...handlers, continuous: true }); f.advance(300);
+  f.adapter.stop(); await flush();
+  assert.equal(f.results.length, 1); assert.equal(f.streams[0].track.enabled, false);
+  assert.equal(f.streams[0].track.stops, 0); assert.equal(f.contexts[0].closed, 0);
+  await f.adapter.start({ ...f.handlers(1, 5), continuous: true });
+  assert.equal(f.streams.length, 1); assert.equal(f.contexts.length, 1); assert.equal(f.streams[0].track.enabled, true);
+  f.adapter.cancel(); assert.equal(f.streams[0].track.stops, 1); assert.equal(f.contexts[0].closed, 1); assert.equal(f.timers.size, 0);
 });
 
 test('지연 회귀: 40ms 클릭과 일정한 배경음은 단발 5초 대기 뒤 유료 요청 없이 끝난다', async () => {

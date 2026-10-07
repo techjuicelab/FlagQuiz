@@ -53,6 +53,53 @@ function setup(options = {}) {
     get cancels() { return cancels; }, get stops() { return stops; }, setCsrf(value) { csrf = value; } };
 }
 
+async function flush() { for (let i = 0; i < 30; i++) await Promise.resolve(); }
+
+// 실제 facade와 스트리밍 어댑터를 연결해 차례 사이의 마이크 소유권을 검사한다.
+function setupStreaming() {
+  const f = setup(), streams = [], contexts = [], nodes = [], sockets = [];
+  class Audio {
+    constructor() {
+      this.state = 'running'; this.closed = 0; this.destination = {}; this.modules = 0;
+      this.audioWorklet = { addModule: async () => { this.modules++; } }; contexts.push(this);
+    }
+    resume() { return Promise.resolve(); }
+    close() { this.state = 'closed'; this.closed++; return Promise.resolve(); }
+    createMediaStreamSource() { return { connect() {}, disconnect() {} }; }
+    createGain() { return { gain: { value: 1 }, connect() {}, disconnect() {} }; }
+  }
+  Object.defineProperty(Audio.prototype, 'audioWorklet', { value: null, writable: true });
+  class Worklet {
+    constructor() { this.commands = []; this.port = { onmessage: null, postMessage: value => this.commands.push(value) }; nodes.push(this); }
+    connect() {} disconnect() {}
+  }
+  class Socket {
+    constructor() { this.readyState = 0; this.bufferedAmount = 0; this.sent = []; sockets.push(this); }
+    send(value) { this.sent.push(value); }
+    close() { this.readyState = 3; this.onclose?.(); }
+    message(value) { this.onmessage?.({ data: JSON.stringify(value) }); }
+  }
+  Object.assign(f.window, { URL, AudioContext: Audio, AudioWorkletNode: Worklet, WebSocket: Socket });
+  f.window.navigator.mediaDevices = { async getUserMedia() {
+    const track = { enabled: true, readyState: 'live', stops: 0,
+      stop() { this.readyState = 'ended'; this.stops++; }, addEventListener() {}, removeEventListener() {} };
+    const stream = { track, getTracks: () => [track] }; streams.push(stream); return stream;
+  } };
+  f.window.FQ.auth.session = () => ({ preview: false, speechStreaming: true });
+  f.window.FQ.audio = { cueListening(done) { done(true); } };
+  vm.runInNewContext(fs.readFileSync(new URL('../js/streaming-speech.js', import.meta.url), 'utf8'), { window: f.window });
+  async function ready(mode = 'voice', turnId = 4) {
+    await flush(); const socket = sockets.at(-1); socket.readyState = 1; socket.onopen();
+    socket.message({ type: 'ready', mode, playerId: '0', turnId: String(turnId) }); await flush(); return socket;
+  }
+  function audioFrame(sample = 512) {
+    const node = nodes.at(-1), command = node.commands.findLast(value => value.type === 'start');
+    const pcm = new Int16Array(1600).fill(sample).buffer;
+    node.port.onmessage?.({ data: { type: 'audio', generation: command.generation, sequence: 0, pcm } });
+  }
+  return { ...f, streams, contexts, nodes, sockets, ready, audioFrame };
+}
+
 function handlers(mode = 'voice', turnId = 4) {
   const events = [];
   return { events, value: { mode, playerId: 0, turnId,
@@ -88,11 +135,11 @@ test('두 말하기 모드의 준비 비프는 권한을 요청할 때 울리지
   }
 });
 
-test('비프 기능이 없는 환경에서도 준비 hook은 즉시 완료하여 녹음을 막지 않는다', () => {
-  const f = setup(), h = handlers(); f.speech.start(h.value); let done = 0;
-  f.factories[0].beforeRecord(() => done++); assert.equal(done, 1);
-  f.sessions[0].onState({ state: 'recording' });
-  assert.deepEqual(h.events.filter(event => event[0] === 'start'), [['start']]);
+test('비프 기능이 없으면 준비 hook은 실패를 알려 조용한 녹음 시작을 막는다', () => {
+  const f = setup(), h = handlers(); f.speech.start(h.value); const completed = [];
+  f.factories[0].beforeRecord(played => completed.push(played));
+  assert.deepEqual(completed, [false]);
+  assert.equal(h.events.filter(event => event[0] === 'start').length, 0);
 });
 
 test('요청·녹음·정리·전사 중 모두 활성 세션이고 녹음 상태에서만 시작을 알린다', () => {
@@ -195,6 +242,69 @@ test('활성 녹음이 없어도 stopAnd의 예약을 다음 화면 이동으로
   const f = setup(); let released = 0;
   f.speech.stopAnd(() => released++); f.speech.abort(); f.advance(1000);
   assert.equal(released, 0);
+});
+
+test('음성 정답의 피드백 뒤 다음 차례는 음소거한 마이크와 worklet을 다시 사용한다', async () => {
+  for (const mode of ['voice', 'capitalVoice']) {
+    const f = setupStreaming(), first = handlers(mode, 4); let narrated = 0;
+    const onResult = first.value.result;
+    first.value.result = text => { onResult(text); f.speech.stopAnd(() => narrated++, { keepMicrophone: true }); };
+    f.speech.start(first.value);
+    const old = await f.ready(mode, 4); f.audioFrame();
+    old.message({ type: 'result', text: mode === 'voice' ? '대한민국' : '서울', mode, playerId: '0', turnId: '4' });
+    assert.equal(first.events.filter(event => event[0] === 'result').length, 1);
+    f.advance(0);
+    assert.equal(narrated, 1); assert.equal(f.streams[0].track.enabled, false);
+    assert.equal(f.streams[0].track.stops, 0, '다음 차례까지 마이크를 보관해야 다시 권한·worklet을 준비하지 않는다');
+    assert.equal(f.contexts[0].closed, 0);
+    f.speech.start(handlers(mode, 5).value); await flush();
+    assert.equal(f.streams.length, 1); assert.equal(f.contexts.length, 1); assert.equal(f.contexts[0].modules, 1);
+    assert.equal(f.streams[0].track.enabled, false, '다음 차례 ready 전에는 피드백과 아이 목소리를 보내지 않는다');
+    const current = await f.ready(mode, 5); f.audioFrame();
+    assert.equal(current.sent.filter(value => typeof value !== 'string').length, 1);
+    assert.equal(old.sent.filter(value => typeof value !== 'string').length, 1, '새 차례 PCM은 이전 소켓에 보내지 않는다');
+    f.speech.abort(); assert.equal(f.streams[0].track.stops, 1); assert.equal(f.contexts[0].closed, 1);
+  }
+});
+
+test('보관 중 홈·글자 입력·숨김·멈춤의 abort는 마이크를 해제하고 피드백 예약도 취소한다', async () => {
+  const f = setupStreaming(); f.speech.start(handlers().value); const old = await f.ready();
+  old.message({ type: 'result', text: '대한민국', mode: 'voice', playerId: '0', turnId: '4' });
+  let narrated = 0; f.speech.stopAnd(() => narrated++, { keepMicrophone: true });
+  f.speech.abort(); f.advance(1000);
+  assert.equal(narrated, 0); assert.equal(f.streams[0].track.stops, 1); assert.equal(f.contexts[0].closed, 1);
+  assert.equal(f.speech.isListening(), false); assert.equal(f.timers.size, 0);
+});
+
+test('마이크 보관은 명시한 true만 허용하고 기본 stopAnd와 연결 오류는 모두 해제한다', async () => {
+  for (const option of [undefined, { keepMicrophone: false }, { keepMicrophone: 'true' }]) {
+    const f = setupStreaming(); f.speech.start(handlers().value); const old = await f.ready();
+    old.message({ type: 'result', text: '대한민국', mode: 'voice', playerId: '0', turnId: '4' });
+    f.speech.stopAnd(() => {}, option); f.advance(0);
+    assert.equal(f.streams[0].track.stops, 1); assert.equal(f.contexts[0].closed, 1);
+  }
+  for (const code of ['auth-required', 'quota', 'service', 'network']) {
+    const f = setupStreaming(); f.speech.start(handlers().value); const old = await f.ready();
+    old.message({ type: 'result', text: '대한민국', mode: 'voice', playerId: '0', turnId: '4' });
+    f.speech.stopAnd(() => {}, { keepMicrophone: true }); f.advance(0);
+    f.speech.start(handlers('voice', 5).value); const current = await f.ready('voice', 5);
+    current.message({ type: 'error', code, mode: 'voice', playerId: '0', turnId: '5' });
+    assert.equal(f.streams.length, 1); assert.equal(f.streams[0].track.stops, 1); assert.equal(f.contexts[0].closed, 1);
+    f.advance(60000); assert.equal(f.sockets.length, 2, '실패 뒤 유료 요청을 자동 재시작하지 않는다');
+  }
+});
+
+test('다음 차례 전에 로그인·연결이 사라지면 보관 마이크를 즉시 해제한다', async () => {
+  for (const blocked of ['auth', 'offline']) {
+    const f = setupStreaming(); f.speech.start(handlers().value); const old = await f.ready();
+    old.message({ type: 'result', text: '대한민국', mode: 'voice', playerId: '0', turnId: '4' });
+    f.speech.stopAnd(() => {}, { keepMicrophone: true }); f.advance(0);
+    if (blocked === 'auth') f.window.FQ.auth.session = () => null;
+    else f.window.navigator.onLine = false;
+    assert.equal(f.speech.start(handlers('voice', 5).value), false);
+    assert.equal(f.streams[0].track.stops, 1, blocked + ': 시작 거절도 보관한 마이크를 남기지 않는다');
+    assert.equal(f.contexts[0].closed, 1); assert.equal(f.sockets.length, 1); assert.equal(f.speech.isListening(), false);
+  }
 });
 
 test('모든 STT 오류는 한 번 종료하고 60초가 지나도 자동 재시도하지 않는다', () => {

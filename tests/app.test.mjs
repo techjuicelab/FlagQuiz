@@ -106,18 +106,18 @@ function fixture({ chain = false } = {}) {
 
 // 실제 speech facade를 앱·채점 엔진에 연결한다. 외부 마이크·HTTP만 cloud 경계에서 모사한다.
 function cloudFixture(f, { streaming = false } = {}) {
-  const sessions=[],factories=[];
+  const sessions=[],factories=[],cancellations=[];
   let cancels=0,stops=0;
   const adapter={supported:()=>true,
     start(handlers){sessions.push(handlers);f.c.listening=true;return Promise.resolve();},
-    stop(){stops++;return true;},cancel(){cancels++;f.c.listening=false;},isRecording:()=>false};
+    stop(){stops++;return true;},cancel(options){cancels++;cancellations.push(options?.keepMicrophone===true);f.c.listening=false;},isRecording:()=>false};
   f.c.FQ.auth={session:()=>({preview:false,speechStreaming:streaming}),isPreview:()=>false,csrfToken:()=> 'test-csrf',start(options){options.onReady();}};
   f.c.navigator.onLine=true;f.c.isSecureContext=true;
   f.c.FQ.cloudSpeech={supported:()=>true,create(options){factories.push({...options,engine:'cloud'});return adapter;}};
   if(streaming)f.c.FQ.streamingSpeech={supported:()=>true,create(options){factories.push({...options,engine:'stream'});return adapter;}};
   for(const key of ['SpeechRecognition','webkitSpeechRecognition'])Object.defineProperty(f.c,key,{get(){throw new Error('브라우저 STT를 사용하면 안 된다');}});
   for(const file of ['js/speech-engine.js','js/speech.js'])vm.runInContext(fs.readFileSync(path.join(root,file),'utf8'),f.c,{filename:file});
-  return {sessions,factories,adapter,get cancels(){return cancels;},get stops(){return stops;},
+  return {sessions,factories,adapter,cancellations,get cancels(){return cancels;},get stops(){return stops;},
     phase(session,state){session.onState({state,playerId:String(session.playerId),turnId:String(session.turnId)});},
     result(session,text,resolution){f.c.listening=false;session.onState({state:'idle'});session.onResult({text,playerId:String(session.playerId),turnId:String(session.turnId),resolution});},
     error(session,code){f.c.listening=false;session.onState({state:'idle'});session.onError({code,message:'지금 문제는 글자로 답해 주세요.',playerId:String(session.playerId),turnId:String(session.turnId)});}};
@@ -195,6 +195,23 @@ test('실제 NAS speech facade와 연결해 빠르게 다음 문제로 넘어가
   assert.equal(a.state.answered,false);assert.equal(cloud.sessions.length,2);
   cloud.phase(cloud.sessions[1],'recording');assert.equal(f.node('#mic').attrs['aria-pressed'],'true');
   f.advance(1000);assert.equal(f.spoken.length,0);
+});
+
+test('두 말하기 모드의 정답 피드백은 다음 문제용 마이크를 보관하고 홈에서는 닫는다',()=>{
+  for(const mode of ['voice','capitalVoice']){
+    const f=fixture(),cloud=cloudFixture(f,{streaming:true});
+    const releaseOptions=[],stopAnd=f.c.FQ.speech.stopAnd;
+    f.c.FQ.speech.stopAnd=(callback,options)=>{releaseOptions.push(options);return stopAnd(callback,options);};
+    f.c.FQ.storage.updateSettings({mode});f.c.FQ.app.startGame(['id','in']);
+    const a=f.c.FQ.test,q=a.state.game.current();
+    cloud.phase(cloud.sessions[0],'recording');
+    cloud.result(cloud.sessions[0],mode==='capitalVoice'?q.country.capital:q.country.ko);
+    assert.equal(a.state.answered,true);
+    assert.equal(releaseOptions.at(-1)?.keepMicrophone,true,'정답 뒤 마이크 장치를 다시 열지 않는다');
+    a.goNext();assert.equal(cloud.sessions.length,2);
+    f.c.FQ.app.home();
+    assert.equal(cloud.cancellations.at(-1),false,'홈 이동은 보관한 마이크도 닫는다');
+  }
 });
 
 test('예약된 안내도 홈 화면으로 이동하면 취소',()=>{
@@ -2161,7 +2178,7 @@ for(const destination of ['home','settings','dex','stats'])for(const phase of ['
   f.c.FQ.storage.updateSettings({players:['민규','아빠'],speak:phase==='name-read',sound:false,homeMusic:false});
   f.c.FQ.app.boot();
   f.c.FQ.auth={session:()=>({preview:false}),isPreview:()=>false,csrfToken:()=> 'test-csrf'};
-  const adapter={supported:()=>true,cancel(options){cancels++;cancellations.push(options?.keepMicrophone===true);},stop(){stops++;},start(options){sessions.push(options);options.onState({state:'recording'});return Promise.resolve();}};
+  const adapter={supported:()=>true,cancel(options){cancels++;cancellations.push(options?.keepMicrophone===true);},stop(){stops++;},start(options){sessions.push(options);options.onState({state:phase==='next-listen'&&sessions.length>1?'requesting':'recording'});return Promise.resolve();}};
   f.c.FQ.cloudSpeech={create(options){adapterOptions=options;return adapter;}};
   state.game=f.c.FQ.quiz.createGame({mode:'voice',only:['kr']});
   f.c.FQ.app.countryChain();
@@ -2184,9 +2201,10 @@ for(const destination of ['home','settings','dex','stats'])for(const phase of ['
   }else if(phase==='name-read'||phase==='next-listen'){
     microphone.onResult({text:'일본',playerId:'1',turnId:'1'});
     assert.equal(previous.snapshot().total,2);
-    assert.ok([...f.timers.values()].some(timer=>timer.delay===(phase==='name-read'?7000:300)));
+    if(phase==='name-read')assert.ok([...f.timers.values()].some(timer=>timer.delay===7000));
+    else {assert.equal(sessions.length,2,'고정 대기 없이 다음 차례를 준비한다');assert.ok(![...f.timers.values()].some(timer=>timer.delay===300));}
     assert.equal(f.node('#chain-mic').disabled,true);assert.equal(f.node('#chain-pause').hidden,false);
-    assert.match(f.node('#chain-mic').innerHTML,phase==='name-read'?/이름 읽는 중/:/듣기 준비 중/);
+    assert.match(f.node('#chain-mic').innerHTML,phase==='name-read'?/이름 읽는 중/:/마이크 준비 중/);
     const starts=sessions.length;f.clickDelegated('[data-chain-mic]',f.node('#chain-mic'));
     assert.equal(sessions.length,starts,'이름 읽기와 다음 듣기 대기 중에는 녹음을 새로 열지 않는다');
     assert.equal(cancellations.at(-1),true,'정상 답 뒤에는 다음 차례를 위해 마이크를 보관한다');

@@ -81,6 +81,9 @@
       session.preRoll = []; session.voiceBins = 0; session.quietBins = 0; session.vadFrame = 0; session.candidateFrame = null;
     }
     function release(session, keepMicrophone) {
+      // result 콜백에서 cancel이 동기 재진입해도 다음 차례에 보관한 마이크는 한 번만 해제한다.
+      if (session.released) return;
+      session.released = true;
       ['permissionTimer', 'handshakeTimer', 'resumeTimer', 'workletTimer', 'beepTimer', 'finalTimer'].forEach(function (key) { global.clearTimeout(session[key]); session[key] = null; });
       if (session.beepDone) session.beepDone();
       session.ready.resolve(false); session.cancelSignal.resolve(false);
@@ -231,22 +234,23 @@
     function beforeRecord(session) {
       return new Promise(function (resolve) {
         var completed = false;
-        function done() {
+        function done(success) {
           if (completed) return;
           completed = true;
           global.clearTimeout(session.beepTimer); session.beepTimer = null; session.beepDone = null;
           var cleanup = session.beepCleanup; session.beepCleanup = null;
           if (typeof cleanup === 'function') { try { cleanup(); } catch (failure) {} }
-          resolve();
+          resolve(success !== false);
         }
         session.beepDone = done;
         if (typeof opts.beforeRecord !== 'function') { done(); return; }
-        session.beepTimer = global.setTimeout(done, 500);
+        // 실제 준비음의 500ms 제한보다 길게 기다리되, 완료 없는 준비음을 성공으로 간주하지 않는다.
+        session.beepTimer = global.setTimeout(function () { done(false); }, 1000);
         try {
           var pending = opts.beforeRecord(done);
           if (typeof pending === 'function') { if (completed) pending(); else session.beepCleanup = pending; }
-          else if (pending && pending.then) pending.then(done, done);
-        } catch (failure) { done(); }
+          else if (pending && pending.then) pending.then(done, function () { done(false); });
+        } catch (failure) { done(false); }
       });
     }
     function sendPcm(session, pcm) {
@@ -331,9 +335,11 @@
         var prepared = await Promise.race([Promise.all([preparation, ready.promise, resumed]).then(function (values) { return values[0] && values[1]; }), cancelSignal.promise]);
         if (!prepared || !live(session)) return false;
         global.clearTimeout(session.permissionTimer); session.permissionTimer = null;
-        await beforeRecord(session); if (!live(session)) return false;
+        // 트랙은 음소거한 채 렌더 스레드를 먼저 준비한다. 비프 중 PCM은 ACK만 하고 버린다.
         session.microphone.node.port.onmessage = function (event) { pcm(session, event); };
         session.microphone.node.port.postMessage({ type: 'start', generation: session.generation });
+        var cued = await beforeRecord(session); if (!live(session)) return false;
+        if (!cued) { fail(session, 'recording', '준비음을 재생하지 못했어요. 소리를 허용한 뒤 다시 눌러 주세요.'); return false; }
         enableTracks(session.microphone.stream, true);
         state(session, 'recording');
         return live(session);

@@ -137,12 +137,18 @@
       pause.hidden = !continuous && !speaking;
       mic.setAttribute('aria-pressed', voiceState === 'recording' ? 'true' : 'false');
     }
+    function updateTurnHint(state) {
+      state = state || game.snapshot();
+      element('chain-turn').textContent = state.complete ? '모든 나라를 함께 찾았어요!' : state.currentPlayer + ' 차례예요. ' +
+        (continuous && voiceState !== 'recording' ? '준비 비프가 끝나면 나라 이름을 말해요.' : '나라 이름을 하나 말해요.');
+    }
     function setVoiceState(state, message) {
       if (!alive) return;
       voiceState = speaking ? 'speaking' : state === 'idle' && continuous ? 'waiting' : state;
       updateVoiceControls();
-      element('chain-voice-state').textContent = message || ({ requesting: '마이크를 켜고 있어요.', recording: '듣고 있어요. 나라 이름을 하나 말해요.',
-        waiting: '듣기를 이어갈 준비를 하고 있어요.', speaking: '나라 이름을 읽고 있어요. 다 읽으면 듣기를 이어가요.',
+      updateTurnHint();
+      element('chain-voice-state').textContent = message || ({ requesting: '마이크를 켜고 있어요. 준비 비프가 끝나면 말해요.', recording: '듣고 있어요. 나라 이름을 하나 말해요.',
+        waiting: '듣기를 준비하고 있어요. 준비 비프가 끝나면 말해요.', speaking: '나라 이름을 읽고 있어요. 다 읽고 준비 비프가 끝나면 말해요.',
         finishing: '녹음을 정리하고 있어요.', transcribing: '말한 나라 이름을 확인하고 있어요.',
         idle: '마이크를 누르고 나라 이름을 하나 말해요. 글로 써도 좋아요.' }[voiceState] || '');
     }
@@ -163,7 +169,7 @@
       element('chain-players').innerHTML = state.players.map(function (name, i) {
         return '<div class="chain-player chain-player--' + i + (state.playerIndex === i && !state.complete ? ' is-current' : '') + '"><span>' + esc(name) + '</span><strong>' + state.scores[i] + '<small>개</small></strong>' + (state.playerIndex === i && !state.complete ? '<span class="chain-player-turn">지금 차례</span>' : '') + '</div>';
       }).join('');
-      element('chain-turn').textContent = state.complete ? '모든 나라를 함께 찾았어요!' : state.currentPlayer + ' 차례예요. 나라 이름을 하나 말해요.';
+      updateTurnHint(state);
       element('chain-input').disabled = state.complete;
       updateVoiceControls();
       element('chain-history-title').textContent = '함께 찾은 나라 · ' + state.total + '개';
@@ -181,6 +187,7 @@
       var token = generation;
       if (!continuous || game.snapshot().complete) { setVoiceState('idle'); return; }
       setVoiceState('waiting');
+      if (!delay) { if (current(token)) beginListening(); return; }
       timer = global.setTimeout(function () { timer = null; if (current(token)) beginListening(); }, delay);
     }
     function voiceError(error, token) {
@@ -244,7 +251,7 @@
       } catch (error) { voiceError(error, token); }
     }
     function readName(country) {
-      if (!speak || !FQ.audio || !FQ.audio.say || FQ.audio.canSpeak && !FQ.audio.canSpeak()) { scheduleListening(300); return; }
+      if (!speak || !FQ.audio || !FQ.audio.say || FQ.audio.canSpeak && !FQ.audio.canSpeak()) { scheduleListening(0); return; }
       var token = generation, finished = false;
       speaking = true;
       setVoiceState('speaking');
@@ -254,7 +261,7 @@
         clearTimer();
         if (stopAudio) stopReading();
         else speaking = false;
-        scheduleListening(300);
+        scheduleListening(0);
       }
       function done() { finish(false); }
       // 읽기가 조용히 멈춰도 다음 사람의 마이크를 끝없이 기다리게 하지 않는다.

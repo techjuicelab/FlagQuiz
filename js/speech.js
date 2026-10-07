@@ -49,6 +49,7 @@
     var h = handlers || {};
     if (session) return true;
     if (blocked()) {
+      abort();
       if (h.error) h.error('unsupported', unavailableReason());
       return false;
     }
@@ -61,7 +62,7 @@
         csrfToken: function () { return FQ.auth && FQ.auth.csrfToken() || ''; },
         beforeRecord: function (done) {
           if (FQ.audio && FQ.audio.cueListening) return FQ.audio.cueListening(done);
-          done();
+          done(false);
         }
       });
       // 문제 제한시간은 화면에서 관리한다. 아이가 생각하는 무음만으로 말하기를 끄지 않는다.
@@ -101,15 +102,22 @@
     }
   }
   function stop() { if (session && engine) engine.stop(); }
-  function abort() {
+  function cancelSession(keepMicrophone) {
+    var hadSession = !!session;
     releaseVersion++;
     session = null;
-    if (engine) engine.cancel();
+    // 최종 결과 callback 안에서는 어댑터가 이미 마이크를 보관했다. 중복 해제로 오디오를 닫지 않는다.
+    if (engine && (!keepMicrophone || hadSession)) {
+      if (keepMicrophone) engine.cancel({ keepMicrophone: true });
+      else engine.cancel();
+    }
   }
+  function abort() { cancelSession(false); }
   /** 안내 음성은 업로드 없이 녹음을 취소한 뒤 재생한다. 다음 화면에서는 예약을 버린다. */
-  function stopAnd(callback) {
+  function stopAnd(callback, options) {
     var hadSession = !!session;
-    abort();
+    // 같은 게임의 다음 말하기 차례만 음소거한 마이크를 보관한다. 화면 이동은 abort로 해제한다.
+    cancelSession(!!options && options.keepMicrophone === true);
     var version = releaseVersion;
     global.setTimeout(function () { if (version === releaseVersion) callback(); }, hadSession && isApple() ? 350 : 0);
   }

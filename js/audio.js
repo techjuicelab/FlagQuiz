@@ -40,10 +40,10 @@
   }
 
   // 실제 마이크 준비 뒤에만 불린다. 비프 종료 전에는 녹음 표본을 받지 않는다.
-  function createListeningCue(getContext, isEnabled) {
+  function createListeningCue(getContext) {
     return function (onDone) {
-      var finished = false, timer = null, a = null, oscillator = null, gain = null;
-      function finish(notify, stopSound) {
+      var finished = false, timer = null, a = null, oscillator = null, gain = null, endsAt = null;
+      function finish(notify, stopSound, played) {
         if (finished) return;
         finished = true;
         if (timer !== null) global.clearTimeout(timer);
@@ -53,12 +53,12 @@
           try { oscillator.disconnect(); } catch (e) {}
         }
         if (gain) { try { gain.disconnect(); } catch (e) {} }
-        if (notify && typeof onDone === 'function') onDone();
+        if (notify && typeof onDone === 'function') onDone(played === true);
       }
       function cancel() { finish(false, true); }
       function playCue() {
         if (finished) return;
-        if (!isEnabled() || a.state !== 'running') { finish(true, true); return; }
+        if (a.state !== 'running') { finish(true, true); return; }
         try {
           var t = a.currentTime;
           oscillator = a.createOscillator();
@@ -66,21 +66,25 @@
           oscillator.type = 'sine';
           oscillator.frequency.setValueAtTime(880, t);
           gain.gain.setValueAtTime(0, t);
-          gain.gain.linearRampToValueAtTime(0.025, t + 0.005);
-          gain.gain.linearRampToValueAtTime(0, t + 0.045);
+          // 준비음은 효과음 설정과 별개로, 짧은 발화 앞에서도 들을 수 있게 낸다.
+          gain.gain.linearRampToValueAtTime(0.2, t + 0.008);
+          gain.gain.setValueAtTime(0.2, t + 0.09);
+          gain.gain.linearRampToValueAtTime(0, t + 0.12);
           oscillator.connect(gain);
           gain.connect(a.destination);
-          oscillator.onended = function () { finish(true, false); };
+          oscillator.onended = function () { finish(true, false, true); };
           oscillator.start(t);
-          oscillator.stop(t + 0.045);
+          endsAt = t + 0.12;
+          oscillator.stop(endsAt);
         } catch (e) { finish(true, true); }
       }
       try {
-        if (!isEnabled()) { finish(true, true); return cancel; }
         a = getContext();
         if (!a || a.state === 'closed') { finish(true, true); return cancel; }
-        // 재생 허가·종료 이벤트가 오지 않아도 듣기를 계속하고 늦은 비프를 막는다.
-        timer = global.setTimeout(function () { finish(true, true); }, 250);
+        // 종료 이벤트 누락 시 실제 오디오 시간이 지난 경우만 준비 완료로 알린다.
+        timer = global.setTimeout(function () {
+          finish(true, true, endsAt !== null && a.state === 'running' && a.currentTime >= endsAt);
+        }, 500);
         if (a.state !== 'running') {
           if (!a.resume) { finish(true, true); return cancel; }
           var resumed = a.resume();
@@ -91,7 +95,7 @@
       return cancel;
     };
   }
-  var cueListening = createListeningCue(ac, function () { return enabled; });
+  var cueListening = createListeningCue(ac);
 
   /**
    * 사용자가 화면을 처음 만질 때 소리를 깨운다.

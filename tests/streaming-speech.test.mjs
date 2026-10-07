@@ -9,18 +9,19 @@ function deferred() { let resolve, reject; const promise = new Promise((a, b) =>
 async function flush() { for (let i = 0; i < 30; i++) await Promise.resolve(); }
 function fixture(options = {}) {
   let now = 0, timerId = 0, csrf = 'session-csrf';
-  const timers = new Map(), sockets = [], streams = [], contexts = [], nodes = [], states = [], results = [], partials = [], errors = [];
+  const timers = new Map(), sockets = [], streams = [], contexts = [], nodes = [], states = [], results = [], partials = [], errors = [], timeline = [];
   function stream() {
     const listeners = new Set();
-    const track = { enabled: true, readyState: 'live', stops: 0, stop() { this.stops++; this.readyState = 'ended'; },
+    let enabled = true;
+    const track = { get enabled() { return enabled; }, set enabled(value) { enabled = value; timeline.push({ type: 'track', enabled, at: now }); }, readyState: 'live', stops: 0, stop() { this.stops++; this.readyState = 'ended'; },
       addEventListener(_, fn) { listeners.add(fn); }, removeEventListener(_, fn) { listeners.delete(fn); },
       end() { this.readyState = 'ended'; for (const fn of listeners) fn(); } };
     const value = { track, getTracks: () => [track] }; streams.push(value); return value;
   }
   class Audio {
     constructor() { this.state = 'running'; this.closed = 0; this.destination = {}; this.modules = [];
-      this.audioWorklet = { addModule: (url, config) => { this.modules.push({ url, config }); return options.module ? options.module.promise : Promise.resolve(); } }; contexts.push(this); }
-    resume() { this.resumes = (this.resumes || 0) + 1; return options.resume ? options.resume.promise : Promise.resolve(); }
+      this.audioWorklet = { addModule: (url, config) => { timeline.push({ type: 'module', at: now }); this.modules.push({ url, config }); return options.module ? options.module.promise : Promise.resolve(); } }; contexts.push(this); }
+    resume() { timeline.push({ type: 'resume', at: now }); this.resumes = (this.resumes || 0) + 1; return options.resume ? options.resume.promise : Promise.resolve(); }
     close() { this.state = 'closed'; this.closed++; return Promise.resolve(); }
     createMediaStreamSource() { return { connect() {}, disconnect() {} }; }
     createGain() { return { gain: { value: 1 }, connect() {}, disconnect() {} }; }
@@ -28,19 +29,26 @@ function fixture(options = {}) {
   if (!options.noAudioWorklet) Object.defineProperty(Audio.prototype, 'audioWorklet', { value: null, writable: true });
   class Worklet {
     constructor(audio, name, config) { this.audio = audio; this.name = name; this.config = config; this.commands = [];
-      this.port = { postMessage: value => this.commands.push(value), onmessage: null }; nodes.push(this); }
+      this.port = { postMessage: value => {
+        this.commands.push(value);
+        if (value.type === 'start') {
+          timeline.push({ type: 'worklet-start', at: now });
+          if (options.processingStartDelay) this.startTimer = window.setTimeout(() => { this.processingGeneration = value.generation; }, options.processingStartDelay);
+          else this.processingGeneration = value.generation;
+        } else if (value.type === 'stop') { window.clearTimeout(this.startTimer); this.processingGeneration = null; }
+      }, onmessage: null }; nodes.push(this); }
     connect() {} disconnect() {}
   }
   class Socket {
     static OPEN = 1;
-    constructor(url) { this.url = url; this.readyState = 0; this.bufferedAmount = 0; this.sent = []; this.closes = 0; sockets.push(this); }
+    constructor(url) { timeline.push({ type: 'socket', at: now }); this.url = url; this.readyState = 0; this.bufferedAmount = 0; this.sent = []; this.closes = 0; sockets.push(this); }
     send(value) { assert.equal(this.readyState, 1); this.sent.push(value); }
     open() { this.readyState = 1; this.onopen?.(); }
     message(value) { this.onmessage?.({ data: typeof value === 'string' ? value : JSON.stringify(value) }); }
     close() { this.closes++; this.readyState = 3; this.onclose?.(); }
   }
   class Clock extends Date { static now() { return now; } }
-  const window = { navigator: { mediaDevices: { getUserMedia: () => options.media ? options.media.promise : Promise.resolve(stream()) } },
+  const window = { navigator: { mediaDevices: { getUserMedia: () => { timeline.push({ type: 'getUserMedia', at: now }); return options.media ? options.media.promise : Promise.resolve(stream()); } } },
     location: { hostname: 'localhost', origin: 'http://localhost', href: 'http://localhost/play' }, isSecureContext: true,
     AudioContext: Audio, AudioWorkletNode: options.unsupported ? null : Worklet, WebSocket: Socket, URL,
     setTimeout(fn, delay) { const id = ++timerId; timers.set(id, { at: now + delay, fn }); return id; }, clearTimeout(id) { timers.delete(id); } };
@@ -71,10 +79,15 @@ function fixture(options = {}) {
     for (let i = 0; i < 320 * windows; i++) samples[i] = Math.round(amplitude * 32767) * (i % 2 ? 1 : -1);
     pcmSamples(samples, node, generation);
   }
+  function input(amplitude = 0.05) {
+    const node = nodes.at(-1), track = streams.at(-1)?.track;
+    if (!node || node.processingGeneration == null || !track?.enabled) return false;
+    pcm(amplitude, 5, node, node.processingGeneration); return true;
+  }
   const binary = () => sockets.flatMap(socket => socket.sent.filter(value => typeof value !== 'string'));
   const control = () => sockets.flatMap(socket => socket.sent.filter(value => typeof value === 'string').map(value => JSON.parse(value)));
-  return { window, adapter, handlers, ids, streams, contexts, sockets, nodes, states, results, partials, errors, timers,
-    start, pcm, pcmSamples, binary, control, advance, stream, setCsrf(value) { csrf = value; } };
+  return { window, adapter, handlers, ids, streams, contexts, sockets, nodes, states, results, partials, errors, timers, timeline,
+    start, pcm, pcmSamples, input, binary, control, advance, stream, now: () => now, setCsrf(value) { csrf = value; } };
 }
 
 test('인증 ready와 준비 비프가 끝나기 전에는 마이크와 PCM을 켜지 않는다', async () => {
@@ -94,6 +107,79 @@ test('인증 ready와 준비 비프가 끝나기 전에는 마이크와 PCM을 �
   assert.equal(f.contexts[0].modules[0].url, 'http://localhost/js/speech-pcm-worklet.js');
   assert.equal(f.contexts[0].modules[0].config.credentials, 'same-origin');
   f.adapter.dispose(); assert.equal(f.timers.size, 0);
+});
+
+test('늦은 마이크·worklet·resume·서버 준비 뒤에만 비프를 내고 종료 직후 첫 PCM을 보존한다', async () => {
+  const media = deferred(), module = deferred(), resume = deferred(), cues = [];
+  let cueDone;
+  const f = fixture({ media, module, resume, processingStartDelay: 100, beforeRecord(done) { cues.push(f.now()); cueDone = done; } });
+  const pending = f.adapter.start({ ...f.handlers(), continuous: true }); await flush();
+  f.advance(120); f.sockets[0].open(); f.sockets[0].message({ type: 'ready', ...f.ids }); await flush();
+  assert.deepEqual(cues, []);
+  f.advance(80); media.resolve(f.stream()); await flush(); assert.deepEqual(cues, []);
+  f.advance(150); module.resolve(); await flush(); assert.deepEqual(cues, []);
+  f.advance(50); resume.resolve(); await flush(); assert.deepEqual(cues, [400]);
+  assert.equal(f.streams[0].track.enabled, false); assert.equal(f.binary().length, 0);
+  f.advance(150); cueDone(true); await pending;
+  assert.equal(f.now(), 550, '비프 종료 뒤 별도 준비 대기를 더하지 않는다');
+  f.input(); assert.equal(f.binary().length, 1, '렌더 스레드 준비를 비프 이후로 미뤄 첫 100ms를 버리지 않는다');
+  assert.equal(new Int16Array(f.binary()[0])[0], -1638);
+  f.sockets[0].message({ type: 'result', text: '대한민국', ...f.ids });
+  assert.equal(f.streams[0].track.enabled, false); assert.equal(f.streams[0].track.stops, 0);
+  const next = f.adapter.start({ ...f.handlers(), continuous: true, turnId: 'next' }); await flush();
+  f.advance(200); f.sockets[1].open(); f.sockets[1].message({ type: 'ready', ...f.ids, turnId: 'next' }); await flush();
+  assert.deepEqual(cues, [400, 750]); assert.equal(f.streams[0].track.enabled, false);
+  f.advance(150); cueDone(true); await next; f.input();
+  assert.equal(f.now(), 900); assert.equal(f.binary().length, 2, '재사용한 다음 차례도 비프 직후 첫 발화를 받는다');
+  assert.equal(f.timeline.filter(value => value.type === 'getUserMedia').length, 1);
+  assert.equal(f.timeline.filter(value => value.type === 'module').length, 1);
+  assert.equal(f.contexts.length, 1); assert.equal(f.sockets.length, 2); f.adapter.dispose(); assert.equal(f.timers.size, 0);
+});
+
+test('비프 실패·거절·예외·미완료에서는 녹음을 켜지 않고 준비음 오류로 끝낸다', async () => {
+  for (const behavior of ['false', 'reject', 'throw', 'never']) {
+    let late;
+    const f = fixture({ beforeRecord(done) {
+      late = done;
+      if (behavior === 'false') done(false);
+      if (behavior === 'reject') return Promise.reject(new Error('cue rejected'));
+      if (behavior === 'throw') throw new Error('cue failed');
+    } });
+    const pending = f.adapter.start(f.handlers()); await flush();
+    f.sockets[0].open(); f.sockets[0].message({ type: 'ready', ...f.ids }); await flush();
+    f.advance(1000); await pending;
+    assert.equal(f.adapter.isRecording(), false, behavior + ': 준비음 없이 말하기를 켜지 않는다');
+    assert.equal(f.errors.length, 1); assert.equal(f.errors[0].code, 'recording'); assert.match(f.errors[0].message, /준비음/);
+    assert.equal(f.streams[0].track.stops, 1); assert.equal(f.binary().length, 0); assert.equal(f.timers.size, 0);
+    late(true); await flush(); assert.equal(f.adapter.isActive(), false); assert.equal(f.errors.length, 1);
+  }
+});
+
+test('긴 준비음은 완료를 기다리고 준비음 도중 취소는 늦은 완료 뒤에도 녹음을 켜지 않는다', async () => {
+  let done, cleanups = 0;
+  const f = fixture({ beforeRecord(callback) { done = callback; return () => { cleanups++; }; } });
+  const pending = f.adapter.start(f.handlers()); await flush(); f.sockets[0].open(); f.sockets[0].message({ type: 'ready', ...f.ids }); await flush();
+  f.advance(600); await flush(); assert.equal(f.adapter.isRecording(), false, '기존 500ms 타이머가 비프를 조기 종료하지 않는다');
+  done(true); await pending; assert.equal(f.adapter.isRecording(), true); assert.equal(cleanups, 1); f.adapter.dispose();
+  const cancelled = fixture({ beforeRecord(callback) { done = callback; return () => { cleanups++; }; } });
+  const waiting = cancelled.adapter.start(cancelled.handlers()); await flush(); cancelled.sockets[0].open(); cancelled.sockets[0].message({ type: 'ready', ...cancelled.ids }); await flush();
+  cancelled.adapter.cancel(); await waiting; done(true); await flush();
+  assert.equal(cleanups, 2); assert.equal(cancelled.adapter.isRecording(), false); assert.equal(cancelled.timers.size, 0);
+});
+
+test('비프 중 Worklet PCM은 ACK만 하고 버려 첫 발화나 유료 전송에 섞지 않는다', async () => {
+  for (const mode of ['voice', 'capitalVoice', 'country-chain']) {
+    let done;
+    const f = fixture({ mode, beforeRecord(callback) { done = callback; } });
+    const pending = f.adapter.start(f.handlers()); await flush(); f.sockets[0].open(); f.sockets[0].message({ type: 'ready', ...f.ids }); await flush();
+    assert.equal(f.nodes[0].commands.filter(value => value.type === 'start').length, 1);
+    for (let i = 0; i < 25; i++) f.pcm(0.1);
+    assert.equal(f.nodes[0].commands.filter(value => value.type === 'ack').length, 25);
+    assert.equal(f.streams[0].track.enabled, false); assert.equal(f.binary().length, 0); assert.equal(f.errors.length, 0);
+    done(true); await pending; f.pcm(0.006);
+    assert.equal(f.binary().length, 1, '비프 중 표본을 pre-roll에도 넣지 않는다');
+    assert.equal(new Int16Array(f.binary()[0])[0], -197); f.adapter.dispose(); assert.equal(f.timers.size, 0);
+  }
 });
 
 test('생각 무음과 40ms 클릭은 전송 0이며 100ms 발화부터 400ms pre-roll을 실시간 전송한다', async () => {
@@ -292,6 +378,19 @@ test('cancel·이전 차례·늦은 권한 응답은 새 차례에 결과나 녹
   assert.equal(late.contexts[0].closed, 1, '권한 대화상자가 남아 있어도 AudioContext는 즉시 해제한다');
   const lateStream = late.stream(); permission.resolve(lateStream); await pending; await flush();
   assert.equal(lateStream.track.stops, 1); assert.equal(late.results.length, 0); assert.equal(late.timers.size, 0);
+});
+
+test('result 콜백의 동기 cancel은 보관한 AudioContext를 다시 닫지 않아 다음 차례에 그대로 재사용한다', async () => {
+  const f = fixture();
+  await f.start({ continuous: true, onResult(value) { f.results.push(value); f.adapter.cancel({ keepMicrophone: true }); } });
+  f.pcm(); f.sockets[0].message({ type: 'result', text: '대한민국', ...f.ids });
+  assert.equal(f.results.length, 1); assert.equal(f.adapter.isActive(), false);
+  assert.equal(f.contexts[0].state, 'running', '결과 처리 중 재진입한 cancel이 보관한 context를 닫지 않는다');
+  assert.equal(f.contexts[0].closed, 0); assert.equal(f.streams[0].track.enabled, false); assert.equal(f.streams[0].track.stops, 0);
+  await f.start({ continuous: true, turnId: 'next' }); f.pcm();
+  assert.equal(f.contexts.length, 1); assert.equal(f.streams.length, 1); assert.equal(f.contexts[0].modules.length, 1);
+  assert.equal(f.binary().length, 2); assert.equal(f.errors.length, 0);
+  f.adapter.dispose(); assert.equal(f.contexts[0].closed, 1); assert.equal(f.streams[0].track.stops, 1); assert.equal(f.timers.size, 0);
 });
 
 test('AudioWorklet 미지원은 마이크를 열기 전에 판별하고 resume 지연·실패·재사용을 처리한다', async () => {

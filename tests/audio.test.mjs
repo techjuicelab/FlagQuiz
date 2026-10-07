@@ -119,7 +119,7 @@ function listeningCueFixture(options = {}) {
   return { ...f, contexts, oscillators, gains, resolveResume: () => resolveResume(), rejectResume: () => rejectResume(new Error('private audio detail')) };
 }
 
-test('녹음 준비 비프는 두 오디오 엔진에서 45ms 작게 재생하고 실제 종료 후에만 완료된다', () => {
+test('녹음 준비 비프는 두 오디오 엔진에서 뚜렷하게 재생하고 실제 종료 후에만 완료된다', () => {
   for (const recorded of [false, true]) {
     const f = listeningCueFixture({ recorded }); let ended = 0;
     f.audio.cueListening(() => ended++);
@@ -127,8 +127,8 @@ test('녹음 준비 비프는 두 오디오 엔진에서 45ms 작게 재생하�
     const beep = f.oscillators[0];
     assert.equal(beep.type, 'sine');
     assert.equal(beep.frequencyValue, 880);
-    assert.ok(Math.abs(beep.stops[0] - beep.startedAt - 0.045) < 0.000001);
-    assert.ok(Math.max(...f.gains[0].values.map(entry => entry.value)) <= 0.03);
+    assert.ok(Math.abs(beep.stops[0] - beep.startedAt - 0.12) < 0.000001);
+    assert.equal(Math.max(...f.gains[0].values.map(entry => entry.value)), 0.2);
     assert.equal(ended, 0, '비프가 끝나기 전에 마이크 표본을 받지 않는다');
     const lateEnd = beep.onended; lateEnd(); lateEnd(); f.advance(1000);
     assert.equal(ended, 1); assert.equal(beep.disconnected, true); assert.equal(f.gains[0].disconnected, true);
@@ -136,34 +136,41 @@ test('녹음 준비 비프는 두 오디오 엔진에서 45ms 작게 재생하�
   }
 });
 
-test('소리 OFF와 Web Audio 미지원은 준비 비프 없이 즉시 녹음을 계속한다', () => {
+test('효과음 OFF여도 마이크 준비 비프는 반드시 재생한다', () => {
   for (const recorded of [false, true]) {
     const f = listeningCueFixture({ recorded }); let ended = 0;
     f.audio.setEnabled(false); f.audio.cueListening(() => ended++);
-    assert.equal(ended, 1); assert.equal(f.contexts.length, 0); assert.equal(f.timers.size, 0);
+    assert.equal(ended, 0); assert.equal(f.oscillators.length, 1);
+    f.oscillators[0].onended();
+    assert.equal(ended, 1); assert.equal(f.timers.size, 0);
   }
+});
+
+test('Web Audio 미지원은 준비 비프 실패를 알린다', () => {
   const unsupported = setup({ ready: false, legacy: true }); let ended = 0;
-  unsupported.audio.cueListening(() => ended++);
+  unsupported.audio.cueListening(played => { assert.equal(played, false); ended++; });
   assert.equal(ended, 1); assert.equal(unsupported.timers.size, 0);
 });
 
-test('준비 비프의 재생 실패·종료 누락은 한 번만 완료하여 마이크를 막지 않는다', async () => {
+test('준비 비프의 재생 실패·종료 누락은 한 번만 실패를 알린다', async () => {
   for (const options of [{ oscillatorThrows: true }, { suspended: true, resumeThrows: true }]) {
     const throwing = listeningCueFixture(options); let throwsDone = 0;
-    throwing.audio.cueListening(() => throwsDone++); assert.equal(throwsDone, 1); assert.equal(throwing.timers.size, 0);
+    const results = [];
+    throwing.audio.cueListening(played => { results.push(played); throwsDone++; });
+    assert.deepEqual(results, [false]); assert.equal(throwsDone, 1); assert.equal(throwing.timers.size, 0);
   }
   const rejected = listeningCueFixture({ suspended: true }); let rejectedDone = 0;
   rejected.audio.cueListening(() => rejectedDone++); rejected.rejectResume(); await flush();
   assert.equal(rejectedDone, 1); assert.equal(rejected.oscillators.length, 0); assert.equal(rejected.timers.size, 0);
   const missingEnd = listeningCueFixture(); let missingDone = 0;
   missingEnd.audio.cueListening(() => missingDone++); const lateEnd = missingEnd.oscillators[0].onended;
-  missingEnd.advance(250); lateEnd(); assert.equal(missingDone, 1); assert.equal(missingEnd.oscillators[0].stops.length, 2);
+  missingEnd.advance(500); lateEnd(); assert.equal(missingDone, 1); assert.equal(missingEnd.oscillators[0].stops.length, 2);
   assert.equal(missingEnd.timers.size, 0);
 });
 
 test('재생 허가가 늦게 끝나거나 준비 비프를 취소해도 새 화면에 늦은 소리를 내지 않는다', async () => {
   const pending = listeningCueFixture({ suspended: true }); let pendingDone = 0;
-  pending.audio.cueListening(() => pendingDone++); pending.advance(250); pending.resolveResume(); await flush();
+  pending.audio.cueListening(() => pendingDone++); pending.advance(500); pending.resolveResume(); await flush();
   assert.equal(pendingDone, 1); assert.equal(pending.oscillators.length, 0);
   const canceled = listeningCueFixture({ suspended: true }); let canceledDone = 0;
   const cancel = canceled.audio.cueListening(() => canceledDone++); cancel(); canceled.resolveResume(); await flush(); canceled.advance(1000);
@@ -172,6 +179,14 @@ test('재생 허가가 늦게 끝나거나 준비 비프를 취소해도 새 화
   const stop = playing.audio.cueListening(() => playingDone++); const lateEnd = playing.oscillators[0].onended;
   stop(); lateEnd(); playing.advance(1000);
   assert.equal(playingDone, 0); assert.equal(playing.oscillators[0].disconnected, true); assert.equal(playing.timers.size, 0);
+});
+
+test('종료 이벤트가 없어도 실제 비프 재생 시간이 지나면 준비 완료를 한 번 알린다', () => {
+  const f = listeningCueFixture(); const results = [];
+  f.audio.cueListening(played => results.push(played));
+  f.contexts[0].currentTime = 5.13;
+  f.advance(500);
+  assert.deepEqual(results, [true]); assert.equal(f.timers.size, 0);
 });
 
 // play()의 Promise와 미디어 이벤트는 다른 순서로 도착할 수 있다.

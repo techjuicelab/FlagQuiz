@@ -31,8 +31,8 @@
     try { ctx = new C(); } catch (e) { ctx = null; }
     return ctx;
   }
-  var cueListening = createListeningCue ? createListeningCue(ac, function () { return enabled; }) :
-    function (onDone) { if (typeof onDone === 'function') onDone(); };
+  var cueListening = createListeningCue ? createListeningCue(ac) :
+    function (onDone) { if (typeof onDone === 'function') onDone(false); };
 
   /**
    * 사용자가 화면을 처음 만질 때 소리를 깨운다.
