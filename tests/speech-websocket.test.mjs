@@ -88,6 +88,77 @@ test('인증된 start만 ready와 공유 슬롯을 얻고 아직 유료 호출�
   c.send({ type: 'cancel' }); await c.closed(); assert.equal(f.releases, 1); assert.equal(f.active, 0);
 });
 
+test('음.. 뒤 같은 소켓에서 유효한 나라를 기다리며 채점과 quota는 한 번만 한다', async t => {
+  const f = await fixture(t, { resolveFinal: async () => ({ status: 'retry', reason: 'unknown' }) });
+  const c = await f.open({ startValue: { mode: 'country-chain' } }), provider = await f.voice(c);
+  provider.emit(value('음.', { boundary: 'end' }));
+  await c.wait('listening');
+  assert.equal(provider.closes, 0); assert.equal(f.quotas, 1);
+  assert.equal(c.packets.some(packet => ['result', 'finishing', 'error'].includes(packet.type)), false);
+  c.ws.send(pcm()); await drain(c.ws); assert.equal(provider.writes.length, 2);
+  provider.emit(value('대한민국')); const result = await c.wait('result'); await c.closed();
+  assert.equal(result.resolution.code, 'kr'); assert.equal(provider.closes, 1);
+  assert.equal(f.quotas, 1); assert.equal(c.packets.filter(packet => packet.type === 'result').length, 1);
+});
+
+test('불인식된 12초 창은 자동으로 무료 대기로 돌아가고 다음 발화만 새로 예약한다', async t => {
+  const f = await fixture(t, { resolveFinal: async () => ({ status: 'retry', reason: 'unknown' }) });
+  const c = await f.open(), old = await f.voice(c);
+  c.send({ type: 'finish' }); await until(() => old.finalizes === 1);
+  old.emit(value('음.', { boundary: 'fin' }));
+  const listening = await c.wait('listening');
+  assert.equal(listening.resetAudio, true); assert.equal(listening.window, 2);
+  assert.equal(old.closes, 1); assert.equal(f.quotas, 1); assert.equal(f.providers.length, 1);
+  old.emit(value('대한민국')); old.fail(error('speech_failed')); await drain(c.ws);
+  assert.equal(c.packets.some(packet => ['error', 'result'].includes(packet.type)), false);
+  const next = await f.voice(c); assert.equal(f.quotas, 2);
+  next.emit(value('대한민국')); await c.wait('result'); await c.closed();
+  assert.equal(f.releases, 1); assert.equal(next.closes, 1);
+});
+
+test('빈 endpoint는 계속 듣고 빈 finalize는 새 창에서 계속 듣는다', async t => {
+  const f = await fixture(t), c = await f.open(), provider = await f.voice(c);
+  provider.emit(value('', { boundary: 'end' }));
+  const same = await c.wait('listening', packet => !packet.resetAudio);
+  assert.equal(same.reason, 'no-speech'); assert.equal(provider.closes, 0);
+  c.send({ type: 'finish' }); await until(() => provider.finalizes === 1);
+  provider.emit(value('', { boundary: 'fin' }));
+  await c.wait('listening', packet => packet.resetAudio);
+  assert.equal(f.quotas, 1); assert.equal(f.finalCalls.length, 0);
+  c.send({ type: 'cancel' }); await c.closed();
+  provider.emit(value('대한민국')); assert.equal(c.packets.some(packet => packet.type === 'result'), false);
+});
+
+test('망설임 해석 대기 중 다음 확정 이름이 오면 늦은 retry로 덮어쓰지 않는다', async t => {
+  const f = await fixture(t), gate = deferred(); f.finalGate = gate;
+  const c = await f.open(), provider = await f.voice(c);
+  provider.emit(value('음.', { boundary: 'end' })); await until(() => f.finalCalls.length === 1);
+  provider.emit(value('대한민국')); await c.wait('result'); await c.closed();
+  gate.resolve({ status: 'retry' }); await new Promise(setImmediate);
+  assert.equal(c.packets.filter(packet => packet.type === 'result').length, 1);
+  assert.equal(c.packets.some(packet => packet.type === 'listening'), false); assert.equal(f.quotas, 1);
+});
+
+test('이전 망설임 해석의 늦은 실패는 새 확정 이름의 인증 대기를 취소하지 않는다', async t => {
+  const f = await fixture(t), old = deferred(), auth = deferred(); f.finalGate = old;
+  const c = await f.open(), provider = await f.voice(c);
+  provider.emit(value('음.', { boundary: 'end' })); await until(() => f.finalCalls.length === 1);
+  f.hooks.getSession = async () => auth.promise;
+  provider.emit(value('대한민국')); await c.wait('finishing');
+  old.reject(error('speech_failed')); await new Promise(resolve => realTimeout(resolve, 20));
+  assert.equal(c.packets.some(packet => packet.type === 'error'), false);
+  auth.resolve(f.session); await c.wait('result'); await c.closed();
+  assert.equal(c.packets.filter(packet => packet.type === 'result').length, 1);
+});
+
+test('프레임 중간에 확인한 100ms 발화는 뒤의 90ms 쉼으로 유실하지 않는다', async t => {
+  const f = await fixture(t), c = await f.open();
+  c.ws.send(Buffer.concat([pcm(90), pcm(10, 0)]));
+  c.ws.send(Buffer.concat([pcm(10), pcm(90, 0)]));
+  await until(() => f.providers.length === 1);
+  assert.equal(f.quotas, 1); c.send({ type: 'cancel' }); await c.closed();
+});
+
 test('나라·수도·이어 말하기는 고정 무음 대기 없이 불변 이름에서 즉시 완성한다', async t => {
   const f = await fixture(t);
   for (const mode of ['voice', 'capitalVoice', 'country-chain']) {
@@ -140,8 +211,10 @@ test('무음과 멀리 떨어진 40ms click은 합쳐서 사용량을 예약하�
   for (let index = 0; index < 3; index++) { c.ws.send(pcm(40)); c.ws.send(pcm(100, 0)); }
   c.ws.send(pcm(100, 1)); await drain(c.ws);
   assert.equal(f.quotas, 0); assert.equal(f.providers.length, 0);
-  c.send({ type: 'finish' }); assert.equal((await c.wait('error')).code, 'no-speech'); await c.closed();
-  assert.equal(f.releases, 1);
+  c.send({ type: 'finish' }); const listening = await c.wait('listening');
+  assert.equal(listening.reason, 'no-speech'); assert.equal(listening.resetAudio, true);
+  assert.equal(f.releases, 0); assert.equal(f.quotas, 0);
+  c.send({ type: 'cancel' }); await c.closed(); assert.equal(f.releases, 1);
 });
 
 test('발화 bin은 frame 경계를 보존하며 80ms 단어 안 쉼을 허용한다', async t => {
@@ -221,8 +294,8 @@ test('유료 연결 전 최신 권한을 재검사하며 변경·회수된 세�
 test('최종 선택 시작·전송 전 권한을 다시 확인하고 회수 뒤 결과를 보내지 않는다', async t => {
   const f = await fixture(t); f.finalGate = deferred();
   const c = await f.open(), provider = await f.voice(c); provider.emit(value('프랑스', { boundary: 'end' }));
-  await c.wait('finishing'); await until(() => f.finalCalls.length === 1);
-  assert.equal(provider.closes, 1); f.session = null; f.finalGate.resolve(answer('fr', '프랑스'));
+  await until(() => f.finalCalls.length === 1);
+  assert.equal(provider.closes, 0); f.session = null; f.finalGate.resolve(answer('fr', '프랑스'));
   assert.equal((await c.wait('error')).code, 'auth-required'); await c.closed();
   assert.equal(c.packets.some(packet => packet.type === 'result'), false); assert.equal(f.releases, 1);
 });
@@ -253,7 +326,7 @@ test('provider 준비 중 close와 최종 선택 중 cancel은 슬롯을 한 번
   assert.equal(first.packets.some(packet => packet.type === 'result'), false); assert.equal(pending.closes, 1);
   f.providerReady = null; f.finalGate = deferred();
   const second = await f.open(), provider = await f.voice(second); provider.emit(value('프랑스', { boundary: 'end' }));
-  await second.wait('finishing'); await until(() => f.finalCalls.length === 1);
+  await until(() => f.finalCalls.length === 1);
   second.send({ type: 'cancel' }); await second.closed();
   assert.equal(f.finalCalls[0].signal.aborted, true); f.finalGate.resolve(answer('fr', '프랑스'));
   provider.emit(value('대한민국')); await new Promise(setImmediate);
@@ -284,10 +357,10 @@ test('공급자 준비 전 PCM queue 64KiB와 실제 PCM 12초 상한을 강제�
 
 test('빈 완료·부정확한 provider callback은 결과 대신 안전한 오류로 종료한다', async t => {
   const f = await fixture(t);
-  for (const result of [value('', { boundary: 'end' }), value('미국', { hasNonFinal: true, boundary: 'end' }), value('가'.repeat(501))]) {
+  for (const result of [value('미국', { hasNonFinal: true, boundary: 'end' }), value('가'.repeat(501))]) {
     const c = await f.open(), provider = await f.voice(c); provider.emit(result);
     const packet = await c.wait('error'); await c.closed();
-    assert.equal(packet.code, result.text === '' ? 'no-speech' : 'service');
+    assert.equal(packet.code, 'service');
     assert.equal(c.packets.some(packet => packet.type === 'result'), false);
   }
   assert.equal(f.finalCalls.length, 0);
@@ -339,7 +412,9 @@ test('시작 5초·무음 60초·유료 20초 timeout은 유료 호출·슬롯�
   t.mock.timers.enable({ apis: ['setTimeout'] });
   const f = await fixture(t), before = await f.open({ start: false });
   t.mock.timers.tick(5001); assert.equal((await before.wait('error')).code, 'timeout'); await before.closed();
-  const silent = await f.open(); t.mock.timers.tick(60001); assert.equal((await silent.wait('error')).code, 'no-speech'); await silent.closed();
+  const silent = await f.open(); t.mock.timers.tick(60001);
+  assert.equal((await silent.wait('listening')).reason, 'no-speech');
+  silent.send({ type: 'cancel' }); await silent.closed();
   assert.equal(f.quotas, 0);
   const paid = await f.open(), provider = await f.voice(paid); t.mock.timers.tick(20001);
   assert.equal((await paid.wait('error')).code, 'timeout'); await paid.closed();

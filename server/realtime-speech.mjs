@@ -96,8 +96,8 @@ export function createRealtimeTranscriber({ apiKey = process.env.SONIOX_API_KEY,
         }
         if (token.text === '<end>' || token.text === '<fin>') {
           if (!token.is_final) { fail(failed()); return; }
-          // 자동 endpoint와 수동 finalize가 경합해도 완료는 한 번만 전달한다.
-          boundary ||= token.text === '<end>' ? 'end' : 'fin';
+          // finalize는 음성 창을 닫고 endpoint는 발화 구간만 나눈다.
+          if (token.text === '<fin>' || !boundary) boundary = token.text === '<end>' ? 'end' : 'fin';
           continue;
         }
         // 완료 경계 뒤에 이어 붙은 텍스트를 같은 차례의 답으로 받아들이지 않는다.
@@ -107,12 +107,12 @@ export function createRealtimeTranscriber({ apiKey = process.env.SONIOX_API_KEY,
         if (nextFinal.length + nonFinal.length > MAX_TEXT_LENGTH) { fail(failed()); return; }
       }
       if ((boundary || result.finished) && hasNonFinal) { fail(failed()); return; }
-      finalText = nextFinal;
-      try { onTranscript({ text: (finalText + nonFinal).trim(), finalText: finalText.trim(), hasNonFinal,
+      finalText = boundary ? '' : nextFinal;
+      try { onTranscript({ text: (nextFinal + nonFinal).trim(), finalText: nextFinal.trim(), hasNonFinal,
         boundary, finished: result.finished === true }); }
       catch { fail(failed()); return; }
-      // 한 연결은 한 차례만 처리한다. 중복 경계와 늦은 메시지는 추가 결과를 만들지 않는다.
-      if (!terminal && (boundary || result.finished)) { terminal = true; opened = false; dispose(); }
+      // 망설임을 포함한 endpoint 뒤에도 같은 연결에서 다음 발화를 받는다.
+      if (!terminal && (boundary === 'fin' || result.finished)) { terminal = true; opened = false; dispose(); }
     }
 
     const connection = {

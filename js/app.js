@@ -1508,7 +1508,7 @@
     }
   }
 
-  /** 문제가 뜨면 한 번 녹음한다. 실패·미인식은 아이가 마이크를 눌러 다시 시도한다. */
+  /** 답을 고르지 못한 발화 뒤에는 같은 문제에서 이어 듣고, 연결 오류 뒤에는 수동 재시도를 기다린다. */
   function startListening() {
     if (state.answered || !state.listenOn || doc.hidden || !state.game) return;
     var game = state.game;
@@ -1540,6 +1540,29 @@
       mic.classList.remove('listening');
       mic.setAttribute('aria-pressed', 'false');
       mic.setAttribute('aria-label', '마이크 다시 시도하기');
+    }
+    function listenAgain() {
+      // 결과 뒤따라 오는 이전 차례의 end가 새 듣기 예약을 끄지 않도록 먼저 차례를 바꾼다.
+      var retryAttempt = ++state.speechAttempt;
+      pauseSpeechTimer(true);
+      mic.classList.remove('listening');
+      mic.setAttribute('aria-pressed', 'false');
+      mic.setAttribute('aria-label', '듣기 멈추기');
+      setListenState('계속 들을 준비를 하고 있어요…', '');
+      if (tip) tip.textContent = what + '을 하나만 편하게 말해 주세요. 마이크를 다시 누르지 않아도 돼요.';
+      if (state.listenTimer) global.clearTimeout(state.listenTimer);
+      state.listenTimer = global.setTimeout(function () {
+        state.listenTimer = null;
+        if (state.game !== game || game.current() !== question || retryAttempt !== state.speechAttempt ||
+            generation !== state.feedbackGeneration || state.answered || !state.listenOn || doc.hidden) return;
+        if (FQ.speech.blocked && FQ.speech.blocked()) {
+          readyToRetry();
+          setListenState('지금은 말하기가 어려워요. 글자로 답해 주세요.', 'off');
+          openTypeFallback();
+          return;
+        }
+        startListening();
+      }, 300);
     }
     pauseSpeechTimer(true);
     var requested = FQ.speech.start({
@@ -1576,9 +1599,7 @@
         // 최종 전사의 선택 의사를 먼저 찾고, 그 답 하나만 기존 채점기로 판정한다.
         var hit = interpret(alts[0], metadata && metadata.resolution);
         if (actOn(hit, alts[0])) return;
-        readyToRetry();
-        setListenState('답을 하나만 다시 말해 주세요.', 'off');
-        openTypeFallback('아직 답을 고르지 못했어요. 마이크를 눌러 ' + what + '을 하나만 말하거나 글자로 답해 주세요.');
+        listenAgain();
       },
       error: function (code, message) {
         if (!current()) return;

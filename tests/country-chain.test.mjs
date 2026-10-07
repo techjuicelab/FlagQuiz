@@ -195,7 +195,7 @@ test('나라 이름 읽기 중 연속 듣기의 시작 버튼을 누를 수 없�
   f.spoken[0].opts.onEnd(); f.runTimer(300); assert.equal(f.sessions.length, 2);
 });
 
-test('중복·모호·미확인 답변 뒤에는 마이크를 닫고 같은 차례의 명시적 다시 시도만 표시한다', () => {
+test('음성 미확인·모호함은 같은 차례를 계속 듣고 글 입력 오류·중복 나라는 수동 재시도를 남긴다', () => {
   for (const text of ['대한민국', '일본 미국', '달나라']) for (const input of ['typed', 'voice']) {
     const f = fixture(), screen = f.c.FQ.countryChain.start({ voice: f.voice, speak: false });
     f.click('#chain-mic'); f.sessions[0].onResult({ text: '한국' }); f.runTimer(300);
@@ -204,15 +204,17 @@ test('중복·모호·미확인 답변 뒤에는 마이크를 닫고 같은 차�
     if (input === 'typed') f.type(text);
     else session.onResult({ text, playerId: '1', turnId: '1' });
     assert.equal(JSON.stringify(screen.snapshot()), before, text + ' ' + input);
-    assert.equal(f.timers.size, 0, '판정이 불명확한 발화는 자동 유료 재시도를 예약하지 않는다');
     assert.equal(f.sessions.length, 2);
-    assert.equal(f.cancellations.at(-1), false, text + ' ' + input + ' 뒤 보관한 마이크도 닫아야 한다');
-    assert.equal(f.node('#chain-mic').disabled, false, text + ' ' + input + ' 뒤 직접 다시 말할 수 있어야 한다');
-    assert.match(f.node('#chain-mic').innerHTML, /말하기 시작/);
-    assert.equal(f.node('#chain-pause').hidden, true, '중단한 듣기의 멈춤 버튼을 남기지 않는다');
+    const resume = input === 'voice' && text !== '대한민국';
+    assert.equal(f.timers.size, resume ? 1 : 0);
+    assert.equal(f.cancellations.at(-1), resume, text + ' ' + input + ' 마이크 보관 정책');
+    assert.equal(f.node('#chain-mic').disabled, resume);
+    assert.match(f.node('#chain-mic').innerHTML, resume ? /듣기 준비 중/ : /말하기 시작/);
+    assert.equal(f.node('#chain-pause').hidden, !resume);
     session.onState({ state: 'recording' }); session.onResult({ text: '일본' });
     assert.equal(JSON.stringify(screen.snapshot()), before, '이전 발화의 늦은 결과는 받지 않는다');
-    f.click('#chain-mic'); assert.equal(f.sessions.length, 3); assert.equal(f.sessions[2].playerId, 1);
+    if (resume) f.runTimer(300); else f.click('#chain-mic');
+    assert.equal(f.sessions.length, 3); assert.equal(f.sessions[2].playerId, 1);
     assert.equal(f.sessions[2].turnId, 1);
   }
 });
@@ -277,15 +279,17 @@ test('마지막 나라를 받으면 보관 마이크를 닫고 마지막 읽기 
   assert.equal(f.timers.size, 0); assert.equal(f.sessions.length, 1); assert.equal(f.node('#chain-pause').hidden, true);
 });
 
-test('중복·미확인·모호한 음성은 같은 차례와 목록을 유지하고 수동 재시도를 기다린다', () => {
+test('유효나라 중복은 수동 재시도하고 미확인·모호한 음성은 같은 차례와 목록을 유지해 듣는다', () => {
   for (const text of ['대한민국', '달나라', '일본 미국']) {
     const f = fixture(), screen = f.c.FQ.countryChain.start({ voice: f.voice, speak: false });
     f.click('#chain-mic'); f.sessions[0].onResult({ text: '한국' }); f.runTimer(300);
     f.sessions.at(-1).onResult({ text });
     assert.equal(screen.snapshot().total, 1); assert.equal(screen.snapshot().playerIndex, 1);
-    assert.ok(f.node('#chain-feedback').classes.has('is-warning')); assert.equal(f.timers.size, 0);
-    assert.equal(f.sessions.length, 2, '알 수 없는 말에 자동 녹음을 반복하지 않는다');
-    f.click('#chain-mic'); assert.equal(f.sessions.length, 3); assert.equal(f.sessions.at(-1).playerId, 1);
+    assert.ok(f.node('#chain-feedback').classes.has('is-warning'));
+    assert.equal(f.timers.size, text === '대한민국' ? 0 : 1);
+    assert.equal(f.sessions.length, 2, '현재 발화의 결과에서 새 유료 요청을 즉시 보내지 않는다');
+    if (text === '대한민국') f.click('#chain-mic'); else f.runTimer(300);
+    assert.equal(f.sessions.length, 3); assert.equal(f.sessions.at(-1).playerId, 1);
   }
 });
 
@@ -409,9 +413,9 @@ test('부정·질문·인용·후보 미선택·지시 주입·포기 인용은 
     f.type(raw); assert.equal(JSON.stringify(screen.snapshot()), before, raw + ' 글 입력');
     f.click('#chain-mic'); const session = f.sessions[0]; session.onState({ state: 'transcribing' });
     session.onResult({ text: raw, playerId: '1', turnId: '1' });
-    assert.equal(JSON.stringify(screen.snapshot()), before, raw + ' STT'); assert.equal(f.timers.size, 0);
-    assert.equal(f.sessions.length, 1); assert.equal(f.node('#chain-pause').hidden, true);
-    f.click('#chain-mic'); assert.equal(f.sessions.length, 2); assert.equal(f.sessions[1].playerId, 1);
+    assert.equal(JSON.stringify(screen.snapshot()), before, raw + ' STT'); assert.equal(f.timers.size, 1);
+    assert.equal(f.sessions.length, 1); assert.equal(f.node('#chain-pause').hidden, false);
+    f.runTimer(300); assert.equal(f.sessions.length, 2); assert.equal(f.sessions[1].playerId, 1);
     f.sessions[1].onResult({ text: '대한민국', playerId: '1', turnId: '1' });
     assert.equal(screen.snapshot().total, 2); assert.equal(screen.snapshot().playerIndex, 0);
     session.onResult({ text: '포르투갈' }); assert.equal(screen.snapshot().total, 2, '재시도 뒤 이전 후보를 적용하지 않는다');
@@ -422,8 +426,8 @@ test('Jev 후보를 받은 나라 이어 말하기도 발화에 등장하지 않
   const f = fixture(), screen = f.c.FQ.countryChain.start({ voice: f.voice, speak: false });
   f.click('#chain-mic'); f.sessions[0].onResult({ text: '포르투갈 아니면 스페인',
     resolution: { source: 'jev', status: 'answer', code: 'br', text: '브라질', reason: 'final-selection' } });
-  assert.equal(screen.snapshot().total, 0); assert.equal(screen.snapshot().playerIndex, 0); assert.equal(f.timers.size, 0);
-  f.click('#chain-mic'); f.sessions[1].onResult({ text: '스페인은 처음에 떠올랐던 거고 포르투갈 쪽으로 할래',
+  assert.equal(screen.snapshot().total, 0); assert.equal(screen.snapshot().playerIndex, 0); assert.equal(f.timers.size, 1);
+  f.runTimer(300); f.sessions[1].onResult({ text: '스페인은 처음에 떠올랐던 거고 포르투갈 쪽으로 할래',
     resolution: { source: 'jev', status: 'answer', code: 'pt', text: '포르투갈', reason: 'final-selection' } });
   assert.equal(screen.snapshot().total, 1); assert.equal(screen.snapshot().countries[0].code, 'pt');
 });
@@ -452,4 +456,78 @@ test('나라 이어 말하기는 부분 전사를 표시만 하고 확정된 문
   f.runTimer(300); assert.equal(f.node('#chain-heard').textContent, '');
   screen.cleanup(); f.sessions[1].onPartial({ text: '종료된 화면' });
   assert.equal(f.node('#chain-heard').textContent, '');
+});
+
+test('필러 결과 음.·음.. 뒤 같은 차례에서 마이크를 다시 누르지 않고 나라 이름을 계속 듣는다', () => {
+  for (const raw of ['음.', '음..']) {
+    const f = fixture(), screen = f.c.FQ.countryChain.start({ voice: f.voice, speak: false });
+    f.click('#chain-mic'); const first = f.sessions[0], before = JSON.stringify(screen.snapshot());
+    first.onResult({ text: raw, playerId: '0', turnId: '0', mode: 'country-chain',
+      resolution: { status: 'retry', source: 'rules', reason: 'unknown', code: null, text: '' } });
+    assert.equal(JSON.stringify(screen.snapshot()), before);
+    assert.equal(f.node('#chain-heard').textContent, raw);
+    assert.equal(f.node('#chain-pause').hidden, false, '필러 때문에 연속 듣기가 꺼지면 안 된다');
+    assert.doesNotMatch(f.node('#chain-mic').innerHTML, /말하기 시작/);
+    f.runTimer(300);
+    assert.equal(f.sessions.length, 2); assert.equal(f.sessions[1].playerId, 0); assert.equal(f.sessions[1].turnId, 0);
+    assert.equal(f.sessions[1].continuous, true); assert.equal(f.timers.size, 0);
+    first.onResult({ text: '일본' }); assert.equal(JSON.stringify(screen.snapshot()), before);
+    f.sessions[1].onResult({ text: '대한민국' });
+    assert.equal(screen.snapshot().total, 1); assert.equal(screen.snapshot().playerIndex, 1);
+    screen.cleanup();
+  }
+});
+
+test('모호한 음성 결과 뒤에도 같은 사람의 다음 한 나라 발화를 자동으로 듣는다', () => {
+  const f = fixture(), screen = f.c.FQ.countryChain.start({ voice: f.voice, speak: false });
+  f.click('#chain-mic'); f.sessions[0].onResult({ text: '대한민국 일본',
+    resolution: { status: 'retry', source: 'rules', reason: 'multiple-answers', code: null, text: '' } });
+  assert.equal(screen.snapshot().total, 0); assert.equal(screen.snapshot().playerIndex, 0);
+  assert.equal(f.node('#chain-pause').hidden, false);
+  f.runTimer(300); assert.equal(f.sessions.length, 2);
+  assert.equal(f.sessions[1].playerId, 0); assert.equal(f.sessions[1].turnId, 0);
+  f.sessions[1].onResult({ text: '일본' }); assert.equal(screen.snapshot().total, 1);
+  screen.cleanup();
+});
+
+test('필러 뒤 예약된 다음 듣기도 멈춤·화면 이동·숨김·새 판·cleanup이면 취소한다', () => {
+  for (const action of ['pause', 'home', 'hidden', 'reset', 'cleanup']) {
+    const f = fixture(), screen = f.c.FQ.countryChain.start({ voice: f.voice, speak: false });
+    f.click('#chain-mic'); const first = f.sessions[0]; first.onResult({ text: '음.' });
+    assert.equal(f.timers.size, 1);
+    if (action === 'pause') f.click('#chain-pause');
+    else if (action === 'home') f.click({ 'data-chain-home': '' });
+    else if (action === 'hidden') { f.hide(true); f.hide(false); }
+    else if (action === 'reset') f.click({ 'data-chain-reset': '' });
+    else screen.cleanup();
+    assert.equal(f.timers.size, 0); assert.equal(f.sessions.length, 1);
+    first.onState({ state: 'recording' }); first.onResult({ text: '일본' });
+    assert.equal(screen.snapshot().total, 0); assert.equal(f.sessions.length, 1);
+    assert.equal(f.cancellations.at(-1), false);
+    screen.cleanup();
+  }
+});
+
+test('필러 다음 녹음의 인증·한도·네트워크·no-speech 오류는 자동 유료 재시작을 하지 않는다', () => {
+  for (const code of ['auth-required', 'quota', 'network', 'service', 'permission', 'recording', 'busy', 'no-speech']) {
+    const f = fixture(), screen = f.c.FQ.countryChain.start({ voice: f.voice, speak: false });
+    f.click('#chain-mic'); f.sessions[0].onResult({ text: '음.' }); f.runTimer(300);
+    const next = f.sessions[1]; next.onError({ code, message: '다시 확인해 주세요.' });
+    assert.equal(f.timers.size, 0); assert.equal(f.sessions.length, 2);
+    assert.equal(f.node('#chain-pause').hidden, true); assert.match(f.node('#chain-mic').innerHTML, /말하기 시작/);
+    next.onState({ state: 'recording' }); next.onResult({ text: '일본' });
+    assert.equal(screen.snapshot().total, 0); assert.equal(f.sessions.length, 2);
+    screen.cleanup();
+  }
+});
+
+test('동일 연결의 nonterminal recording 복원은 새 start 없이 같은 차례의 듣기 표시만 복원한다', () => {
+  const f = fixture(), screen = f.c.FQ.countryChain.start({ voice: f.voice, speak: false });
+  f.click('#chain-mic'); const first = f.sessions[0];
+  first.onPartial({ text: '음.' }); first.onState({ state: 'transcribing' });
+  first.onState({ state: 'recording' });
+  assert.equal(f.sessions.length, 1); assert.equal(f.timers.size, 0); assert.equal(screen.snapshot().total, 0);
+  assert.match(f.node('#chain-mic').innerHTML, /말했어요/); assert.equal(f.node('#chain-pause').hidden, false);
+  first.onResult({ text: '대한민국' }); assert.equal(screen.snapshot().total, 1);
+  screen.cleanup();
 });

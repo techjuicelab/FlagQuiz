@@ -33,6 +33,16 @@ const final = text => ({ text, is_final: true });
 const partial = text => ({ text, is_final: false });
 const code = expected => error => error instanceof SpeechError && error.code === expected;
 
+test('망설임 endpoint 뒤에도 같은 연결로 나라 이름을 계속 받는다', async () => {
+  const f = setup(), c = f.connect(), ws = f.sockets[0]; ws.open(); await c.ready;
+  ws.receive({ tokens: [final('음.'), final('<end>')] });
+  assert.equal(ws.terminations, 0);
+  assert.equal(c.write(Buffer.alloc(3200)), true);
+  ws.receive({ tokens: [final('대한민국'), final('<end>')] });
+  assert.deepEqual(f.transcripts.map(row => row.finalText), ['음.', '대한민국']);
+  c.close();
+});
+
 test('Soniox 연결은 서버 고정 WSS·Bearer와 한국어 PCM 설정만 사용한다', async () => {
   for (const mode of ['voice', 'capitalVoice', 'country-chain']) {
     const f = setup(), c = f.connect({ mode, apiKey: 'client-key', model: 'client-model', answer: '프랑스' });
@@ -79,7 +89,7 @@ test('최종 token만 누적하고 부분 전사는 매 응답의 최신 부분�
   c.close();
 });
 
-for (const [marker, boundary] of [['<end>', 'end'], ['<fin>', 'fin']]) {
+for (const [marker, boundary] of [['<fin>', 'fin']]) {
   test(`${marker}는 텍스트에서 제거하고 한 차례 경계를 한 번만 전달한다`, async () => {
     const f = setup(), c = f.connect(), ws = f.sockets[0]; ws.open(); await c.ready;
     ws.receive({ tokens: [final(' 파리'), final(marker)] });
@@ -101,7 +111,7 @@ test('finished 응답은 경계 token 없이도 한 번 종료한다', async () 
 test('자동 endpoint와 manual finalize 경계가 같은 응답에 와도 완료는 한 번이다', async () => {
   const f = setup(), c = f.connect(), ws = f.sockets[0]; ws.open(); await c.ready;
   ws.receive({ tokens: [final('일본'), final('<end>'), final('<fin>'), final('<fin>')] });
-  assert.equal(f.transcripts.length, 1); assert.equal(f.transcripts[0].boundary, 'end');
+  assert.equal(f.transcripts.length, 1); assert.equal(f.transcripts[0].boundary, 'fin');
   assert.equal(f.transcripts[0].text, '일본'); assert.equal(f.errors.length, 0); assert.equal(ws.terminations, 1);
 });
 

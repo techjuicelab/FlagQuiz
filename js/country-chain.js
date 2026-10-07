@@ -223,12 +223,20 @@
             element('chain-heard').textContent = typeof event.text === 'string' ? event.text.trim() : '';
             var resolved = FQ.speech && FQ.speech.resolveAnswer ? FQ.speech.resolveAnswer(event.text, 'country', event.resolution) : null;
             if (resolved && resolved.status !== 'answer') {
+              if (resolved.status === 'clarify' || resolved.status === 'unknown' ||
+                  resolved.status === 'retry' && resolved.reason !== 'invalid-decision' && resolved.reason !== 'unavailable') {
+                cancelVoice(true);
+                stopReading();
+                message('나라 이름을 하나만 말해 주세요. 같은 차례에서 계속 듣고 있어요.', true);
+                scheduleListening(300);
+                return;
+              }
               continuous = false; cancelVoice();
               message('답을 하나만 다시 말해 주세요. 지금 차례에서 계속할 수 있어요.', true);
               setVoiceState('idle', '마이크를 다시 누르거나 나라 이름을 글로 써요.');
               return;
             }
-            submit(resolved ? resolved.text : event.text);
+            submit(resolved ? resolved.text : event.text, true);
           },
           onError: function (error) { voiceError(error, token); }
         });
@@ -253,7 +261,7 @@
       timer = global.setTimeout(function () { finish(true); }, 7000);
       try { FQ.audio.say([country.ko], { onEnd: done }, done); } catch (error) { done(); }
     }
-    function submit(text) {
+    function submit(text, fromVoice) {
       if (!alive) return { status: 'inactive' };
       cancelVoice(continuous);
       stopReading();
@@ -267,13 +275,16 @@
         setVoiceState('idle', continuous ? '나라 이름을 듣고 다음 사람이 말해요.' : undefined);
         readName(result.country);
       } else {
-        continuous = false;
-        cancelVoice();
         if (result.status === 'duplicate') message(result.country.ko + '은(는) ' + result.previous.player + '이(가) 이미 말했어요. ' + result.player + ' 차례에서 다른 나라를 말해요.', true);
         else if (result.status === 'ambiguous') message('여러 나라 이름이 들렸어요. ' + result.player + ' 차례에서 하나만 말해요.', true);
         else if (result.status === 'complete') message('모든 나라를 함께 찾았어요! 새로 하기를 누르면 다시 시작해요.');
         else message('나라 이름을 찾지 못했어요. ' + result.player + ' 차례에서 다시 말하거나 글로 써요.', true);
-        setVoiceState('idle');
+        if (fromVoice && continuous && (result.status === 'unknown' || result.status === 'ambiguous')) scheduleListening(300);
+        else {
+          continuous = false;
+          cancelVoice();
+          setVoiceState('idle');
+        }
       }
       return result;
     }

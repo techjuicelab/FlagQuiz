@@ -147,6 +147,28 @@
       var text = typeof message.message === 'string' && message.message.trim() && message.message.length <= 500 ? message.message : copy[code] || '음성을 확인하지 못했어요. 다시 누르거나 글자로 답해 주세요.';
       fail(session, code, text, message.status);
     }
+    function listening(session, value) {
+      if (session.phase !== 'recording' && session.phase !== 'finishing') return;
+      if ((value.reason !== 'retry' && value.reason !== 'no-speech') || typeof value.resetAudio !== 'boolean' ||
+          !Number.isSafeInteger(value.window) || value.window < 1) return;
+      if (!value.resetAudio) {
+        // 보통의 필러 endpoint는 같은 공급자 창이다. 음성·표본 상한을 그대로 유지한다.
+        if (value.window !== session.window || session.phase !== 'recording') return;
+        state(session, 'recording'); return;
+      }
+      // 새 무료 VAD 창만 표본 상한을 갱신한다. 중복·이전 창은 녹음을 되살리지 않는다.
+      if (value.window <= session.window) return;
+      if (!usable(session.microphone)) { fail(session, 'recording', '마이크 연결이 끊겼어요. 다시 누르거나 글자로 답해 주세요.'); return; }
+      global.clearTimeout(session.finalTimer); session.finalTimer = null;
+      session.window = value.window; session.samples = 0; session.sending = false;
+      session.preRoll = []; session.voiceBins = 0; session.quietBins = 0;
+      session.generation = ++generation; session.microphone.generation = session.generation;
+      try {
+        session.microphone.node.port.postMessage({ type: 'start', generation: session.generation });
+        enableTracks(session.microphone.stream, true);
+      } catch (failure) { fail(session, 'recording', '마이크를 다시 시작하지 못했어요. 다시 누르거나 글자로 답해 주세요.'); return; }
+      state(session, 'recording');
+    }
     function message(session, event) {
       if (!live(session)) return;
       var value;
@@ -159,8 +181,10 @@
       if (!matches(session, value, required)) return;
       if (value.type === 'ready') {
         if (session.phase !== 'requesting') return;
+        if (Number.isSafeInteger(value.window) && value.window > 0) session.window = value.window;
         global.clearTimeout(session.handshakeTimer); session.handshakeTimer = null; session.ready.resolve(true);
       } else if (value.type === 'error') serverError(session, value);
+      else if (value.type === 'listening') listening(session, value);
       else if (value.type === 'finishing') {
         if (session.phase === 'recording') finalWait(session);
       } else if (value.type === 'partial' || value.type === 'result') {
@@ -263,7 +287,7 @@
       var h = handlers || {}, ready = deferred(), cancelSignal = deferred();
       var session = { handlers: h, ready: ready, cancelSignal: cancelSignal, generation: ++generation,
         playerId: String(h.playerId), turnId: String(h.turnId), mode: h.mode === undefined ? (opts.mode || 'country-chain') : h.mode,
-        continuous: h.continuous === true, preRoll: [], voiceBins: 0, quietBins: 0, samples: 0 };
+        continuous: h.continuous === true, preRoll: [], voiceBins: 0, quietBins: 0, samples: 0, window: 1 };
       current = session;
       var endpoint, workletUrl, token;
       try {

@@ -224,7 +224,7 @@ test('통합: 한 나라 인식 뒤 이름 재생 중에는 시작·멈추기 �
   assert.equal(f.streams[0].track.enabled, false);
 });
 
-test('통합: 여러 나라가 들린 발화는 자동 재요청 없이 같은 차례를 남기고 명시적 다시 듣기의 한 나라만 인정한다', async t => {
+test('통합: 여러 나라가 들린 발화 뒤 같은 마이크를 보관하고 같은 차례의 다음 새 발화만 인정한다', async t => {
   const f = fixture({ responses: ['대한민국 일본', '일본'] }); t.after(() => f.game.cleanup());
   f.setLoud(0.1); f.click('[data-chain-mic]'); await flush();
   await f.advance(300); f.setLoud(0); await f.advance(1200);
@@ -233,21 +233,39 @@ test('통합: 여러 나라가 들린 발화는 자동 재요청 없이 같은 �
   assert.equal(f.game.snapshot().playerIndex, 0);
   assert.match(f.node('#chain-feedback').textContent, /하나만/);
   assert.equal(f.spoken.length, 0, '여러 나라로 판정한 입력을 정답 이름으로 읽지 않는다');
-  assert.ok(f.streams[0].track.stops > 0, '판정하지 못한 답은 자동 유료 재시도를 끝내고 트랙도 닫는다');
+  assert.equal(f.streams[0].track.stops, 0, '판정하지 못한 답은 같은 차례의 다음 새 발화를 기다린다');
   await f.advance(30000);
   assert.equal(f.requests.length, 1);
   assert.equal(f.streams.length, 1);
-  assert.equal(f.node('#chain-pause').hidden, true);
-  f.setLoud(0.1); f.click('[data-chain-mic]'); await flush();
+  assert.equal(f.node('#chain-pause').hidden, false);
+  assert.equal(f.adapter.isRecording(), true);
+  f.setLoud(0.1); await flush();
   await f.advance(800); f.setLoud(0); await f.advance(1200);
   assert.equal(f.requests.length, 2);
   assert.equal(f.game.snapshot().total, 1);
   assert.equal(f.game.snapshot().playerIndex, 1);
   assert.deepEqual(Array.from(f.game.snapshot().scores), [1, 0]);
   assert.deepEqual(f.spoken[0].lines, ['일본']);
-  assert.equal(f.streams.length, 2, '사용자가 명시적으로 다시 시작한 뒤에만 새 마이크를 얻는다');
-  assert.equal(f.contexts.length, 2);
-  assert.equal(f.streams[1].track.enabled, false, '새 세션의 정답 읽기에서도 마이크를 mute한다');
+  assert.equal(f.streams.length, 1, '다음 발화도 보관해 둔 같은 마이크에서 듣는다');
+  assert.equal(f.contexts.length, 1);
+  assert.equal(f.streams[0].track.enabled, false, '다음 새 발화의 정답 읽기에서도 마이크를 mute한다');
+});
+
+test('통합: Groq 필러 음.. 결과는 같은 마이크에서 다음 실제 발화만 기다리고 같은 차례를 잇는다', async t => {
+  const f = fixture({ speak: false, responses: ['음..', '일본'] }); t.after(() => f.game.cleanup());
+  f.setLoud(0.1); f.click('[data-chain-mic]'); await flush();
+  await f.advance(300); f.setLoud(0); await f.advance(1200);
+  assert.equal(f.requests.length, 1); assert.equal(f.game.snapshot().total, 0);
+  assert.equal(f.game.snapshot().playerIndex, 0); assert.equal(f.node('#chain-pause').hidden, false);
+  await f.advance(30000);
+  assert.equal(f.requests.length, 1, '다음 발화 없이 같은 필러를 자동 유료 재전송하면 안 된다');
+  assert.equal(f.streams.length, 1); assert.equal(f.streams[0].track.stops, 0);
+  assert.equal(f.adapter.isRecording(), true);
+  f.setLoud(0.1); await f.advance(400); f.setLoud(0); await f.advance(1200);
+  assert.equal(f.requests.length, 2); assert.equal(f.streams.length, 1);
+  assert.equal(f.requests[1].config.headers['X-Player-Id'], '0');
+  assert.equal(f.requests[1].config.headers['X-Turn-Id'], '0');
+  assert.equal(f.game.snapshot().total, 1); assert.equal(f.game.snapshot().playerIndex, 1);
 });
 
 for (const action of ['pause', 'home', 'hidden', 'reset']) {
@@ -364,9 +382,10 @@ test('통합: 최신 문장 판정은 전사에 나온 Jev 선택을 보존하�
       assert.equal(f.streams[0].track.enabled, false);
     } else {
       assert.equal(f.spoken.length, 0);
-      assert.ok(f.streams[0].track.stops > 0);
+      assert.equal(f.streams[0].track.stops, 0);
       await f.advance(30000);
-      assert.equal(f.requests.length, 1, '유효하지 않은 모델 선택도 자동 유료 재시도하지 않는다');
+      assert.equal(f.requests.length, 1, '유효하지 않은 모델 선택을 받은 원음은 자동 유료 재전송하지 않는다');
+      assert.equal(f.adapter.isRecording(), true);
     }
   }
 });

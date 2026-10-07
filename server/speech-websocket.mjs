@@ -68,28 +68,70 @@ export function attachSpeechWebSocket(server, { origin, isConfigured, getSession
     return session;
   }
   function paidActive(state) { return state.phase === 'starting-provider' || state.phase === 'streaming'; }
+  function armIdle(state) {
+    clearTimeout(state.idleTimer);
+    state.idleTimer = setTimeout(async () => {
+      const window = state.window;
+      try {
+        await fresh(state);
+        if (state.phase === 'ready' && state.window === window) listenAgain(state, 'no-speech', true);
+      } catch (error) { fail(state, error); }
+    }, IDLE_TIMEOUT);
+  }
+  function listenAgain(state, reason, resetAudio) {
+    if (state.phase === 'closed') return;
+    if (resetAudio) {
+      closeUpstream(state); clearTimeout(state.paidTimer);
+      state.window++; state.phase = 'ready'; state.queue = []; state.queueBytes = 0;
+      state.pcmBytes = 0; state.voicedBins = 0; state.quietBins = 0; state.vadRemainder = Buffer.alloc(0);
+      state.finishRequested = false; state.finalizeSent = false; state.quota = null; state.segments = [];
+      armIdle(state);
+    }
+    send(state, { type: 'listening', reason, resetAudio, window: state.window });
+  }
   function finalize(state) {
     if (state.phase !== 'streaming' || state.finalizeSent) return;
     state.finalizeSent = true;
     try { if (state.upstream.finalize() === false && state.phase === 'streaming') fail(state, invalid('service')); }
     catch { fail(state, invalid('service')); }
   }
-  async function complete(state, text, instantResolution) {
+  async function complete(state, text, resolution) {
     if (!paidActive(state)) return;
     state.phase = 'finishing';
     if (!send(state, { type: 'finishing' })) return;
     // 최종 선택을 기다리는 동안에도 녹음과 공급자 과금은 이미 끝나 있어야 한다.
-    closeUpstream(state); state.queue = []; state.queueBytes = 0;
+    closeUpstream(state); state.queue = []; state.queueBytes = 0; state.segments = [];
     try {
-      const session = await fresh(state);
+      await fresh(state);
       if (state.phase !== 'finishing') return;
-      const resolution = instantResolution || await resolveFinal({ text, mode: state.identity.mode }, state.abort.signal, session, state.req);
-      if (state.phase !== 'finishing' || state.abort.signal.aborted) return;
       if (!object(resolution)) throw invalid('service');
       await fresh(state);
       if (state.phase !== 'finishing' || state.abort.signal.aborted) return;
       if (send(state, { type: 'result', text, resolution, quota: state.quota })) end(state);
     } catch (error) { fail(state, error); }
+  }
+  async function resolveSegments(state) {
+    if (state.resolving || !paidActive(state)) return;
+    const resolvingWindow = state.window;
+    state.resolving = true;
+    try {
+      while (state.segments.length && paidActive(state)) {
+        const segment = state.segments.shift(), window = state.window;
+        const session = await fresh(state);
+        if (!paidActive(state) || state.window !== window) return;
+        const resolution = segment.text ? await resolveFinal({ text: segment.text, mode: state.identity.mode }, state.abort.signal, session, state.req) : { status: 'retry' };
+        if (!paidActive(state) || state.window !== window || state.abort.signal.aborted) return;
+        if (!object(resolution) || !['answer', 'giveup', 'retry'].includes(resolution.status) || resolution.reason === 'rules-unavailable') throw invalid('service');
+        await fresh(state);
+        if (!paidActive(state) || state.window !== window) return;
+        if (resolution.status !== 'retry') { void complete(state, segment.text, resolution); return; }
+        listenAgain(state, segment.text ? 'retry' : 'no-speech', segment.terminal);
+      }
+    } catch (error) {
+      // 다음 확정 답의 인증 대기를 이전 구간의 늦은 실패가 취소하지 않는다.
+      if (paidActive(state) && state.window === resolvingWindow) fail(state, error);
+    }
+    finally { state.resolving = false; }
   }
   function transcript(state, value) {
     if (!paidActive(state)) return;
@@ -108,14 +150,16 @@ export function attachSpeechWebSocket(server, { origin, isConfigured, getSession
       }
       if (value.boundary || value.finished) {
         const text = value.finalText.trim();
-        if (!text) { fail(state, invalid('no-speech')); return; }
-        void complete(state, text);
+        if (state.segments.length >= 16) throw invalid('service');
+        state.segments.push({ text, terminal: value.boundary === 'fin' || value.finished });
+        void resolveSegments(state);
       }
     } catch (error) { fail(state, error); }
   }
   async function startProvider(state) {
     if (state.phase !== 'ready') return;
     state.phase = 'starting-provider'; clearTimeout(state.idleTimer);
+    const window = state.window;
     state.paidTimer = setTimeout(() => fail(state, invalid('speech_timeout')), PAID_TIMEOUT);
     try {
       const session = await fresh(state);
@@ -127,7 +171,8 @@ export function attachSpeechWebSocket(server, { origin, isConfigured, getSession
       const transcriber = createTranscriber();
       if (!transcriber?.ready || typeof transcriber.connect !== 'function') throw invalid('service');
       state.upstream = transcriber.connect({ mode: state.identity.mode, signal: state.abort.signal,
-        onTranscript: value => transcript(state, value), onError: error => { if (paidActive(state)) fail(state, error); } });
+        onTranscript: value => { if (state.window === window) transcript(state, value); },
+        onError: error => { if (state.window === window && paidActive(state)) fail(state, error); } });
       if (!paidActive(state)) { closeUpstream(state); return; }
       await state.upstream.ready;
       if (!paidActive(state)) return;
@@ -142,15 +187,16 @@ export function attachSpeechWebSocket(server, { origin, isConfigured, getSession
   }
   function voiced(state, chunk) {
     const audio = state.vadRemainder.length ? Buffer.concat([state.vadRemainder, chunk]) : chunk;
-    let offset = 0;
+    let offset = 0, detected = false;
     for (; offset + 320 <= audio.length; offset += 320) {
       let energy = 0;
       for (let index = offset; index < offset + 320; index += 2) { const sample = audio.readInt16LE(index) / 32768; energy += sample * sample; }
       if (Math.sqrt(energy / 160) >= 0.003) { state.voicedBins++; state.quietBins = 0; }
       else if (++state.quietBins > 8) state.voicedBins = 0;
+      if (state.voicedBins >= 10) detected = true;
     }
     state.vadRemainder = Buffer.from(audio.subarray(offset));
-    return state.voicedBins >= 10;
+    return detected;
   }
   function pcm(state, data) {
     if (!['ready', 'starting-provider', 'streaming'].includes(state.phase)) { fail(state, invalid('invalid-frame')); return; }
@@ -188,7 +234,7 @@ export function attachSpeechWebSocket(server, { origin, isConfigured, getSession
         state.release = claimSpeech(state.session);
         if (typeof state.release !== 'function') throw invalid('service');
         clearTimeout(state.startTimer); state.phase = 'ready';
-        state.idleTimer = setTimeout(() => fail(state, invalid('no-speech')), IDLE_TIMEOUT);
+        armIdle(state);
         send(state, { type: 'ready' });
       } catch (error) { fail(state, error); }
       return;
@@ -196,13 +242,19 @@ export function attachSpeechWebSocket(server, { origin, isConfigured, getSession
     if (value.type !== 'finish') { fail(state, invalid('invalid-frame')); return; }
     if (state.finishRequested) return;
     state.finishRequested = true;
-    if (state.phase === 'ready') { fail(state, invalid('no-speech')); return; }
+    if (state.phase === 'ready') {
+      const window = state.window;
+      void fresh(state).then(() => {
+        if (state.phase === 'ready' && state.window === window) listenAgain(state, 'no-speech', true);
+      }).catch(error => fail(state, error));
+      return;
+    }
     finalize(state);
   }
   function accept(ws, req, session) {
     const state = { ws, req, session, phase: 'waiting-start', identity: null, release: null, upstream: null,
       abort: new AbortController(), queue: [], queueBytes: 0, pcmBytes: 0, voicedBins: 0, quietBins: 0, vadRemainder: Buffer.alloc(0),
-      finishRequested: false, finalizeSent: false, quota: null };
+      finishRequested: false, finalizeSent: false, quota: null, window: 1, resolving: false, segments: [] };
     connections.add(state);
     state.startTimer = setTimeout(() => fail(state, invalid('speech_timeout')), START_TIMEOUT);
     ws.on('message', (data, binary) => message(state, data, binary));

@@ -140,6 +140,98 @@ test('서버 finishing은 먼저 송신을 끊고 수동 finish를 중복 보내
   assert.equal(f.results.length, 1); assert.equal(f.timers.size, 0);
 });
 
+test('구버전 서버의 비정답 result는 화면의 같은 차례 재시도 경로로 전달하고 마이크를 보관한다', async () => {
+  for (const status of ['retry', 'clarify', 'no_match']) {
+    const f = fixture({ mode: 'country-chain' }); await f.start({ continuous: true }); f.pcm();
+    f.sockets[0].message({ type: 'finishing', ...f.ids });
+    f.sockets[0].message({ type: 'result', text: '음', resolution: { status, code: null, text: '', reason: 'no-match' }, ...f.ids });
+    assert.equal(f.results.length, 1); assert.equal(f.results[0].resolution.status, status);
+    assert.equal(f.errors.length, 0); assert.equal(f.adapter.isActive(), false);
+    assert.equal(f.streams[0].track.enabled, false); assert.equal(f.streams[0].track.stops, 0);
+    f.adapter.dispose();
+  }
+});
+
+test('일반 필러 listening은 같은 provider·마이크·PCM을 유지하고 12초 안전 상한을 초기화하지 않는다', async () => {
+  for (const mode of ['voice', 'capitalVoice', 'country-chain']) {
+    const f = fixture({ mode }); await f.start({ continuous: true });
+    for (let i = 0; i < 100; i++) f.pcm();
+    const commands = f.nodes[0].commands.length, states = f.states.length;
+    f.sockets[0].message({ type: 'listening', reason: 'retry', resetAudio: false, window: 1, ...f.ids });
+    assert.equal(f.results.length, 0); assert.equal(f.errors.length, 0); assert.equal(f.adapter.isRecording(), true);
+    assert.equal(f.streams[0].track.enabled, true); assert.equal(f.streams[0].track.stops, 0);
+    assert.equal(f.nodes[0].commands.length, commands, '일반 필러 뒤에는 Worklet을 끊지 않는다');
+    assert.equal(f.states.length, states + 1); assert.equal(f.states.at(-1).state, 'recording');
+    for (let i = 0; i < 20; i++) f.pcm(0);
+    assert.equal(f.binary().length, 120); assert.equal(f.adapter.isRecording(), false);
+    assert.equal(f.control().filter(value => value.type === 'finish').length, 1); f.adapter.dispose();
+  }
+});
+
+test('한 번 시작한 세 말하기 모드에서 음 뒤 실제 이름을 말하면 연결 재시작 없이 한 번만 답한다', async () => {
+  for (const [mode, text, code] of [['voice', '대한민국', 'kr'], ['capitalVoice', '서울', 'kr'], ['country-chain', '프랑스', 'fr']]) {
+    let beeps = 0;
+    const f = fixture({ mode, beforeRecord(done) { beeps++; done(); } }); await f.start({ continuous: true });
+    f.pcm(); f.sockets[0].message({ type: 'partial', text: '음', ...f.ids });
+    f.sockets[0].message({ type: 'listening', reason: 'retry', resetAudio: false, window: 1, ...f.ids });
+    assert.equal(f.results.length, 0); assert.equal(f.adapter.isRecording(), true);
+    f.pcm(); f.sockets[0].message({ type: 'partial', text, ...f.ids });
+    f.sockets[0].message({ type: 'finishing', ...f.ids });
+    f.sockets[0].message({ type: 'result', text, resolution: { status: 'answer', text, code, source: 'rules' }, ...f.ids });
+    assert.equal(f.results.length, 1); assert.equal(f.results[0].resolution.code, code); assert.equal(f.errors.length, 0);
+    assert.equal(f.sockets.length, 1); assert.equal(f.streams.length, 1); assert.equal(f.contexts.length, 1); assert.equal(beeps, 1);
+    assert.equal(f.binary().length, 2); assert.equal(f.streams[0].track.enabled, false); assert.equal(f.timers.size, 0);
+    f.adapter.dispose();
+  }
+});
+
+test('서버 listening은 필러와 no-speech를 최종 오류로 만들지 않고 이미 켜진 녹음을 유지한다', async () => {
+  for (const mode of ['voice', 'capitalVoice', 'country-chain']) {
+    const f = fixture({ mode }); await f.start({ continuous: true }); f.pcm();
+    const states = f.states.length;
+    f.sockets[0].message({ type: 'listening', reason: 'no-speech', resetAudio: true, window: 2, ...f.ids });
+    assert.equal(f.errors.length, 0); assert.equal(f.results.length, 0); assert.equal(f.adapter.isRecording(), true);
+    assert.equal(f.streams[0].track.enabled, true); assert.equal(f.streams[0].track.stops, 0);
+    assert.equal(f.states.length, states + 1, '화면도 계속 듣는 상태를 안내한다');
+    assert.equal(f.states.at(-1).state, 'recording');
+    for (let i = 0; i < 10; i++) f.pcm(0);
+    assert.equal(f.binary().length, 1, '비정답 뒤 생각 무음은 새 유료 창으로 보내지 않는다');
+    f.pcm(); assert.equal(f.binary().length, 5); f.adapter.dispose();
+  }
+});
+
+test('12초 안전 상한 뒤 비정답이면 새 녹음 창으로 재개하고 취소 뒤 retry는 되살리지 않는다', async () => {
+  const f = fixture(); await f.start({ continuous: true });
+  for (let i = 0; i < 120; i++) f.pcm();
+  assert.equal(f.adapter.isRecording(), false); assert.equal(f.binary().length, 120);
+  const oldGeneration = f.nodes[0].commands.findLast(value => value.type === 'start').generation;
+  f.sockets[0].message({ type: 'listening', reason: 'retry', resetAudio: true, window: 2, ...f.ids });
+  assert.equal(f.adapter.isRecording(), true); assert.equal(f.streams[0].track.enabled, true);
+  assert.equal(f.timers.size, 0, '이전 창의 최종 응답 제한도 해제한다');
+  f.pcm(0.05, 5, f.nodes[0], oldGeneration); assert.equal(f.binary().length, 120, '이전 창에서 늦게 온 PCM을 보내지 않는다');
+  f.pcm(); assert.equal(f.binary().length, 121); assert.equal(f.control().filter(value => value.type === 'finish').length, 1);
+  const late = f.sockets[0].onmessage; f.adapter.cancel();
+  late({ data: JSON.stringify({ type: 'listening', reason: 'retry', resetAudio: true, window: 3, ...f.ids }) });
+  assert.equal(f.adapter.isRecording(), false); assert.equal(f.streams[0].track.stops, 1); assert.equal(f.timers.size, 0);
+});
+
+test('다른 차례·이전 창·중복 listening은 녹음이나 12초 상한을 되살리지 않는다', async () => {
+  const f = fixture(); await f.start({ continuous: true });
+  for (let i = 0; i < 120; i++) f.pcm();
+  const event = { type: 'listening', reason: 'retry', resetAudio: true, window: 2, ...f.ids };
+  f.sockets[0].message({ ...event, turnId: 'old' });
+  f.sockets[0].message({ ...event, window: 1 });
+  f.sockets[0].message({ ...event, resetAudio: false, window: 1 });
+  assert.equal(f.adapter.isRecording(), false); assert.equal(f.streams[0].track.enabled, false);
+  f.sockets[0].message(event); assert.equal(f.adapter.isRecording(), true);
+  for (let i = 0; i < 100; i++) f.pcm();
+  const starts = f.nodes[0].commands.filter(value => value.type === 'start').length;
+  f.sockets[0].message(event);
+  assert.equal(f.nodes[0].commands.filter(value => value.type === 'start').length, starts);
+  for (let i = 0; i < 20; i++) f.pcm();
+  assert.equal(f.binary().length, 240); assert.equal(f.adapter.isRecording(), false); f.adapter.dispose();
+});
+
 test('수동 stop과 실제 전송 12초 상한은 finish 한 번이고 최종 응답 제한을 지킨다', async () => {
   const manual = fixture(); await manual.start(); manual.pcm();
   assert.equal(manual.adapter.stop(), true); assert.equal(manual.adapter.stop(), false);
