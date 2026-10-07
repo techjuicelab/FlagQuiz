@@ -78,7 +78,7 @@
         enableTracks(session.microphone.stream, false);
         try { session.microphone.node.port.postMessage({ type: 'stop', generation: session.generation }); } catch (failure) {}
       }
-      session.preRoll = []; session.voiceBins = 0; session.quietBins = 0;
+      session.preRoll = []; session.voiceBins = 0; session.quietBins = 0; session.vadFrame = 0; session.candidateFrame = null;
     }
     function release(session, keepMicrophone) {
       ['permissionTimer', 'handshakeTimer', 'resumeTimer', 'workletTimer', 'beepTimer', 'finalTimer'].forEach(function (key) { global.clearTimeout(session[key]); session[key] = null; });
@@ -161,7 +161,7 @@
       if (!usable(session.microphone)) { fail(session, 'recording', '마이크 연결이 끊겼어요. 다시 누르거나 글자로 답해 주세요.'); return; }
       global.clearTimeout(session.finalTimer); session.finalTimer = null;
       session.window = value.window; session.samples = 0; session.sending = false;
-      session.preRoll = []; session.voiceBins = 0; session.quietBins = 0;
+      session.preRoll = []; session.voiceBins = 0; session.quietBins = 0; session.vadFrame = 0; session.candidateFrame = null;
       session.generation = ++generation; session.microphone.generation = session.generation;
       try {
         session.microphone.node.port.postMessage({ type: 'start', generation: session.generation });
@@ -266,19 +266,24 @@
       if (value.type !== 'audio') return;
       if (!value.pcm || value.pcm.byteLength !== FRAME_BYTES || Object.prototype.toString.call(value.pcm) !== '[object ArrayBuffer]') { fail(session, 'recording', '마이크 음성을 읽지 못했어요. 다시 눌러 주세요.'); return; }
       if (session.sending) { sendPcm(session, value.pcm); return; }
-      session.preRoll.push(value.pcm); if (session.preRoll.length > 4) session.preRoll.shift();
-      var samples = new Int16Array(value.pcm);
+      // 80ms 공백 9개와 100ms 발화는 820ms에 걸칠 수 있어 후보 전체를 최대 1초 보관한다.
+      session.preRoll.push(value.pcm); if (session.preRoll.length > 10) session.preRoll.shift();
+      var samples = new Int16Array(value.pcm), frame = ++session.vadFrame, bufferFrames = 4;
       for (var offset = 0; offset < samples.length; offset += 160) {
         var energy = 0;
         for (var i = offset; i < offset + 160; i++) energy += samples[i] * samples[i];
         var loud = Math.sqrt(energy / 160) / 32768 >= 0.003;
         // 서버와 같은 100ms 발화·80ms 자음 공백 기준이다. 한 번의 40ms 클릭은 통과하지 않는다.
-        if (loud) { session.voiceBins++; session.quietBins = 0; }
-        else if (++session.quietBins > 8) session.voiceBins = 0;
-        if (session.voiceBins >= 10) session.sending = true;
+        if (loud) {
+          if (session.voiceBins === 0) session.candidateFrame = frame;
+          session.voiceBins++; session.quietBins = 0;
+        } else if (++session.quietBins > 8) { session.voiceBins = 0; session.candidateFrame = null; }
+        if (session.voiceBins >= 10) {
+          session.sending = true; bufferFrames = Math.max(4, frame - session.candidateFrame + 1); break;
+        }
       }
       if (session.sending) {
-        var buffered = session.preRoll; session.preRoll = [];
+        var buffered = session.preRoll.slice(-bufferFrames); session.preRoll = [];
         for (var index = 0; index < buffered.length; index++) if (!sendPcm(session, buffered[index])) break;
       }
     }
@@ -287,7 +292,7 @@
       var h = handlers || {}, ready = deferred(), cancelSignal = deferred();
       var session = { handlers: h, ready: ready, cancelSignal: cancelSignal, generation: ++generation,
         playerId: String(h.playerId), turnId: String(h.turnId), mode: h.mode === undefined ? (opts.mode || 'country-chain') : h.mode,
-        continuous: h.continuous === true, preRoll: [], voiceBins: 0, quietBins: 0, samples: 0, window: 1 };
+        continuous: h.continuous === true, preRoll: [], voiceBins: 0, quietBins: 0, vadFrame: 0, candidateFrame: null, samples: 0, window: 1 };
       current = session;
       var endpoint, workletUrl, token;
       try {

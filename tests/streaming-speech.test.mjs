@@ -62,16 +62,19 @@ function fixture(options = {}) {
       ...(extra.playerId !== undefined ? { playerId: String(extra.playerId) } : {}),
       ...(extra.mode !== undefined ? { mode: extra.mode } : {}) }); await pending; return pending;
   }
-  function pcm(amplitude = 0.05, windows = 5, node = nodes.at(-1), generation) {
+  function pcmSamples(samples, node = nodes.at(-1), generation) {
     const command = node.commands.findLast(value => value.type === 'start');
+    node.port.onmessage?.({ data: { type: 'audio', generation: generation ?? command.generation, sequence: node.sequence = (node.sequence ?? -1) + 1, pcm: samples.buffer } });
+  }
+  function pcm(amplitude = 0.05, windows = 5, node = nodes.at(-1), generation) {
     const samples = new Int16Array(1600);
     for (let i = 0; i < 320 * windows; i++) samples[i] = Math.round(amplitude * 32767) * (i % 2 ? 1 : -1);
-    node.port.onmessage?.({ data: { type: 'audio', generation: generation ?? command.generation, sequence: node.sequence = (node.sequence ?? -1) + 1, pcm: samples.buffer } });
+    pcmSamples(samples, node, generation);
   }
   const binary = () => sockets.flatMap(socket => socket.sent.filter(value => typeof value !== 'string'));
   const control = () => sockets.flatMap(socket => socket.sent.filter(value => typeof value === 'string').map(value => JSON.parse(value)));
   return { window, adapter, handlers, ids, streams, contexts, sockets, nodes, states, results, partials, errors, timers,
-    start, pcm, binary, control, advance, stream, setCsrf(value) { csrf = value; } };
+    start, pcm, pcmSamples, binary, control, advance, stream, setCsrf(value) { csrf = value; } };
 }
 
 test('인증 ready와 준비 비프가 끝나기 전에는 마이크와 PCM을 켜지 않는다', async () => {
@@ -112,6 +115,37 @@ test('자음 사이 80ms 이내 공백은 발화 시간에 합치고 단독 클�
   f.pcm(0.006, 3); assert.equal(f.binary().length, 0);
   f.pcm(0.006, 3); assert.equal(f.binary().length, 2);
   f.adapter.dispose();
+});
+
+test('80ms씩 끊긴 100ms 발화는 서버 VAD가 열리도록 실제 송신 PCM 전체에 보존한다', async () => {
+  for (const firstBin of [0, 9]) {
+    const f = fixture(); await f.start({ continuous: true });
+    for (let i = 0; i < 300; i++) f.pcm(0);
+    const frames = Math.floor((firstBin + 81) / 10) + 1;
+    for (let frame = 0; frame < frames; frame++) {
+      const samples = new Int16Array(1600);
+      for (let bin = 0; bin < 10; bin++) {
+        const relative = frame * 10 + bin - firstBin;
+        if (relative < 0 || relative > 81 || relative % 9 !== 0) continue;
+        for (let i = bin * 160; i < (bin + 1) * 160; i++) samples[i] = i % 2 ? 1638 : -1638;
+      }
+      f.pcmSamples(samples);
+      if (frame < frames - 1) assert.equal(f.binary().length, 0, '100ms 미만 후보는 전송하지 않는다');
+    }
+    let voicedMs = 0;
+    for (const buffer of f.binary()) {
+      const samples = new Int16Array(buffer);
+      for (let offset = 0; offset < samples.length; offset += 160) {
+        let energy = 0;
+        for (let i = offset; i < offset + 160; i++) energy += samples[i] * samples[i];
+        if (Math.sqrt(energy / 160) / 32768 >= 0.003) voicedMs += 10;
+      }
+    }
+    assert.equal(voicedMs, 100, '서버에 도착하는 발화도 클라이언트 감지와 동일한 100ms여야 한다');
+    assert.equal(f.binary().length, frames, '최대 1초 후보 버퍼에서 해당 발화의 시작부터 보낸다');
+    assert.ok(f.binary().length * 3200 <= 32000, '최대 후보 보관은 32KiB보다 작게 제한한다');
+    assert.equal(f.errors.length, 0); assert.equal(f.adapter.isRecording(), true); f.adapter.dispose();
+  }
 });
 
 test('발화가 계속되는 중 partial은 표시만 하고 result는 즉시 음소거·한 번 채점한다', async () => {
