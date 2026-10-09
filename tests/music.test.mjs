@@ -7,7 +7,7 @@ const source = fs.readFileSync(new URL('../js/music.js', import.meta.url), 'utf8
 function setup({ ready = true, noAudio = false, clips, online = true } = {}) {
   let now = 0, nextTimer = 1;
   const timers = new Map(), players = [];
-  const events = {};
+  const events = {}, documentEvents = {};
   class FakeAudio {
     constructor() { this.src = ''; this.duration = 2; this.calls = []; this.pauseCount = 0; players.push(this); }
     setAttribute() {}
@@ -24,6 +24,10 @@ function setup({ ready = true, noAudio = false, clips, online = true } = {}) {
   const sandbox = {
     Audio: noAudio ? null : FakeAudio,
     navigator: { onLine: online },
+    document: {
+      hidden: false,
+      addEventListener(name, callback) { (documentEvents[name] ||= []).push(callback); }
+    },
     addEventListener(name, callback) { (events[name] ||= []).push(callback); },
     Date: class extends Date { constructor(...args) { super(...(args.length ? args : [now])); } },
     Math: Object.assign(Object.create(Math), { random: () => 0 }),
@@ -45,6 +49,11 @@ function setup({ ready = true, noAudio = false, clips, online = true } = {}) {
       sandbox.navigator.onLine = online;
       for (const callback of events[online ? 'online' : 'offline'] || []) callback();
     },
+    hide(hidden) {
+      sandbox.document.hidden = hidden;
+      for (const callback of documentEvents.visibilitychange || []) callback();
+    },
+    pageHide() { for (const callback of events.pagehide || []) callback(); },
     advance(ms) {
       const target = now + ms;
       while (true) {
@@ -260,6 +269,61 @@ test('무음 열기가 응답하지 않아도 타임아웃 후 다시 시도하�
   const env = setup(); env.music.unlock(); env.advance(6000);
   assert.equal(env.player.src, ''); assert.equal(env.timers.size, 0);
   env.music.unlock(); assert.equal(env.player.calls.length, 2);
+  env.music.stop(); assert.equal(env.timers.size, 0);
+});
+
+test('화면 잠금과 페이지 숨김 뒤 첫 조작은 같은 음악 요소를 다시 준비한다', async () => {
+  const env = setup();
+  env.music.unlock(); env.player.calls[0].resolve(); await flush();
+  env.music.unlock(); assert.equal(env.player.calls.length, 1);
+  for (const leave of [() => env.hide(true), () => env.pageHide()]) {
+    const calls = env.player.calls.length;
+    leave(); env.hide(false);
+    assert.equal(env.player.calls.length, calls, '복귀 자체로 음악을 재생하지 않는다');
+    env.music.unlock(); env.music.unlock();
+    assert.equal(env.player.calls.length, calls + 1, '복귀 뒤 첫 조작에서 한 번 다시 준비한다');
+    assert.match(env.player.calls.at(-1).src, /^data:audio\/wav;base64,/);
+    env.player.calls.at(-1).resolve(); await flush();
+  }
+  assert.equal(env.players.length, 1);
+  assert.equal(env.timers.size, 0);
+});
+
+test('숨기기 전 늦은 무음 Promise는 복귀 후 준비나 새 음악을 멈추지 않는다', async () => {
+  const env = setup();
+  env.music.unlock(); const beforeLock = env.player.calls[0];
+  env.hide(true); env.hide(false); env.music.unlock();
+  assert.equal(env.player.calls.length, 2);
+  const resumedPrime = env.player.calls[1], pauses = env.player.pauseCount;
+  beforeLock.resolve(); await flush();
+  assert.equal(env.player.pauseCount, pauses);
+  assert.match(env.player.src, /^data:audio\/wav;base64,/);
+  assert.equal(env.timers.size, 1, '새 준비의 타임아웃을 유지한다');
+  resumedPrime.reject({ name: 'NotAllowedError' }); await flush();
+  env.music.unlock(); assert.equal(env.player.calls.length, 3, '새 준비가 실패하면 다음 조작에서 재시도한다');
+  const beforePageHide = env.player.calls[2];
+  env.pageHide(); env.music.play('chest');
+  const playingPauses = env.player.pauseCount;
+  beforePageHide.resolve(); await flush();
+  assert.equal(env.player.pauseCount, playingPauses);
+  assert.equal(env.player.src, 'audio/music/chest-one.mp3');
+  await ended(env); env.advance(100000);
+  assert.equal(env.timers.size, 0);
+});
+
+test('숨김 뒤 다시 준비해도 현재 음악의 요소와 완료 콜백은 유지한다', async () => {
+  const env = setup(); let done = 0;
+  env.music.play('chest', { onDone: () => done++ });
+  env.player.calls[0].resolve(); await flush();
+  const calls = env.player.calls.length, pauses = env.player.pauseCount;
+  env.hide(true); env.pageHide(); env.hide(false); env.music.unlock();
+  assert.equal(env.player.calls.length, calls);
+  assert.equal(env.player.pauseCount, pauses);
+  assert.equal(env.player.src, 'audio/music/chest-one.mp3');
+  assert.equal(env.music.isPlaying(), true);
+  env.player.onended(); env.advance(0);
+  assert.equal(done, 1);
+  env.music.unlock(); assert.equal(env.player.calls.length, calls + 1);
   env.music.stop(); assert.equal(env.timers.size, 0);
 });
 

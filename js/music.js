@@ -10,6 +10,7 @@
   var last = {};
   var primed = false;
   var priming = false;
+  var primeGeneration = 0;
   var primeTimer = null;
   var START_TIMEOUT = 6000;
   var OFFLINE_TIMEOUT = 1500;
@@ -52,6 +53,7 @@
 
   function stop() {
     generation += 1;
+    primeGeneration += 1;
     clearTimers(current);
     current = null;
     global.clearTimeout(primeTimer);
@@ -60,15 +62,26 @@
     resetPlayer();
   }
 
+  /** 잠금 뒤에는 같은 요소를 다시 준비한다. 재생 중인 음악에는 손대지 않는다. */
+  function invalidateUnlock() {
+    var wasPriming = priming;
+    primeGeneration += 1;
+    primed = false;
+    priming = false;
+    global.clearTimeout(primeTimer);
+    primeTimer = null;
+    if (wasPriming && !current) resetPlayer();
+  }
+
   /** 같은 요소의 무음을 손가락 조작 안에서 재생하여 iOS 재생 허가를 연다. */
   function unlock() {
     if (!enabled || current || primed || priming) return;
     var audio = getPlayer();
     if (!audio) return;
-    var token = generation;
+    var token = ++primeGeneration;
     priming = true;
     function finish(success) {
-      if (token !== generation || current || !priming) return;
+      if (token !== primeGeneration || current || !priming) return;
       global.clearTimeout(primeTimer);
       primeTimer = null;
       priming = false;
@@ -203,6 +216,7 @@
   }
 
   if (global.addEventListener) {
+    global.addEventListener('pagehide', invalidateUnlock);
     global.addEventListener('offline', function () {
       if (current && current.waitForData && (!current.started || (player && player.readyState < 3))) current.waitForData();
     });
@@ -210,6 +224,12 @@
       if (!current) return;
       global.clearTimeout(current.offlineTimer);
       current.offlineTimer = null;
+    });
+  }
+
+  if (global.document && global.document.addEventListener) {
+    global.document.addEventListener('visibilitychange', function () {
+      if (global.document.hidden) invalidateUnlock();
     });
   }
 

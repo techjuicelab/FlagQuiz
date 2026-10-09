@@ -12,8 +12,10 @@
   var enabled = true;
   var speakEnabled = true;
   var unlocked = false;
+  var effectsGeneration = 0;
   var voicePlayer = null;
   var mediaPrimed = false;
+  var mediaPrimeGeneration = 0;
   var generation = 0;
   var active = null;
   var pending = [];
@@ -25,29 +27,36 @@
   var SILENCE = 'data:audio/wav;base64,UklGRiYAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQIAAAAAAA==';
 
   function ac() {
-    if (ctx) return ctx;
+    if (ctx && ctx.state !== 'closed') return ctx;
+    // 닫힌 장치는 다시 쓸 수 없으며, 출력 노드도 새 장치에 맞춰 만든다.
+    if (ctx) { master = null; unlocked = false; effectsGeneration += 1; }
     var C = global.AudioContext || global.webkitAudioContext;
     if (!C) return null;
     try { ctx = new C(); } catch (e) { ctx = null; }
     return ctx;
   }
+  // iPad는 화면 잠금 뒤 suspended 대신 interrupted가 되기도 한다.
+  function resumeAudio(a) {
+    if (!a || a.state === 'running' || a.state === 'closed' || !a.resume) return null;
+    try {
+      var resumed = a.resume();
+      if (resumed && resumed.catch) resumed.catch(function () {});
+      return resumed;
+    } catch (e) { return null; } // 다음 손가락 조작에서 다시 시도한다.
+  }
+
   var cueListening = createListeningCue ? createListeningCue(ac) :
     function (onDone) { if (typeof onDone === 'function') onDone(false); };
 
   /**
    * 사용자가 화면을 처음 만질 때 소리를 깨운다.
    * 아이폰·아이패드는 손가락 조작 중에 한 번 소리를 내 봐야 그다음부터 소리가 난다.
-   * 여러 번 불러도 안전하며, 열리고 나면 아무 일도 하지 않는다.
+   * 여러 번 불러도 안전하며, 화면 잠금으로 중단된 장치도 다시 깨운다.
    */
   function unlock() {
     var a = ac();
     if (a) {
-      if (a.state === 'suspended' && a.resume) {
-        try {
-          var resumed = a.resume();
-          if (resumed && resumed.catch) resumed.catch(function () {});
-        } catch (e) { /* 다음 손가락 조작에서 다시 시도한다 */ }
-      }
+      var resumed = resumeAudio(a);
       if (!unlocked) {
         try {
           var buffer = a.createBuffer(1, 1, 22050);
@@ -60,6 +69,7 @@
       }
     }
     primeSpeech();
+    return resumed;
   }
 
   function getPlayer() {
@@ -82,12 +92,13 @@
     var player = getPlayer();
     if (!player) return;
     var token = generation;
+    var primeToken = mediaPrimeGeneration;
     try {
       player.src = SILENCE;
       var started = player.play();
       if (started && started.then) started.then(function () {
         // 그동안 실제 음원이나 다른 무음 시도가 시작됐다면 이전 작업은 아무것도 바꾸지 않는다.
-        if (token !== generation || active || player.src !== SILENCE) return;
+        if (token !== generation || primeToken !== mediaPrimeGeneration || active || player.src !== SILENCE) return;
         mediaPrimed = true;
         player.pause();
       }, function () {});
@@ -180,8 +191,22 @@
   }
 
   function play(name) {
-    if (!enabled) return;
-    unlock();
+    if (!enabled || (global.document && global.document.hidden)) return;
+    var resumed = unlock();
+    var a = ac();
+    var token = effectsGeneration;
+    var requestedAt = +new Date();
+    function ready() {
+      // 잠금 중 대기한 소리가 복귀 뒤 한꺼번에 울리지 않게 한다.
+      if (!enabled || token !== effectsGeneration || a !== ctx || !a || a.state !== 'running' ||
+          (global.document && global.document.hidden) || +new Date() - requestedAt > 1000) return;
+      playSound(name);
+    }
+    if (a && a.state === 'running') ready();
+    else if (resumed && resumed.then) resumed.then(ready, function () {});
+  }
+
+  function playSound(name) {
     switch (name) {
       case 'correct':                       // 정답 — 짧고 밝은 팡파레
         fanfare(0);
@@ -413,7 +438,7 @@
     });
   }
 
-  function setEnabled(v) { enabled = !!v; }
+  function setEnabled(v) { enabled = !!v; if (!enabled) effectsGeneration += 1; }
   function setSpeakEnabled(v) { speakEnabled = !!v; if (!v) stopSpeaking(); }
 
   if (global.addEventListener) {
@@ -425,6 +450,27 @@
       global.clearTimeout(clip.offlineTimer);
       clip.offlineTimer = null;
     });
+  }
+
+  // 페이지 복귀 때 기존 장치를 재개하고, 재생 허가는 다음 조작에서 다시 연다.
+  function pauseAudio() {
+    effectsGeneration += 1;
+    unlocked = false;
+    mediaPrimed = false;
+    mediaPrimeGeneration += 1;
+  }
+  function restoreAudio() {
+    if (ctx && !(global.document && global.document.hidden)) resumeAudio(ac());
+  }
+  if (global.document && global.document.addEventListener) {
+    global.document.addEventListener('visibilitychange', function () {
+      if (global.document.hidden) pauseAudio();
+      else restoreAudio();
+    });
+  }
+  if (global.addEventListener) {
+    global.addEventListener('pagehide', pauseAudio);
+    global.addEventListener('pageshow', restoreAudio);
   }
 
   FQ.audio = {

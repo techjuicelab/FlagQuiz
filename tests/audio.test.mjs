@@ -15,6 +15,7 @@ function setup({ ready = true, legacy = false, online = true, audioContext } = {
   const fetches = [];
   const utterances = [];
   const events = {};
+  const documentEvents = {};
   class FakeAudio {
     constructor() {
       this.src = '';
@@ -39,6 +40,10 @@ function setup({ ready = true, legacy = false, online = true, audioContext } = {
     Audio: FakeAudio,
     AudioContext: audioContext,
     navigator: { onLine: online },
+    document: {
+      hidden: false,
+      addEventListener(name, callback) { (documentEvents[name] ||= []).push(callback); }
+    },
     addEventListener(name, callback) { (events[name] ||= []).push(callback); },
     Date: class extends Date { constructor(...args) { super(...(args.length ? args : [now])); } static now() { return now; } },
     setTimeout(fn, delay = 0) { const id = nextTimer++; timers.set(id, { fn, time: now + delay }); return id; },
@@ -70,6 +75,11 @@ function setup({ ready = true, legacy = false, online = true, audioContext } = {
   return {
     audio: sandbox.FQ.audio, originalAudio, sandbox, players, timers, fetches, utterances,
     get player() { return players[0]; },
+    hide(hidden) {
+      sandbox.document.hidden = hidden;
+      for (const callback of documentEvents.visibilitychange || []) callback();
+    },
+    pageHide() { for (const callback of events.pagehide || []) callback(); },
     network(online) {
       sandbox.navigator.onLine = online;
       for (const callback of events[online ? 'online' : 'offline'] || []) callback();
@@ -408,6 +418,41 @@ test('무음 열기의 늦은 Promise가 실제 Sua 재생을 멈추지 않는�
   assert.equal(env.player.src, 'audio/sua/correct.mp3');
   env.audio.unlock();
   assert.equal(env.player.calls.length, 2);
+});
+
+test('화면 잠금 뒤 첫 조작은 같은 읽어주기 요소의 재생 허가를 다시 연다', async () => {
+  const env = setup();
+  env.audio.unlock(); env.player.calls[0].resolve(); await flush();
+  env.audio.unlock(); assert.equal(env.player.calls.length, 1);
+  for (const leave of [() => env.hide(true), () => env.pageHide()]) {
+    const calls = env.player.calls.length;
+    leave(); env.hide(false);
+    assert.equal(env.player.calls.length, calls, '복귀만으로 목소리를 시작하지 않는다');
+    env.audio.unlock();
+    assert.equal(env.player.calls.length, calls + 1);
+    assert.match(env.player.calls.at(-1).src, /^data:audio\/wav;base64,/);
+    env.player.calls.at(-1).resolve(); await flush();
+  }
+  assert.equal(env.players.length, 1);
+});
+
+test('잠금 전 무음 Promise는 복귀 후 새 준비와 실제 읽어주기를 멈추지 않는다', async () => {
+  const env = setup();
+  env.audio.unlock(); const stale = env.player.calls[0];
+  env.hide(true); env.pageHide(); env.hide(false); env.audio.unlock();
+  assert.equal(env.player.calls.length, 2);
+  const currentPrime = env.player.calls[1], pauses = env.player.pauseCount;
+  stale.resolve(); await flush();
+  assert.equal(env.player.pauseCount, pauses);
+  currentPrime.reject({ name: 'NotAllowedError' }); await flush();
+  env.audio.unlock();
+  assert.equal(env.player.calls.length, 3, '과거 성공이 새 준비 실패를 덮어쓰지 않는다');
+  const pendingPrime = env.player.calls[2];
+  env.audio.say(['정답']);
+  const playingPauses = env.player.pauseCount;
+  pendingPrime.resolve(); await flush();
+  assert.equal(env.player.pauseCount, playingPauses);
+  assert.equal(env.player.src, 'audio/sua/correct.mp3');
 });
 
 test('speak 콜백과 명시적 queue 옵션이 순서대로 작동한다', async () => {
