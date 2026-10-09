@@ -286,7 +286,15 @@ export async function createAuthServer({ config = readConfig(), fetchImpl = fetc
     if (pathname === '/health' && req.method === 'GET') return json(res, 200, { ok: true, configured: config.ready });
     if ((pathname === '/sw.js' || pathname === '/auth-cleanup.js' || pathname === '/login-legacy.js') && ['GET', 'HEAD'].includes(req.method)) {
       const file = path.join(repository, 'server', pathname === '/sw.js' ? 'private-sw.js' : pathname === '/auth-cleanup.js' ? 'login-cleanup.js' : 'login-legacy.js');
-      let bytes; try { bytes = await fs.readFile(file); } catch { throw new AccessError(404, 'not-found'); }
+      let bytes;
+      try {
+        bytes = await fs.readFile(file);
+        if (pathname === '/sw.js') {
+          // 배포 때 계산한 셸 해시와 같은 코드로 로그인 뒤 받은 자료를 보관한다.
+          const runtime = await fs.readFile(path.join(config.staticRoot, 'sw.js'));
+          bytes = Buffer.concat([bytes, Buffer.from('\n'), runtime]);
+        }
+      } catch { throw new AccessError(404, 'not-found'); }
       res.writeHead(200, { 'Content-Type': 'text/javascript; charset=utf-8', 'Content-Length': bytes.length });
       return res.end(req.method === 'HEAD' ? undefined : bytes);
     }

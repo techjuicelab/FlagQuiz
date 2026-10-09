@@ -113,6 +113,72 @@ test('나라·수도·이어 말하기 모드는 같은 녹음 경로를 쓰고 
   }
 });
 
+test('오프라인에서 직접 어댑터를 시작해도 마이크·녹음·서버 요청 없이 글자 답으로 돌린다', async () => {
+  for (const mode of ['voice', 'capitalVoice', 'country-chain']) {
+    const f = fixture({ mode });
+    f.window.navigator.onLine = false;
+    await f.adapter.start(f.handlers());
+    assert.equal(f.streams.length, 0);
+    assert.equal(f.contexts.length, 0);
+    assert.equal(f.recorders.length, 0);
+    assert.equal(f.requests.length, 0);
+    assert.equal(f.errors.length, 1);
+    assert.equal(f.errors[0].code, 'network');
+    assert.match(f.errors[0].message, /글자/);
+    assert.equal(f.adapter.isRecording(), false);
+    assert.equal(f.timers.size, 0);
+  }
+});
+
+test('브라우저 연결 표시가 있어도 오프라인 세션에서는 마이크와 업로드를 시작하지 않는다', async () => {
+  for (const mode of ['voice', 'capitalVoice', 'country-chain']) {
+    const f = fixture({ mode });
+    f.window.navigator.onLine = true;
+    f.window.FQ.auth = { session: () => ({ authenticated: true, offline: true }) };
+    await f.adapter.start(f.handlers());
+    assert.equal(f.streams.length, 0);
+    assert.equal(f.contexts.length, 0);
+    assert.equal(f.recorders.length, 0);
+    assert.equal(f.requests.length, 0);
+    assert.equal(f.errors.length, 1);
+    assert.equal(f.errors[0].code, 'network');
+    assert.equal(f.timers.size, 0);
+  }
+});
+
+test('녹음 변환 중 오프라인 세션으로 바뀌어도 음성을 서버에 보내지 않는다', async () => {
+  const decode = deferred(), f = fixture({ decode });
+  await f.adapter.start(f.handlers());
+  f.adapter.stop(); await flush();
+  f.window.navigator.onLine = true;
+  f.window.FQ.auth = { session: () => ({ authenticated: true, offline: true }) };
+  decode.resolve({ length: 48000, sampleRate: 48000, numberOfChannels: 1,
+    getChannelData: () => new Float32Array(48000).fill(0.25) });
+  await flush();
+  assert.equal(f.requests.length, 0);
+  assert.equal(f.errors.length, 1);
+  assert.equal(f.errors[0].code, 'network');
+  assert.equal(f.streams[0].track.stops, 1);
+  assert.equal(f.timers.size, 0);
+});
+
+test('녹음 변환 중 오프라인이 되면 음성을 서버에 보내지 않고 마이크를 해제한다', async () => {
+  const decode = deferred(), f = fixture({ decode });
+  await f.adapter.start(f.handlers());
+  f.adapter.stop(); await flush();
+  f.window.navigator.onLine = false;
+  decode.resolve({ length: 48000, sampleRate: 48000, numberOfChannels: 1,
+    getChannelData: () => new Float32Array(48000).fill(0.25) });
+  await flush();
+  assert.equal(f.requests.length, 0);
+  assert.equal(f.results.length, 0);
+  assert.equal(f.errors.length, 1);
+  assert.equal(f.errors[0].code, 'network');
+  assert.equal(f.streams[0].track.stops, 1);
+  assert.equal(f.contexts[0].closed, 1);
+  assert.equal(f.timers.size, 0);
+});
+
 test('수동으로 녹음을 끝내도 완전무음은 보내지 않고 조용한 목소리의 PCM은 제거하지 않는다', async () => {
   const silent = fixture({ sample: 0 });
   await silent.adapter.start(silent.handlers()); silent.adapter.stop(); await flush();

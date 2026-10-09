@@ -127,10 +127,14 @@
       voiceState = 'idle';
     }
     function current(token) { return alive && token === generation && !doc.hidden; }
+    function connected() {
+      var account = FQ.auth && FQ.auth.session && FQ.auth.session();
+      return (!global.navigator || global.navigator.onLine !== false) && !(account && account.offline);
+    }
     function voiceAvailable() { return !!(voice && voice.start && (!voice.supported || voice.supported())); }
     function updateVoiceControls() {
       var mic = element('chain-mic'), pause = element('chain-pause');
-      mic.disabled = game.snapshot().complete || speaking || !(voiceState === 'recording' || voiceState === 'idle' && !continuous);
+      mic.disabled = !connected() || game.snapshot().complete || speaking || !(voiceState === 'recording' || voiceState === 'idle' && !continuous);
       var label = speaking ? '이름 읽는 중' : ({ recording: '말했어요', requesting: '마이크 준비 중', waiting: '듣기 준비 중',
         speaking: '이름 읽는 중', finishing: '녹음 정리 중', transcribing: '나라 이름 확인 중' }[voiceState] || (continuous ? '듣기 준비 중' : '말하기 시작'));
       mic.innerHTML = ui.icon('mic') + '<span>' + label + '</span>';
@@ -147,7 +151,7 @@
       voiceState = speaking ? 'speaking' : state === 'idle' && continuous ? 'waiting' : state;
       updateVoiceControls();
       updateTurnHint();
-      element('chain-voice-state').textContent = message || ({ requesting: '마이크를 켜고 있어요. 준비 비프가 끝나면 말해요.', recording: '듣고 있어요. 나라 이름을 하나 말해요.',
+      element('chain-voice-state').textContent = !connected() ? '인터넷이 없어요. 같은 차례에서 나라 이름을 글로 써요.' : message || ({ requesting: '마이크를 켜고 있어요. 준비 비프가 끝나면 말해요.', recording: '듣고 있어요. 나라 이름을 하나 말해요.',
         waiting: '듣기를 준비하고 있어요. 준비 비프가 끝나면 말해요.', speaking: '나라 이름을 읽고 있어요. 다 읽고 준비 비프가 끝나면 말해요.',
         finishing: '녹음을 정리하고 있어요.', transcribing: '말한 나라 이름을 확인하고 있어요.',
         idle: '마이크를 누르고 나라 이름을 하나 말해요. 글로 써도 좋아요.' }[voiceState] || '');
@@ -200,6 +204,7 @@
     }
     function beginListening() {
       if (!alive || doc.hidden || !continuous || game.snapshot().complete) return;
+      if (!connected()) { connectionChanged(); return; }
       if (!voiceAvailable()) {
         continuous = false;
         cancelVoice();
@@ -302,6 +307,15 @@
       setVoiceState('idle', '듣기를 멈췄어요. 같은 차례에서 글로 쓰거나 마이크를 다시 눌러요.');
     }
     function visibility() { if (doc.hidden && alive) pauseListening(); }
+    function connectionChanged() {
+      if (!alive) return;
+      if (!connected()) {
+        continuous = false;
+        cancelVoice();
+        stopReading();
+      }
+      setVoiceState('idle');
+    }
     function cleanup() {
       if (!alive) return;
       alive = false;
@@ -340,8 +354,8 @@
     });
     doc.addEventListener('visibilitychange', visibility);
     render();
-    if (!voiceAvailable()) setVoiceState('idle', '나라 이름을 글로 써도 같은 놀이를 이어갈 수 있어요.');
-    return { cleanup: cleanup, submit: submit, snapshot: function () { return game.snapshot(); }, pause: pauseListening };
+    if (!connected() || !voiceAvailable()) setVoiceState('idle', '나라 이름을 글로 써도 같은 놀이를 이어갈 수 있어요.');
+    return { cleanup: cleanup, submit: submit, snapshot: function () { return game.snapshot(); }, pause: pauseListening, connectionChanged: connectionChanged };
   }
 
   FQ.countryChain = { createGame: createGame, start: start };

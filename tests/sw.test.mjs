@@ -9,6 +9,8 @@ const FLAGS = 'flagquiz-flags-v1';
 const ART = 'flagquiz-art-v1';
 const AUDIO = 'flagquiz-v4';
 const source = fs.readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
+const privateSource = fs.readFileSync(new URL('../server/private-sw.js', import.meta.url), 'utf8');
+const AUTH = 'flagquiz-offline-auth-v1';
 const urlOf = request => new URL(request.url || request, BASE).href;
 
 function worker({ buckets = new Map(['another-app-v1', 'flagquiz-v2', 'flagquiz-v3', AUDIO, SHELL].map(name => [name, new Map()])), script = source } = {}) {
@@ -44,7 +46,7 @@ function worker({ buckets = new Map(['another-app-v1', 'flagquiz-v2', 'flagquiz-
       async addAll(requests) {
         addAllCalls.push({ name, urls: Array.from(requests, urlOf) });
         const responses = await Promise.all(requests.map(async request => {
-          const response = await sandbox.fetch(new Request(urlOf(request)));
+          const response = await sandbox.fetch(request instanceof Request ? request : new Request(urlOf(request)));
           if (!response.ok) throw new TypeError('Cache.addAll requires successful responses');
           return response;
         }));
@@ -1106,3 +1108,226 @@ test('캐시를 읽을 수 없으면 준비 완료 대신 저장소 오류를 �
   assert.equal(result.messages.at(-1).status, 'error');
   assert.equal(result.messages.at(-1).error, 'storage');
 });
+
+test('실제 HTML·CSS·manifest가 참조하는 정적 셸 파일은 모두 설치 목록에 있다', () => {
+  const w = worker(), paths = new Set(Array.from(w.sandbox.SHELL, urlOf));
+  const html = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  const references = [...html.matchAll(/(?:src|href)="([^"]+)"/g)].map(match => match[1])
+    .filter(value => !/^(?:https?:|#)/.test(value));
+  const manifest = JSON.parse(fs.readFileSync(new URL('../manifest.webmanifest', import.meta.url), 'utf8'));
+  references.push(...manifest.icons.map(icon => icon.src));
+  for (const stylesheet of ['style.css', 'map.css']) {
+    const css = fs.readFileSync(new URL('../css/' + stylesheet, import.meta.url), 'utf8');
+    for (const match of css.matchAll(/url\(['"]?([^)'"\s]+)['"]?\)/g)) references.push(new URL(match[1], BASE + 'css/' + stylesheet).href);
+  }
+  references.push('js/speech-pcm-worklet.js');
+  for (const reference of references) assert.ok(paths.has(urlOf(reference)), reference + ' 설치 목록 누락');
+});
+
+function privateWorker(options = {}) {
+  const w = worker({ ...options, script: privateSource + '\n' + source });
+  const messages = [];
+  w.sandbox.self.clients.matchAll = async () => [{ postMessage(message) { messages.push(message); } }];
+  w.revocations = messages;
+  return w;
+}
+
+function sessionResponse(overrides = {}) {
+  return new Response(JSON.stringify({ authenticated: true, email: 'family@example.invalid', role: 'superadmin',
+    csrfToken: 'must-not-be-saved', expiresAt: Date.now() + 60000, ...overrides }), { headers: { 'content-type': 'application/json' } });
+}
+
+test('보호 앱 세션은 온라인 검증 뒤 최소 권한만 보관하고 연결 오류에서만 오프라인으로 이어진다', async () => {
+  const w = privateWorker();
+  w.sandbox.fetch = async () => sessionResponse();
+  const online = await request(w, './api/auth/session');
+  assert.equal((await online.json()).csrfToken, 'must-not-be-saved');
+  w.sandbox.fetch = async () => { throw new Error('offline'); };
+  const offline = await request(w, './api/auth/session');
+  const data = await offline.json();
+  assert.equal(data.authenticated, true);
+  assert.equal(data.offline, true);
+  assert.equal(typeof data.expiresAt, 'number');
+  assert.deepEqual(Object.keys(data).sort(), ['authenticated', 'expiresAt', 'offline']);
+  assert.ok(!w.puts.some(put => put.name === SHELL && urlOf(put.request).includes('/api/')));
+  assert.ok(w.buckets.has(AUTH));
+});
+
+for (const denial of ['false', '401', '403', 'redirect', 'server-error']) {
+  test('보호 앱 온라인 세션 거부는 이전 저장 세션으로 우회하지 않는다: ' + denial, async () => {
+    const w = privateWorker();
+    w.sandbox.fetch = async () => sessionResponse();
+    await request(w, './api/auth/session');
+    w.seed(SHELL, './index.html', new Response('private app'));
+    w.seed(AUDIO, './audio/sua/test.mp3', new Response('private audio'));
+    w.sandbox.fetch = async () => denial === 'false' ? sessionResponse({ authenticated: false }) :
+      denial === 'redirect' ? Response.redirect(BASE + 'login', 303) : new Response('{}', { status: Number(denial === 'server-error' ? 503 : denial) });
+    const response = await request(w, './api/auth/session');
+    assert.equal(response.status, denial === 'false' ? 200 : denial === 'redirect' ? 303 : Number(denial === 'server-error' ? 503 : denial));
+    if (denial === 'server-error') return;
+    assert.ok(![...w.buckets.keys()].some(name => name.startsWith('flagquiz-')));
+    assert.ok(w.buckets.has('another-app-v1'));
+    assert.ok(w.revocations.some(message => message.type === 'OFFLINE_AUTH_REVOKED'));
+  });
+}
+
+test('보호 앱의 관리자·로그인 응답은 셸 캐시에 보관하지 않는다', async () => {
+  const w = privateWorker();
+  w.sandbox.fetch = async () => new Response('sensitive response');
+  for (const path of ['./api/admin/allowlist', './login']) assert.equal(await (await request(w, path)).text(), 'sensitive response');
+  assert.equal(w.puts.length, 0);
+});
+
+test('보호 앱은 유효한 오프라인 세션이 없으면 저장된 앱 복사본을 제공하지 않는다', async () => {
+  const w = privateWorker();
+  w.seed(SHELL, './index.html', new Response('private app'));
+  const response = await request(w, './index.html');
+  assert.equal(response.type, 'error');
+  assert.equal(w.read(SHELL, './index.html'), undefined);
+});
+
+test('보호 앱의 로그아웃은 네트워크가 끊겨도 로컬 캐시를 즉시 지운다', async () => {
+  const w = privateWorker();
+  w.seed(SHELL, './index.html', new Response('private app'));
+  w.seed(AUDIO, './audio/sua/test.mp3', new Response('private audio'));
+  await assert.rejects(request(w, new Request(urlOf('./api/auth/logout'), { method: 'POST' })));
+  assert.ok(![...w.buckets.keys()].some(name => name.startsWith('flagquiz-')));
+  assert.ok(w.revocations.some(message => message.type === 'OFFLINE_AUTH_REVOKED'));
+});
+
+test('보호 앱 OFFLINE_CLEAR는 캐시 폐기 뒤 응답하고 늦은 세션 요청이 접근을 복구하지 않는다', async () => {
+  const w = privateWorker();
+  let finish;
+  w.sandbox.fetch = () => new Promise(resolve => { finish = resolve; });
+  const pending = request(w, './api/auth/session');
+  await new Promise(resolve => setImmediate(resolve));
+  const cleared = sendMessage(w, 'OFFLINE_CLEAR', 'clear-1');
+  await cleared.done;
+  assert.deepEqual(cleared.messages, [{ type: 'OFFLINE_CLEARED', requestId: 'clear-1' }]);
+  finish(sessionResponse());
+  await pending;
+  assert.ok(![...w.buckets.keys()].some(name => name.startsWith('flagquiz-')));
+});
+
+test('보호 앱 설치는 로그인 검증 실패 때 셸 파일을 내려받지 않는다', async () => {
+  const w = privateWorker(), fetched = [];
+  w.sandbox.fetch = async req => { fetched.push(urlOf(req)); return sessionResponse({ authenticated: false }); };
+  await assert.rejects(lifecycle(w, 'install'));
+  assert.deepEqual(fetched, [urlOf('./api/auth/session')]);
+});
+
+test('보호 앱은 인증한 설치 셸을 오프라인 재시작에서 열고 Safari 음원 구간도 제공한다', async () => {
+  const first = privateWorker(), fetched = [];
+  first.sandbox.fetch = async req => {
+    fetched.push(req);
+    return urlOf(req).endsWith('/api/auth/session') ? sessionResponse() : new Response('installed ' + urlOf(req));
+  };
+  await lifecycle(first, 'install');
+  assert.ok(fetched.slice(1).every(req => req.redirect === 'error'), '로그인 화면으로 따라간 200은 설치 셸로 보관하면 안 된다');
+  first.seed(AUDIO, './audio/music/test.mp3', new Response('0123456789'));
+  const restarted = privateWorker({ buckets: first.buckets });
+  const session = await (await request(restarted, './api/auth/session')).json();
+  assert.equal(session.offline, true);
+  assert.match(await (await request(restarted, './index.html')).text(), /installed/);
+  const sound = await request(restarted, new Request(urlOf('./audio/music/test.mp3'), { headers: { range: 'bytes=0-1' } }));
+  assert.equal(sound.status, 206);
+  assert.equal(await sound.text(), '01');
+});
+
+test('보호 앱 저장은 실제 파일을 모두 채우고 새 워커에서도 준비 완료를 확인한다', async () => {
+  const first = privateWorker();
+  first.sandbox.fetch = async () => sessionResponse();
+  await request(first, './api/auth/session');
+  offlineFixture(first);
+  const download = sendMessage(first, 'OFFLINE_DOWNLOAD');
+  await download.done;
+  assert.equal(download.messages.at(-1).status, 'ready');
+  const restarted = privateWorker({ buckets: first.buckets });
+  const status = sendMessage(restarted, 'OFFLINE_STATUS');
+  await status.done;
+  assert.equal(status.messages.at(-1).status, 'ready');
+  assert.equal(status.messages.at(-1).cached, status.messages.at(-1).total);
+});
+
+test('보호 앱은 세션이 만료되면 오프라인 셸·음원·접근 정보를 폐기한다', async () => {
+  const w = privateWorker();
+  w.sandbox.fetch = async () => sessionResponse();
+  await request(w, './api/auth/session');
+  w.seed(SHELL, './index.html', new Response('private app'));
+  w.seed(AUDIO, './audio/music/test.mp3', new Response('0123456789'));
+  w.sandbox.Date = class extends Date { static now() { return Date.now() + 120000; } };
+  w.sandbox.fetch = async () => { throw new Error('offline'); };
+  await assert.rejects(request(w, './api/auth/session'));
+  assert.ok(![...w.buckets.keys()].some(name => name.startsWith('flagquiz-')));
+  assert.equal((await request(w, './index.html')).type, 'error');
+});
+
+test('보호 앱의 늦은 세션 JSON 거부는 새 로그인 접근 정보를 지우지 않는다', async () => {
+  const w = privateWorker();
+  let finishBody;
+  const body = new Promise(resolve => { finishBody = resolve; });
+  w.sandbox.fetch = async () => ({ ok: true, status: 200, clone() { return { json: () => body }; } });
+  const previous = request(w, './api/auth/session');
+  await new Promise(resolve => setImmediate(resolve));
+  await sendMessage(w, 'OFFLINE_CLEAR').done;
+  w.sandbox.fetch = async () => sessionResponse();
+  await request(w, './api/auth/session');
+  const revocations = w.revocations.length;
+  finishBody({ authenticated: false });
+  await previous;
+  assert.ok(w.read(AUTH, './_offline-session'));
+  assert.equal(w.revocations.length, revocations);
+});
+
+test('보호 앱 새 세션은 진행 중인 캐시 삭제·다른 창 알림이 끝난 뒤 저장한다', async () => {
+  const w = privateWorker();
+  w.sandbox.fetch = async () => sessionResponse();
+  await request(w, './api/auth/session');
+  const remove = w.sandbox.caches.delete;
+  let allowDelete, deleting;
+  const gate = new Promise(resolve => { allowDelete = resolve; });
+  const started = new Promise(resolve => { deleting = resolve; });
+  w.sandbox.caches.delete = async name => {
+    if (name === AUTH) { deleting(); await gate; }
+    return remove(name);
+  };
+  const cleared = sendMessage(w, 'OFFLINE_CLEAR');
+  await started;
+  let sessionFinished = false;
+  const fresh = request(w, './api/auth/session').then(() => { sessionFinished = true; });
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(sessionFinished, false);
+  allowDelete();
+  await Promise.all([cleared.done, fresh]);
+  assert.ok(w.read(AUTH, './_offline-session'));
+  assert.equal(w.sandbox.privateRevoked, false);
+});
+
+test('보호 앱의 저장 요청은 인증이 없으면 파일을 받지 않고 로그인 확인을 요구한다', async () => {
+  const w = privateWorker(), fetched = [];
+  w.sandbox.fetch = async req => { fetched.push(urlOf(req)); return new Response('must not download'); };
+  const download = sendMessage(w, 'OFFLINE_DOWNLOAD');
+  await download.done;
+  assert.equal(download.messages.at(-1).error, 'auth');
+  assert.deepEqual(fetched, []);
+});
+
+for (const path of ['./api/speech/status', './images/symbols/new.webp']) {
+  test('보호 앱의 늦은 API·자료 거부도 새 로그인 접근 정보를 지우지 않는다: ' + path, async () => {
+    const w = privateWorker();
+    w.sandbox.fetch = async () => sessionResponse();
+    await request(w, './api/auth/session');
+    let finish;
+    w.sandbox.fetch = () => new Promise(resolve => { finish = resolve; });
+    const previous = request(w, path);
+    await new Promise(resolve => setImmediate(resolve));
+    await sendMessage(w, 'OFFLINE_CLEAR').done;
+    w.sandbox.fetch = async () => sessionResponse();
+    await request(w, './api/auth/session');
+    const revocations = w.revocations.length;
+    finish(new Response('{}', { status: 401 }));
+    await previous;
+    assert.ok(w.read(AUTH, './_offline-session'));
+    assert.equal(w.revocations.length, revocations);
+  });
+}

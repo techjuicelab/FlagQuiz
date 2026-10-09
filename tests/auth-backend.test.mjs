@@ -342,18 +342,34 @@ test('관리자 JSON 을 기다리는 중 로그아웃하거나 세션이 만료
   }
 });
 
+test('NAS 워커는 배포 셸 해시를 포함한 공통 오프라인 코드를 private 모드로 제공한다', async t => {
+  const f = await httpFixture(t);
+  const common = "var SHELL_CACHE = 'flagquiz-shell-fixture-hash';\n/* fixture offline runtime */";
+  await fs.writeFile(path.join(f.env.STATIC_ROOT, 'sw.js'), common);
+  const preamble = await fs.readFile(new URL('../server/private-sw.js', import.meta.url), 'utf8');
+  const response = await f.request('/sw.js');
+  assert.equal(response.status, 200);
+  assert.equal(await response.text(), preamble + '\n' + common);
+  const head = await f.request('/sw.js', { method: 'HEAD' });
+  assert.equal(Number(head.headers.get('content-length')), Buffer.byteLength(preamble + '\n' + common));
+  assert.equal(await head.text(), '');
+});
+
 test('로그인 cleanup 은 루트의 FlagQuiz worker 와 flagquiz- 캐시만 정리한다', async () => {
   const deleted = [], unregistered = [], origin = 'https://quiz.test';
+  const local = new Map([['flagquiz.logout-pending', '1'], ['flagquiz.v1', 'learning-records']]);
   function registration(name, scope, scriptURL, phase = 'active') { return { scope, [phase]: { scriptURL }, unregister() { unregistered.push(name); return Promise.resolve(true); } }; }
   const registrations = [registration('root', origin + '/', origin + '/sw.js'), registration('waiting', origin + '/', origin + '/sw.js?private=1', 'waiting'),
     registration('nested', origin + '/other/', origin + '/sw.js'), registration('other-app', origin + '/', origin + '/other-worker.js'),
     registration('other-origin', 'https://other.test/', 'https://other.test/sw.js')];
-  const context = { URL, location: { origin }, navigator: { serviceWorker: { getRegistrations: async () => registrations } },
+  const context = { URL, location: { origin }, localStorage: { removeItem: key => local.delete(key) }, navigator: { serviceWorker: { getRegistrations: async () => registrations } },
     caches: { keys: async () => ['flagquiz-v4', 'flagquiz-shell-v2', 'flagquiz-other', 'flagquiz', 'flagquizother', 'another-app'], delete: async name => { deleted.push(name); } } };
   context.window = context;
   vm.runInNewContext(await fs.readFile(new URL('../server/login-cleanup.js', import.meta.url), 'utf8'), context);
   await new Promise(resolve => setImmediate(resolve));
   assert.deepEqual(unregistered, ['root', 'waiting']); assert.deepEqual(deleted, ['flagquiz-v4', 'flagquiz-shell-v2', 'flagquiz-other']);
+  assert.equal(local.has('flagquiz.logout-pending'), false);
+  assert.equal(local.get('flagquiz.v1'), 'learning-records');
 });
 
 test('유료 음성 요청은 로그인·CSRF·키·입력 검사를 먼저 하고 quota 를 저장한 후에만 호출한다', async t => {

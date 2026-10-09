@@ -173,7 +173,7 @@ test('확장 검사기는 헬퍼를 통한 실제 v4 음원 조회·저장과 �
 test('검사기는 음원 조회·저장 버킷을 따로 바꾼 변이를 모두 거부한다', async () => {
   const mutants = [
     ['조회 버킷', replaceOnce(sw, 'matchCache(AUDIO_CACHE, whole)', 'matchCache(SHELL_CACHE, whole)')],
-    ['저장 버킷', replaceOnce(sw, 'putCache(AUDIO_CACHE, whole, copy)', 'putCache(SHELL_CACHE, whole, copy)')],
+    ['저장 버킷', replaceOnce(sw, 'putCache(AUDIO_CACHE, whole, copy, epoch)', 'putCache(SHELL_CACHE, whole, copy, epoch)')],
     ['음원 버킷명', replaceOnce(sw, "var AUDIO_CACHE = 'flagquiz-v4';", "var AUDIO_CACHE = 'flagquiz-audio-v1';")]
   ];
   for (const [name, source] of mutants) {
@@ -204,7 +204,7 @@ test('검사기는 이름을 유지한 음원 본문 손상도 잡는다', async
 
 test('검사기는 전역 캐시 조회로 인한 옛 셸과 다른 앱 스크립트 오염을 잡는다', async () => {
   const source = replaceOnce(sw,
-    'return caches.open(name).then(function (cache) { return cache.match(req); });',
+    'return openCache(name).then(function (cache) { return cache.match(req); });',
     'return caches.match(req);');
   const failed = await problems(verifyActivateKeepsAudio, source);
   assert.ok(failed.some(message => /오프라인 탐색.*현재 셸/.test(message)), failed.join('\n'));

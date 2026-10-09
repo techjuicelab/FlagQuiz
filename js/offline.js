@@ -18,14 +18,37 @@
   var statusCheckedAt = 0;
   var sequence = 0;
   var downloadWanted = false;
+  var DOWNLOAD_KEY = 'flagquiz.offline-download';
+  var authRevoked = false;
+  try { downloadWanted = global.localStorage.getItem(DOWNLOAD_KEY) === '1'; } catch (e) { /* 저장소 차단 환경은 현재 실행에서만 이어받는다. */ }
   var resumeAfterCurrent = false;
   var reconnectTimer = null;
+  var connected = null;
   var state = { status: 'checking', cached: 0, total: 0 };
 
   function node(id) { return doc.getElementById(id); }
-  function online() { return nav.onLine !== false; }
+  function account() { return FQ.auth && FQ.auth.session ? FQ.auth.session() : null; }
+  function online() { var current = account(); return nav.onLine !== false && !(current && current.offline); }
   function worker() { return nav.serviceWorker.controller || (registration && registration.active); }
   function busy() { return !!(activeRequest && activeRequest.type === 'OFFLINE_DOWNLOAD') || (!available && !!registrationAttempt); }
+  function wantDownload(wanted) {
+    downloadWanted = wanted;
+    try {
+      if (wanted) global.localStorage.setItem(DOWNLOAD_KEY, '1');
+      else global.localStorage.removeItem(DOWNLOAD_KEY);
+    } catch (e) { /* 학습 기록과 이미 받은 캐시는 이 표식과 별도로 보존한다. */ }
+  }
+  function revoked() {
+    authRevoked = true;
+    wantDownload(false);
+    clearReconnectRetry();
+    if (activeRequest) activeRequest.close();
+    registrationSequence += 1;
+    registrationAttempt = null;
+    available = false;
+    state = { status: 'partial', cached: 0, total: 0, error: 'auth' };
+    render();
+  }
 
   function render() {
     var status = node('offline-status');
@@ -42,7 +65,8 @@
     if (state.status === 'checking') { summary = '확인 중'; message = '이 기기에 저장한 놀이를 확인하고 있어요.'; }
     if (state.status === 'downloading') { summary = '저장 중'; message = '그림과 소리를 저장하고 있어요. 저장하는 동안에도 놀 수 있어요.'; }
     if (ready) { summary = '준비 완료'; message = '그림과 읽어주기까지 모두 준비됐어요. 인터넷 없이도 놀 수 있어요.'; }
-    if (state.error === 'quota') message = '기기 저장 공간이 부족해요. 공간을 확보한 뒤 이어서 저장해 주세요. 이미 받은 자료는 남아 있어요.';
+    if (state.error === 'auth') { summary = '로그인 필요'; message = '오프라인 놀이를 준비하려면 인터넷에 연결해 다시 로그인해 주세요.'; }
+    else if (state.error === 'quota') message = '기기 저장 공간이 부족해요. 공간을 확보한 뒤 이어서 저장해 주세요. 이미 받은 자료는 남아 있어요.';
     else if (state.error === 'storage') message = '이 브라우저에 자료를 저장하지 못했어요. 저장 공간과 브라우저 설정을 확인한 뒤 다시 시도해 주세요.';
     else if (state.error) message = online()
       ? '저장을 마치지 못했어요. 연결을 확인하고 이어서 저장해 주세요. 이미 받은 자료는 남아 있어요.'
@@ -59,7 +83,7 @@
     progress.setAttribute('aria-valuetext', (state.cached || 0) + ' / ' + (state.total || 0) + '개 저장');
     var button = node('offline-download');
     button.hidden = ready || state.status === 'unsupported';
-    button.disabled = busy() || !online();
+    button.disabled = authRevoked || busy() || !online();
     button.textContent = !available ? '다시 확인하기' : state.status === 'downloading' ? '저장 중…' : downloadWanted && state.cached ? '이어서 저장하기' : '전체 저장하기';
     var connection = node('connection-note');
     connection.hidden = online();
@@ -78,7 +102,7 @@
   }
 
   function request(type) {
-    if (!available || !worker() || activeRequest) return;
+    if (authRevoked || !available || !worker() || activeRequest) return;
     if (reconnectTimer !== null) { global.clearTimeout(reconnectTimer); reconnectTimer = null; }
     var target = worker();
     checkedWorker = target;
@@ -118,7 +142,8 @@
         var retryAfterEnd = resumeAfterCurrent && type === 'OFFLINE_DOWNLOAD' && downloadWanted && online() &&
           (data.status === 'partial' || data.status === 'error') && data.error === 'network';
         clearReconnectRetry();
-        if (data.status === 'ready') downloadWanted = false;
+        if (data.status === 'ready') wantDownload(false);
+        if (data.error === 'auth') { revoked(); return; }
         if (retryAfterEnd) reconnectTimer = global.setTimeout(function () {
           reconnectTimer = null;
           if (downloadWanted && online() && !activeRequest) request('OFFLINE_DOWNLOAD');
@@ -151,6 +176,7 @@
 
   /** controllerchange와 등록 완료가 같은 워커를 알려도 전체 검사는 한 번만 한다. */
   function useWorker(retry) {
+    if (authRevoked) return false;
     var target = worker();
     if (!target || (target === failedWorker && !retry)) return false;
     if (target === checkedWorker && available) return true;
@@ -162,7 +188,7 @@
   }
 
   function register(retry) {
-    if (registrationAttempt) return;
+    if (authRevoked || registrationAttempt) return;
     var id = ++registrationSequence;
     var timer;
     var attempt = { id: id };
@@ -209,6 +235,22 @@
     }).catch(function () { failed('network'); });
   }
 
+  function connectionChanged() {
+    if (!initialized || authRevoked || state.status === 'unsupported') return;
+    var next = online();
+    if (connected === next) { render(); return; }
+    connected = next;
+    clearReconnectRetry();
+    if (!next) { render(); return; }
+    resumeAfterCurrent = downloadWanted;
+    if (available) {
+      warmSmall(true);
+      if (activeRequest) activeRequest.close();
+      refresh();
+    } else register(true);
+    render();
+  }
+
   function init() {
     if (initialized) return;
     initialized = true;
@@ -220,35 +262,36 @@
       render();
       return;
     }
+    connected = online();
     node('offline-download').addEventListener('click', function () {
-      if (!online() || busy()) return;
+      if (authRevoked || !online() || busy()) return;
       clearReconnectRetry();
       // 복귀 직후 상태를 검사하고 있어도, 아이가 누른 전체 저장을 먼저 시작한다.
       if (activeRequest) activeRequest.close();
-      downloadWanted = true;
+      wantDownload(true);
       if (!available) register(true);
       else request('OFFLINE_DOWNLOAD');
     });
     nav.serviceWorker.addEventListener('controllerchange', function () {
       useWorker(false);
     });
-    global.addEventListener('online', function () {
-      clearReconnectRetry();
-      resumeAfterCurrent = downloadWanted;
-      if (available) {
-        warmSmall(true);
-        if (activeRequest) activeRequest.close();
-        refresh();
-      } else register(true);
-      render();
+    nav.serviceWorker.addEventListener('message', function (event) {
+      if (event.data && event.data.type === 'OFFLINE_AUTH_REVOKED') revoked();
     });
-    global.addEventListener('offline', function () { clearReconnectRetry(); render(); });
+    global.addEventListener('online', function () {
+      if (authRevoked) { render(); return; }
+      var current = account();
+      // 보호된 앱은 auth의 실제 세션 조회가 끝난 뒤 이어받는다.
+      if (current && !current.preview) { render(); return; }
+      connectionChanged();
+    });
+    global.addEventListener('offline', connectionChanged);
     doc.addEventListener('visibilitychange', function () {
-      if (!doc.hidden) { warmSmall(false); refresh(true); }
+      if (!authRevoked && !doc.hidden) { warmSmall(false); refresh(true); }
     });
     useWorker(false);
     register(false);
   }
 
-  FQ.offline = { init: init, render: render };
+  FQ.offline = { init: init, render: render, connectionChanged: connectionChanged };
 })(window);

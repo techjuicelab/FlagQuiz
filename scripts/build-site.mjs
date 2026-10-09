@@ -62,8 +62,12 @@ const artSet = checkArtSet(root, fq.subjects, fq.countries.map(c => c.code), fq.
 const artFiles = checkImages({root});
 const artErrors = [...artSet.errors, ...artFiles.errors];
 if (artErrors.length) throw new Error('그림 배포 검사 실패:\n' + artErrors.join('\n'));
-// 스트리밍 캡처 파일이 빠진 상태로 기존 배포 묶음을 교체하지 않는다.
-for (const file of ['js/streaming-speech.js', 'js/speech-pcm-worklet.js', 'js/speech-engine.js']) {
+// 워커의 실제 설치 목록을 검사한다. 누락 파일 때문에 배포 후 전체 오프라인 설치가
+// 실패하거나 기존 정상 배포 묶음이 먼저 지워지지 않게 한다.
+const workerContext = { self: { addEventListener() {} } };
+vm.runInNewContext(await fs.readFile(path.join(root, 'sw.js'), 'utf8'), workerContext);
+for (const url of workerContext.SHELL) {
+  const file = url === './' ? 'index.html' : url === './login-legacy.js' ? 'server/login-legacy.js' : url.replace(/^\.\//, '');
   await fs.access(path.join(root, file));
 }
 await fs.rm(output, { recursive: true, force: true });
@@ -91,6 +95,8 @@ for (const folder of ['assets', 'css', 'js', 'data']) await hashShell(folder);
 for (const file of ['index.html', 'manifest.webmanifest', 'sw.js', 'login-legacy.js']) {
   shellHash.update(file + '\0').update(await fs.readFile(path.join(output, file)));
 }
+// 보호 모드의 접근 경계가 바뀌어도 새 셸을 완전히 설치한 뒤 전환한다.
+shellHash.update('server/private-sw.js\0').update(await fs.readFile(path.join(root, 'server/private-sw.js')));
 const workerPath = path.join(output, 'sw.js');
 const workerSource = await fs.readFile(workerPath, 'utf8');
 await fs.writeFile(workerPath, workerSource.replace(/var SHELL_CACHE = '[^']+';/,

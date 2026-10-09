@@ -295,15 +295,29 @@ test('마이크 보관은 명시한 true만 허용하고 기본 stopAnd와 연�
 });
 
 test('다음 차례 전에 로그인·연결이 사라지면 보관 마이크를 즉시 해제한다', async () => {
-  for (const blocked of ['auth', 'offline']) {
+  for (const blocked of ['auth', 'offline', 'offline-session']) {
     const f = setupStreaming(); f.speech.start(handlers().value); const old = await f.ready();
     old.message({ type: 'result', text: '대한민국', mode: 'voice', playerId: '0', turnId: '4' });
     f.speech.stopAnd(() => {}, { keepMicrophone: true }); f.advance(0);
     if (blocked === 'auth') f.window.FQ.auth.session = () => null;
+    else if (blocked === 'offline-session') f.window.FQ.auth.session = () => ({ authenticated: true, offline: true });
     else f.window.navigator.onLine = false;
     assert.equal(f.speech.start(handlers('voice', 5).value), false);
     assert.equal(f.streams[0].track.stops, 1, blocked + ': 시작 거절도 보관한 마이크를 남기지 않는다');
     assert.equal(f.contexts[0].closed, 1); assert.equal(f.sockets.length, 1); assert.equal(f.speech.isListening(), false);
+  }
+});
+
+test('브라우저가 온라인이어도 저장된 오프라인 로그인으로는 말하기를 시작하지 않는다', () => {
+  for (const mode of ['voice', 'capitalVoice']) {
+    const f = setup(), h = handlers(mode);
+    f.window.FQ.auth.session = () => ({ authenticated: true, offline: true });
+    assert.equal(f.window.navigator.onLine, true);
+    assert.match(f.speech.unavailableReason(), /인터넷 연결/);
+    assert.equal(f.speech.start(h.value), false);
+    assert.equal(f.sessions.length, 0);
+    assert.equal(f.factories.length, 0);
+    assert.match(h.events.find(event => event[0] === 'error')[2], /글자나 보기/);
   }
 });
 
@@ -362,6 +376,29 @@ test('명확한 최종 수정·직접 포기는 서버의 다른 선택으로 �
   const answer = f.speech.resolveAnswer('포르투갈 아니고 스페인', 'country', remote);
   assert.equal(answer.status, 'answer'); assert.equal(answer.code, 'es'); assert.equal(answer.text, '스페인');
   assert.equal(f.speech.resolveAnswer('몰라요', 'country', remote).status, 'giveup');
+});
+
+test('오프라인에서도 최신 아이 발음·정정·수도 이름 판정은 서버 전사 없이 동작한다', () => {
+  const f = setup({ offline: true });
+  f.window.fetch = () => { throw new Error('오프라인 판정이 서버를 요청했다'); };
+  f.window.WebSocket = class { constructor() { throw new Error('오프라인 판정이 소켓을 만들었다'); } };
+  for (const [text, kind, code] of [
+    ['포르 갈', 'country', 'pt'],
+    ['포도칼', 'country', 'pt'],
+    ['포르 갈 아니고 스페인', 'country', 'es'],
+    ['스톡 름', 'capital', 'se'],
+    ['스톡 름 아니고 서울', 'capital', 'kr']
+  ]) {
+    const resolved = f.speech.resolveAnswer(text, kind);
+    assert.equal(resolved.status, 'answer', text);
+    assert.equal(resolved.code, code, text);
+  }
+  assert.equal(f.speech.resolveAnswer('몰라요', 'country').status, 'giveup');
+  for (const text of ['포르 갈 아니면 스페인', '포르 갈은 아니에요', '포르 갈인가요?']) {
+    assert.equal(f.speech.resolveAnswer(text, 'country').status, 'retry', text);
+  }
+  assert.equal(f.sessions.length, 0);
+  assert.equal(f.factories.length, 0);
 });
 
 test('Jev도 부정·질문·인용·미선택·지시 주입을 채점할 수 없고 후보 밖 답·canonical 불일치를 거절한다', () => {

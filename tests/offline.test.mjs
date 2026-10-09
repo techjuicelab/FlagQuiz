@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 
 const source = fs.readFileSync(new URL('../js/offline.js', import.meta.url), 'utf8');
-function fixture({ supported = true, online = true, registrationFails = false, controller = true, registrationPending = false, installing = false } = {}) {
+function fixture({ supported = true, online = true, registrationFails = false, controller = true, registrationPending = false, installing = false, local = new Map(), authOffline = null } = {}) {
   const nodes = new Map(), events = {}, swEvents = {}, requests = [], timers = new Map();
   const registrationJobs = [];
   let tick = 0, clock = 0, registerCalls = 0, updateCalls = 0;
@@ -19,11 +19,13 @@ function fixture({ supported = true, online = true, registrationFails = false, c
   const reg = { active: controller ? worker : null, installing: installing ? installingWorker : null,
     update() { updateCalls++; return Promise.resolve(reg); } };
   const c = { FQ: {}, navigator: { onLine: online }, location: { protocol: 'https:', hostname: 'test.invalid' },
+    localStorage: { getItem: key => local.get(key) || null, setItem: (key, value) => local.set(key, value), removeItem: key => local.delete(key) },
     document: { getElementById: node, addEventListener(type, fn) { events[type] = fn; } },
     addEventListener(type, fn) { events[type] = fn; },
     Date: { now: () => clock },
     setTimeout(fn, delay) { fn.delay = delay; timers.set(++tick, fn); return tick; }, clearTimeout(id) { timers.delete(id); },
     MessageChannel: function () { this.port1 = { close() {} }; this.port2 = { receiver: this.port1 }; } };
+  if (authOffline !== null) c.FQ.auth = { session: () => ({ authenticated: true, offline: authOffline }) };
   if (supported) c.navigator.serviceWorker = { controller: worker,
     register() {
       registerCalls++;
@@ -42,11 +44,73 @@ function fixture({ supported = true, online = true, registrationFails = false, c
   }
   function connect(value) { c.navigator.onLine = value; events[value ? 'online' : 'offline'](); }
   function runDelay(delay) { for (const [id, timer] of [...timers]) if (timer.delay === delay) { timers.delete(id); timer(); } }
-  return { c, node, events, swEvents, requests, timers, reply, connect, latest, reg, worker, makeWorker,
+  return { c, node, events, swEvents, requests, timers, reply, connect, latest, reg, worker, makeWorker, local,
+    setAuthOffline(value) { authOffline = value; c.FQ.offline.connectionChanged(); },
     installingWorker, registrationJobs, runDelay, advance(ms) { clock += ms; },
     get registerCalls() { return registerCalls; }, get updateCalls() { return updateCalls; } };
 }
 const settle = () => new Promise(resolve => setImmediate(resolve));
+
+test('브라우저가 온라인이어도 서버 오프라인 세션에서는 저장을 멈추고 서버 인증 복구 뒤 이어받는다', async () => {
+  const local = new Map([['flagquiz.offline-download', '1']]);
+  const f = fixture({ local, authOffline: true }); await settle();
+  assert.equal(f.latest().data.type, 'OFFLINE_STATUS');
+  f.reply('partial', { cached: 35 });
+  assert.equal(f.node('connection-note').hidden, false);
+  assert.equal(f.node('offline-download').disabled, true);
+  const count = f.requests.length;
+  f.connect(true);
+  assert.equal(f.requests.length, count);
+  f.setAuthOffline(false);
+  assert.equal(f.latest().data.type, 'OFFLINE_DOWNLOAD');
+  assert.equal(f.node('connection-note').hidden, true);
+  f.reply('ready', { cached: 100 });
+  const completedCount = f.requests.length;
+  f.setAuthOffline(false);
+  assert.equal(f.requests.length, completedCount, '주기적 세션 확인으로 저장을 다시 시작하지 않는다');
+});
+
+test('보호 앱의 브라우저 재연결은 아직 온라인인 이전 세션 대신 서버 재확인 완료를 기다린다', async () => {
+  const f = fixture({ authOffline: false }); await settle(); f.reply('partial');
+  f.node('offline-download').click(); f.reply('partial', { cached: 35, error: 'network' });
+  f.connect(false); const count = f.requests.length;
+  f.connect(true);
+  assert.equal(f.requests.length, count);
+  f.setAuthOffline(false);
+  assert.equal(f.latest().data.type, 'OFFLINE_DOWNLOAD');
+});
+
+test('전체 저장 도중 앱을 닫아도 다음 실행·재연결 때 받은 분량부터 이어받고 완료 뒤에는 반복하지 않는다', async () => {
+  const local = new Map();
+  const first = fixture({ local }); await settle(); first.reply('partial');
+  first.node('offline-download').click(); first.reply('partial', { cached: 35, error: 'network' });
+  assert.equal(local.get('flagquiz.offline-download'), '1');
+  const reopened = fixture({ local, online: false, registrationFails: true }); await settle();
+  assert.equal(reopened.latest().data.type, 'OFFLINE_STATUS');
+  reopened.reply('partial', { cached: 35 });
+  assert.equal(reopened.node('offline-download').textContent, '이어서 저장하기');
+  reopened.connect(true);
+  assert.equal(reopened.latest().data.type, 'OFFLINE_DOWNLOAD');
+  reopened.reply('ready', { cached: 100 });
+  assert.equal(local.has('flagquiz.offline-download'), false);
+  const completed = fixture({ local }); await settle();
+  assert.equal(completed.latest().data.type, 'OFFLINE_STATUS');
+});
+
+test('로그인 해제 안내를 받으면 진행 중 저장·재접속 이어받기를 멈추고 학습 기록을 보존한다', async () => {
+  const local = new Map([['flagquiz.v1', 'keep-records']]);
+  const f = fixture({ local }); await settle(); f.reply('partial');
+  f.node('offline-download').click(); const previous = f.latest();
+  f.swEvents.message({ data: { type: 'OFFLINE_AUTH_REVOKED' } });
+  assert.equal(local.has('flagquiz.offline-download'), false);
+  assert.equal(local.get('flagquiz.v1'), 'keep-records');
+  assert.match(f.node('offline-status').textContent, /로그인/);
+  const count = f.requests.length;
+  f.reply('ready', { cached: 100 }, previous);
+  assert.notEqual(f.node('offline-summary').textContent, '준비 완료');
+  f.connect(false); f.connect(true); f.events.visibilitychange();
+  assert.equal(f.requests.length, count);
+});
 
 test('준비 완료는 워커의 실제 검사 응답 뒤에만 표시하고, 빠진 자료가 있으면 이어받기를 제공한다', async () => {
   const f = fixture();

@@ -123,8 +123,66 @@ function cloudFixture(f, { streaming = false } = {}) {
     error(session,code){f.c.listening=false;session.onState({state:'idle'});session.onError({code,message:'지금 문제는 글자로 답해 주세요.',playerId:String(session.playerId),turnId:String(session.turnId)});}};
 }
 
+
 let passed=0;
 function test(name,fn){fn();passed++;console.log('✓ '+name);}
+
+test('로그인한 NAS 앱도 홈과 설정에서 오프라인 저장을 열고 워커를 등록한다',()=>{
+  const f=fixture();cloudFixture(f);
+  let initialized=0;
+  f.c.FQ.offline={init(){initialized++;},render(){}};
+  f.c.FQ.app.boot();
+  assert.equal(initialized,1);
+  assert.equal(f.node('#home-offline').hidden,false);
+  assert.equal(f.node('#offline-panel').hidden,false);
+  f.node('#home-offline').click();
+  assert.equal(f.node('#offline-panel').open,true);
+});
+
+test('나라 이어 말하기는 연결이 끊기면 같은 차례를 입력으로 이어가고 늦은 음성을 무시한다',()=>{
+  const f=fixture({chain:true});f.c.FQ.app.boot();
+  const sessions=[];let cancelled=0;
+  f.c.FQ.auth={session:()=>({preview:false}),csrfToken:()=> 'test-csrf'};
+  f.c.FQ.speechEngine={create:()=>({supported:()=>true,start(h){sessions.push(h);},cancel(){cancelled++;}})};
+  f.c.FQ.app.countryChain();
+  const chain=f.c.FQ.test.state.countryChain;
+  f.clickDelegated('[data-chain-mic]',f.node('#chain-mic'));
+  sessions[0].onState({state:'recording'});
+  f.c.navigator.onLine=false;f.events.offline[0]();
+  assert.equal(f.node('#chain-mic').disabled,true);
+  assert.match(f.node('#chain-voice-state').textContent,/인터넷.*글/);
+  assert.equal(f.node('#chain-input').disabled,false);
+  sessions[0].onResult({text:'프랑스'});
+  assert.equal(chain.snapshot().total,0);
+  assert.equal(chain.submit('대한민국').status,'accepted');
+  assert.equal(chain.snapshot().total,1);
+  assert.ok(cancelled>0);
+  f.finishVoice();
+  f.c.navigator.onLine=true;f.events.online[0]();
+  assert.equal(f.node('#chain-mic').disabled,false);
+  assert.equal(chain.snapshot().total,1);
+});
+
+test('브라우저가 온라인이어도 저장 세션으로 열면 말하기 대신 선택·글 입력을 사용한다',()=>{
+  for(const mode of ['voice','capitalVoice']){
+    const f=fixture();
+    f.c.navigator.onLine=true;
+    f.c.FQ.auth={session:()=>({authenticated:true,offline:true})};
+    const a=startMode(f,mode,['kr','jp']);
+    assert.equal(a.state.game.current().mode,mode==='capitalVoice'?'capital':'reverse');
+    assert.ok(!f.c.listening);
+  }
+  const f=fixture({chain:true});let account={authenticated:true,offline:true},hooks;
+  f.c.navigator.onLine=true;
+  f.c.FQ.auth={session:()=>account,csrfToken:()=>'',start(options){hooks=options;options.onReady();}};
+  f.c.FQ.speechEngine={create:()=>({supported:()=>true,start(){},cancel(){}})};
+  f.c.FQ.app.boot();f.c.FQ.app.countryChain();
+  assert.equal(f.node('#chain-mic').disabled,true);
+  assert.match(f.node('#chain-voice-state').textContent,/인터넷.*글/);
+  const previous=account;account={authenticated:true,offline:false};
+  hooks.onSessionChange(account,previous);
+  assert.equal(f.node('#chain-mic').disabled,false);
+});
 const rx=(s)=>s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
 const quizModes=['choice4','reverse','voice','typing','symbol','place','map','capital','capitalVoice'];
 function startMode(f,mode,only=['kr','jp','fr'],settings={}){

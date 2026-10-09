@@ -90,6 +90,42 @@ function fixture(options = {}) {
     start, pcm, pcmSamples, input, binary, control, advance, stream, now: () => now, setCsrf(value) { csrf = value; } };
 }
 
+test('오프라인에서 직접 어댑터를 시작해도 마이크·소켓 없이 글자 답으로 돌린다', async () => {
+  for (const mode of ['voice', 'capitalVoice', 'country-chain']) {
+    const f = fixture({ mode });
+    f.window.navigator.onLine = false;
+    const pending = f.adapter.start(f.handlers());
+    await flush();
+    f.advance(20000);
+    assert.equal(await pending, false);
+    assert.equal(f.streams.length, 0);
+    assert.equal(f.contexts.length, 0);
+    assert.equal(f.sockets.length, 0);
+    assert.equal(f.errors.length, 1);
+    assert.equal(f.errors[0].code, 'network');
+    assert.match(f.errors[0].message, /글자/);
+    assert.equal(f.adapter.isActive(), false);
+    assert.equal(f.timers.size, 0);
+  }
+});
+
+test('브라우저 연결 표시가 있어도 오프라인 세션에서는 마이크와 소켓을 시작하지 않는다', async () => {
+  for (const mode of ['voice', 'capitalVoice', 'country-chain']) {
+    const f = fixture({ mode });
+    f.window.navigator.onLine = true;
+    f.window.FQ.auth = { session: () => ({ authenticated: true, offline: true }) };
+    const pending = f.adapter.start(f.handlers());
+    await flush(); f.advance(20000);
+    assert.equal(await pending, false);
+    assert.equal(f.streams.length, 0);
+    assert.equal(f.contexts.length, 0);
+    assert.equal(f.sockets.length, 0);
+    assert.equal(f.errors.length, 1);
+    assert.equal(f.errors[0].code, 'network');
+    assert.equal(f.timers.size, 0);
+  }
+});
+
 test('인증 ready와 준비 비프가 끝나기 전에는 마이크와 PCM을 켜지 않는다', async () => {
   let beepDone;
   const f = fixture({ beforeRecord(done) { beepDone = done; } });

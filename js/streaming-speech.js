@@ -6,6 +6,10 @@
   var HANDSHAKE_MS = 20000, FINAL_MS = 25000;
 
   function validMode(mode) { return mode === 'voice' || mode === 'capitalVoice' || mode === 'country-chain'; }
+  function offline() {
+    var account = FQ.auth && typeof FQ.auth.session === 'function' ? FQ.auth.session() : null;
+    return (global.navigator || {}).onLine === false || !!(account && account.offline === true);
+  }
   function supported() {
     var host = global.location && global.location.hostname;
     var Audio = global.AudioContext || global.webkitAudioContext;
@@ -298,6 +302,10 @@
         playerId: String(h.playerId), turnId: String(h.turnId), mode: h.mode === undefined ? (opts.mode || 'country-chain') : h.mode,
         continuous: h.continuous === true, preRoll: [], voiceBins: 0, quietBins: 0, vadFrame: 0, candidateFrame: null, samples: 0, window: 1 };
       current = session;
+      // 이어 말하기의 직접 호출도 오프라인에서는 마이크나 소켓을 열지 않는다.
+      if (offline()) {
+        fail(session, 'network', '말하기에는 인터넷 연결이 필요해요. 글자로 계속 놀 수 있어요.'); return false;
+      }
       var endpoint, workletUrl, token;
       try {
         if (!validMode(session.mode) || h.playerId === undefined || h.playerId === null || h.turnId === undefined || h.turnId === null ||

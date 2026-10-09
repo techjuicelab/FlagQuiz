@@ -9,6 +9,10 @@
   var MIN_VOICE_MS = 100;
 
   function validMode(mode) { return mode === 'voice' || mode === 'capitalVoice' || mode === 'country-chain'; }
+  function offline() {
+    var account = FQ.auth && typeof FQ.auth.session === 'function' ? FQ.auth.session() : null;
+    return (global.navigator || {}).onLine === false || !!(account && account.offline === true);
+  }
 
   function supported() {
     var host = global.location && global.location.hostname;
@@ -208,6 +212,9 @@
         if (!live(session)) return;
         var decoded = await decode(session.audio, bytes);
         if (!live(session)) return;
+        if (offline()) {
+          error(session, 'network', '말하기에는 인터넷 연결이 필요해요. 글자로 계속 놀 수 있어요.'); return;
+        }
         var input = wav(decoded);
         global.clearTimeout(session.processingTimer); session.processingTimer = null;
         var endpoint = new global.URL(opts.endpoint || '/api/speech', global.location.href);
@@ -412,6 +419,10 @@
       cancel({ keepMicrophone: continuous });
       var session = { handlers: h, continuous: continuous, playerId: String(h.playerId), turnId: String(h.turnId), mode: mode, phase: 'requesting', chunks: [], cancelled: false };
       current = session;
+      // 이어 말하기도 이 어댑터를 직접 사용하므로 facade 밖에서 연결을 확인한다.
+      if (offline()) {
+        error(session, 'network', '말하기에는 인터넷 연결이 필요해요. 글자로 계속 놀 수 있어요.'); return;
+      }
       if (!validMode(mode)) { error(session, 'configuration', '말하기 놀이를 확인할 수 없어요. 같은 문제에서 글자로 답해 주세요.'); return; }
       if (!supported() || ![session.playerId, session.turnId].every(function (id) { return /^[a-zA-Z0-9_-]{1,80}$/.test(id) && id !== 'undefined'; })) {
         error(session, 'unsupported', '이 기기에서는 클라우드 말하기를 쓸 수 없어요. 지금 차례는 글자로 답해 주세요.'); return;

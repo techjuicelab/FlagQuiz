@@ -41,6 +41,10 @@
 
   /** 말로 답하는 놀이(말로 답하기·국기 보고 수도 말하기) — 마이크·중간 결과 채점·맞히면 저절로 다음(D25)을 같이 쓴다. */
   function speechMode(mode) { var m = quiz.MODES[mode]; return !!(m && m.speech); }
+  function offline() {
+    var account = FQ.auth && FQ.auth.session && FQ.auth.session();
+    return global.navigator.onLine === false || !!(account && account.offline);
+  }
   /** 무엇을 말하면 답인가: 'country'(나라 이름) 또는 'capital'(수도 이름, D28) */
   function answerKind(mode) { var m = quiz.MODES[mode]; return (m && m.answer) || 'country'; }
   function answerWhat(mode) { return answerKind(mode) === 'capital' ? '수도 이름' : '나라 이름'; }
@@ -225,7 +229,6 @@
     var chainButton = ui.$('#home-country-chain', m);
     if (chainButton) chainButton.addEventListener('click', startCountryChain);
     ui.$('#home-offline', m).addEventListener('click', function () { renderSettings('offline'); });
-    if (FQ.auth && !FQ.auth.isPreview()) ui.$('#home-offline', m).hidden = true;
     ui.$('#home-progress', m).addEventListener('click', function () { FQ.screens.stats(); });
     var dailyGo = ui.$('#daily-go', m);
     if (dailyGo) dailyGo.addEventListener('click', function () {
@@ -477,7 +480,7 @@
   }
 
   function voiceNotice(mode) {
-    if (global.navigator.onLine === false || state.speechNeedsConnection) {
+    if (offline() || state.speechNeedsConnection) {
       return '<div class="notice">📴 인터넷 없이도 놀 수 있어요. 이름을 듣고 국기를 누르는 놀이로 이어져요.</div>';
     }
     var reason = FQ.speech.unavailableReason();
@@ -522,7 +525,7 @@
     stopListening();
     audio.stopSpeaking();
     // 음성 서버만 잠깐 끊겼던 경우, 새 판에서는 연결 상태에 맞춰 다시 시도한다.
-    state.speechNeedsConnection = global.navigator.onLine === false;
+    state.speechNeedsConnection = offline();
     var s = store.settings();
     if (s.mode !== quiz.availableMode(s.mode)) s = store.updateSettings({ mode: quiz.availableMode(s.mode) });
     var reviewing = !!(onlyCodes && onlyCodes.length && quiz.MODES[s.mode].axis === 'flag');
@@ -1135,7 +1138,7 @@
 
     var q = g.current();
     var s = store.settings();
-    if (speechMode(q.mode) && (global.navigator.onLine === false || state.speechNeedsConnection)) touchQuestion(q);
+    if (speechMode(q.mode) && (offline() || state.speechNeedsConnection)) touchQuestion(q);
     var duel = g.players.length > 1;
     var stage;
     if (q.mode === 'symbol' || q.mode === 'place') {
@@ -1514,7 +1517,7 @@
     var game = state.game;
     var question = game.current();
     if (!question || !speechMode(question.mode)) return;
-    if (global.navigator.onLine === false || state.speechNeedsConnection) { continueWithTouch(); return; }
+    if (offline() || state.speechNeedsConnection) { continueWithTouch(); return; }
     if (FQ.speech.isListening && FQ.speech.isListening()) return;
     var what = answerWhat(question.mode);
     var generation = state.feedbackGeneration;
@@ -2532,7 +2535,16 @@
   /* =================== 시작 =================== */
   function boot() {
     if (FQ.auth) {
-      FQ.auth.start({ onReady: bootReady, onBlocked: function () { enterCapitalScreen('login'); } });
+      FQ.auth.start({ onReady: bootReady, onBlocked: function () { enterCapitalScreen('login'); },
+        onSessionChange: function (next, previous) {
+          if (!!(next && next.offline) !== !!(previous && previous.offline)) {
+            state.speechNeedsConnection = offline();
+            if (offline()) continueWithTouch();
+            if (state.countryChain && state.countryChain.connectionChanged) state.countryChain.connectionChanged();
+          }
+          if (FQ.offline && FQ.offline.connectionChanged) FQ.offline.connectionChanged();
+        }
+      });
       return;
     }
     bootReady();
@@ -2540,7 +2552,7 @@
 
   function bootReady() {
     var offlinePanel = doc.getElementById('offline-panel');
-    if (offlinePanel && FQ.auth && !FQ.auth.isPreview()) offlinePanel.hidden = true;
+    if (offlinePanel) offlinePanel.hidden = false;
     if (!FQ.countries || !FQ.countries.length) {
       ui.setMain('<div class="card">국기 자료를 불러오지 못했어요. <code>data/countries.js</code> 파일을 확인해 주세요.</div>');
       return;
@@ -2600,10 +2612,12 @@
     global.addEventListener('offline', function () {
       state.speechNeedsConnection = true;
       continueWithTouch();
+      if (state.countryChain && state.countryChain.connectionChanged) state.countryChain.connectionChanged();
     });
     global.addEventListener('online', function () {
       // 풀던 문제는 그대로 둔다. 다음 말하기 문제부터 마이크를 다시 사용한다.
       state.speechNeedsConnection = false;
+      if (state.countryChain && state.countryChain.connectionChanged) state.countryChain.connectionChanged();
     });
     // 아이폰·아이패드는 사용자가 화면을 처음 만질 때만 소리를 열어 준다
     ['pointerdown', 'touchend', 'click', 'keydown'].forEach(function (evt) {
@@ -2619,8 +2633,6 @@
 
   /* 한 번 열어 두면 인터넷 없이도 놀 수 있게 한다. file:// 로 연 경우에는 건너뛴다. */
   function registerServiceWorker() {
-    // 보호된 서버에서는 로그인 이전의 앱 복사본을 캐시로 열지 않는다。
-    if (FQ.auth && !FQ.auth.isPreview()) return;
     if (FQ.offline) { FQ.offline.init(); return; }
     if (!('serviceWorker' in global.navigator)) return;
     var proto = global.location.protocol;

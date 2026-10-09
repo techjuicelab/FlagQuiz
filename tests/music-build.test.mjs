@@ -13,8 +13,9 @@ async function fixture(t) {
   for (const folder of ['scripts/lib', 'server', 'js', 'assets', 'css', 'flags', 'images', 'data', 'audio/sua', 'audio/music', '_site']) await fs.mkdir(path.join(root, folder), { recursive: true });
   await fs.copyFile(build, path.join(root, 'scripts/build-site.mjs'));
   for (const file of ['scripts/lib/art-gate.mjs', 'scripts/check-images.mjs', 'scripts/prepare-images.mjs', 'js/features.js',
-    'js/streaming-speech.js', 'js/speech-pcm-worklet.js', 'js/speech-engine.js', 'server/login-legacy.js']) await fs.copyFile(new URL('../' + file, import.meta.url), path.join(root, file));
+    'js/streaming-speech.js', 'js/speech-pcm-worklet.js', 'js/speech-engine.js', 'server/login-legacy.js', 'server/private-sw.js']) await fs.copyFile(new URL('../' + file, import.meta.url), path.join(root, file));
   for (const file of ['index.html', 'sw.js', 'manifest.webmanifest', 'data/countries.js', 'data/subjects.js', 'data/confusion-groups.js', 'data/map-coords.js', 'data/map-shapes.js']) await fs.writeFile(path.join(root, file), file);
+  await fs.writeFile(path.join(root, 'sw.js'), "var SHELL_CACHE = 'flagquiz-shell-v2';\nvar AUDIO_CACHE = 'flagquiz-v4';\nvar SHELL = ['./', './index.html', './login-legacy.js', './js/streaming-speech.js', './js/speech-pcm-worklet.js', './js/speech-engine.js'];");
   await fs.writeFile(path.join(root, 'data/countries.js'), 'window.FQ.countries=[{code:"kr"}];');
   // 그림 원장도 파일도 없는 최소 저장소다. 보류로 적어야 그림 게이트가 음악 검사를 가로막지 않는다.
   await fs.writeFile(path.join(root, 'data/subjects.js'), 'window.FQ.subjects={kr:{symbol:{ko:"김치",noArt:true}}};');
@@ -55,7 +56,6 @@ test('검증된 음악 16개만 배포하고 원본·제작 문서·목록 밖 �
 
 test('셸 파일이 바뀌면 배포 워커의 캐시 버전도 바뀌고 같은 빌드는 같은 버전을 쓴다', async t => {
   const env = await fixture(t);
-  await fs.writeFile(path.join(env.root, 'sw.js'), "var SHELL_CACHE = 'flagquiz-shell-v2';\nvar AUDIO_CACHE = 'flagquiz-v4';");
   const read = () => fs.readFile(path.join(env.root, '_site/sw.js'), 'utf8');
   assert.equal((await env.run()).status, 0);
   const first = await read();
@@ -82,6 +82,9 @@ test('셸 파일이 바뀌면 배포 워커의 캐시 버전도 바뀌고 같은
     assert.equal((await env.run()).status, 0); assert.equal(await read(), current);
     previous = current;
   }
+  await fs.appendFile(path.join(env.root, 'server/private-sw.js'), '\n/* 보호 모드 변경 검사 */\n');
+  assert.equal((await env.run()).status, 0);
+  assert.notEqual(await read(), previous);
 });
 
 test('스트리밍 캡처3개 중 빠진 파일이 있으면 기존 배포 묶음을 보존하고 거부한다', async t => {

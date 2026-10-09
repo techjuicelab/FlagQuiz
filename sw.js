@@ -9,6 +9,13 @@ var ART_CACHE = 'flagquiz-art-v1';
 // 아이패드에 이미 받아 둔 음원을 그대로 쓴다. 이 이름은 바꾸지 않는다.
 var AUDIO_CACHE = 'flagquiz-v4';
 var KEEP = [SHELL_CACHE, FLAG_CACHE, ART_CACHE, AUDIO_CACHE];
+var PRIVATE_MODE = typeof FQ_PRIVATE_MODE !== 'undefined' && FQ_PRIVATE_MODE;
+var AUTH_CACHE = 'flagquiz-offline-auth-v1';
+var AUTH_ENTRY = './_offline-session';
+var privateEpoch = 0;
+var privateRevoked = false;
+var privateClearing = null;
+if (PRIVATE_MODE) KEEP.push(AUTH_CACHE);
 var SHELL = [
   './',
   './index.html',
@@ -52,6 +59,8 @@ var SHELL = [
   './assets/icon.svg',
   './assets/icon-180.png',
   './assets/icon-192.png',
+  './assets/icon-512.png',
+  './assets/icon-maskable-512.png',
   './assets/gifts-sprite.png',
   './assets/gifts-sprite-2.png',
   './assets/gifts-sprite-3.png'
@@ -59,15 +68,124 @@ var SHELL = [
 
 self.addEventListener('install', function (event) {
   event.waitUntil(
-    caches.open(SHELL_CACHE)
+    (PRIVATE_MODE ? privateInstall() : Promise.resolve()).then(function () { return openCache(SHELL_CACHE); })
       .then(function (cache) {
         return cache.addAll(SHELL.map(function (url) {
-          return new Request(new URL(url, self.location.href).href, { cache: 'reload' });
+          return new Request(new URL(url, self.location.href).href, { cache: 'reload', redirect: PRIVATE_MODE ? 'error' : 'follow' });
         }));
       })
       .then(function () { return self.skipWaiting(); })
   );
 });
+
+function privateCurrent(epoch) {
+  if (PRIVATE_MODE && (privateRevoked || epoch !== privateEpoch)) throw new Error('offline-access-revoked');
+}
+
+function openCache(name) {
+  return Promise.resolve().then(function () { privateCurrent(privateEpoch); return caches.open(name); });
+}
+
+/** 허용 정보는 온라인 세션의 만료 시각만 보관한다. 계정·관리자·CSRF 응답은 저장하지 않는다. */
+function privateLease() {
+  if (privateRevoked) return Promise.resolve(null);
+  var epoch = privateEpoch;
+  return caches.open(AUTH_CACHE).then(function (cache) { return cache.match(AUTH_ENTRY); })
+    .then(function (hit) { return hit ? hit.json() : null; })
+    .then(function (data) {
+      if (epoch !== privateEpoch) return null;
+      return data && data.authenticated === true && data.offline === true &&
+        Number.isSafeInteger(data.expiresAt) && data.expiresAt > Date.now() ? data : null;
+    })['catch'](function () { return null; });
+}
+
+function clearPrivateCaches() {
+  privateEpoch += 1;
+  privateRevoked = true;
+  offlinePlan = null;
+  var clearing = (privateClearing || Promise.resolve()).then(function () { return caches.keys(); }).then(function (names) {
+    return Promise.all(names.filter(function (name) { return name.indexOf('flagquiz-') === 0; })
+      .map(function (name) { return caches.delete(name); }));
+  }).then(function () {
+    if (!self.clients || typeof self.clients.matchAll !== 'function') return;
+    return self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (clients) {
+      clients.forEach(function (client) { client.postMessage({ type: 'OFFLINE_AUTH_REVOKED' }); });
+    });
+  });
+  privateClearing = clearing.then(function (value) {
+    if (privateClearing === pending) privateClearing = null;
+    return value;
+  }, function (error) {
+    if (privateClearing === pending) privateClearing = null;
+    throw error;
+  });
+  var pending = privateClearing;
+  return pending;
+}
+
+function privateNetwork(req) {
+  var controller = new AbortController();
+  return withDeadline(function () {
+    return fetch(req, { cache: 'no-store', credentials: 'same-origin', signal: controller.signal });
+  }, controller);
+}
+
+function privateSession(req, requireOnline) {
+  var epoch = privateEpoch;
+  return privateNetwork(req).then(function (res) {
+    if (epoch !== privateEpoch) return res;
+    // 5xx는 연결 오류와 다르다. 서버가 응답한 실패를 저장 세션으로 가리지 않는다.
+    if (res.status >= 500) return res;
+    if (!res.ok || res.redirected || res.type === 'opaqueredirect') {
+      return clearPrivateCaches().then(function () { return res; });
+    }
+    return res.clone().json()['catch'](function () { return null; }).then(function (data) {
+      if (epoch !== privateEpoch) return res;
+      if (!data || data.authenticated !== true || !Number.isSafeInteger(data.expiresAt) || data.expiresAt <= Date.now()) {
+        return clearPrivateCaches().then(function () { return res; });
+      }
+      // 진행 중인 로그아웃의 삭제·다른 창 알림이 끝난 뒤 새 접근 정보를 보관한다.
+      var lease = { authenticated: true, offline: true, expiresAt: data.expiresAt };
+      return (privateClearing || Promise.resolve()).then(function () {
+        if (epoch !== privateEpoch) return;
+        privateRevoked = false;
+        return caches.open(AUTH_CACHE);
+      }).then(function (cache) {
+        if (!cache) return;
+        privateCurrent(epoch);
+        return cache.put(AUTH_ENTRY, new Response(JSON.stringify(lease), { headers: { 'content-type': 'application/json' } }));
+      })['catch'](function () { /* 저장 실패는 현재 온라인 놀이를 막지 않는다. */ }).then(function () { return res; });
+    });
+  }, function (error) {
+    if (requireOnline || epoch !== privateEpoch) throw error;
+    return privateLease().then(function (lease) {
+      if (lease) return new Response(JSON.stringify(lease), { headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
+      return clearPrivateCaches().then(function () { throw error; });
+    });
+  });
+}
+
+function privateInstall() {
+  var req = new Request(new URL('./api/auth/session', self.location.href).href);
+  return privateSession(req, true).then(function (res) {
+    if (!res.ok || res.redirected) throw new Error('login-required');
+    return res.json().then(function (data) {
+      if (!data || data.authenticated !== true || data.expiresAt <= Date.now()) throw new Error('login-required');
+    });
+  });
+}
+
+function privateAccess(req, work) {
+  var epoch = privateEpoch;
+  return privateLease().then(function (lease) {
+    if (lease) return work().then(function (res) { return epoch === privateEpoch ? res : Response.error(); });
+    // 새 로그인 직후에는 기존 워커가 아직 제어할 수 있다. 서버의 인증된 200은 그대로 열어
+    // 앱이 세션을 다시 확인하게 하되, 기기 접근이 없는 파일을 캐시에 담지는 않는다.
+    return (privateRevoked ? Promise.resolve() : clearPrivateCaches()).then(function () {
+      return privateNetwork(req)['catch'](function () { return Response.error(); });
+    });
+  });
+}
 
 /**
  * 국기 194장을 미리 담아 둔다. 다 합쳐도 2MB 남짓이라,
@@ -75,6 +193,7 @@ self.addEventListener('install', function (event) {
  * 설치를 붙잡지 않도록 활성화 뒤에 조금씩 담고, 실패해도 그냥 넘어간다.
  */
 function warmFlags() {
+  var epoch = privateEpoch;
   return manifestText('./data/countries.js')
     .then(function (src) {
       var codes = [];
@@ -82,9 +201,10 @@ function warmFlags() {
       var m;
       while ((m = re.exec(src))) codes.push(m[1]);
       if (!codes.length) return false;
-      return caches.open(FLAG_CACHE).then(function (cache) {
+      return openCache(FLAG_CACHE).then(function (cache) {
         var i = 0, failed = false;
         function nextChunk() {
+          privateCurrent(epoch);
           if (i >= codes.length) return !failed;
           var chunk = codes.slice(i, i + 20).map(function (c) { return './flags/' + c + '.svg'; });
           i += 20;
@@ -163,12 +283,13 @@ function artState(hit, bytes) {
 
 /** 한 바퀴 돈다. 전부 담겼으면 true, 하나라도 못 받았으면 false. 절대 거부하지 않는다. */
 function warmArt() {
+  var epoch = privateEpoch;
   return manifestText('./data/subjects.js')
     .then(function (src) {
       var items = artItemsFrom(src);
       if (!items.length) return false;
       var stamp = items.map(function (it) { return it.url + ' ' + it.bytes; }).join('\n');
-      return caches.open(ART_CACHE).then(function (cache) {
+      return openCache(ART_CACHE).then(function (cache) {
         return cache.match(ART_WARM_MARK)
           .then(function (mark) { return mark ? mark.text() : ''; })
           ['catch'](function () { return ''; })
@@ -187,6 +308,7 @@ function warmArt() {
                 });
             }
             function nextChunk() {
+              privateCurrent(epoch);
               if (i >= items.length) return null;
               var chunk = items.slice(i, i + 10);
               i += 10;
@@ -194,6 +316,7 @@ function warmArt() {
             }
             return Promise.resolve(nextChunk()).then(function () {
               if (failed) return false;
+              privateCurrent(epoch);
               return cache.put(ART_WARM_MARK, new Response(stamp))
                 .then(function () { return true; }, function () { return false; });
             });
@@ -217,11 +340,12 @@ function resumeArtWarm() {
 function extend(event, promise) {
   try { if (event && typeof event.waitUntil === 'function') event.waitUntil(promise); }
   catch (e) { /* 이벤트가 이미 끝났다 — 예열은 어차피 배경 작업이다. */ }
+  return promise;
 }
 
 function preserveLegacyFlag(legacy, req) {
   // 설치 직후 연결이 끊겨도 이미 받아 둔 국기를 잃지 않는다.
-  return caches.open(FLAG_CACHE).then(function (flags) {
+  return openCache(FLAG_CACHE).then(function (flags) {
     return flags.match(req).then(function (hit) {
       if (hit && hit.ok) return true;
       return legacy.match(req).then(function (res) {
@@ -242,11 +366,11 @@ self.addEventListener('activate', function (event) {
           .map(function (k) { return caches.delete(k); }));
       })
       .then(function () {
-        return Promise.all(KEEP.map(function (name) { return caches.open(name); }));
+        return Promise.all(KEEP.map(function (name) { return openCache(name); }));
       })
       .then(function () {
         // 국기는 새 버킷에 확보한 뒤 정리한다. 음원은 옮기거나 다시 받지 않는다.
-        return caches.open(AUDIO_CACHE).then(function (cache) {
+        return openCache(AUDIO_CACHE).then(function (cache) {
           return cache.keys().then(function (requests) {
             return Promise.all(requests.filter(function (req) {
               return new URL(req.url).pathname.indexOf('/audio/') === -1;
@@ -267,20 +391,25 @@ self.addEventListener('activate', function (event) {
 });
 
 function matchCache(name, req) {
-  return caches.open(name).then(function (cache) { return cache.match(req); });
+  return openCache(name).then(function (cache) { return cache.match(req); });
 }
 
-function putCache(name, req, res) {
-  return caches.open(name).then(function (cache) { return cache.put(req, res); })
+function putCache(name, req, res, epoch) {
+  if (epoch === undefined) epoch = privateEpoch;
+  return Promise.resolve().then(function () {
+    privateCurrent(epoch);
+    return openCache(name);
+  }).then(function (cache) { privateCurrent(epoch); return cache.put(req, res); })
     ['catch'](function () { return null; });
 }
 
 function cacheFirst(req, name) {
+  var epoch = privateEpoch;
   return matchCache(name, req)['catch'](function () { return null; }).then(function (hit) {
     if (hit) return hit;
     return fetch(req).then(function (res) {
       if (!res || !res.ok) return res;
-      return putCache(name, req, res.clone()).then(function () { return res; });
+      return putCache(name, req, res.clone(), epoch).then(function () { return res; });
     });
   });
 }
@@ -323,6 +452,7 @@ function audioRange(req, res) {
 }
 
 function cachedAudio(req) {
+  var epoch = privateEpoch;
   // 206 응답은 Cache.put에 저장할 수 없다. 최초 재생부터 전체 파일을 받아 보관한다.
   var headers = new Headers(req.headers);
   headers.delete('range');
@@ -334,7 +464,7 @@ function cachedAudio(req) {
       if (!res || res.status !== 200) return res;
       var copy = res.clone();
       // 저장 완료를 응답 수명에 포함한다. 저장 공간 부족은 현재 재생을 막지 않는다.
-      return putCache(AUDIO_CACHE, whole, copy)
+      return putCache(AUDIO_CACHE, whole, copy, epoch)
         .then(function () { return res; });
     });
   }).then(function (res) { return audioRange(req, res); });
@@ -342,32 +472,57 @@ function cachedAudio(req) {
 
 self.addEventListener('fetch', function (event) {
   var req = event.request;
-  if (req.method !== 'GET') return;
   var url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
-
-  if (url.pathname.indexOf('/audio/') !== -1) {
-    event.respondWith(cachedAudio(req));
+  var base = new URL('./', self.location.href).pathname;
+  var path = url.pathname.indexOf(base) === 0 ? '/' + url.pathname.slice(base.length) : url.pathname;
+  var epoch = privateEpoch;
+  if (PRIVATE_MODE && path === '/api/auth/session' && req.method === 'GET') {
+    event.respondWith(privateSession(req));
     return;
+  }
+  if (PRIVATE_MODE && path === '/api/auth/logout' && req.method === 'POST') {
+    event.respondWith(clearPrivateCaches().then(function () { return privateNetwork(req); }));
+    return;
+  }
+  // 계정·유료 API와 로그인 화면은 어떤 모드에서도 앱 셸로 저장하지 않는다.
+  if (path.indexOf('/api/') === 0 || path === '/login' || path === '/auth-cleanup.js') {
+    event.respondWith(privateNetwork(req).then(function (res) {
+      return PRIVATE_MODE && epoch === privateEpoch && res.status === 401 ? clearPrivateCaches().then(function () { return res; }) : res;
+    }));
+    return;
+  }
+  if (req.method !== 'GET') return;
+  event.respondWith(PRIVATE_MODE ? privateAccess(req, function () {
+    return assetResponse(req, event, url).then(function (res) {
+      if (epoch === privateEpoch && res && (res.status === 401 || res.status === 403 || res.redirected)) {
+        return clearPrivateCaches().then(function () { return res; });
+      }
+      return res;
+    });
+  }) : assetResponse(req, event, url));
+});
+
+function assetResponse(req, event, url) {
+  if (url.pathname.indexOf('/audio/') !== -1) {
+    return cachedAudio(req);
   }
 
   // 상징물·대표 명소는 같은 그림 버킷을 쓰며 404는 저장하지 않는다.
   if (url.pathname.indexOf('/images/') !== -1) {
-    event.respondWith(cacheFirst(req, ART_CACHE));
-    return;
+    return cacheFirst(req, ART_CACHE);
   }
 
   // 국기 이미지는 한 번 받으면 그대로 쓴다
   if (url.pathname.indexOf('/flags/') !== -1) {
-    event.respondWith(cachedFlag(req));
-    return;
+    return cachedFlag(req);
   }
 
   // 설치를 마친 셸을 즉시 쓴다. 느린 연결을 기다리거나 배포 중 신·구 코드를 섞지 않는다.
   extend(event, resumeArtWarm());
   extend(event, resumeFlagsWarm());
-  event.respondWith(shellResponse(req));
-});
+  return shellResponse(req);
+}
 
 /** 저장된 셸의 원장부터 읽어 현재 앱과 같은 자료 목록을 사용한다. */
 function manifestText(url) {
@@ -403,8 +558,10 @@ function boundedFetch(url) {
 
 /** 저장 성공 뒤 실제 캐시를 확인한다. 재생용 putCache와 달리 실패를 숨기지 않는다. */
 function saveAsset(cache, item, request) {
+  var epoch = privateEpoch;
   var controller = new AbortController();
   return withDeadline(function () {
+    privateCurrent(epoch);
     return fetch(request || item.url, { signal: controller.signal }).then(function (res) {
       if (!res || res.status !== 200) {
         var error = new Error('network');
@@ -420,6 +577,7 @@ function saveAsset(cache, item, request) {
         var headers = new Headers(res.headers);
         headers.delete('content-encoding');
         headers.set('content-length', String(body.byteLength));
+        privateCurrent(epoch);
         return cache.put(item.url, new Response(body, { status: 200, headers: headers }))
           ['catch'](function (error) {
             error.offlineCode = error.name === 'QuotaExceededError' || /quota/i.test(error.message) ? 'quota' : 'storage';
@@ -465,8 +623,10 @@ function shellResponse(req) {
 }
 
 function fetchShell(req) {
+  var epoch = privateEpoch;
   return boundedFetch(req).then(function (res) {
-    if (res && res.ok) return putCache(SHELL_CACHE, req, res.clone()).then(function () { return res; });
+    if (PRIVATE_MODE && res && res.redirected) return res;
+    if (res && res.ok) return putCache(SHELL_CACHE, req, res.clone(), epoch).then(function () { return res; });
     return res;
   });
 }
@@ -564,17 +724,19 @@ function broadcastOffline(progress) {
 }
 
 function downloadOffline() {
+  var epoch = privateEpoch;
   return offlineItems().then(function (items) {
     return inspectOffline(items, broadcastOffline).then(function (initial) {
       var progress = initial.progress, missing = initial.missing, i = 0, stopped = false, errorCode;
       progress.status = 'downloading';
       broadcastOffline(progress);
       function nextChunk() {
+        privateCurrent(epoch);
         if (stopped || i >= missing.length) return;
         var chunk = missing.slice(i, i + 4);
         i += chunk.length;
         return Promise.all(chunk.map(function (item) {
-          return caches.open(item.cache).then(function (cache) { return saveAsset(cache, item); })
+          return openCache(item.cache).then(function (cache) { privateCurrent(epoch); return saveAsset(cache, item); })
             .then(function () { progress.cached += 1; progress.groups[item.group].cached += 1; })
             ['catch'](function (error) {
               progress.failed += 1;
@@ -602,6 +764,27 @@ function downloadOffline() {
 
 self.addEventListener('message', function (event) {
   var data = event.data || {};
+  var target = event.ports && event.ports[0] || event.source;
+  if (PRIVATE_MODE && data.type === 'OFFLINE_CLEAR') {
+    extend(event, clearPrivateCaches().then(function () {
+      if (target && typeof target.postMessage === 'function') target.postMessage({ type: 'OFFLINE_CLEARED', requestId: data.requestId });
+    }));
+    return;
+  }
+  if (['OFFLINE_STATUS', 'OFFLINE_DOWNLOAD', 'OFFLINE_WARM'].indexOf(data.type) === -1) return;
+  if (!PRIVATE_MODE) { processOfflineMessage(event); return; }
+  extend(event, privateLease().then(function (lease) {
+    if (lease) return processOfflineMessage(event);
+    return (privateRevoked ? Promise.resolve() : clearPrivateCaches()).then(function () {
+      if (target && typeof target.postMessage === 'function') target.postMessage({
+        type: 'OFFLINE_PROGRESS', requestId: data.requestId, status: 'error', cached: 0, total: 0, failed: 0, error: 'auth'
+      });
+    });
+  }));
+});
+
+function processOfflineMessage(event) {
+  var data = event.data || {};
   if (['OFFLINE_STATUS', 'OFFLINE_DOWNLOAD', 'OFFLINE_WARM'].indexOf(data.type) === -1) return;
   var target = event.ports && event.ports[0] || event.source;
   function reply(progress) {
@@ -614,8 +797,7 @@ self.addEventListener('message', function (event) {
     // 재연결 신호에서는 이전 실패의 5분 대기를 건너뛴다. 전체 음원은 버튼으로만 받는다.
     artWarmRetryAt = 0;
     flagWarmRetryAt = 0;
-    extend(event, Promise.all([resumeFlagsWarm(), resumeArtWarm()]));
-    return;
+    return extend(event, Promise.all([resumeFlagsWarm(), resumeArtWarm()]));
   }
   if (data.type === 'OFFLINE_DOWNLOAD') {
     offlineListeners.push(reply);
@@ -628,11 +810,10 @@ self.addEventListener('message', function (event) {
         offlineLastProgress = null;
       });
     }
-    extend(event, offlineDownload);
-    return;
+    return extend(event, offlineDownload);
   }
   reply({ status: 'checking', total: 0, cached: 0, failed: 0 });
-  extend(event, offlineItems().then(function (items) {
+  return extend(event, offlineItems().then(function (items) {
     return inspectOffline(items, reply).then(function (checked) {
       checked.progress.status = checked.missing.length ? 'partial' : 'ready';
       reply(checked.progress);
@@ -640,4 +821,4 @@ self.addEventListener('message', function (event) {
   })['catch'](function (error) {
     reply({ status: 'error', total: 0, cached: 0, failed: 0, error: offlineError(error) });
   }));
-});
+}

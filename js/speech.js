@@ -23,8 +23,8 @@
   function unavailableReason() {
     if (!secureOk()) return '말하기는 https 주소에서 사용할 수 있어요. 지금 문제는 글자로 답해 주세요.';
     if (!supported()) return '이 기기에서는 마이크 녹음을 사용할 수 없어요. 지금 문제는 글자로 답해 주세요.';
-    if ((global.navigator || {}).onLine === false) return '말하기에는 인터넷 연결이 필요해요. 글자나 보기로 계속 놀 수 있어요.';
     var account = FQ.auth && FQ.auth.session();
+    if ((global.navigator || {}).onLine === false || account && account.offline === true) return '말하기에는 인터넷 연결이 필요해요. 글자나 보기로 계속 놀 수 있어요.';
     if (!account || account.preview) return '말하기에는 TechJuice ID 로그인이 필요해요. 지금 문제는 글자로 답해 주세요.';
     return null;
   }
