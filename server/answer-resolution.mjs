@@ -31,7 +31,7 @@ async function loadRules() {
       for (let index = 0; index < files.length; index++) vm.runInContext(sources[index], context, { filename: files[index], timeout: 1000 });
       const fq = context.window.FQ;
       if (typeof fq.spokenAnswer?.resolve !== 'function' || !Array.isArray(fq.countries)) throw new Error('Spoken answer rules are unavailable');
-      return { resolve: fq.spokenAnswer.resolve, canUseSemantic: fq.spokenAnswer.canUseSemantic,
+      return { resolve: fq.spokenAnswer.resolve, canUseSemantic: fq.spokenAnswer.canUseSemantic, voiceForms: fq.spokenAnswer.voiceForms,
         countries: fq.countries, entryFor: fq.quiz.entryFor };
     })().catch(error => { sharedRules = undefined; throw error; });
   }
@@ -67,6 +67,22 @@ export async function createInstantAnswerResolver() {
     if (typeof input?.text !== 'string' || input.text.length > 500 || blockedUtterance(input.text) ||
         !['voice', 'capitalVoice', 'country-chain'].includes(input.mode)) return null;
     return indexes.get(input.mode === 'capitalVoice' ? 'capital' : 'country').get(normalize(input.text)) || null;
+  };
+}
+
+// 모르는 이름의 최종 원문만 문제 화면으로 넘긴다. 정답 추정·채점은 하지 않는다.
+export async function createUnknownVoiceAnswerGuard() {
+  const rules = await loadRules();
+  return input => {
+    if (typeof input?.text !== 'string' || !input.text.trim() || input.text.length > 500 ||
+        !['voice', 'capitalVoice'].includes(input.mode) || typeof rules.voiceForms !== 'function') return false;
+    const kind = input.mode === 'capitalVoice' ? 'capital' : 'country';
+    const resolved = rules.resolve(input.text, { kind });
+    if (resolved.status !== 'retry' || resolved.reason !== 'unknown' ||
+        !Array.isArray(resolved.candidates) || resolved.candidates.length || !rules.voiceForms(input.text).length) return false;
+    // 실제 나라·수도를 다른 종류의 이름으로 관대 채점하게 만들지 않는다.
+    const other = rules.resolve(input.text, { kind: kind === 'capital' ? 'country' : 'capital' });
+    return other.status !== 'answer' && Array.isArray(other.candidates) && other.candidates.length === 0;
   };
 }
 

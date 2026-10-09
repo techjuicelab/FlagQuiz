@@ -21,7 +21,7 @@ function clientCode(error) {
 }
 
 export function attachSpeechWebSocket(server, { origin, isConfigured, getSession, validateCsrf, claimSpeech, consumeQuota,
-  createTranscriber, resolveInstant, resolveFinal }) {
+  createTranscriber, resolveInstant, resolveFinal, canGradeUnknown = () => false }) {
   const wss = new WebSocketServer({ noServer: true, maxPayload: MAX_FRAME, perMessageDeflate: false });
   const connections = new Set(), pending = new Set();
   let shuttingDown = false, closing;
@@ -124,7 +124,14 @@ export function attachSpeechWebSocket(server, { origin, isConfigured, getSession
         if (!object(resolution) || !['answer', 'giveup', 'retry'].includes(resolution.status) || resolution.reason === 'rules-unavailable') throw invalid('service');
         await fresh(state);
         if (!paidActive(state) || state.window !== window) return;
-        if (resolution.status !== 'retry') { void complete(state, segment.text, resolution); return; }
+        let gradeUnknown = false;
+        if (resolution.status === 'retry' && resolution.reason === 'unknown' &&
+            (state.identity.mode === 'voice' || state.identity.mode === 'capitalVoice')) {
+          gradeUnknown = canGradeUnknown({ text: segment.text, mode: state.identity.mode });
+          if (typeof gradeUnknown !== 'boolean') throw invalid('service');
+        }
+        // 최종 이름 원문은 문제 화면에서만 관대 채점한다. 중간 토큰·이어 말하기는 이 경로에 넣지 않는다.
+        if (resolution.status !== 'retry' || gradeUnknown) { void complete(state, segment.text, resolution); return; }
         listenAgain(state, segment.text ? 'retry' : 'no-speech', segment.terminal);
       }
     } catch (error) {

@@ -4,7 +4,26 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { createAnswerResolver, createInstantAnswerResolver, resolveSpokenAnswer, JEV_MODEL, MAX_JEV_TIMEOUT_MS } from '../server/answer-resolution.mjs';
+import { createAnswerResolver, createInstantAnswerResolver, createUnknownVoiceAnswerGuard, resolveSpokenAnswer, JEV_MODEL, MAX_JEV_TIMEOUT_MS } from '../server/answer-resolution.mjs';
+
+test('미해석 음성 원문 전달은 최종 이름 형태와 빈 전체 후보만 허용하고 현재 정답을 사용하지 않는다', async () => {
+  const guard = await createUnknownVoiceAnswerGuard();
+  for (const [text, mode] of [['격도누기', 'voice'], ['음 격도누기요', 'voice'], ['정답은 격도누기예요', 'voice'], ['서루', 'capitalVoice']]) {
+    assert.equal(guard({ text, mode }), true, mode + ': ' + text);
+    assert.equal(guard({ text, mode, answer: '대한민국', expectedAnswer: 'kr', choices: ['서울'] }), true, text);
+  }
+  for (const [text, mode = 'voice'] of [
+    ['격도누기', 'country-chain'], ['격도누기', 'typing'], ['격도누기', 'invalid'],
+    ['기니'], ['기니비사우'], ['적도기니'], ['격도기니'], ['도쿄', 'capitalVoice'],
+    ['서울'], ['말라보'], ['대한민국', 'capitalVoice'], ['적도기니', 'capitalVoice'],
+    ['격도누기 아니야'], ['격도누기인가요?'], ['아마 격도누기'], ['격도누기 또는 기니'],
+    ['기니 격도누기'], ['기니 아니고 적도기니'], ['"격도누기"라고 했어'],
+    ['격도누기에서 살아요'], ['몰라요'], ['패스'], ['음.'], ['글쎄요'], ['']
+  ]) assert.equal(guard({ text, mode }), false, mode + ': ' + text);
+  for (const input of [null, {}, { text: '격도누기' }, { text: 1, mode: 'voice' }, { text: '가'.repeat(501), mode: 'voice' }]) {
+    assert.equal(guard(input), false);
+  }
+});
 
 test('불변 전사의 완전한 나라·수도 이름은 녹음 종료 없이 확정한다', async () => {
   const resolve = await createInstantAnswerResolver();
@@ -43,6 +62,68 @@ test('서버 공유 판정도 말머리·띄어쓰기와 유일한 발음 보완
     }
   }
 });
+
+test('서버도 격도기니 전사 안의 짧은 기니보다 전체 발음 후보를 보존한다', async () => {
+  let calls = 0;
+  const resolve = createAnswerResolver({ fetchImpl: async () => {
+    calls++; throw new Error('유일한 발음 복원은 외부 요청 없이 동작해야 한다');
+  } });
+  for (const text of ['격도기니', '음 격도기니요', '정답은 격도기니예요']) {
+    for (const mode of ['voice', 'country-chain']) {
+      const result = await resolve({ text, mode, target: '기니', expectedAnswer: 'gn', answer: '기니' });
+      assert.equal(result.status, 'answer', mode + ': ' + text + ': ' + result.reason);
+      assert.equal(result.code, 'gq'); assert.equal(result.text, '적도기니'); assert.equal(result.source, 'rules');
+      assert.deepEqual(result, await resolve({ text, mode, target: '적도기니', expectedAnswer: 'gq' }), text);
+    }
+  }
+  assert.equal(calls, 0);
+});
+
+test('서버의 넓힌 발음 인정도 실제 이름·명시 정정·모드 경계를 보존한다', async () => {
+  const resolve = createAnswerResolver();
+  for (const [text, code] of [
+    ['기니', 'gn'], ['기니비사우', 'gw'], ['적도기니', 'gq'],
+    ['도미니카', 'dm'], ['도미니카공화국', 'do'], ['대한민국', 'kr'], ['북한', 'kp'],
+    ['기니 아니고 격도기니', 'gq'], ['격도기니 아니고 기니', 'gn']
+  ]) {
+    for (const mode of ['voice', 'country-chain']) {
+      const result = await resolve({ text, mode });
+      assert.equal(result.status, 'answer', text + ': ' + result.reason);
+      assert.equal(result.code, code, text); assert.equal(result.source, 'rules');
+    }
+  }
+  for (const text of ['격도누기', '격도기니', '적도기니', '대한민국', '북한']) {
+    assert.equal((await resolve({ text, mode: 'capitalVoice' })).status, 'retry', text);
+  }
+  for (const text of ['서울', '도쿄', '말라보']) {
+    assert.equal((await resolve({ text, mode: 'voice' })).status, 'retry', text);
+  }
+  assert.equal((await resolve({ text: '말라보', mode: 'capitalVoice' })).code, 'gq');
+});
+
+test('서버 전역 해석은 현재 문제 단서를 받아도 격도누기를 적도기니로 추정하지 않는다', async () => {
+  const resolve = createAnswerResolver();
+  for (const mode of ['voice', 'country-chain']) {
+    for (const text of ['격도누기', '음 격도누기요']) {
+      const result = await resolve({ text, mode, target: '적도기니', expectedAnswer: 'gq' });
+      assert.equal(result.status, 'retry', text); assert.equal(result.code, null, text);
+    }
+  }
+});
+
+test('서버의 격도누기 발음 보완도 부정·질문·후보 나열을 외부 호출 없이 재질문한다', async () => {
+  let calls = 0;
+  const resolve = createAnswerResolver({ apiKey: 'fixture-typesafe-never-real', fetchImpl: async () => {
+    calls++; throw new Error('부정·질문·여러 후보는 외부 선택 요청에 보내지 않는다');
+  } });
+  for (const text of ['격도누기 아니야', '격도기니 말고', '격도누기인가요?',
+    '격도누기 또는 기니', '기니 격도누기', '"격도누기"라고 했어']) {
+    const result = await resolve({ text, mode: 'voice', target: '적도기니' });
+    assert.equal(result.status, 'retry', text + ': ' + result.reason); assert.equal(result.source, 'rules');
+  }
+  assert.equal(calls, 0);
+});
+
 const retry = (overrides = {}) => ({ status: 'retry', code: null, text: '', reason: 'unsupported-structure', candidates, ...overrides });
 function rules(result = retry()) { return { countries, resolve: () => result, canUseSemantic: () => true }; }
 function response(choice = 'kr', overrides = {}) {
@@ -498,4 +579,8 @@ test('운영 이미지처럼 원본 js 없이 _site에만 브라우저 코드가
   const packed = await import(pathToFileURL(path.join(directory, 'server/answer-resolution.mjs')).href);
   const result = await packed.resolveSpokenAnswer({ text: '일본 아니고 대한민국', mode: 'voice' });
   assert.equal(result.status, 'answer'); assert.equal(result.code, 'kr'); assert.equal(result.source, 'rules');
+  const guard = await packed.createUnknownVoiceAnswerGuard();
+  assert.equal(guard({ text: '격도누기', mode: 'voice' }), true);
+  assert.equal(guard({ text: '격도누기', mode: 'country-chain' }), false);
+  assert.equal(guard({ text: '서울', mode: 'voice' }), false);
 });

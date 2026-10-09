@@ -2652,4 +2652,51 @@ for(const mode of ['voice','capitalVoice'])test(`${mode}의 스트리밍 생각�
   assert.equal(a.state.game.correct,1);assert.equal(f.c.FQ.storage.stats().asked,1);assert.equal(cloud.sessions.length,1);
 });
 
+test('실제 최종 STT 격도누기는 적도기니 문제에서 30% 말하기 채점으로 한 번만 정답 처리한다',()=>{
+  const f=fixture(),cloud=cloudFixture(f),a=startMode(f,'voice',['gq'],{speak:false,timer:0}),payloads=[];
+  const original=a.state.game.submit;
+  a.state.game.submit=function(payload,...rest){payloads.push(payload);return original(payload,...rest);};
+  assert.equal(f.c.FQ.spokenAnswer.resolve('격도누기',{kind:'country'}).status,'retry');
+  const session=cloud.sessions[0];cloud.phase(session,'recording');cloud.result(session,'격도누기');
+  assert.equal(a.state.answered,true);assert.equal(a.state.game.correct,1);assert.equal(a.state.game.voiceCorrect,1);
+  assert.equal(payloads.length,1);assert.equal(payloads[0].source,'voice');
+  assert.equal(f.node('#heard').textContent,'격도누기');assert.equal(f.c.FQ.storage.stats().asked,1);
+  session.onResult({text:'격도누기'});assert.equal(f.c.FQ.storage.stats().asked,1);
+});
+
+test('격도누기의 30% 말하기 인정은 말하기 화면의 글자 답과 쓰기 문제에는 적용하지 않는다',()=>{
+  for(const mode of ['voice','typing']){
+    const f=fixture(),a=startMode(f,mode,['gq'],{speak:false,timer:0}),payloads=[];
+    const original=a.state.game.submit;
+    a.state.game.submit=function(payload,...rest){payloads.push(payload);return original(payload,...rest);};
+    f.node('#answer-input').value='격도누기';f.node('#answer-submit').click();
+    assert.equal(a.state.game.correct,0,mode);assert.equal(a.state.game.voiceCorrect,0,mode);
+    if(mode==='voice'){
+      assert.equal(a.state.answered,false);assert.equal(payloads.length,0);assert.equal(f.c.FQ.storage.stats().asked,0);
+      assert.equal(f.node('.type-fallback').open,true);
+    }else{
+      assert.equal(a.state.answered,true);assert.equal(payloads.length,1);assert.equal(payloads[0].source,undefined);
+    }
+  }
+});
+
+test('적도기니 문제의 30% STT 보완도 질문·부정·다른 실제 나라와 수도를 정답으로 만들지 않는다',()=>{
+  for(const text of ['격도누기 아니야','격도누기인가요?','격도누기 또는 기니','"격도누기"라고 했어','기니','기니비사우','말라보']){
+    const f=fixture(),cloud=cloudFixture(f),a=startMode(f,'voice',['gq'],{speak:false,timer:0});
+    cloud.result(cloud.sessions[0],text);
+    assert.equal(a.state.game.correct,0,text);assert.equal(a.state.game.voiceCorrect,0,text);
+    if(['기니','기니비사우'].includes(text))assert.equal(a.state.answered,true,text);
+    else assert.equal(a.state.answered,false,text);
+  }
+});
+
+test('수도 말하기는 서루 전사를 서울로 관대 채점해도 나라 이름을 수도로 바꾸지 않는다',()=>{
+  const f=fixture(),cloud=cloudFixture(f),a=startMode(f,'capitalVoice',['kr'],{speak:false,timer:0});
+  cloud.result(cloud.sessions[0],'서루');
+  assert.equal(a.state.answered,true);assert.equal(a.state.game.correct,1);assert.equal(a.state.game.voiceCorrect,1);
+  const g=fixture(),other=cloudFixture(g),b=startMode(g,'capitalVoice',['kr'],{speak:false,timer:0});
+  other.result(other.sessions[0],'대한민국');
+  assert.equal(b.state.answered,false);assert.equal(b.state.game.correct,0);assert.equal(g.c.FQ.storage.stats().asked,0);
+});
+
 console.log('앱 흐름 회귀 검사 '+passed+'건 통과');

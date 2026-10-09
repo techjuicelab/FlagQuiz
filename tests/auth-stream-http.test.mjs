@@ -59,9 +59,10 @@ async function fixture(t, { configured = true } = {}) {
 const voice = () => { const pcm = Buffer.alloc(3200); for (let i = 0; i < 1600; i++) pcm.writeInt16LE(Math.round(Math.sin(i / 8) * 3000), i * 2); return pcm; };
 const tick = () => new Promise(resolve => setTimeout(resolve, 25));
 async function spoken(f, connection) {
+  const previous = f.calls.length;
   connection.socket.send(voice());
-  for (let i = 0; i < 40 && !f.calls.length; i++) await tick();
-  assert.equal(f.calls.length, 1); await tick(); return f.calls[0];
+  for (let i = 0; i < 40 && f.calls.length === previous; i++) await tick();
+  assert.equal(f.calls.length, previous + 1); await tick(); return f.calls[previous];
 }
 
 test('인증 세션은 서버 스트리밍 준비 여부만 공개하고 공급자 키를 보내지 않는다', async t => {
@@ -87,6 +88,73 @@ test('세 모드 모두 부분 문자열은 표시만 하고 확정 이름에서
     assert.ok(connection.messages.findIndex(value => value.type === 'finishing') < connection.messages.findIndex(value => value.type === 'result'));
     assert.equal(result.quota.dailyUsed, 1);
   }
+});
+
+test('말하기 퀴즈의 미해석 이름은 최종 경계에서 원문과 retry 결정을 브라우저 채점으로 보낸다', async t => {
+  for (const [mode, text, boundary] of [['voice', '격도누기', 'end'], ['capitalVoice', '서루', 'fin']]) {
+    const f = await fixture(t), connection = await f.connect(mode), call = await spoken(f, connection);
+    call.options.onTranscript({ text, finalText: text, hasNonFinal: false, boundary: null, finished: false });
+    await connection.wait('partial'); await tick();
+    assert.equal(connection.messages.some(packet => packet.type === 'result'), false);
+    call.options.onTranscript({ text, finalText: text, hasNonFinal: false, boundary, finished: false });
+    const result = await connection.wait('result');
+    assert.equal(result.text, text); assert.equal(result.mode, mode);
+    assert.equal(result.resolution.status, 'retry'); assert.equal(result.resolution.reason, 'unknown');
+    assert.equal(result.resolution.source, 'rules'); assert.equal(result.resolution.code, null);
+    assert.equal(result.playerId, 'one'); assert.equal(result.turnId, 'turn-1');
+    assert.equal(result.quota.dailyUsed, 1); assert.equal(call.closed, 1);
+    call.options.onTranscript({ text: '대한민국', finalText: '대한민국', hasNonFinal: false, boundary: 'end', finished: false });
+    await tick();
+    assert.equal(connection.messages.filter(packet => packet.type === 'result').length, 1);
+    assert.equal(connection.messages.some(packet => packet.type === 'listening'), false);
+  }
+});
+
+test('미해석 원문 전달도 이어 말하기·질문·부정·후보 모호성·나라 수도 경계를 보호한다', async t => {
+  for (const [mode, text] of [
+    ['country-chain', '격도누기'], ['voice', '격도누기인가요?'], ['voice', '격도누기 아니야'],
+    ['voice', '격도누기 또는 기니'], ['voice', '기니 격도누기'], ['voice', '"격도누기"라고 했어'],
+    ['voice', '음.'], ['voice', '서울'], ['capitalVoice', '대한민국']
+  ]) {
+    const f = await fixture(t), connection = await f.connect(mode), call = await spoken(f, connection);
+    call.options.onTranscript({ text, finalText: text, hasNonFinal: false, boundary: 'end', finished: false });
+    const listening = await connection.wait('listening');
+    assert.equal(listening.resetAudio, false, mode + ': ' + text);
+    assert.equal(connection.messages.some(packet => packet.type === 'result'), false, mode + ': ' + text);
+    assert.equal(call.closed, 0, text);
+    connection.socket.send(JSON.stringify({ type: 'cancel' }));
+    await once(connection.socket, 'close');
+  }
+});
+
+test('미해석 원문 전달은 실제 다른 이름·명시 정정·포기의 최종 결정을 바꾸지 않는다', async t => {
+  for (const [mode, text, status, code] of [
+    ['voice', '기니', 'answer', 'gn'], ['voice', '기니 아니고 적도기니', 'answer', 'gq'],
+    ['voice', '몰라요', 'giveup', null], ['capitalVoice', '도쿄', 'answer', 'jp']
+  ]) {
+    const f = await fixture(t), connection = await f.connect(mode), call = await spoken(f, connection);
+    call.options.onTranscript({ text, finalText: text, hasNonFinal: false, boundary: 'end', finished: false });
+    const result = await connection.wait('result');
+    assert.equal(result.text, text); assert.equal(result.resolution.status, status, text);
+    assert.equal(result.resolution.code, code, text); assert.equal(result.quota.dailyUsed, 1);
+    assert.equal(connection.messages.filter(packet => packet.type === 'result').length, 1);
+  }
+});
+
+test('미해석 원문 결과 뒤 다음 차례를 재연결하며 이전 결과나 사용량을 중복 적용하지 않는다', async t => {
+  const f = await fixture(t), first = await f.connect(), old = await spoken(f, first);
+  old.options.onTranscript({ text: '격도누기', finalText: '격도누기', hasNonFinal: false, boundary: 'end', finished: false });
+  assert.equal((await first.wait('result')).quota.dailyUsed, 1);
+  if (first.socket.readyState !== WebSocket.CLOSED) await once(first.socket, 'close');
+  assert.equal(f.calls.length, 1); assert.equal(old.closed, 1);
+  const next = await f.connect(), current = await spoken(f, next);
+  old.options.onTranscript({ text: '미국', finalText: '미국', hasNonFinal: false, boundary: 'end', finished: false });
+  current.options.onTranscript({ text: '대한민국', finalText: '대한민국', hasNonFinal: false, boundary: null, finished: false });
+  const result = await next.wait('result');
+  assert.equal(result.resolution.code, 'kr'); assert.equal(result.quota.dailyUsed, 2);
+  assert.equal(next.messages.filter(packet => packet.type === 'result').length, 1);
+  assert.equal(first.messages.filter(packet => packet.type === 'result').length, 1);
+  assert.equal(f.calls.length, 2); assert.equal(current.closed, 1);
 });
 
 test('인도 확정 토큰 뒤 인도네시아가 완성될 때까지 나라를 잘못 확정하지 않는다', async t => {

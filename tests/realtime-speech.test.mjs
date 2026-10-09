@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { EventEmitter, once } from 'node:events';
+import { readFileSync } from 'node:fs';
+import vm from 'node:vm';
 import WebSocket, { WebSocketServer } from 'ws';
 import { createRealtimeTranscriber } from '../server/realtime-speech.mjs';
 import { SpeechError } from '../server/speech.mjs';
@@ -53,14 +55,43 @@ test('Soniox 연결은 서버 고정 WSS·Bearer와 한국어 PCM 설정만 사�
     assert.equal(c.write(Buffer.alloc(320)), false);
     ws.open(); await c.ready;
     const config = JSON.parse(ws.sent[0].data);
-    assert.deepEqual(config, { model: 'stt-rt-v5', audio_format: 'pcm_s16le', sample_rate: 16000, num_channels: 1,
-      language_hints: ['ko'], enable_endpoint_detection: true, endpoint_latency_adjustment_level: 3, endpoint_sensitivity: 0.3, max_endpoint_delay_ms: 500 });
+    const { context, ...audioConfig } = config;
+    assert.deepEqual(audioConfig, { model: 'stt-rt-v5', audio_format: 'pcm_s16le', sample_rate: 16000, num_channels: 1,
+      language_hints: ['ko'], language_hints_strict: true, enable_endpoint_detection: true,
+      endpoint_latency_adjustment_level: 3, endpoint_sensitivity: 0.3, max_endpoint_delay_ms: 500 });
+    assert.ok(Array.isArray(context?.terms));
     assert.equal(ws.sent[0].config.binary, false);
-    assert.doesNotMatch(ws.sent[0].data, /provider-key|client-key|프랑스|client-model/);
+    assert.doesNotMatch(ws.sent[0].data, /provider-key|client-key|client-model/);
     const audio = Buffer.from([1, 0, 2, 0]); assert.equal(c.write(audio), true);
     assert.deepEqual(ws.sent[1].data, audio); assert.equal(ws.sent[1].config.binary, true);
     audio.fill(0); assert.deepEqual(ws.sent[1].data, Buffer.from([1, 0, 2, 0]));
     c.close();
+  }
+});
+
+test('나라·수도 전체 한국어 사전은 현재 정답이나 클라이언트 어휘와 무관하다', async () => {
+  const source = vm.createContext({ window: { FQ: {} } });
+  vm.runInContext(readFileSync(new URL('../data/countries.js', import.meta.url), 'utf8'), source);
+  const countries = source.window.FQ.countries;
+  for (const mode of ['voice', 'capitalVoice', 'country-chain']) {
+    const f = setup(), c = f.connect({ mode }), ws = f.sockets[0];
+    ws.open(); await c.ready;
+    const config = JSON.parse(ws.sent[0].data);
+    assert.ok(config.context?.general?.some(entry => entry.key === 'language' && entry.value === 'Korean'));
+    assert.ok(Array.isArray(config.context.terms));
+    for (const country of countries) assert.ok(config.context.terms.includes(mode === 'capitalVoice' ? country.capital : country.ko));
+    assert.equal(config.context.terms.length, new Set(config.context.terms).size);
+    assert.ok(config.context.terms.every(term => typeof term === 'string' && /[가-힣]/.test(term)));
+    assert.ok(JSON.stringify(config.context).length < 10000);
+    if (mode !== 'capitalVoice') assert.ok(config.context.terms.includes('적도기니'));
+    else assert.ok(config.context.terms.includes('말라보'));
+    c.close();
+    const changed = f.connect({ mode, answer: '클라이언트전용답', choices: ['현재정답보기'],
+      context: { terms: ['외부힌트'], general: [{ key: 'topic', value: '현재정답' }] }, language_hints: ['en'] });
+    const other = f.sockets[1]; other.open(); await changed.ready;
+    assert.equal(other.sent[0].data, ws.sent[0].data);
+    assert.doesNotMatch(other.sent[0].data, /클라이언트전용답|현재정답보기|외부힌트|현재정답/);
+    changed.close();
   }
 });
 

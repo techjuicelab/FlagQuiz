@@ -6,6 +6,8 @@ Node.js 24 이상으로 `_site`를 로그인 뒤에서 제공한다. NAS 구성�
 
 국기 보고 나라 말하기(`voice`)·국기 보고 수도 말하기(`capitalVoice`)·나라 이어 말하기(`country-chain`)는 NAS가 허용하고 기기가 지원하면 Soniox 스트리밍으로 연결해 확정 이름을 즉시 채점한다. 키 미설정·기기 미지원이면 기존 Groq 파일 전사를 선택한다. 실제 iPhone/iPad 어린이 발화 정확도·지연은 별도 검증 대상이다. [말하기 설계와 검증 범위](../docs/spoken-stt.md), [스트리밍 계약](../docs/streaming-speech-design.md)을 참고한다.
 
+Soniox에는 한국어 제한과 모드별 전체 나라 또는 수도 이름·별칭 사전을 제공한다. 현재 문제의 정답이나 보기로 전사를 유도하지 않는다. `voice`·`capitalVoice`의 발화 종료 시점에서 이름으로 해석하지 못한 짧은 한국어 답도 브라우저로 전달해 소리 자모의 실제 편집거리 유사도 30%부터 관대하게 채점한다. 명확한 다른 이름, 질문·부정·포기·모호한 후보와 망설임만 있는 말은 기존 해석을 유지한다. 글자 입력과 `country-chain`에는 이 추가 채점 기준을 적용하지 않는다.
+
 ## 시작 설정
 
 NAS용 [Compose](../deploy/compose.prod.yml)는 `AUTH_PROVIDER=techjuice-id`, `TJID_APP_SLUG=flagquiz`, `TJID_GOOGLE_ENABLED=false`를 사용한다. Google 버튼은 중앙 Google 로그인 검증 전까지 표시하지 않는다. 기존 `AUTH_PROVIDER=google` 경로는 호환용으로 남아 있지만 현재 NAS 배포의 로그인 방식은 아니다.

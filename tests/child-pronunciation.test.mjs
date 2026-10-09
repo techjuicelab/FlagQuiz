@@ -54,6 +54,85 @@ for (const [said, code, kind = 'country'] of [
   });
 }
 
+// 긴 발음 후보 안의 정확한 짧은 이름('기니') 때문에 전체 후보를 놓치지 않는다.
+for (const said of ['격도기니', '격도기니요', '음 격도기니', '정답은 격도기니예요', '음 격도기니 요']) {
+  test('적도기니의 전사 오류는 전체 이름의 유일한 발음으로 복원한다: ' + said, () => {
+    const result = resolve(said);
+    assert.equal(result.status, 'answer', result.reason);
+    assert.equal(result.code, 'gq');
+    assert.equal(result.text, '적도기니');
+    assert.deepEqual(result.candidates.map(candidate => candidate.code), ['gq']);
+  });
+}
+
+test('전사 오류의 관대 인정도 기니 계열·도미니카 계열·남북한의 실제 이름을 바꾸지 않는다', () => {
+  for (const [said, code] of [
+    ['기니', 'gn'], ['기니비사우', 'gw'], ['적도기니', 'gq'],
+    ['도미니카', 'dm'], ['도미니카연방', 'dm'], ['도미니카공화국', 'do'],
+    ['대한민국', 'kr'], ['한국', 'kr'], ['북한', 'kp']
+  ]) {
+    for (const text of [said, '음 ' + said + '이요']) {
+      const result = resolve(text);
+      assert.equal(result.status, 'answer', text + ': ' + result.reason);
+      assert.equal(result.code, code, text);
+      assert.deepEqual(result.candidates.map(candidate => candidate.code), [code], text);
+    }
+  }
+});
+
+test('적도기니의 전사 오류에도 부정·질문·여러 후보·인용은 답을 확정하지 않는다', () => {
+  for (const said of [
+    '격도누기 아니야', '격도기니 말고', '격도누기인가요?', '아마 격도누기',
+    '격도누기 또는 기니', '격도누기 기니', '기니 격도누기',
+    '"격도누기"라고 했어', '격도누기에서 살아요'
+  ]) {
+    const result = resolve(said);
+    assert.equal(result.status, 'retry', said + ': ' + result.reason);
+    assert.equal(result.code, null, said);
+  }
+});
+
+test('적도기니의 전사 오류와 실제 기니의 명시적 정정은 마지막 이름을 따른다', () => {
+  for (const [said, code] of [
+    ['기니 아니고 격도기니', 'gq'], ['격도기니 아니고 기니', 'gn'],
+    ['기니비사우 말고 격도기니', 'gq'], ['격도기니 말고 기니비사우', 'gw']
+  ]) {
+    const result = resolve(said);
+    assert.equal(result.status, 'answer', said + ': ' + result.reason);
+    assert.equal(result.code, code, said);
+    assert.equal(result.reason, 'explicit-correction', said);
+    assert.equal(result.candidates.length, 2, said);
+  }
+});
+
+test('넓힌 전사 오류 복원도 나라·수도 모드 경계를 넘지 않는다', () => {
+  for (const text of ['격도누기', '격도기니', '적도기니', '대한민국', '북한']) {
+    assert.equal(resolve(text, 'capital').status, 'retry', text);
+  }
+  for (const text of ['서울', '도쿄', '말라보']) {
+    assert.equal(resolve(text, 'country').status, 'retry', text);
+  }
+  assert.equal(resolve('말라보', 'capital').code, 'gq');
+});
+
+test('적도기니의 전사 오류 복원은 나라 목록 순서와 현재 목록 밖 정답에 기대지 않는다', () => {
+  const reversed = [...countries].reverse(), rotated = [...countries.slice(73), ...countries.slice(0, 73)];
+  for (const said of ['격도기니', '음 격도기니요']) {
+    const original = resolve(said);
+    assert.equal(original.code, 'gq', said);
+    for (const roster of [reversed, rotated]) assert.deepEqual(resolve(said, 'country', roster), original, said);
+    const withoutEquatorialGuinea = countries.filter(country => country.code !== 'gq');
+    assert.equal(resolve(said, 'country', withoutEquatorialGuinea).status, 'retry', said);
+  }
+});
+
+test('격도누기 전사는 현재 문제 없는 전역 해석에서 적도기니로 추정하지 않는다', () => {
+  for (const said of ['격도누기', '음 격도누기요', '정답은 격도누기예요']) {
+    assert.equal(resolve(said).status, 'retry', said);
+    assert.equal(resolve(said).code, null, said);
+  }
+});
+
 test('나라 목록 순서가 달라도 불완전 발음의 유일성·모호성 판정은 같다', () => {
   const reversed = [...countries].reverse(), rotated = [...countries.slice(73), ...countries.slice(0, 73)];
   for (const [said, kind = 'country'] of [

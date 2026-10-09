@@ -145,7 +145,8 @@
     Object.keys(names).forEach(function (name) {
       if (!/^[가-힣]{2,20}$/.test(name)) return;
       var first = sound(name[0]), last = sound(name[name.length - 1]), distances = Object.create(null), starts = [];
-      Object.keys(positions).forEach(function (initial) { if (edgeDistance(initial, first) <= 1) starts = starts.concat(positions[initial]); });
+      // 긴 이름은 첫 음절의 초성·모음이 함께 흔들려도 전체 발음으로 다시 검사한다.
+      Object.keys(positions).forEach(function (initial) { if (edgeDistance(initial, first) <= (name.length >= 4 ? 2 : 1)) starts = starts.concat(positions[initial]); });
       for (var s = 0; s < starts.length; s++) {
         var start = starts[s];
         for (var length = Math.max(2, name.length - 2); length <= name.length + 1 && start + length <= text.length; length++) {
@@ -154,10 +155,12 @@
           if (!(fragment in distances)) distances[fragment] = pronunciationDistance(fragment, name);
           var score = distances[fragment];
           if (score === null) continue;
-          // 실제 다른 이름은 우선한다. 인도→인도네시야처럼 긴 이름 앞부분에 포함된 경우만 이어 본다.
+          // 긴 이름의 앞·뒤에 포함된 짧은 이름은 전체 발음을 가로막지 않는다(격도기니의 기니).
           if (exact.some(function (span) {
             if (span.start >= end || span.end <= start) return false;
-            return !(span.start === start && span.end < end && name.indexOf(text.slice(span.start, span.end)) === 0);
+            var exactName = text.slice(span.start, span.end);
+            return !((span.start === start && span.end < end && name.indexOf(exactName) === 0) ||
+              (span.end === end && span.start > start && name.endsWith(exactName)));
           })) continue;
           var key = start + ':' + end, group = fragments[key] || (fragments[key] = { start: start, end: end, entries: [], phonetic: true });
           names[name].forEach(function (entry) {
@@ -230,9 +233,9 @@
     return 'unknown';
   }
 
-  function bareFallback(raw, text, kind, countries, evidence) {
-    if (!FQ.quiz || !FQ.quiz.findCountry || !/^[\p{L}\p{N}\s.,!。！…]+$/u.test(raw.trim()) || text.length > 80 ||
-        negative(text) || help(text) || uncertainty(text) || /(?:and|or|but|그리고|정정|생각해|마지막|최종)/.test(text)) return null;
+  function bareNameForms(raw, text) {
+    if (!/^[\p{L}\p{N}\s.,!。！…]+$/u.test(raw.trim()) || text.length > 80 ||
+        negative(text) || help(text) || uncertainty(text) || /(?:and|or|but|그리고|정정|생각해|마지막|최종)/.test(text)) return [];
     // 전체 이름 한 덩어리만 비교한다. 필러·조사를 떼어도 일반 문장 안의 낱말은 추출하지 않는다.
     var forms = [text], stripped = text, changed = true;
     function add(value) { if (forms.indexOf(value) === -1) forms.push(value); }
@@ -256,6 +259,23 @@
         }
       }
     });
+    return forms;
+  }
+
+  // 말하기 채점에만 쓰는 이름 형태다. 현재 문제의 답은 이 해석 단계에 넣지 않는다.
+  function voiceForms(raw) {
+    if (typeof raw !== 'string' || raw.length > MAX_TEXT || !raw.trim()) return [];
+    var text = compact(raw);
+    if (quoted(raw, text) || manipulation(raw, text) || pass(text) || terminalUnknown(text) ||
+        /(?:안맞|아님|아닐|틀리|틀려|빼고|모르겠|몰라)/.test(text) ||
+        /(?:맞지|맞죠|맞을까|인듯|일듯|라던데|라는데|다던데|다는데)(?:요)?$/.test(text) ||
+        wordsOnly(text, PREFIX.concat(SUFFIX, ['가', '는', '를', '하고', '글쎄요', '글쎄', '흐음', '으흠', '흠', '에이', '잠시만요']))) return [];
+    return bareNameForms(raw, text).filter(function (form) { return /^[가-힣]+$/.test(form); });
+  }
+
+  function bareFallback(raw, text, kind, countries, evidence) {
+    if (!FQ.quiz || !FQ.quiz.findCountry) return null;
+    var forms = bareNameForms(raw, text);
     var matches = forms.map(function (value) {
       return singleNameFallback(value, kind, countries);
     }).filter(Boolean);
@@ -424,5 +444,5 @@
       !negative(tail) && !help(tail);
   }
 
-  FQ.spokenAnswer = { resolve: resolve, canUseSemantic: canUseSemantic, MAX_TEXT_LENGTH: MAX_TEXT };
+  FQ.spokenAnswer = { resolve: resolve, voiceForms: voiceForms, canUseSemantic: canUseSemantic, MAX_TEXT_LENGTH: MAX_TEXT };
 })(window);

@@ -1484,6 +1484,9 @@
     var resolved = FQ.speech.resolveAnswer(text, answerKind(q.mode), remote);
     if (resolved.status === 'answer') return { kind: 'answer', text: resolved.text };
     if (resolved.status === 'giveup') return { kind: 'giveup' };
+    if (resolved.reason === 'unknown' && quiz.checkVoiceText && quiz.checkVoiceText(q.country, text, answerKind(q.mode)).correct) {
+      return { kind: 'answer', text: text };
+    }
     return null;
   }
 

@@ -509,6 +509,43 @@
     return result;
   }
 
+  // 말로 맞추기는 아이의 발음·전사 오류에 관대하게, 실제 소리 자모 유사도 30%부터 인정한다.
+  var VOICE_MIN_SIMILARITY = 0.30;
+  function checkVoiceText(answer, input, kind) {
+    if (!FQ.spokenAnswer || !FQ.spokenAnswer.voiceForms) return checkText(answer, input, kind);
+    kind = kind === 'capital' ? 'capital' : 'country';
+    var resolved = FQ.spokenAnswer.resolve(input, { kind: kind });
+    if (resolved.status === 'answer') return checkText(answer, resolved.text, kind);
+    var result = checkText(answer, '', kind);
+    if (resolved.status !== 'retry' || resolved.reason !== 'unknown' || resolved.candidates.length) return result;
+    var forms = FQ.spokenAnswer.voiceForms(input);
+    if (!forms.length) return result;
+    // 실제 수도를 나라로, 나라를 수도로 말한 답은 낮은 유사도 기준으로 덮어쓰지 않는다.
+    var otherKind = FQ.spokenAnswer.resolve(input, { kind: kind === 'capital' ? 'country' : 'capital' });
+    if (otherKind.status === 'answer' || otherKind.candidates.length) return result;
+    var entry = entryFor(answer, kind), best = 0, matched = '';
+    if (!entry) return result;
+    (entry.aliases || []).concat([entry.ko]).forEach(function (name) {
+      var target = util.soundKey(util.compareKey(name));
+      if (!target) return;
+      forms.forEach(function (form) {
+        var said = util.soundKey(util.compareKey(form));
+        // util.similarity의 길이 기반 상한값 대신 실제 편집거리로 낮은 문턱을 검사한다.
+        var similarity = 1 - util.editDistance(said, target) / Math.max(said.length, target.length);
+        if (similarity > best) { best = similarity; matched = name; }
+      });
+    });
+    result.similarity = best;
+    if (best >= VOICE_MIN_SIMILARITY) {
+      result.correct = true;
+      result.exact = false;
+      result.lenient = true;
+      result.matched = matched;
+      result.score = best;
+    }
+    return result;
+  }
+
   /* ---------------- 수도 퀴즈 보기 난이도 ----------------
    * 공부는 별도 화면에서 진행한다. 퀴즈에서는 익힌 정도에 맞춰 보기 국기의 거리만 조절한다.
    */
@@ -646,7 +683,8 @@
         };
       } else {
         // 국기 보고 수도 말하기는 수도 이름으로 채점한다(answer: 'capital', D28). 나머지 글자·말 놀이는 나라 이름이다.
-        res = checkText(q.country, (payload && payload.text) || '', MODES[cfg.mode] && MODES[cfg.mode].answer);
+        var grader = payload && payload.source === 'voice' && MODES[q.mode] && MODES[q.mode].speech ? checkVoiceText : checkText;
+        res = grader(q.country, (payload && payload.text) || '', MODES[cfg.mode] && MODES[cfg.mode].answer);
         res.picked = null;
       }
 
@@ -734,6 +772,7 @@
     confusionSet: confusionSet,
     makeQuestion: makeQuestion,
     checkText: checkText,
+    checkVoiceText: checkVoiceText,
     candidateKeys: candidateKeys,
     soundsLike: soundsLike,
     prefixRisky: prefixRisky,

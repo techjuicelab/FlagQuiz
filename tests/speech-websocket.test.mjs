@@ -129,6 +129,18 @@ test('빈 endpoint는 계속 듣고 빈 finalize는 새 창에서 계속 듣는�
   provider.emit(value('대한민국')); assert.equal(c.packets.some(packet => packet.type === 'result'), false);
 });
 
+test('미해석 음성 원문 전달 guard의 실패나 비동기 반환은 결과를 보내지 않고 연결을 닫는다', async t => {
+  for (const guard of [() => { throw new Error('private guard failure'); }, async () => true, () => undefined]) {
+    const f = await fixture(t, { resolveFinal: async () => ({ status: 'retry', reason: 'unknown', source: 'rules' }), canGradeUnknown: guard });
+    const c = await f.open(), provider = await f.voice(c);
+    provider.emit(value('격도누기', { boundary: 'end' }));
+    assert.equal((await c.wait('error')).code, 'service'); await c.closed();
+    assert.equal(c.packets.some(packet => packet.type === 'result'), false);
+    assert.equal(provider.closes, 1); assert.equal(f.releases, 1); assert.equal(f.quotas, 1);
+    assert.doesNotMatch(JSON.stringify(c.packets), /private guard failure/);
+  }
+});
+
 test('망설임 해석 대기 중 다음 확정 이름이 오면 늦은 retry로 덮어쓰지 않는다', async t => {
   const f = await fixture(t), gate = deferred(); f.finalGate = gate;
   const c = await f.open(), provider = await f.voice(c);

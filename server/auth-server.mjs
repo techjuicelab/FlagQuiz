@@ -12,7 +12,7 @@ import { openAccessStore, AccessError } from './lib/access-store.mjs';
 import { clientIp, parseTrustedProxyIPs } from './lib/proxy-ip.mjs';
 import { attachSpeechWebSocket } from './speech-websocket.mjs';
 import { createRealtimeTranscriber } from './realtime-speech.mjs';
-import { createInstantAnswerResolver } from './answer-resolution.mjs';
+import { createInstantAnswerResolver, createUnknownVoiceAnswerGuard } from './answer-resolution.mjs';
 
 const repository = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const COOKIE = 'flagquiz_session', LOGIN_COOKIE = 'flagquiz_login';
@@ -396,6 +396,7 @@ export async function createAuthServer({ config = readConfig(), fetchImpl = fetc
   });
   server.requestTimeout = 15000; server.headersTimeout = 10000;
   const instant = config.sonioxApiKey ? await createInstantAnswerResolver() : () => null;
+  const canGradeUnknown = config.sonioxApiKey ? await createUnknownVoiceAnswerGuard() : () => false;
   const realtime = injectedRealtime || createRealtimeTranscriber({ apiKey: config.sonioxApiKey });
   const stream = attachSpeechWebSocket(server, {
     origin: () => config.publicOrigin, isConfigured: () => Boolean(config.ready && config.sonioxApiKey && realtime.ready),
@@ -404,7 +405,7 @@ export async function createAuthServer({ config = readConfig(), fetchImpl = fetc
       sameOrigin({ headers: { ...req.headers, 'x-csrf-token': token } }, session);
     },
     claimSpeech, consumeQuota: session => store.consumeSpeechQuota(session), createTranscriber: () => realtime,
-    resolveInstant: instant,
+    resolveInstant: instant, canGradeUnknown,
     async resolveFinal(input, signal, session, req) {
       resolveAnswer ||= (await import('./answer-resolution.mjs')).createAnswerResolver({ apiKey: config.typesafeApiKey, fetchImpl });
       return resolveAnswer(input, { signal, beforeSemantic: async () => {
