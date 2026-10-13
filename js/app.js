@@ -1935,14 +1935,14 @@
     var slots = ui.$('.travel-slots');
     if (slots) slots.innerHTML = travelSlots(chestNow, false);
 
-    // 수도 정답은 나라 이름과 수도 이름을 모두 확인하고, 다른 놀이의 정답 첫 안내는 이름만 짧게 읽는다.
+    // 수도의 전체 설명은 수도 이름과 관계 두 문구다. 나라 이름은 관계 문장 안에서 한 번만 읽는다.
     var isCapitalQ = capitalAxis(q.mode);
     var confirmCapital = isCapitalQ && !!res.correct;
     var isMapQ = q.mode === 'map';
     var isArtQ = q.mode === 'symbol' || q.mode === 'place';
     var feedbackArtName = isArtQ ? artAlt(c.code, q.mode) : '';
     state.lastSpeech = {
-      lines: isCapitalQ ? (confirmCapital ? [c.ko, c.capital, c.ko + '의 수도예요'] : [c.capital, c.ko + '의 수도예요']) : isArtQ ? [c.ko, feedbackArtName, c.fact].filter(Boolean) : isMapQ ? [c.ko, c.fact] : [c.ko, c.flagHint],
+      lines: isCapitalQ ? [c.capital, c.ko + '의 수도예요'] : isArtQ ? [c.ko, feedbackArtName, c.fact].filter(Boolean) : isMapQ ? [c.ko, c.fact] : [c.ko, c.flagHint],
       opts: { rate: 0.93, pitch: 1.1 }
     };
     var feedbackSpeech = state.lastSpeech;
@@ -1965,8 +1965,11 @@
       return state.feedbackGeneration === generation && state.game === g &&
         g.current() === q && state.answered && !doc.hidden;
     }
-    // 수도 정답은 두 이름과 관계를 확인하고, 다른 정답은 이름만 짧게 읽은 뒤 자동 진행한다.
-    var quickAnswerSpeech = res.correct && !confirmCapital ? { lines: [c.ko], opts: feedbackSpeech.opts } : feedbackSpeech;
+    // 수도 듣기는 문제에서 수도를 이미 들었으므로 정답에서는 관계만 이어 읽는다.
+    // 수도 말하기는 정답 발음과 관계를 확인하고, 직접 다시 듣기는 전체 설명을 읽는다.
+    var quickAnswerSpeech = !res.correct ? feedbackSpeech : q.mode === 'capital'
+      ? { lines: [c.ko + '의 수도예요'], opts: feedbackSpeech.opts }
+      : isCapitalQ ? feedbackSpeech : { lines: [c.ko], opts: feedbackSpeech.opts };
     function scheduleAutoNext(request, delay) {
       if (!feedbackCurrent() || request !== narrationRequest) return;
       if (state.autoNextTimer) global.clearTimeout(state.autoNextTimer);
@@ -2040,7 +2043,7 @@
     // 정답 카드(시안 PhoneAnswer): 정오답이 같은 카드다. 폰에서 국기 전폭, 이름 34px, 노란 상자(그림 이름·상식 / 국기 특징),
     // 🔊 설명 다시 듣기 56px, '다음 나라 →' 64px.
     // 수도 놀이의 정답 카드는 수도가 주인공이다(D29): 수도 명패(가장 큰 글자, 수도 안 명소 그림(D26)이 있으면 함께 — 파리 옆에 에펠탑) 아래에
-    // '[국기] 나라의 수도예요' 한 줄. 정답 확인에서는 나라 이름과 수도 이름을 구분하고 두 이름을 모두 읽는다.
+    // '[국기] 나라의 수도예요' 한 줄. 정답 카드에서는 나라 이름과 수도 이름을 구분해 표시한다.
     var feedbackArt = isArtQ ? artFor(c.code, q.mode) : null;
     var rememberTitle = isArtQ ? esc(artAlt(c.code, q.mode)) : isMapQ ? '🗺️ ' + esc(c.continent) + ' · ' + esc(c.region) : '';
     var rememberBody = isMapQ || isArtQ ? esc(c.fact) : '🚩 ' + esc(c.flagHint);
