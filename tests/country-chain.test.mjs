@@ -7,7 +7,7 @@ import test from 'node:test';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
-function fixture() {
+function fixture({ realMap = false } = {}) {
   const nodes = new Map(), timers = new Map(), sessions = [], spoken = [], maps = [], cancellations = [];
   let nextTimer = 0, cancels = 0, stops = 0, speechStops = 0, c;
   class Element extends EventTarget {
@@ -53,17 +53,23 @@ function fixture() {
   for (const file of ['js/util.js', 'data/countries.js', 'js/quiz.js', 'js/spoken-answer.js', 'js/speech.js', 'js/ui.js', 'js/country-chain.js']) {
     vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), c, { filename: file });
   }
-  function dispatch(target, type) {
+  if (realMap) {
+    for (const file of ['data/map-coords.js', 'data/map-shapes.js', 'js/map.js']) vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), c, { filename: file });
+    const collection = c.FQ.map.collection;
+    c.FQ.map.collection = function (countries, opts) { maps.push({ countries: [...countries], opts }); return collection(countries, opts); };
+  }
+  function dispatch(target, type, eventInit = {}) {
     const event = new Event(type, { cancelable: true });
     Object.defineProperty(event, 'target', { value: target });
+    for (const [name, value] of Object.entries(eventInit)) Object.defineProperty(event, name, { value });
     node('#main').dispatchEvent(event);
   }
-  function click(selectorOrAttrs) {
+  function click(selectorOrAttrs, eventInit) {
     const target = typeof selectorOrAttrs === 'string' ? node(selectorOrAttrs) : new Element('button');
     if (typeof selectorOrAttrs !== 'string') {
       Object.assign(target.attrs, selectorOrAttrs); node('#main').children.add(target);
     }
-    if (!target.disabled) dispatch(target, 'click');
+    if (!target.disabled) dispatch(target, 'click', eventInit);
   }
   function type(text) {
     node('#chain-input').value = text;
@@ -158,6 +164,79 @@ test('화면은 5개 제한 없이 전체 accepted 나라를 지도·국기 목�
   assert.match(f.node('#chain-detail').innerHTML, new RegExp(countries[0].ko));
   assert.equal(f.maps.at(-1).opts.owners[countries[0].code], 0); assert.equal(f.maps.at(-1).opts.owners[countries[1].code], 1);
   assert.doesNotMatch(f.node('#main').innerHTML, /정답|문제|data-chain-next|confirm/);
+});
+
+test('실제 지도는 두 사람 색으로 누적하고 나라 영역·보조 단추는 같은 상세를 선택하며 차례와 마이크를 보존한다', () => {
+  const f = fixture({ realMap: true }), screen = f.c.FQ.countryChain.start({ players: ['민규', '아빠'], voice: f.voice, speak: false });
+  f.type('대한민국'); f.type('일본'); f.type('프랑스');
+  const before = JSON.stringify(screen.snapshot()), map = () => f.node('#chain-map').innerHTML;
+  assert.equal((map().match(/<path class="chain-map-region\b/g) || []).length, 3);
+  assert.equal((map().match(/class="map-country"/g) || []).length, 194);
+  assert.match(map(), /<b>민규<\/b> · 2개/); assert.match(map(), /<b>아빠<\/b> · 1개/);
+  assert.match(map(), /3개 나라의 땅을 채웠어요/);
+  f.click('#chain-mic'); const listening = f.sessions.length;
+  f.click({ 'data-chain-country': 'kr', class: 'chain-map-region chain-owner-0' });
+  const selectedRegionDetail = f.node('#chain-detail').innerHTML;
+  assert.match(selectedRegionDetail, /대한민국/);
+  assert.equal(f.maps.at(-1).opts.activeCode, 'kr');
+  assert.match(map(), /chain-map-region chain-owner-0 is-active" data-chain-country="kr"/);
+  f.click({ 'data-chain-country': 'jp', class: 'chain-map-marker chain-owner-1' });
+  f.click({ 'data-chain-country': 'kr', class: 'chain-map-marker chain-owner-0' });
+  assert.equal(f.node('#chain-detail').innerHTML, selectedRegionDetail, '영역과 보조 단추가 같은 나라 상세를 선택한다');
+  assert.equal(JSON.stringify(screen.snapshot()), before);
+  assert.equal(f.sessions.length, listening, '나라 정보를 골라도 새 마이크를 시작하지 않는다');
+  assert.equal((map().match(/<path class="chain-map-region\b/g) || []).length, 3);
+  assert.match(map(), /chain-map-region chain-owner-1" data-chain-country="jp"/);
+  f.click({ 'data-chain-country': 'us', class: 'map-country' });
+  assert.equal(f.node('#chain-detail').innerHTML, selectedRegionDetail, '아직 말하지 않은 중립 나라는 선택하지 않는다');
+  screen.cleanup();
+});
+
+test('이웃 나라의 투명 보조 영역 아래 땅을 누르면 그 나라를 고르고 점·키보드 선택과 차례는 유지한다', () => {
+  const f = fixture({ realMap: true }), screen = f.c.FQ.countryChain.start({ voice: f.voice, speak: false });
+  f.type('대한민국'); f.type('일본'); f.click('#chain-mic');
+  const before = JSON.stringify(screen.snapshot()), listening = f.sessions.length, cancels = f.cancels;
+  const japan = f.node('overlapping-japan-marker');
+  japan.setAttribute('data-chain-country', 'jp'); japan.setAttribute('class', 'chain-map-marker chain-owner-1');
+  f.node('#main').children.add(japan);
+  japan.querySelector = () => ({ getBoundingClientRect: () => ({ left: 110, right: 117, top: 100, bottom: 107 }) });
+  const korea = f.node('underlying-korea-region');
+  korea.setAttribute('data-chain-country', 'kr'); korea.setAttribute('class', 'chain-map-region chain-owner-0');
+  korea.ownerSVGElement = f.node('.chain-map-canvas').querySelector('svg.map-context-land');
+  const otherMap = f.node('other-map-region');
+  otherMap.setAttribute('data-chain-country', 'jp'); otherMap.setAttribute('class', 'chain-map-region'); otherMap.ownerSVGElement = {};
+  // 한국 땅 위에 일본의 넓은 투명 누르기 영역이 겹친 실제 브라우저 상황을 모사한다.
+  f.c.document.elementsFromPoint = () => [japan, otherMap, korea];
+  f.click('overlapping-japan-marker', { detail: 1, clientX: 90, clientY: 106 });
+  assert.equal(f.maps.at(-1).opts.activeCode, 'kr'); assert.match(f.node('#chain-detail').innerHTML, /대한민국/);
+  f.click('overlapping-japan-marker', { detail: 0, clientX: 90, clientY: 106 });
+  assert.equal(f.maps.at(-1).opts.activeCode, 'jp', '키보드로 고른 일본 단추는 일본을 선택한다');
+  f.click('overlapping-japan-marker', { detail: 1, clientX: 113, clientY: 103 });
+  assert.equal(f.maps.at(-1).opts.activeCode, 'jp', '보이는 일본 점을 직접 누르면 일본을 선택한다');
+  f.c.document.elementsFromPoint = () => [japan];
+  f.click('overlapping-japan-marker', { detail: 1, clientX: 90, clientY: 106 });
+  assert.equal(f.maps.at(-1).opts.activeCode, 'jp', '아래에 다른 나라 땅이 없으면 작은 나라의 넓은 보조 단추를 유지한다');
+  assert.equal(JSON.stringify(screen.snapshot()), before, '정보 선택은 소유자·점수·차례를 바꾸지 않는다');
+  assert.equal(f.sessions.length, listening); assert.equal(f.cancels, cancels, '정보 선택은 현재 마이크를 끊지 않는다');
+  screen.cleanup();
+});
+
+test('실제 누적 지도도 중복·미확인·다중 답을 더하지 않으며 새 판에서는 색칠과 점수만 비운다', () => {
+  const f = fixture({ realMap: true }), screen = f.c.FQ.countryChain.start({ players: ['첫째', '둘째'], speak: false });
+  f.type('대한민국'); f.type('일본');
+  const before = JSON.stringify(screen.snapshot()), paths = html => (html.match(/<path class="chain-map-region[^>]+>/g) || []).slice().sort();
+  const previous = paths(f.node('#chain-map').innerHTML);
+  for (const said of ['한국', '없는나라xyz', '프랑스 또는 미국']) {
+    f.type(said);
+    assert.equal(JSON.stringify(screen.snapshot()), before, said);
+    assert.deepEqual(paths(f.node('#chain-map').innerHTML), previous, said + ' 기존 영역과 색 유지');
+  }
+  f.click({ 'data-chain-reset': '' });
+  assert.equal(screen.snapshot().total, 0); assert.equal(screen.snapshot().playerIndex, 0);
+  assert.equal(paths(f.node('#chain-map').innerHTML).length, 0);
+  assert.equal((f.node('#chain-map').innerHTML.match(/class="map-country"/g) || []).length, 194);
+  assert.match(f.node('#chain-map').innerHTML, /<b>첫째<\/b> · 0개/); assert.match(f.node('#chain-map').innerHTML, /<b>둘째<\/b> · 0개/);
+  screen.cleanup();
 });
 
 test('accepted면 먼저 화면·차례를 바꾸고 음성 읽기 완료 뒤 다음 사람을 자동으로 듣는다', () => {

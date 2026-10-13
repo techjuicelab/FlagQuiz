@@ -109,10 +109,22 @@ test('넓힌 전사 오류 복원도 나라·수도 모드 경계를 넘지 않�
   for (const text of ['격도누기', '격도기니', '적도기니', '대한민국', '북한']) {
     assert.equal(resolve(text, 'capital').status, 'retry', text);
   }
-  for (const text of ['서울', '도쿄', '말라보']) {
+  for (const text of ['서울', '도쿄', '시우다드데라파스']) {
     assert.equal(resolve(text, 'country').status, 'retry', text);
   }
-  assert.equal(resolve('말라보', 'capital').code, 'gq');
+  assert.equal(resolve('시우다드데라파스', 'capital').code, 'gq');
+});
+
+test('적도기니 수도 변경은 새 한국어·영문 이름을 인정하고 옛 수도 말라보를 정답으로 인정하지 않는다', () => {
+  for (const said of ['시우다드데라파스', '시우다드 데 라 파스', 'Ciudad de la Paz']) {
+    const result = resolve(said, 'capital');
+    assert.equal(result.status, 'answer', said); assert.equal(result.code, 'gq');
+    assert.equal(result.text, '시우다드데라파스');
+  }
+  for (const said of ['말라보', 'Malabo', '말라보예요', '정답은 말라보']) {
+    const result = resolve(said, 'capital');
+    assert.equal(result.status, 'retry', said); assert.equal(result.code, null, said);
+  }
 });
 
 test('적도기니의 전사 오류 복원은 나라 목록 순서와 현재 목록 밖 정답에 기대지 않는다', () => {

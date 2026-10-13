@@ -10550,5 +10550,13 @@
     "model": "ssfm-v30",
     "requestHash": "80e8e27d6faea11c807cc622d69721569aaf11eea5a6924a1929ee4a6b84fbb1",
     "sha256": "a3e937dd45366f7845489d6d9e8b0933a65a9c41b49ffa4e459a6f75555668f3"
+  },
+  "778a18d4020ab710a53e787a": {
+    "text": "시우다드데라파스",
+    "kind": "name",
+    "voiceId": "tc_6699eb5749dfac016c29445c",
+    "model": "ssfm-v30",
+    "requestHash": "778a18d4020ab710a53e787a6902275dfa21a39fe9235e497b82fb249dcf89b7",
+    "sha256": "3b4ff84059da0f70b48c6965958f918aa99535857ec5231a9d30d14304bcb566"
   }
 }

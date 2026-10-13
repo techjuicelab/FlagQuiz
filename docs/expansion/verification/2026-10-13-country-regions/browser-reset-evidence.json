@@ -1,0 +1,26 @@
+{
+  "mobile": {
+    "content": [
+      {
+        "type": "text",
+        "text": "Script ran on page and returned:\n```json\n{\"viewport\":[390,844],\"overflow\":false,\"colors\":[[\"kr\",\"rgb(147, 183, 255)\"],[\"jp\",\"rgb(245, 187, 103)\"],[\"cn\",\"rgb(147, 183, 255)\"],[\"us\",\"rgb(245, 187, 103)\"],[\"br\",\"rgb(147, 183, 255)\"],[\"au\",\"rgb(245, 187, 103)\"]],\"scores\":[\"3개\",\"3개\"],\"neutral\":194,\"targets\":[[44,44],[44,44],[44,44],[44,44],[44,44],[44,44]]}\n```"
+      }
+    ]
+  },
+  "reset": {
+    "content": [
+      {
+        "type": "text",
+        "text": "Script ran on page and returned:\n```json\n{\"colors\":0,\"neutral\":194,\"scores\":[\"0개\",\"0개\"],\"history\":0,\"turn\":\"민규 차례예요. 나라 이름을 하나 말해요.\"}\n```"
+      }
+    ]
+  },
+  "restart": {
+    "content": [
+      {
+        "type": "text",
+        "text": "Script ran on page and returned:\n```json\n{\"colors\":[[\"fr\",\"rgb(147, 183, 255)\"],[\"ca\",\"rgb(245, 187, 103)\"]],\"scores\":[\"1개\",\"1개\"],\"turn\":\"민규 차례예요. 나라 이름을 하나 말해요.\"}\n```"
+      }
+    ]
+  }
+}

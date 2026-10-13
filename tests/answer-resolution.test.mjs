@@ -15,7 +15,7 @@ test('미해석 음성 원문 전달은 최종 이름 형태와 빈 전체 후�
   for (const [text, mode = 'voice'] of [
     ['격도누기', 'country-chain'], ['격도누기', 'typing'], ['격도누기', 'invalid'],
     ['기니'], ['기니비사우'], ['적도기니'], ['격도기니'], ['도쿄', 'capitalVoice'],
-    ['서울'], ['말라보'], ['대한민국', 'capitalVoice'], ['적도기니', 'capitalVoice'],
+    ['서울'], ['시우다드데라파스'], ['대한민국', 'capitalVoice'], ['적도기니', 'capitalVoice'],
     ['격도누기 아니야'], ['격도누기인가요?'], ['아마 격도누기'], ['격도누기 또는 기니'],
     ['기니 격도누기'], ['기니 아니고 적도기니'], ['"격도누기"라고 했어'],
     ['격도누기에서 살아요'], ['몰라요'], ['패스'], ['음.'], ['글쎄요'], ['']
@@ -95,10 +95,27 @@ test('서버의 넓힌 발음 인정도 실제 이름·명시 정정·모드 경
   for (const text of ['격도누기', '격도기니', '적도기니', '대한민국', '북한']) {
     assert.equal((await resolve({ text, mode: 'capitalVoice' })).status, 'retry', text);
   }
-  for (const text of ['서울', '도쿄', '말라보']) {
+  for (const text of ['서울', '도쿄', '시우다드데라파스']) {
     assert.equal((await resolve({ text, mode: 'voice' })).status, 'retry', text);
   }
-  assert.equal((await resolve({ text: '말라보', mode: 'capitalVoice' })).code, 'gq');
+  assert.equal((await resolve({ text: '시우다드데라파스', mode: 'capitalVoice' })).code, 'gq');
+});
+
+test('서버 수도 판정도 새 시우다드데라파스를 인정하고 말라보로 정답을 복구하지 않는다', async () => {
+  let calls = 0;
+  const resolve = createAnswerResolver({ fetchImpl: async () => { calls++; throw new Error('수도 이름 자체는 외부 추정 없이 판정한다'); } });
+  const instant = await createInstantAnswerResolver();
+  for (const text of ['시우다드데라파스', '시우다드 데 라 파스', 'Ciudad de la Paz']) {
+    const result = await resolve({ text, mode: 'capitalVoice', expectedAnswer: 'gq', target: '적도기니' });
+    assert.equal(result.status, 'answer', text); assert.equal(result.code, 'gq'); assert.equal(result.text, '시우다드데라파스');
+  }
+  assert.equal(instant({ text: '시우다드데라파스', mode: 'capitalVoice' }).code, 'gq');
+  for (const text of ['말라보', 'Malabo', '말라보예요']) {
+    const result = await resolve({ text, mode: 'capitalVoice', expectedAnswer: 'gq', target: '적도기니' });
+    assert.equal(result.status, 'retry', text); assert.equal(result.code, null, text);
+    assert.equal(instant({ text, mode: 'capitalVoice' }), null, text);
+  }
+  assert.equal(calls, 0);
 });
 
 test('서버 전역 해석은 현재 문제 단서를 받아도 격도누기를 적도기니로 추정하지 않는다', async () => {

@@ -84,7 +84,10 @@ test('나라·수도 전체 한국어 사전은 현재 정답이나 클라이언
     assert.ok(config.context.terms.every(term => typeof term === 'string' && /[가-힣]/.test(term)));
     assert.ok(JSON.stringify(config.context).length < 10000);
     if (mode !== 'capitalVoice') assert.ok(config.context.terms.includes('적도기니'));
-    else assert.ok(config.context.terms.includes('말라보'));
+    else {
+      assert.ok(config.context.terms.includes('시우다드데라파스'));
+      assert.ok(!config.context.terms.includes('말라보'), '새 수도 사전에 옛 수도를 정답 후보로 남기지 않는다');
+    }
     c.close();
     const changed = f.connect({ mode, answer: '클라이언트전용답', choices: ['현재정답보기'],
       context: { terms: ['외부힌트'], general: [{ key: 'topic', value: '현재정답' }] }, language_hints: ['en'] });

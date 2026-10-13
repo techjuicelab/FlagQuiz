@@ -11,7 +11,7 @@ function deferred() {
 }
 
 // 실제 두 모듈을 실행하고 기기·네트워크·시간만 바꾼다. 외부 요청은 없다.
-function fixture({ responses = ['대한민국'], network, permission, speak = true, countryCodes } = {}) {
+function fixture({ responses = ['대한민국'], network, permission, speak = true, countryCodes, realMap = false } = {}) {
   let now = 0, timerId = 0, loud = 0, homes = 0;
   const signal = [{ at: 0, value: 0 }];
   const timers = new Map(), nodes = new Map(), events = new Map();
@@ -115,6 +115,9 @@ function fixture({ responses = ['대한민국'], network, permission, speak = tr
   for (const file of ['js/util.js', 'data/countries.js', 'js/spoken-answer.js', 'js/cloud-speech.js', 'js/speech.js', 'js/country-chain.js']) {
     vm.runInContext(fs.readFileSync(new URL('../' + file, import.meta.url), 'utf8'), context, { filename: file });
   }
+  if (realMap) for (const file of ['data/map-coords.js', 'data/map-shapes.js', 'js/map.js']) {
+    vm.runInContext(fs.readFileSync(new URL('../' + file, import.meta.url), 'utf8'), context, { filename: file });
+  }
   const adapter = window.FQ.cloudSpeech.create({ csrfToken: 'synthetic-csrf', mode: 'country-chain' });
   const game = window.FQ.countryChain.start({ players: ['첫째', '둘째'], voice: adapter,
     countries: countryCodes && window.FQ.countries.filter(country => countryCodes.includes(country.code)),
@@ -186,13 +189,15 @@ test('통합: 작은 고정 배경음은 다음 나라 발화로 반복 과금·
   assert.doesNotMatch(f.node('#chain-feedback').textContent, /여러 나라/);
 });
 
-test('통합: 한 나라 인식 뒤 이름 재생 중에는 시작·멈추기 모순과 TTS 재녹음을 막고 상대 차례 듣기를 잇는다', async t => {
-  const f = fixture({ responses: ['대한민국', '일본'] }); t.after(() => f.game.cleanup());
+test('통합: 두 사람 영역 색칠을 누적하며 이름 재생 중 TTS 재녹음을 막고 상대 차례 듣기를 잇는다', async t => {
+  const f = fixture({ responses: ['대한민국', '일본'], realMap: true }); t.after(() => f.game.cleanup());
   f.setLoud(0.1); f.click('[data-chain-mic]'); await flush();
   await f.advance(300); f.setLoud(0); await f.advance(1200);
   assert.equal(f.requests.length, 1);
   assert.equal(f.game.snapshot().total, 1);
   assert.equal(f.game.snapshot().playerIndex, 1);
+  assert.equal((f.node('#chain-map').innerHTML.match(/<path class="chain-map-region\b/g) || []).length, 1);
+  assert.match(f.node('#chain-map').innerHTML, /chain-map-region chain-owner-0 is-active" data-chain-country="kr"/);
   assert.deepEqual(f.spoken[0].lines, ['대한민국']);
   assert.equal(f.adapter.isRecording(), false, '앱이 나라 이름을 읽는 동안 녹음하지 않는다');
   assert.equal(f.streams[0].track.enabled, false, '앱의 TTS가 남아 있는 마이크로 들어가지 않게 실제 트랙을 mute한다');
@@ -219,6 +224,10 @@ test('통합: 한 나라 인식 뒤 이름 재생 중에는 시작·멈추기 �
   assert.deepEqual(Array.from(f.game.snapshot().scores), [1, 1]);
   assert.equal(f.game.snapshot().playerIndex, 0);
   assert.deepEqual(f.spoken[1].lines, ['일본']);
+  assert.equal((f.node('#chain-map').innerHTML.match(/<path class="chain-map-region\b/g) || []).length, 2);
+  assert.match(f.node('#chain-map').innerHTML, /chain-map-region chain-owner-0" data-chain-country="kr"/);
+  assert.match(f.node('#chain-map').innerHTML, /chain-map-region chain-owner-1 is-active" data-chain-country="jp"/);
+  assert.match(f.node('#chain-map').innerHTML, /<b>첫째<\/b> · 1개/); assert.match(f.node('#chain-map').innerHTML, /<b>둘째<\/b> · 1개/);
   assert.equal(f.streams.length, 1);
   assert.equal(f.contexts.length, 1);
   assert.equal(f.streams[0].track.enabled, false);

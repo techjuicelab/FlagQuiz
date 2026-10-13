@@ -1,0 +1,43 @@
+{
+  "viewport": [
+    1180,
+    820
+  ],
+  "landClick": {
+    "point": [
+      1019,
+      355
+    ],
+    "overlay": "jp",
+    "selected": "kr",
+    "scores": [
+      1,
+      1
+    ],
+    "colors": 2,
+    "turn": "민규"
+  },
+  "pointClick": {
+    "target": "jp visible center",
+    "selected": "jp",
+    "colors": 2
+  },
+  "keyboard": {
+    "target": "kr marker Enter",
+    "selected": "kr",
+    "scores": [
+      1,
+      1
+    ],
+    "colors": 2
+  },
+  "narrowLongNames": {
+    "viewport": [
+      320,
+      568
+    ],
+    "nameLength": 20,
+    "pageScrollWidth": 320,
+    "legendWrap": "anywhere"
+  }
+}

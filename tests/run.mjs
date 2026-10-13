@@ -58,7 +58,7 @@ sandbox.window = sandbox;
 sandbox.global = sandbox;
 vm.createContext(sandbox);
 
-for (const file of ['server/login-legacy.js', 'js/legacy-records.js', 'js/legacy-boot.js', 'js/util.js', 'js/storage.js', 'js/features.js', 'data/countries.js', 'data/subjects.js', 'data/confusion-groups.js', 'data/map-coords.js', 'data/map-shapes.js', 'js/map.js', 'js/progress.js', 'js/quiz.js', 'js/spoken-answer.js', 'js/offline.js', 'js/auth.js', 'js/cloud-speech.js', 'js/streaming-speech.js', 'js/speech-pcm-worklet.js', 'js/speech-engine.js', 'js/country-chain.js']) {
+for (const file of ['server/login-legacy.js', 'js/legacy-records.js', 'js/legacy-boot.js', 'js/util.js', 'js/storage.js', 'js/features.js', 'data/countries.js', 'data/subjects.js', 'data/confusion-groups.js', 'data/map-coords.js', 'data/map-shapes.js', 'data/capital-coords.js', 'js/map.js', 'js/progress.js', 'js/quiz.js', 'js/spoken-answer.js', 'js/offline.js', 'js/auth.js', 'js/cloud-speech.js', 'js/streaming-speech.js', 'js/speech-pcm-worklet.js', 'js/speech-engine.js', 'js/country-chain.js', 'js/country-browser.js']) {
   const full = path.join(root, file);
   if (!fs.existsSync(full)) {
     console.error('✗ 파일이 없어요: ' + file);
@@ -192,7 +192,8 @@ group('지도 자료', () => {
     const [lng, lat] = point;
     ok(Number.isFinite(lng) && lng >= -180 && lng <= 180, '지도 경도 범위', c.code);
     ok(Number.isFinite(lat) && lat >= -90 && lat <= 90, '지도 위도 범위', c.code);
-    ok(point.every((v) => Number.isFinite(v) && Number(v.toFixed(2)) === v), '지도 좌표는 소수 둘째 자리까지', c.code);
+    const precision = c.code === 'va' ? 6 : 2;
+    ok(point.every((v) => Number.isFinite(v) && Number(v.toFixed(precision)) === v), '지도 좌표는 나라별 원자료 정밀도를 지켜야 함', c.code);
   }
   for (const code of Object.keys(coords)) {
     ok(codes.has(code), '쓰이지 않는 지도 좌표가 없어야 함', code);
@@ -208,7 +209,7 @@ group('지도 자료', () => {
   ok(inside('kr', 124, 33, 132, 39), '한국 지도 좌표는 한반도 안에 있어야 함', 'kr');
   ok(inside('au', 112, -44, 154, -10), '호주 지도 좌표는 남반구 본토에 있어야 함', 'au');
   ok(inside('br', -74, -34, -34, 6), '브라질 지도 좌표는 남미 안에 있어야 함', 'br');
-  ok(inside('va', 12.428, 41.898, 12.439, 41.906), '바티칸 지도 좌표는 실제 바티칸 경계 상자 안이어야 함', 'va');
+  ok(inside('va', 12.445, 41.899, 12.459, 41.908), '바티칸 지도 좌표는 실제 바티칸 경계 상자 안이어야 함', 'va');
   ok(inside('ru', 30, 50, 100, 72), '러시아 지도 좌표는 서쪽 본토에 있어야 함', 'ru');
 
   const land = FQ.mapLand || {};
@@ -259,7 +260,7 @@ group('지도 자료', () => {
   const build = fs.readFileSync(path.join(root, 'scripts/build-site.mjs'), 'utf8');
   const sw = fs.readFileSync(path.join(root, 'sw.js'), 'utf8');
   const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-  for (const file of ['data/map-coords.js', 'data/map-shapes.js']) {
+  for (const file of ['data/map-coords.js', 'data/map-shapes.js', 'data/capital-coords.js']) {
     ok(build.includes("'" + file + "'"), 'scripts/build-site.mjs: files 목록에 ' + file + '를 등록해야 함');
     ok(sw.includes("'./" + file + "'"), 'sw.js: SHELL 목록에 ./' + file + '를 등록해야 함');
     const tag = '<script src="' + file + '"></script>';
@@ -268,6 +269,20 @@ group('지도 자료', () => {
       html.indexOf(tag) < html.indexOf('<script src="js/progress.js"></script>'), 'index.html: ' + file + '는 countries 뒤, progress 앞에서 읽어야 함');
   }
   ok(sw.includes('flagquiz-v4'), '서비스워커 버전을 올리면 아이패드에 받아 둔 음원 캐시가 전부 삭제된다');
+});
+
+group('나라 공부 화면 연결', () => {
+  ok(typeof FQ.countryBrowser?.open === 'function', '나라 공부 공개 진입점이 있어야 함');
+  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  const sw = fs.readFileSync(path.join(root, 'sw.js'), 'utf8');
+  for (const file of ['js/country-browser.js', 'css/country-browser.css']) {
+    ok(fs.existsSync(path.join(root, file)), '나라 공부 파일이 있어야 함', file);
+    ok(sw.includes("'./" + file + "'"), '나라 공부 파일은 오프라인 셸에도 있어야 함', file);
+    ok(html.includes(file), '나라 공부 파일은 실제 화면에서 읽어야 함', file);
+  }
+  ok(html.indexOf('js/country-browser.js') > html.indexOf('js/ui.js') &&
+    html.indexOf('js/country-browser.js') < html.indexOf('js/app.js'), '나라 공부는 공통 UI 뒤, 앱 진입점 앞에서 읽어야 함');
+  ok(html.includes('id="nav-study"'), '홈 밖에서도 나라 공부를 열 수 있는 탐색 버튼이 있어야 함');
 });
 
 group('이름 충돌 (다른 나라와 헷갈리지 않기)', () => {

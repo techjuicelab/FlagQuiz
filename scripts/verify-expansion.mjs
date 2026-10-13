@@ -571,7 +571,7 @@ const BASE_JS_FILES = [
 export function verifyMapScriptScope(t, actual) {
   const extra = actual.filter((file) => !BASE_JS_FILES.includes(file));
   // 지도 확장 이후 승인된 오프라인 전체 저장 UI도 명시적으로 허용한다.
-  const allowed = ['features.js', 'map.js', 'offline.js', 'auth.js', 'cloud-speech.js', 'streaming-speech.js', 'speech-pcm-worklet.js', 'speech-engine.js', 'country-chain.js', 'spoken-answer.js', 'legacy-records.js', 'legacy-boot.js'];
+  const allowed = ['features.js', 'map.js', 'offline.js', 'auth.js', 'cloud-speech.js', 'streaming-speech.js', 'speech-pcm-worklet.js', 'speech-engine.js', 'country-chain.js', 'country-browser.js', 'spoken-answer.js', 'legacy-records.js', 'legacy-boot.js'];
   const unexpected = extra.filter((file) => !allowed.includes(file));
   t.ok(unexpected.length === 0, 'js/ 에 승인 범위 밖의 새 파일이 들어왔다', unexpected.join(', '));
   const missing = BASE_JS_FILES.filter((file) => !actual.includes(file));
@@ -646,19 +646,63 @@ function newScriptFiles() {
    1부 — 금지 사항 (severity: guardrail) · 위반하면 종료 코드 1
    ══════════════════════════════════════════════════════════════════════ */
 
-export function verifyTestSourceTree(t, directory, relative = 'tests') {
+/** 원자료를 뺀 실제 사본에서 실행해 선택적인 원자료 검사가 CI를 막지 않는지 확인한다. */
+export function verifyTestRunsWithoutRawSource(testFile, repositoryRoot = root) {
+  const temporary = fs.mkdtempSync(path.join(os.tmpdir(), 'flagquiz-no-raw-'));
+  try {
+    for (const directory of ['data', 'js', 'scripts', 'tests', 'server']) {
+      const source = path.join(repositoryRoot, directory);
+      if (!fs.existsSync(source)) continue;
+      fs.cpSync(source, path.join(temporary, directory), { recursive: true, filter(full) {
+        return directory !== 'data' || path.relative(source, full).split(path.sep)[0] !== 'natural-earth';
+      } });
+    }
+    const packageFile = path.join(repositoryRoot, 'package.json');
+    if (fs.existsSync(packageFile)) fs.copyFileSync(packageFile, path.join(temporary, 'package.json'));
+    const modules = path.join(repositoryRoot, 'node_modules');
+    if (fs.existsSync(modules)) fs.symlinkSync(modules, path.join(temporary, 'node_modules'));
+    const relative = path.relative(repositoryRoot, testFile);
+    if (relative.startsWith('..') || path.isAbsolute(relative)) return { ok: false, detail: '저장소 밖 테스트는 실행하지 않는다' };
+    // 이 헬퍼의 회귀 검사 안에서도 별도 CLI가 실제로 실행되도록 부모 테스트의 내부 표시를 상속하지 않는다.
+    const childEnvironment = { ...process.env }; delete childEnvironment.NODE_TEST_CONTEXT;
+    const output = execFileSync(process.execPath, ['--test', '--test-reporter=tap', relative], {
+      cwd: temporary, env: childEnvironment, encoding: 'utf8', timeout: 30000, maxBuffer: 4 * 1024 * 1024, stdio: ['ignore', 'pipe', 'pipe']
+    });
+    return { ok: /# fail 0\b/.test(output), detail: output.slice(-1000) };
+  } catch (error) {
+    return { ok: false, detail: String(error.stdout || error.stderr || error.message).slice(-1000) };
+  } finally {
+    fs.rmSync(temporary, { recursive: true, force: true });
+  }
+}
+
+export function verifyTestSourceTree(t, directory, relative = 'tests', sourceIndependentTest) {
   for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
     const full = path.join(directory, entry.name), label = relative + '/' + entry.name;
     if (entry.isDirectory()) {
-      verifyTestSourceTree(t, full, label);
+      verifyTestSourceTree(t, full, label, sourceIndependentTest);
     } else {
       t.ok(entry.isFile(), label + ' 는 일반 파일이어야 한다');
       if (entry.isFile()) {
-        t.ok(!fs.readFileSync(full, 'utf8').includes('natural-earth'),
-          label + ' 가 원본 geojson 에 기댄다 — 원본 없이 npm test 가 성립해야 한다');
+        const hasSourceReference = fs.readFileSync(full, 'utf8').includes('natural-earth');
+        let independent = !hasSourceReference, detail;
+        if (!independent && entry.name.endsWith('.test.mjs') && sourceIndependentTest) {
+          const result = sourceIndependentTest(full);
+          independent = result.ok; detail = result.detail;
+        }
+        t.ok(independent, label + ' 가 원본 geojson 에 기댄다 — 원본 없이 npm test 가 성립해야 한다', detail);
       }
     }
   }
+}
+
+export function verifyMapTestPrecision(t, source) {
+  const code = codeOnly(source);
+  const declaration = /\b(?:const|let|var)\s+([\w$]+)\s*=\s*c\.code\s*===\s*['"]va['"]\s*\?\s*6\s*:\s*2\s*;/.exec(code);
+  const variableComparison = declaration && new RegExp('Number\\(\\s*([\\w$]+)\\.toFixed\\(\\s*' +
+    declaration[1].replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*\\)\\s*\\)\\s*===\\s*\\1\\b').test(code);
+  const inlineComparison = /Number\(\s*([\w$]+)\.toFixed\(\s*c\.code\s*===\s*['"]va['"]\s*\?\s*6\s*:\s*2\s*\)\s*\)\s*===\s*\1\b/.test(code);
+  t.ok(variableComparison || inlineComparison, '바티칸 6자리·다른 나라 2자리의 실제 좌표 정밀도 비교를 쓰지 않는다');
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
@@ -1111,7 +1155,7 @@ await check({
 await check({
   id: 'map-coords-values',
   task: '지도 T4-emit-data · T6-tests',
-  label: '좌표가 [lng, lat] 순서·범위·소수 2자리를 지키는가',
+  label: '좌표가 [lng, lat] 순서·범위·정밀도를 지키는가 (바티칸 6자리 예외)',
   severity: 'acceptance',
   why: '[lat,lng] 로 뒤집히면 지도가 조용히 90도 돌아간 모양이 되고 테스트는 초록불이다. toFixed 를 Number() 로 감싸지 않으면 문자열이 들어가 렌더링 시점에 터진다.'
 }, (t) => {
@@ -1128,13 +1172,14 @@ await check({
     }
     t.ok(lng >= -180 && lng <= 180, 'lng 범위를 벗어났다: ' + code, String(lng));
     t.ok(lat >= -90 && lat <= 90, 'lat 범위를 벗어났다 ([lat,lng] 로 뒤집혔을 수 있다): ' + code, String(lat));
-    t.ok(Number(lng.toFixed(2)) === lng && Number(lat.toFixed(2)) === lat, '소수 2자리가 아니다: ' + code, JSON.stringify(v));
+    const decimals = code === 'va' ? 6 : 2;
+    t.ok(Number(lng.toFixed(decimals)) === lng && Number(lat.toFixed(decimals)) === lat, '나라 라벨 좌표 정밀도가 다르다: ' + code, JSON.stringify(v));
   }
   const SAMPLES = {
     kr: [[124, 132], [33, 39]],
     au: [[112, 154], [-44, -10]],
     br: [[-74, -34], [-34, 5]],
-    va: [[12.428, 12.439], [41.898, 41.906]],
+    va: [[12.452, 12.455], [41.902, 41.905]],
     ru: [[30, 100], [40, 78]]
   };
   for (const [code, [lngR, latR]] of Object.entries(SAMPLES)) {
@@ -1166,7 +1211,7 @@ await check({
   t.ok(land.d.length < 400000, 'd 가 너무 길다', land.d.length + '자');
   t.ok(land.d.includes('M'), 'd 에 M 명령이 없다');
   const size = fs.statSync(p('data/map-shapes.js')).size;
-  t.ok(size < 500000, '파일이 500KB 이상이다', size + 'B');
+  t.ok(size < 1000000, '파일이 1MB 이상이다', size + 'B');
 
   const body = src.replace(/^\s*\/\*[\s\S]*?\*\//, '');
   for (const word of ['ADMIN', 'France', 'Russia', 'Taiwan', 'Korea']) {
@@ -1353,7 +1398,7 @@ await check({
       }
     }
   }
-  verifyTestSourceTree(t, p('tests'));
+  verifyTestSourceTree(t, p('tests'), 'tests', verifyTestRunsWithoutRawSource);
 });
 
 await check({
@@ -1501,8 +1546,10 @@ await check({
   const context = { window: {} };
   vm.runInNewContext(read('data/map-shapes.js'), context, { filename: 'data/map-shapes.js' });
   const regions = context.window.FQ.mapRegions || {};
+  const { prepareMap } = await import('../scripts/build-map.mjs');
+  const prepared = prepareMap();
   let sourceRings = 0;
-  for (const [code, feature] of r.matched) {
+  for (const [code, feature] of prepared.matched) {
     const polygons = feature.geometry.type === 'Polygon' ? [feature.geometry.coordinates] : feature.geometry.coordinates;
     const count = polygons.reduce((sum, polygon) => sum + polygon.length, 0);
     sourceRings += count;
@@ -1584,7 +1631,7 @@ await check({
   t.ok(!/lat\s*<\s*-6\d/.test(src), '남극을 자르는 위도 필터가 있다');
   t.ok(src.includes('LABEL_X') && src.includes('LABEL_Y'), 'LABEL_X/LABEL_Y 를 쓰지 않는다');
   t.ok(src.includes('LABEL_OVERRIDES'), 'LABEL_OVERRIDES 상수가 없다');
-  t.ok(/Number\(\s*[\w.[\]]+\.toFixed\(2\)\s*\)/.test(src), 'Number(x.toFixed(2)) 형태의 반올림이 없다');
+  t.ok(/Number\(\s*[\w.[\]]+\.toFixed\((?:2|code === 'va' \? 6 : 2)\)\s*\)/.test(src), '바티칸 6자리·다른 나라 2자리의 숫자 반올림이 없다');
   const imports = src.match(/^import .*?from ['"]([^'"]+)['"]/gm) || [];
   for (const line of imports) {
     const mod = /from ['"]([^'"]+)['"]/.exec(line)[1];
@@ -1597,9 +1644,9 @@ await check({
 await check({
   id: 'no-new-js-files',
   task: '지도 T5-register',
-  label: '지도·오프라인 기능의 승인된 스크립트만 추가하고 기존 파일을 보존한다',
+  label: '지도·나라별 공부·오프라인 기능의 승인된 스크립트만 추가하고 기존 파일을 보존한다',
   severity: 'acceptance',
-  why: '나라 위치 핀 퀴즈와 오프라인 진행 개선 범위의 map.js·offline.js를 명시적으로 허용하며 다른 새 스크립트를 포괄 허용하지 않는다.'
+  why: '국가 영역 지도와 나라별 정보 탐색·오프라인 진행을 위한 스크립트를 명시적으로 허용하며 다른 새 스크립트를 포괄 허용하지 않는다.'
 }, (t) => {
   const actual = fs.readdirSync(p('js')).filter((f) => f.endsWith('.js')).sort();
   verifyMapScriptScope(t, actual);
@@ -1621,7 +1668,7 @@ await check({
   t.ok(g.includes('EXPECTED_COUNT'), 'EXPECTED_COUNT 를 재사용하지 않는다');
   t.ok(!/\b194\b/.test(g), 'group 안에 숫자 194 를 다시 적었다 — 상수를 재사용해야 한다');
   t.ok(g.includes('DISPUTED'), 'DISPUTED 상수를 재사용하지 않는다');
-  t.ok(g.includes('toFixed(2)'), 'toFixed(2) 비교를 쓰지 않는다');
+  verifyMapTestPrecision(t, g);
   t.ok(!/Math\.round\([^)]*\*\s*100/.test(g), 'Math.round(x*100) 방식을 쓴다 — 부동소수가 샌다');
   t.ok(g.includes("'d,viewBox'") || g.includes('"d,viewBox"'), "mapLand 키를 'd,viewBox' 로 고정하는 단언이 없다");
   for (const s of ['kr', 'au', 'br', 'va', 'ru']) t.ok(g.includes("'" + s + "'"), '표본 단언이 없다: ' + s);

@@ -7,7 +7,8 @@ import vm from 'node:vm';
 import { buildLand } from '../scripts/build-map.mjs';
 import { verifyAudioCache, verifyActivateKeepsAudio, verifyMapTolerance,
   verifyMapGeometry, verifyMapRegions, verifySmallLandPreservation, verifyUiVoicePhrases, verifyMapScriptScope,
-  verifyScriptRegistration, verifyShellFileSources, verifyTestSourceTree } from '../scripts/verify-expansion.mjs';
+  verifyScriptRegistration, verifyShellFileSources, verifyTestSourceTree,
+  verifyTestRunsWithoutRawSource, verifyMapTestPrecision } from '../scripts/verify-expansion.mjs';
 
 const sw = fs.readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
 const ui = fs.readFileSync(new URL('../js/ui.js', import.meta.url), 'utf8');
@@ -54,6 +55,36 @@ test('CI 원본 의존 검사는 symlink 자료로 검사 범위를 벗어나지
   fs.symlinkSync('source.json', path.join(directory, 'linked.json'));
   const failed = await problems(verifyTestSourceTree, directory);
   assert.ok(failed.some(message => message.includes('tests/linked.json') && message.includes('일반 파일')), failed.join('\n'));
+});
+
+test('원자료를 참조하는 테스트도 원자료 없는 실제 사본에서 통과한 경우만 CI 독립성을 인정한다', async t => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'flagquiz-optional-source-'));
+  t.after(() => fs.rmSync(directory, { recursive: true, force: true }));
+  const rawFolder = ['natural', 'earth'].join('-'), testDirectory = path.join(directory, 'tests');
+  fs.mkdirSync(path.join(directory, 'data', rawFolder), { recursive: true });
+  fs.mkdirSync(testDirectory);
+  fs.writeFileSync(path.join(directory, 'data', rawFolder, 'sample.json'), '{}');
+  const file = path.join(testDirectory, 'sample.test.mjs');
+  const imports = "import test from 'node:test'; import assert from 'node:assert/strict'; import fs from 'node:fs';\n" +
+    "const raw = new URL('../data/" + rawFolder + "/sample.json', import.meta.url);\n";
+  fs.writeFileSync(file, imports + "test('raw', () => assert.equal(fs.readFileSync(raw, 'utf8'), '{}'));\n");
+  assert.equal(verifyTestRunsWithoutRawSource(file, directory).ok, false, '현재 checkout에 원자료가 있어도 격리 사본의 의존성은 실패해야 한다');
+  assert.ok((await problems(verifyTestSourceTree, testDirectory, 'tests', candidate => verifyTestRunsWithoutRawSource(candidate, directory))).length > 0);
+  fs.writeFileSync(file, imports + "test('raw', {skip: !fs.existsSync(raw)}, () => assert.equal(fs.readFileSync(raw, 'utf8'), '{}'));\n" +
+    "test('generated contract', () => assert.equal(1 + 1, 2));\n");
+  const optional = verifyTestRunsWithoutRawSource(file, directory);
+  assert.equal(optional.ok, true, optional.detail);
+  assert.deepEqual(await problems(verifyTestSourceTree, testDirectory, 'tests', candidate => verifyTestRunsWithoutRawSource(candidate, directory)), []);
+});
+
+test('지도 테스트 정밀도 검사는 바티칸 6자리 변수 선언과 실제 비교를 함께 요구한다', async () => {
+  const source = "const precision = c.code === 'va' ? 6 : 2; point.every(v => Number.isFinite(v) && Number(v.toFixed(precision)) === v);";
+  assert.deepEqual(await problems(verifyMapTestPrecision, source), []);
+  assert.deepEqual(await problems(verifyMapTestPrecision, "point.every(v => Number(v.toFixed(c.code === 'va' ? 6 : 2)) === v);"), []);
+  for (const invalid of [source.replace('? 6 : 2', '? 2 : 2'), source.replace('v.toFixed(precision)', 'v.toFixed(2)'),
+    '/* ' + source + ' */ point.every(v => Number(v.toFixed(2)) === v);', "const precision = c.code === 'va' ? 6 : 2;"]) {
+    assert.ok((await problems(verifyMapTestPrecision, invalid)).length > 0, invalid);
+  }
 });
 
 test('기록 이전3개는 정확한 source·index·SHELL·빌드·실제 로더 등록만 허용한다', async () => {

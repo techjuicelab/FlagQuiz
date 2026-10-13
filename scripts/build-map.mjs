@@ -1,8 +1,10 @@
 /* 지도 자산 빌드. 앱 빌드와 분리되어 원자료를 명시적으로 준비한 경우만 실행한다. */
 import fs from 'node:fs';
 import path from 'node:path';
+import vm from 'node:vm';
 import { fileURLToPath } from 'node:url';
-import { SOURCE_RELATIVE_PATH, SOURCE_VERSION, verifySource } from './fetch-map-source.mjs';
+import { SOURCE_RELATIVE_PATH, SOURCE_VERSION, SOURCE_URL, EXPECTED_SHA256, verifySource,
+  HIGH_RESOLUTION_URL, HIGH_RESOLUTION_SHA256, HIGH_RESOLUTION_RELATIVE_PATH, verifyHighResolutionSource } from './fetch-map-source.mjs';
 import { joinFeatures, readCountryCodes } from './lib/ne-join.mjs';
 import { exteriorRings, largestRing, ringBounds, assertDateline, hasSelfIntersections, topologySimplifier } from './lib/simplify.mjs';
 
@@ -35,12 +37,68 @@ function pointBounds(points) {
     [Infinity, Infinity, -Infinity, -Infinity]);
 }
 
-function regionContains(d, coordinate) {
+export function regionContains(d, coordinate) {
   const rings = d.split('Z').filter(Boolean).map((part) => {
     const values = (part.match(/-?\d+(?:\.\d+)?/g) || []).map(Number);
     return Array.from({ length: values.length / 2 }, (_, index) => values.slice(index * 2, index * 2 + 2));
   });
   return rings.reduce((count, ring) => count + Number(pointInRing(project(coordinate), ring)), 0) % 2 !== 0;
+}
+
+export function featureContains(feature, coordinate) {
+  return polygonsFor(feature).some((polygon) => pointInRing(coordinate, polygon[0]) &&
+    !polygon.slice(1).some((ring) => pointInRing(coordinate, ring)));
+}
+
+function readCapitals() {
+  const context = { window: {} };
+  vm.createContext(context);
+  vm.runInContext(fs.readFileSync(path.join(root, 'data/capital-coords.js'), 'utf8'), context);
+  const capitals = context.window.FQ.capitalCoords;
+  const codes = readCountryCodes(root).sort();
+  if (!capitals || JSON.stringify(Object.keys(capitals).sort()) !== JSON.stringify(codes) ||
+      Object.values(capitals).some((point) => !Array.isArray(point) || point.length !== 2 ||
+        !point.every(Number.isFinite) || Math.abs(point[0]) > 180 || Math.abs(point[1]) > 90)) {
+    throw new Error('수도 좌표는 앱 194개 나라와 일치하는 실제 경위도여야 합니다.');
+  }
+  return capitals;
+}
+
+/** 원본 50m 경계가 실제 수도를 담지 못하는 나라만 공식 10m 도형으로 보완한다. */
+export function upgradeCapitalGeometry(source, highResolution, capitals) {
+  const codes = readCountryCodes(root);
+  const original = joinFeatures(source.features, codes);
+  const replacements = new Map(), overrides = [];
+  const outside = [];
+  for (const [code, feature] of original.matched) {
+    if (!capitals[code] || featureContains(feature, capitals[code])) continue;
+    const candidates = highResolution.features.filter((candidate) => candidate.properties.ADMIN === feature.properties.ADMIN);
+    if (candidates.length !== 1) throw new Error('10m 국가 매칭 실패: ' + code);
+    const precise = candidates[0];
+    if (!featureContains(precise, capitals[code])) {
+      // 니코시아의 공식 도시점은 Natural Earth의 UN 완충 지대에 있다. 국가 경계와 점을 옮기지 않는다.
+      if (code !== 'cy') throw new Error('10m 경계도 실제 수도를 포함하지 못합니다: ' + code);
+      outside.push(code); continue;
+    }
+    replacements.set(feature, { ...feature, geometry: precise.geometry });
+    overrides.push(code);
+  }
+  // 바티칸 외곽과 이탈리아의 해당 구멍은 같은 원자료 링을 사용한다. 이전 위치의 구멍도 제거한다.
+  const vatican = original.matched.get('va'), italy = original.matched.get('it');
+  if (replacements.has(vatican)) {
+    const oldRing = exteriorRings(vatican)[0], actualRing = exteriorRings(replacements.get(vatican))[0];
+    const oldBox = ringBounds(oldRing);
+    let replaced = 0;
+    const polygons = polygonsFor(italy).map((polygon) => polygon.map((ring, index) => {
+      if (!index || !ringBounds(ring).every((value, i) => Math.abs(value - oldBox[i]) < 1e-6)) return ring;
+      replaced++; return actualRing;
+    }));
+    if (replaced !== 1) throw new Error('이탈리아의 바티칸 구멍 매칭 실패');
+    replacements.set(italy, { ...italy, geometry: italy.geometry.type === 'Polygon'
+      ? { type: 'Polygon', coordinates: polygons[0] } : { type: 'MultiPolygon', coordinates: polygons } });
+  }
+  const features = source.features.map((feature) => replacements.get(feature) || feature);
+  return { features, ...joinFeatures(features, codes), overrides: overrides.sort(), outside: outside.sort() };
 }
 
 function focusRings(feature, label, rendered) {
@@ -76,7 +134,7 @@ function bboxPath([west, south, east, north]) {
   return [[x0,y0], [x1,y0], [x1,y1], [x0,y1], [x0,y0]].map((p) => roundPoint(p.map((v) => v / 10)));
 }
 
-export function buildLand(features, matched, tolerance = SIMPLIFY_TOLERANCE_DEG, coords = buildCoordinates(matched)) {
+export function buildLand(features, matched, tolerance = SIMPLIFY_TOLERANCE_DEG, coords = buildCoordinates(matched), options = {}) {
   // 좌표를 만들지 않는 48개 지역도 육지다. 홍콩·마카오 등을 크기 필터로 지우지 않는다.
   // 모든 도형의 최대 링과 핀이 있는 링을 보호하고, 그 밖의 작은 부속 섬만 생략한다.
   const protectedRings = new Set(features.map(largestRing));
@@ -142,7 +200,8 @@ export function buildLand(features, matched, tolerance = SIMPLIFY_TOLERANCE_DEG,
   const mapLand = { viewBox: '0 0 2000 1000', d: parts.join('') };
   if (Buffer.byteLength(JSON.stringify(mapLand)) >= 250000) throw new Error('지도 실루엣이 250KB를 넘었습니다.');
   assertPinsOnLand(coords, mapLand);
-  const mapRegions = buildRegions(features, matched, coords);
+  const mapRegions = buildRegions(options.regionFeatures || features, options.regionMatched || matched, coords,
+    REGION_SIMPLIFY_TOLERANCE_DEG, options);
   return { mapLand, mapRegions, stats: { sourcePoints, outputPoints, outputRings, preservedCountries: matched.size, preservedFeatures: positiveAreaFeatures.size,
     bboxFallbacks: [...bboxFallbackFeatures].map((f) => countryByFeature.get(f) || f.properties.ADMIN), refinementPasses, ...topology.stats } };
 }
@@ -155,12 +214,26 @@ export function prepareMap({ sourcePath = path.join(root, SOURCE_RELATIVE_PATH) 
     throw error;
   }
   const source = verifySource(bytes);
-  const joined = joinFeatures(source.features, readCountryCodes(root));
-  const coords = buildCoordinates(joined.matched);
-  return { source, ...joined, coords, ...buildLand(source.features, joined.matched, SIMPLIFY_TOLERANCE_DEG, coords) };
+  let highBytes;
+  try { highBytes = fs.readFileSync(path.join(root, HIGH_RESOLUTION_RELATIVE_PATH)); }
+  catch (error) { if (error.code === 'ENOENT') throw new Error('10m 지도 원자료가 없습니다. npm run map:fetch 를 먼저 실행하세요.'); throw error; }
+  const capitals = readCapitals();
+  const upgraded = upgradeCapitalGeometry(source, verifyHighResolutionSource(highBytes), capitals);
+  const coords = buildCoordinates(upgraded.matched);
+  // 바탕 실루엣은 기존 50m를 유지하고 위치가 잘못된 바티칸만 교체한다.
+  const baseFeatures = source.features.map((feature) => feature.properties.ADMIN === 'Vatican'
+    ? upgraded.matched.get('va') : feature);
+  const base = joinFeatures(baseFeatures, readCountryCodes(root));
+  const sourceMetadata = { version: SOURCE_VERSION, base: { url: SOURCE_URL, sha256: EXPECTED_SHA256 },
+    boundaryOverrides: { url: HIGH_RESOLUTION_URL, sha256: HIGH_RESOLUTION_SHA256, countries: upgraded.overrides },
+    capitalOutsideBoundary: upgraded.outside,
+    capitalBoundaryExceptions: upgraded.outside.length ? { cy: '니코시아 도시점은 Natural Earth 10m Cyprus U.N. Buffer Zone 안에 있다. 실제 도시점과 기존 국가 경계를 유지한다.' } : {},
+    boundaryApproximation: 'Natural Earth는 지도 축척에 맞춘 근사 경계다. 바티칸의 10m 외곽도 실측 지적 경계를 뜻하지 않는다.' };
+  return { source, ...upgraded, coords, sourceMetadata, ...buildLand(baseFeatures, base.matched, SIMPLIFY_TOLERANCE_DEG, coords,
+    { regionFeatures: upgraded.features, regionMatched: upgraded.matched, capitals, capitalBoundaryExceptions: upgraded.outside }) };
 }
 
-export function buildRegions(features, matched, coords = buildCoordinates(matched), tolerance = REGION_SIMPLIFY_TOLERANCE_DEG) {
+export function buildRegions(features, matched, coords = buildCoordinates(matched), tolerance = REGION_SIMPLIFY_TOLERANCE_DEG, options = {}) {
   // 이탈리아의 바티칸·산마리노와 남아공의 레소토를 실제 구멍으로 남긴다.
   // 구멍도 공유 arc 계산에 참여시켜 둘러싼 나라와 안쪽 나라의 경계를 일치시킨다.
   const holeFeatures = features.flatMap((feature) => holesFor(feature).map((ring) => ({
@@ -194,8 +267,18 @@ export function buildRegions(features, matched, coords = buildCoordinates(matche
       if (!regionContains(mapRegions[code].d, coords[code])) {
         refine.push(...exteriorRings(feature).filter((ring) => pointInRing(coords[code], ring)));
       }
+      const capital = options.capitals && options.capitals[code];
+      if (capital && featureContains(feature, capital) && !regionContains(mapRegions[code].d, capital)) {
+        refine.push(...exteriorRings(feature).filter((ring) => pointInRing(capital, ring)));
+      }
     }
-    if (!refine.length) { assertPinsInRegions(coords, mapRegions); return mapRegions; }
+    if (!refine.length) {
+      assertPinsInRegions(coords, mapRegions);
+      const missed = Object.keys(options.capitals || {}).filter((code) => matched.has(code) &&
+        !(options.capitalBoundaryExceptions || []).includes(code) && !regionContains(mapRegions[code].d, options.capitals[code]));
+      if (missed.length) throw new Error('나라 영역 밖의 실제 수도: ' + missed.join(', '));
+      return mapRegions;
+    }
     if (pass === 64 || !topology.refineRings(refine)) {
       throw new Error('나라 영역의 자기교차 또는 좌표 이탈을 해소하지 못했습니다.');
     }
@@ -210,7 +293,7 @@ export const LABEL_OVERRIDES = Object.freeze({
   nz: [175.4, -38.6], // 해상 라벨을 북섬 내부로 이동.
   st: [6.61, 0.23], // 해상 라벨을 상투메섬 내부로 이동.
   tt: [-61.3, 10.45], // 해상 라벨을 트리니다드섬 내부로 이동.
-  va: [12.43, 41.9], // 원본 라벨은 바티칸 동쪽 로마에 있어 실제 작은 외곽 안으로 이동.
+  va: [12.453418, 41.903323], // 10m 공식 LABEL. 50m의 서쪽으로 치우친 경계와 라벨을 함께 바로잡는다.
   vc: [-61.2, 13.25] // 해상 라벨을 세인트빈센트섬 내부로 이동.
 });
 
@@ -237,7 +320,7 @@ export function buildCoordinates(matched, { overrides = LABEL_OVERRIDES } = {}) 
       errors.push(code + ': LABEL 경위도가 유효하지 않음');
       continue;
     }
-    const rounded = label.map((value) => Number(value.toFixed(2)));
+    const rounded = label.map((value) => Number(value.toFixed(code === 'va' ? 6 : 2)));
     const rings = exteriorRings(feature);
     if (!rings.some((ring) => pointInRing(label, ring))) errors.push(code + ': 라벨이 원본 육지 링 밖: ' + JSON.stringify(label));
     if (!rings.some((ring) => pointInRing(rounded, ring))) errors.push(code + ': 반올림 좌표가 원본 육지 링 밖: ' + JSON.stringify(rounded));
@@ -295,12 +378,15 @@ export function emitMap() {
   const coordBody = Object.entries(coords).map(([code, point]) => '  ' + JSON.stringify(code) + ': ' + JSON.stringify(point)).join(',\n');
   const coordText = header + '// 값은 [lng, lat]. 특정 화면의 x/y는 저장하지 않는다.\n' +
     '// 렌더링 시 x=(lng+180)/360, y=(90-lat)/180으로 화면 좌표를 구한다.\n' +
+    '// 바티칸만 10m 공식 LABEL을 소수 여섯째 자리로 보존하며, 나머지 나라는 소수 둘째 자리다.\n' +
     'window.FQ = window.FQ || {};\nwindow.FQ.mapCoords = {\n' + coordBody + '\n};\n';
   const shapeText = header + 'window.FQ = window.FQ || {};\nwindow.FQ.mapLand = ' + JSON.stringify(result.mapLand) + ';\n' +
     '// 나라 영역 단순화 허용 오차: ' + REGION_SIMPLIFY_TOLERANCE_DEG + '°; SVG 소수 셋째 자리; 작은 영역은 원본 외곽 보존.\n' +
     '// 나라 영역은 evenodd fill을 쓰며, bounds는 전체 영역·focusBounds는 주영역과 인접 섬의 SVG 좌표다.\n' +
-    'window.FQ.mapRegions = ' + JSON.stringify(result.mapRegions) + ';\n';
-  if (Buffer.byteLength(coordText) >= 12000 || Buffer.byteLength(shapeText) >= 500000) throw new Error('지도 생성물이 용량 한도를 넘었습니다.');
+    'window.FQ.mapRegions = ' + JSON.stringify(result.mapRegions) + ';\n' +
+    '// 수도 원좌표는 바꾸지 않는다. 바티칸을 포함한 작은 나라의 경계는 지도 축척에 따른 근사다.\n' +
+    'window.FQ.mapSourceMeta = ' + JSON.stringify(result.sourceMetadata) + ';\n';
+  if (Buffer.byteLength(coordText) >= 12000 || Buffer.byteLength(shapeText) >= 1000000) throw new Error('지도 생성물이 용량 한도를 넘었습니다.');
   fs.writeFileSync(path.join(root, 'data/map-coords.js'), coordText);
   fs.writeFileSync(path.join(root, 'data/map-shapes.js'), shapeText);
   return { ...result, coords, bytes: { coords: Buffer.byteLength(coordText), shapes: Buffer.byteLength(shapeText) } };

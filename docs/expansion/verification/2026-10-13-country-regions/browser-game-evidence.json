@@ -1,0 +1,116 @@
+[
+  {
+    "input": "대한민국",
+    "expectedCode": "kr",
+    "expectedOwner": 0,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Script ran on page and returned:\n```json\n{\"paths\":[{\"code\":\"kr\",\"owner\":0,\"fill\":\"rgb(147, 183, 255)\",\"stroke\":\"rgb(147, 183, 255)\",\"exact\":true}],\"scores\":[\"1개\",\"0개\"],\"turn\":\"아빠 차례예요. 나라 이름을 하나 말해요.\",\"legend\":\"민규 · 1개아빠 · 0개\",\"message\":\"대한민국! 이제 아빠 차례예요.\"}\n```"
+        }
+      ]
+    }
+  },
+  {
+    "input": "일본",
+    "expectedCode": "jp",
+    "expectedOwner": 1,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Script ran on page and returned:\n```json\n{\"paths\":[{\"code\":\"kr\",\"owner\":0,\"fill\":\"rgb(147, 183, 255)\",\"stroke\":\"rgb(147, 183, 255)\",\"exact\":true},{\"code\":\"jp\",\"owner\":1,\"fill\":\"rgb(245, 187, 103)\",\"stroke\":\"rgb(245, 187, 103)\",\"exact\":true}],\"scores\":[\"1개\",\"1개\"],\"turn\":\"민규 차례예요. 나라 이름을 하나 말해요.\",\"legend\":\"민규 · 1개아빠 · 1개\",\"message\":\"일본! 이제 민규 차례예요.\"}\n```"
+        }
+      ]
+    }
+  },
+  {
+    "input": "중국",
+    "expectedCode": "cn",
+    "expectedOwner": 0,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Script ran on page and returned:\n```json\n{\"paths\":[{\"code\":\"kr\",\"owner\":0,\"fill\":\"rgb(147, 183, 255)\",\"stroke\":\"rgb(147, 183, 255)\",\"exact\":true},{\"code\":\"jp\",\"owner\":1,\"fill\":\"rgb(245, 187, 103)\",\"stroke\":\"rgb(245, 187, 103)\",\"exact\":true},{\"code\":\"cn\",\"owner\":0,\"fill\":\"rgb(147, 183, 255)\",\"stroke\":\"rgb(147, 183, 255)\",\"exact\":true}],\"scores\":[\"2개\",\"1개\"],\"turn\":\"아빠 차례예요. 나라 이름을 하나 말해요.\",\"legend\":\"민규 · 2개아빠 · 1개\",\"message\":\"중국! 이제 아빠 차례예요.\"}\n```"
+        }
+      ]
+    }
+  },
+  {
+    "input": "미국",
+    "expectedCode": "us",
+    "expectedOwner": 1,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Script ran on page and returned:\n```json\n{\"paths\":[{\"code\":\"kr\",\"owner\":0,\"fill\":\"rgb(147, 183, 255)\",\"exact\":true},{\"code\":\"jp\",\"owner\":1,\"fill\":\"rgb(245, 187, 103)\",\"exact\":true},{\"code\":\"cn\",\"owner\":0,\"fill\":\"rgb(147, 183, 255)\",\"exact\":true},{\"code\":\"us\",\"owner\":1,\"fill\":\"rgb(245, 187, 103)\",\"exact\":true}],\"scores\":[\"2개\",\"2개\"],\"turn\":\"민규 차례예요. 나라 이름을 하나 말해요.\",\"legend\":\"민규 · 2개아빠 · 2개\",\"message\":\"미국! 이제 민규 차례예요.\"}\n```"
+        }
+      ]
+    }
+  },
+  {
+    "input": "브라질",
+    "expectedCode": "br",
+    "expectedOwner": 0,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Script ran on page and returned:\n```json\n{\"paths\":[{\"code\":\"kr\",\"owner\":0,\"fill\":\"rgb(147, 183, 255)\",\"exact\":true},{\"code\":\"jp\",\"owner\":1,\"fill\":\"rgb(245, 187, 103)\",\"exact\":true},{\"code\":\"cn\",\"owner\":0,\"fill\":\"rgb(147, 183, 255)\",\"exact\":true},{\"code\":\"us\",\"owner\":1,\"fill\":\"rgb(245, 187, 103)\",\"exact\":true},{\"code\":\"br\",\"owner\":0,\"fill\":\"rgb(147, 183, 255)\",\"exact\":true}],\"scores\":[\"3개\",\"2개\"],\"turn\":\"아빠 차례예요. 나라 이름을 하나 말해요.\",\"legend\":\"민규 · 3개아빠 · 2개\",\"message\":\"브라질! 이제 아빠 차례예요.\"}\n```"
+        }
+      ]
+    }
+  },
+  {
+    "input": "호주",
+    "expectedCode": "au",
+    "expectedOwner": 1,
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Script ran on page and returned:\n```json\n{\"paths\":[{\"code\":\"kr\",\"owner\":0,\"fill\":\"rgb(147, 183, 255)\",\"exact\":true},{\"code\":\"jp\",\"owner\":1,\"fill\":\"rgb(245, 187, 103)\",\"exact\":true},{\"code\":\"cn\",\"owner\":0,\"fill\":\"rgb(147, 183, 255)\",\"exact\":true},{\"code\":\"us\",\"owner\":1,\"fill\":\"rgb(245, 187, 103)\",\"exact\":true},{\"code\":\"br\",\"owner\":0,\"fill\":\"rgb(147, 183, 255)\",\"exact\":true},{\"code\":\"au\",\"owner\":1,\"fill\":\"rgb(245, 187, 103)\",\"exact\":true}],\"scores\":[\"3개\",\"3개\"],\"turn\":\"민규 차례예요. 나라 이름을 하나 말해요.\",\"legend\":\"민규 · 3개아빠 · 3개\",\"message\":\"오스트레일리아! 이제 민규 차례예요.\"}\n```"
+        }
+      ]
+    }
+  },
+  {
+    "input": "한국",
+    "expected": "unchanged-6-3-3",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Script ran on page and returned:\n```json\n{\"count\":6,\"scores\":[\"3개\",\"3개\"],\"turn\":\"민규 차례예요. 나라 이름을 하나 말해요.\",\"message\":\"대한민국은(는) 민규이(가) 이미 말했어요. 민규 차례에서 다른 나라를 말해요.\",\"colors\":[[\"kr\",\"rgb(147, 183, 255)\"],[\"jp\",\"rgb(245, 187, 103)\"],[\"cn\",\"rgb(147, 183, 255)\"],[\"us\",\"rgb(245, 187, 103)\"],[\"br\",\"rgb(147, 183, 255)\"],[\"au\",\"rgb(245, 187, 103)\"]],\"neutralClass\":\"map-country\"}\n```"
+        }
+      ]
+    }
+  },
+  {
+    "input": "없는나라",
+    "expected": "unchanged-6-3-3",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Script ran on page and returned:\n```json\n{\"count\":6,\"scores\":[\"3개\",\"3개\"],\"turn\":\"민규 차례예요. 나라 이름을 하나 말해요.\",\"message\":\"나라 이름을 찾지 못했어요. 민규 차례에서 다시 말하거나 글로 써요.\",\"colors\":[[\"kr\",\"rgb(147, 183, 255)\"],[\"jp\",\"rgb(245, 187, 103)\"],[\"cn\",\"rgb(147, 183, 255)\"],[\"us\",\"rgb(245, 187, 103)\"],[\"br\",\"rgb(147, 183, 255)\"],[\"au\",\"rgb(245, 187, 103)\"]],\"neutralClass\":\"map-country\"}\n```"
+        }
+      ]
+    }
+  },
+  {
+    "input": "캐나다 프랑스",
+    "expected": "unchanged-6-3-3",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Script ran on page and returned:\n```json\n{\"count\":6,\"scores\":[\"3개\",\"3개\"],\"turn\":\"민규 차례예요. 나라 이름을 하나 말해요.\",\"message\":\"여러 나라 이름이 들렸어요. 민규 차례에서 하나만 말해요.\",\"colors\":[[\"kr\",\"rgb(147, 183, 255)\"],[\"jp\",\"rgb(245, 187, 103)\"],[\"cn\",\"rgb(147, 183, 255)\"],[\"us\",\"rgb(245, 187, 103)\"],[\"br\",\"rgb(147, 183, 255)\"],[\"au\",\"rgb(245, 187, 103)\"]],\"neutralClass\":\"map-country\"}\n```"
+        }
+      ]
+    }
+  }
+]

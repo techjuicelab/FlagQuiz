@@ -184,9 +184,9 @@
     if (shell) shell.setAttribute('data-screen', screen);
     var extras = doc.getElementById('settings-extras');
     if (extras) extras.hidden = screen !== 'settings';
-    ['home', 'dex', 'stats', 'settings'].forEach(function (name) {
+    ['home', 'study', 'dex', 'stats', 'settings'].forEach(function (name) {
       var link = doc.getElementById('nav-' + name);
-      if (link) link.setAttribute('aria-current', (name === screen || (name === 'home' && ['category', 'art-menu', 'capital-menu', 'map-menu', 'result', 'country-chain'].indexOf(screen) >= 0)) ? 'page' : 'false');
+      if (link) link.setAttribute('aria-current', (name === screen || (name === 'study' && screen === 'country-browser') || (name === 'home' && ['category', 'art-menu', 'capital-menu', 'map-menu', 'result', 'country-chain'].indexOf(screen) >= 0)) ? 'page' : 'false');
     });
     if (!FQ.music) return;
     var s = store.settings();
@@ -218,6 +218,8 @@
     var m = ui.setMain('<section class="screen home-kid">' +
       '<div class="home-intro"><span class="home-avatar" aria-hidden="true">' + esc(name.slice(0, 1)) + '</span>' +
         '<span class="eyebrow">' + esc(name) + '의 세계 여행</span><h2>무엇을 알아볼까요?</h2></div>' +
+      (FQ.countryBrowser ? '<button class="card country-browser-home-card" id="home-country-browser" type="button">' + ui.icon('book') +
+        '<span><b>나라별로 공부하기</b><span>나라를 골라 국기 · 수도 · 지도를 살펴봐요</span></span>' + ui.icon('chevron') + '</button>' : '') +
       playGrid(s) +
       (FQ.countryChain ? '<button class="card chain-home-card" id="home-country-chain" type="button">' + ui.icon('mic') +
         '<span><b>나라 이름 번갈아 말하기</b><span>아직 나오지 않은 나라를 말하고 지도에 모아요</span></span>' + ui.icon('chevron') + '</button>' : '') +
@@ -226,6 +228,8 @@
         '<span>인터넷 없이 놀기</span><span class="spacer"></span><span id="home-offline-summary">준비 확인</span>' + ui.icon('chevron') + '</button>' +
       '</section>');
     ui.on(m, '[data-play]', 'click', function (e, t) { renderCategory(t.getAttribute('data-play')); });
+    var countryBrowserButton = ui.$('#home-country-browser', m);
+    if (countryBrowserButton) countryBrowserButton.addEventListener('click', openCountryBrowser);
     var chainButton = ui.$('#home-country-chain', m);
     if (chainButton) chainButton.addEventListener('click', startCountryChain);
     ui.$('#home-offline', m).addEventListener('click', function () { renderSettings('offline'); });
@@ -239,6 +243,16 @@
       renderCategory('flag');
     });
     if (FQ.offline && FQ.offline.render) FQ.offline.render();
+  }
+
+  function openCountryBrowser() {
+    if (!FQ.countryBrowser) return;
+    enterCapitalScreen('country-browser');
+    state.study = null;
+    state.mapStudy = null;
+    state.artStudy = null;
+    ui.closeModal();
+    FQ.countryBrowser.open();
   }
 
   function startCountryChain() {
@@ -2589,6 +2603,8 @@
     audio.setSpeakEnabled(s.speak);
 
     doc.getElementById('nav-home').addEventListener('click', renderHome);
+    var studyButton = doc.getElementById('nav-study');
+    if (studyButton) studyButton.addEventListener('click', openCountryBrowser);
     doc.getElementById('nav-settings').addEventListener('click', function () { renderSettings(); });
     var accountButton = doc.getElementById('nav-account');
     if (accountButton) accountButton.addEventListener('click', renderAccount);
@@ -2668,7 +2684,7 @@
     global.navigator.serviceWorker.register('sw.js').catch(function () { /* 없어도 그만 */ });
   }
 
-  FQ.app = { home: renderHome, settings: renderSettings, category: renderCategory, boot: boot, startGame: startGame, countryChain: startCountryChain, musicScreen: musicScreen };
+  FQ.app = { home: renderHome, settings: renderSettings, category: renderCategory, boot: boot, startGame: startGame, countryBrowser: openCountryBrowser, countryChain: startCountryChain, musicScreen: musicScreen };
 
   if (doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', boot);
   else boot();

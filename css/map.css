@@ -1,12 +1,40 @@
 /* 지도는 문제의 주인공이다. 세계 지도는 2:1, 지역 지도는 4:3으로 지형 비율을 보존한다. */
 .chain-map-scroll { max-width: 100%; overflow-x: auto; overscroll-behavior-x: contain; border: 1px solid var(--line); border-radius: 14px; }
+.chain-map, .chain-map-canvas, .chain-map-legend { --chain-owner-0: #1559d5; --chain-owner-1: #b86400; }
 .chain-map-canvas { --map-water: #eef5fb; --map-land: #c1cfdd; --map-label: #45566d; position: relative; min-width: 760px; width: 100%; aspect-ratio: 2 / 1; background: var(--map-water); }
+.chain-map-heading { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px 12px; margin-bottom: 10px; }
+.chain-map-heading h2 { margin: 0; font-size: 1.1rem; font-weight: 650; }
+.chain-map-count { margin: 0; color: var(--text-soft); font-size: .875rem; }
+.chain-map-legend { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 18px; margin: 0 0 12px; }
+.chain-map-legend-item { display: inline-flex; align-items: center; gap: 8px; min-width: 0; max-width: 100%; min-height: 32px; color: var(--text-soft); font-size: .875rem; line-height: 1.4; }
+.chain-map-legend-item > span:last-child { min-width: 0; overflow-wrap: anywhere; }
+.chain-map-legend-item b { color: var(--text); font-weight: 650; }
+.chain-map-legend-swatch { flex: 0 0 auto; width: 24px; height: 18px; border: 2px solid var(--chain-owner-0); border-radius: 4px; background: color-mix(in srgb, var(--chain-owner-0) 68%, var(--card)); }
+.chain-map-legend-swatch.chain-owner-1 { border-color: var(--chain-owner-1); border-style: dashed; background: color-mix(in srgb, var(--chain-owner-1) 68%, var(--card)); }
+/* 말한 나라는 섬과 국경 안의 빈 영역까지 실제 윤곽 그대로 누적한다. 두 사람은 색과 선 모양을 함께 구별한다. */
+.chain-map-canvas .map-context-land .map-country { stroke: color-mix(in srgb, var(--map-label) 40%, var(--map-water)); stroke-width: .5px; }
+.chain-map-canvas .chain-map-region {
+  fill: var(--chain-owner-0);
+  fill-opacity: .68;
+  stroke: var(--chain-owner-0);
+  stroke-width: 1.5px;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+  pointer-events: visiblePainted;
+  cursor: pointer;
+  transition: fill-opacity .15s ease, stroke-width .15s ease;
+}
+.chain-map-canvas .chain-map-region.chain-owner-1 { fill: var(--chain-owner-1); stroke: var(--chain-owner-1); stroke-dasharray: 6px 3px; }
+.chain-map-canvas .chain-map-region.is-active, .chain-map-canvas .chain-map-region.is-selected, .chain-map-canvas .chain-map-region.is-focused { fill-opacity: .95; stroke-width: 3px; }
+.chain-map-canvas .chain-map-region:focus-visible { fill-opacity: 1; stroke: var(--text); stroke-width: 3px; outline: none; }
 .chain-map-marker { position: absolute; z-index: 2; transform: translate(-50%, -50%); width: 44px; height: 44px; min-height: 44px; border: 0; padding: 0; background: transparent; border-radius: 50%; cursor: pointer; }
-.chain-map-marker > span { display: block; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 9px; height: 9px; border-radius: 50%; background: #1559d5; border: 2px solid white; box-shadow: 0 0 0 1px #1559d5; }
-.chain-map-marker.chain-owner-1 > span { background: #b86400; box-shadow: 0 0 0 1px #b86400; }
+.chain-map-marker > span { display: block; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 7px; height: 7px; border-radius: 50%; background: var(--chain-owner-0); border: 1.5px solid var(--card); box-shadow: 0 0 0 1px var(--chain-owner-0); }
+.chain-map-marker.chain-owner-1 > span { background: var(--chain-owner-1); border-radius: 2px; transform: translate(-50%, -50%) rotate(45deg); box-shadow: 0 0 0 1px var(--chain-owner-1); }
 .chain-map-marker.is-active { z-index: 3; }
-.chain-map-marker.is-active > span { width: 16px; height: 16px; box-shadow: 0 0 0 5px rgb(21 89 213 / 20%); }
-.chain-map-marker:focus-visible { z-index: 4; outline: 3px solid #1559d5; }
+.chain-map-marker.is-active > span { width: 10px; height: 10px; box-shadow: 0 0 0 3px var(--card), 0 0 0 5px var(--chain-owner-0); }
+.chain-map-marker.chain-owner-1.is-active > span { box-shadow: 0 0 0 3px var(--card), 0 0 0 5px var(--chain-owner-1); }
+.chain-map-marker:focus-visible { z-index: 4; outline: 3px solid var(--chain-owner-0); outline-offset: -3px; }
+.chain-map-marker.chain-owner-1:focus-visible { outline-color: var(--chain-owner-1); }
 .map-board, .map-context-canvas {
   --map-water: #eef5fb;
   --map-land: #c1cfdd;
@@ -167,6 +195,49 @@
 .map-location-marker { position: absolute; width: 0; height: 0; z-index: 3; pointer-events: none; }
 .map-location-label-country { position: absolute; left: 50%; top: 21px; transform: translateX(-50%); width: max-content; max-width: min(13rem, 62vw); padding: 6px 10px; border: 1px solid var(--map-point); border-radius: 9px; background: var(--card); color: var(--text); font-size: .95rem; font-weight: 700; line-height: 1.35; text-align: center; overflow-wrap: anywhere; }
 .map-location-label-country::before { content: none; }
+/* 수도는 나라의 대표 좌표와 다르다. 별표 중심을 실제 경위도에 고정하고 이름표만 옆으로 둔다. */
+.map-capital-marker { pointer-events: none; }
+.map-capital-halo { fill: var(--card); stroke: var(--danger); stroke-width: 1.5px; vector-effect: non-scaling-stroke; }
+.map-context-land .map-capital-star, .map-inset .map-capital-star {
+  fill: var(--danger);
+  stroke: var(--danger);
+  stroke-width: .6px;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+.map-capital-label {
+  position: absolute;
+  z-index: 4;
+  width: max-content;
+  max-width: min(12rem, var(--map-capital-label-room, 60%));
+  padding: 6px 9px;
+  border: 1px solid var(--danger);
+  border-radius: 9px;
+  background: var(--card);
+  color: var(--text);
+  font-size: .85rem;
+  line-height: 1.35;
+  transform: translate(12px, calc(-100% - 10px));
+  overflow-wrap: anywhere;
+  word-break: keep-all;
+  box-shadow: var(--shadow);
+  pointer-events: none;
+}
+.map-capital-label > span { color: var(--danger); font-size: .75rem; font-weight: 600; }
+.map-capital-label > strong { font-weight: 750; }
+.map-capital-label--left { transform: translate(calc(-100% - 12px), calc(-100% - 10px)); }
+.map-capital-label--below { transform: translate(12px, 10px); }
+.map-capital-label--left.map-capital-label--below { transform: translate(calc(-100% - 12px), 10px); }
+.map-location-marker--caption { width: auto; height: auto; max-width: calc(100% - 24px); z-index: 2; }
+.map-location-marker--caption .map-location-label-country {
+  position: static;
+  display: block;
+  max-width: 100%;
+  transform: none;
+  border-color: var(--line);
+  font-size: .875rem;
+}
+.map-capital-inset-label { color: var(--danger); font-size: .85rem; font-weight: 650; line-height: 1.4; }
 .map-inset {
   display: grid;
   gap: 8px;
@@ -221,6 +292,8 @@
   .map-question .btn-listen { padding: 12px 18px; font-size: 1rem; }
   .map-dot { width: 28px; height: 28px; font-size: 1rem; }
   .map-location-label-country { font-size: 1.1rem; }
+  .map-capital-label { font-size: 1rem; }
+  .map-capital-label > span { font-size: .8rem; }
   .map-study-heading { grid-template-columns: auto minmax(0, 1fr) auto; }
   .map-study-heading .btn-listen { grid-column: auto; width: auto; }
 }
@@ -237,17 +310,26 @@
   .map-screen .map-continent-label { font-size: 1rem; }
 }
 @media (prefers-color-scheme: dark) {
+  .chain-map, .chain-map-canvas, .chain-map-legend { --chain-owner-0: #93b7ff; --chain-owner-1: #f5bb67; }
   .chain-map-canvas { --map-water: #151f2d; --map-land: #53657d; --map-label: #d5e0ed; }
   .map-board, .map-context-canvas { --map-water: #151f2d; --map-land: #53657d; --map-label: #d5e0ed; --map-point: #93b7ff; --map-halo: #172234; }
   .map-dot { color: #152137; }
   .map-viewport-box { background: rgb(147 183 255 / 10%); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .map-land .map-region, .map-context-land .map-region, .map-inset .map-region { transition: none; }
+  .map-land .map-region, .map-context-land .map-region, .map-inset .map-region, .chain-map-canvas .chain-map-region { transition: none; }
 }
 @media (forced-colors: active) {
+  .chain-map, .chain-map-canvas, .chain-map-legend { --chain-owner-0: Highlight; --chain-owner-1: CanvasText; }
+  .chain-map-canvas .chain-map-region { fill-opacity: 1; forced-color-adjust: none; }
+  .chain-map-legend-swatch { background: Highlight; forced-color-adjust: none; }
+  .chain-map-legend-swatch.chain-owner-1 { background: CanvasText; }
+  .chain-map-marker > span { forced-color-adjust: none; }
   .map-land path, .map-context-land path { fill: GrayText; }
   .map-land .map-region, .map-context-land .map-region, .map-inset .map-region { fill: Highlight; stroke: CanvasText; forced-color-adjust: none; }
   .map-dot { forced-color-adjust: none; background: Highlight; color: HighlightText; }
   .map-continent-label { color: CanvasText; text-shadow: 0 0 2px Canvas; }
+  .map-capital-halo { fill: Canvas; stroke: CanvasText; forced-color-adjust: none; }
+  .map-context-land .map-capital-star, .map-inset .map-capital-star { fill: CanvasText; stroke: CanvasText; forced-color-adjust: none; }
+  .map-capital-label { border-color: CanvasText; }
 }

@@ -2161,9 +2161,9 @@ window.FQ.voiceManifest = {
       "src": "audio/sua/6c425f7cd6a2d516077f8d87.mp3",
       "sha256": "6a922a45cd859aa079c4d80e74e93fa833fa814b02e931603b3290112272a632"
     },
-    "말라보": {
-      "src": "audio/sua/36020cac1f3a197a59b4e499.mp3",
-      "sha256": "893b488ccfc7a4aa72b26ea8f845914f191598ad0795537bad043f5e4be0dd48"
+    "시우다드데라파스": {
+      "src": "audio/sua/778a18d4020ab710a53e787a.mp3",
+      "sha256": "3b4ff84059da0f70b48c6965958f918aa99535857ec5231a9d30d14304bcb566"
     },
     "초록-하양-빨강 가로 줄, 왼쪽엔 파란 삼각형 가운데엔 나무 문장이 있어요": {
       "src": "audio/sua/89fd15187a84d539c2b38ed5.mp3",

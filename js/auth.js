@@ -45,7 +45,7 @@
   }
   function navigation(enabled) {
     var doc = global.document;
-    ['nav-home', 'nav-dex', 'nav-stats', 'nav-settings'].forEach(function (id) {
+    ['nav-home', 'nav-study', 'nav-dex', 'nav-stats', 'nav-settings'].forEach(function (id) {
       var button = doc.getElementById(id);
       if (button) button.disabled = !enabled;
     });

@@ -164,7 +164,7 @@
     function renderDetails(state) {
       var country = state.countries.filter(function (c) { return c.code === selectedCode; })[0];
       var location = country && FQ.map && FQ.map.describe ? FQ.map.describe(country).coordinates : '';
-      element('chain-detail').innerHTML = country ? '<img class="chain-detail-flag" src="' + esc(ui.flagSrc(country.code)) + '" alt="' + esc(country.ko + ' 국기') + '"><div><h2>' + esc(country.ko) + '</h2><p>' + esc([country.continent, country.region].filter(Boolean).join(' · ')) + '</p><p><span class="muted">수도</span> ' + esc(country.capital || '') + '</p>' + (location ? '<p class="small muted">' + esc(location) + '</p>' : '') + '</div>' : '<p class="muted">나라 이름을 말하면 국기와 위치가 여기에 쌓여요.</p>';
+      element('chain-detail').innerHTML = country ? '<img class="chain-detail-flag" src="' + esc(ui.flagSrc(country.code)) + '" alt="' + esc(country.ko + ' 국기') + '"><div><h2>' + esc(country.ko) + '</h2><p>' + esc([country.continent, country.region].filter(Boolean).join(' · ')) + '</p><p><span class="muted">수도</span> ' + esc(country.capital || '') + '</p>' + (location ? '<p class="small muted">' + esc(location) + '</p>' : '') + '</div>' : '<p class="muted">나라 이름을 말하면 국기와 나라의 땅이 여기에 쌓여요.</p>';
     }
     function render() {
       if (!alive) return;
@@ -177,9 +177,16 @@
       element('chain-input').disabled = state.complete;
       updateVoiceControls();
       element('chain-history-title').textContent = '함께 찾은 나라 · ' + state.total + '개';
-      element('chain-map').innerHTML = FQ.map && FQ.map.collection ? FQ.map.collection(state.countries, { activeCode: selectedCode, owners: owners }) : '<p class="muted">지도 자료를 준비하고 있어요.</p>';
+      var mapLegend = '<div class="chain-map-heading"><h2>함께 색칠한 지도</h2><p class="chain-map-count">' +
+        state.total + '개 나라의 땅을 채웠어요</p></div><div class="chain-map-legend" aria-label="지도 색깔의 주인">' +
+        state.players.map(function (name, i) {
+          return '<span class="chain-map-legend-item chain-owner-' + i + '"><span class="chain-map-legend-swatch chain-owner-' + i +
+            '" aria-hidden="true"></span><span><b>' + esc(name) + '</b> · ' + state.scores[i] + '개</span></span>';
+        }).join('') + '</div>';
+      element('chain-map').innerHTML = mapLegend + (FQ.map && FQ.map.collection ?
+        FQ.map.collection(state.countries, { activeCode: selectedCode, owners: owners }) : '<p class="muted">지도 자료를 준비하고 있어요.</p>');
       var scroller = ui.$('.chain-map-scroll', m), marker = scroller && ui.$('.chain-map-marker.is-active', scroller);
-      // 지도 안에서만 선택한 점을 가운데로 보낸다. 글 입력의 초점과 페이지 위치는 유지한다.
+      // 지도 안에서만 선택한 나라를 가운데로 보낸다. 글 입력의 초점과 페이지 위치는 유지한다.
       if (marker && typeof marker.offsetLeft === 'number' && scroller.clientWidth) scroller.scrollLeft = Math.max(0, marker.offsetLeft - scroller.clientWidth / 2);
       element('chain-history').innerHTML = state.history.map(function (entry) {
         return '<li class="chain-history-item"><button type="button" class="chain-country-button chain-owner--' + entry.playerIndex + (entry.code === selectedCode ? ' is-selected' : '') + '" data-chain-country="' + esc(entry.code) + '" aria-label="' + esc(entry.number + '번째, ' + entry.player + ', ' + entry.country.ko + ' 정보 보기') + '"><span class="chain-country-number">' + entry.number + '</span><img src="' + esc(ui.flagSrc(entry.code)) + '" alt="" loading="lazy"><strong>' + esc(entry.country.ko) + '</strong><span>' + esc(entry.player) + '</span></button></li>';
@@ -347,9 +354,34 @@
       render();
       message('새로 시작했어요. 아직 말하지 않은 나라를 자유롭게 말해요.');
     });
+    function countryAtClick(event, button) {
+      var code = button.getAttribute('data-chain-country');
+      var classes = ' ' + button.getAttribute('class') + ' ';
+      if (classes.indexOf(' chain-map-marker ') === -1 || event.detail === 0 ||
+          typeof event.clientX !== 'number' || typeof event.clientY !== 'number' || !doc.elementsFromPoint) return code;
+      var point = button.querySelector('span');
+      var box = point && point.getBoundingClientRect && point.getBoundingClientRect();
+      // 보이는 점 자체와 키보드 선택은 보조 단추의 나라를 그대로 고른다.
+      if (box && event.clientX >= box.left && event.clientX <= box.right &&
+          event.clientY >= box.top && event.clientY <= box.bottom) return code;
+      // 44px 투명 여백이 이웃 나라의 땅을 덮어도, 실제로 누른 국가 영역을 먼저 고른다.
+      var canvas = ui.$('.chain-map-canvas', m);
+      var svg = canvas && canvas.querySelector('svg.map-context-land');
+      var beneath = doc.elementsFromPoint(event.clientX, event.clientY);
+      for (var i = 0; svg && i < beneath.length; i++) {
+        var target = beneath[i];
+        if (target.ownerSVGElement === svg && target.getAttribute &&
+            (' ' + target.getAttribute('class') + ' ').indexOf(' chain-map-region ') !== -1) {
+          return target.getAttribute('data-chain-country');
+        }
+      }
+      return code;
+    }
     ui.on(m, '[data-chain-country]', 'click', function (event, button) {
       if (!alive) return;
-      selectedCode = button.getAttribute('data-chain-country');
+      var code = countryAtClick(event, button);
+      if (!game.snapshot().countries.some(function (country) { return country.code === code; })) return;
+      selectedCode = code;
       render();
     });
     doc.addEventListener('visibilitychange', visibility);

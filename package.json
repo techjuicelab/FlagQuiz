@@ -20,6 +20,8 @@
     "music:prepare": "node scripts/prepare-music.mjs",
     "map:fetch": "node scripts/fetch-map-source.mjs",
     "map:build": "node scripts/build-map.mjs",
+    "capitals:fetch": "node scripts/fetch-capital-source.mjs",
+    "capitals:build": "node scripts/build-capital-coords.mjs",
     "subjects:build": "node scripts/build-subjects.mjs",
     "images:lint": "node scripts/image-ledger.mjs lint",
     "images:prompts": "node scripts/build-image-prompts.mjs --style b --board",

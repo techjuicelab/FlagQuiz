@@ -11,7 +11,8 @@ for (const file of ['data/countries.js', 'data/map-coords.js', 'data/map-shapes.
 
 test('기록 지도는 전체194개국을 좌표 그대로 유지하고 퀴즈의4개 제한을 적용하지 않는다', () => {
   const html = context.FQ.map.collection(context.FQ.countries, { activeCode: 'kr', owners: { jp: 1 } });
-  assert.equal((html.match(/data-chain-country=/g) || []).length, 194);
+  assert.equal((html.match(/<button[^>]*data-chain-country=/g) || []).length, 194);
+  assert.equal((html.match(/<path[^>]*data-chain-country=/g) || []).length, 194);
   for (const country of context.FQ.countries) {
     const [lng, lat] = context.FQ.mapCoords[country.code];
     const marker = html.match(new RegExp('<button[^>]+data-chain-country="' + country.code + '"[^>]+>'))[0];
@@ -25,6 +26,7 @@ test('기록 지도는 전체194개국을 좌표 그대로 유지하고 퀴즈�
 test('같은나라 중복입력과 잘못된 좌표는 지도표시를 복제하거나 지도밖으로 밀지 않는다', () => {
   const kr = context.FQ.countries.find(country => country.code === 'kr');
   const html = context.FQ.map.collection([kr, kr, { code: 'zz', ko: '<script>' }]);
-  assert.equal((html.match(/data-chain-country=/g) || []).length, 1);
+  assert.equal((html.match(/<button[^>]*data-chain-country=/g) || []).length, 1);
+  assert.equal((html.match(/<path[^>]*data-chain-country=/g) || []).length, 1);
   assert.doesNotMatch(html, /<script>|zz/);
 });

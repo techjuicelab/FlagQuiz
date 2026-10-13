@@ -7,7 +7,7 @@ const read = file => fs.readFileSync(new URL('../' + file, import.meta.url), 'ut
 function fixture() {
   const context = { window: {} };
   vm.createContext(context);
-  for (const file of ['data/countries.js', 'data/map-coords.js', 'data/map-shapes.js', 'js/map.js']) {
+  for (const file of ['data/countries.js', 'data/map-coords.js', 'data/map-shapes.js', 'data/capital-coords.js', 'js/map.js']) {
     vm.runInContext(read(file), context, { filename: file });
   }
   return context.window.FQ;
@@ -39,11 +39,11 @@ test('194개 나라의 공부 지도는 원좌표와 국가 전체 영역을 보
       assert.equal(shape,FQ.mapRegions[country.code].d,country.code+' 부속섬과 내륙국 구멍을 포함한 전체 경계');
     }
     const markers = [...html.matchAll(/class="map-location-marker"[^>]*style="left:([^%]+)%;top:([^%]+)%"/g)];
-    assert.equal(markers.length, 2);
+    assert.equal(markers.length, 1, '국가 대표 위치점은 세계 지도에 두고 지역 지도에서는 수도와 구분한 이름 안내로 둔다');
     near(Number(markers[0][1]), (lng + 180) / 360 * 100, country.code + ' 세계 경도');
     near(Number(markers[0][2]), (90 - lat) / 180 * 100, country.code + ' 세계 위도');
-    near(vx + Number(markers[1][1]) / 100 * vw, x, country.code + ' 확대 경도 역투영');
-    near(vy + Number(markers[1][2]) / 100 * vh, y, country.code + ' 확대 위도 역투영');
+    assert.match(html, /map-location-marker--caption/, country.code + ' 국가 안내는 수도 위치를 가리지 않는다');
+    assert.match(html, /class="map-capital-marker"/, country.code + ' 지역 지도는 실제 수도를 표시한다');
     assert.equal((html.match(/preserveAspectRatio="xMidYMid meet"/g) || []).length, views.length);
     assert.ok(html.includes(country.ko));
     assert.ok(html.includes('색칠한 영역이 이 나라예요'),country.code+' 영역 색칠 설명');

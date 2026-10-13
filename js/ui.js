@@ -4,6 +4,9 @@
   var FQ = (global.FQ = global.FQ || {});
   var doc = global.document;
   var delegatedListeners = new WeakMap();
+  var modalState = null;
+  var modalGeneration = 0;
+  var modalSpeechGeneration = 0;
   // CSP가 인라인 이벤트를 차단해도 깨진 그림은 글자 설명만 남긴다.
   doc.addEventListener('error', function (event) {
     var image = event.target;
@@ -81,6 +84,7 @@
   function main() { return doc.getElementById('main'); }
 
   function setMain(html) {
+    if (modalState) closeModal();
     var m = main();
     // #main은 화면 사이에 남으므로, 이전 화면에서 맡긴 위임 이벤트를 먼저 해제한다.
     var listeners = delegatedListeners.get(m) || [];
@@ -110,42 +114,77 @@
 
   /* --------- 나라 상세 모달 --------- */
   function closeModal() {
-    var back = $('.modal-back');
-    if (back) { FQ.audio.stopSpeaking(); back.remove(); }
+    modalGeneration++;
+    modalSpeechGeneration++;
+    var current = modalState;
+    var back = current ? current.back : $('.modal-back');
+    modalState = null;
+    if (!back) return;
+    if (FQ.speech && FQ.speech.abort) FQ.speech.abort();
+    if (FQ.audio && FQ.audio.stopSpeaking) FQ.audio.stopSpeaking();
+    if (back.remove) back.remove();
+    if (current) {
+      if (doc.body.style) doc.body.style.overflow = current.bodyOverflow;
+      var opener = current.opener;
+      if (opener && opener.focus && opener.isConnected !== false) opener.focus({ preventScroll: true });
+    }
   }
 
   function countryModal(country) {
     if (!country) return;
     if (FQ.music) FQ.music.stop();
+    var opener = modalState ? modalState.opener : doc.activeElement;
     closeModal();
+    if (FQ.speech && FQ.speech.abort) FQ.speech.abort();
+    if (FQ.audio && FQ.audio.stopSpeaking) FQ.audio.stopSpeaking();
+    var generation = ++modalGeneration;
     var st = FQ.storage.allCountryStats()[country.code] || { seen: 0, correct: 0, wrong: 0, streak: 0 };
     var rate = st.seen ? Math.round((st.correct / st.seen) * 100) : null;
+    var mapHTML = '';
+    if (FQ.map && typeof FQ.map.study === 'function') mapHTML = FQ.map.study(country);
+    else if (FQ.map && typeof FQ.map.renderStudy === 'function') mapHTML = FQ.map.renderStudy(country, flagSrc(country.code));
+    var titleId = 'country-detail-title-' + country.code;
     var back = doc.createElement('div');
     back.className = 'modal-back';
     back.innerHTML =
-      '<div class="modal" role="dialog" aria-modal="true" aria-label="' + esc(country.ko) + ' 정보">' +
-        '<img class="big" src="' + flagSrc(country.code) + '" alt="' + esc(country.ko) + ' 국기">' +
-        '<div style="display:flex;align-items:center;gap:10px;margin-top:12px;flex-wrap:wrap">' +
-          '<div style="font-size:1.7rem;font-weight:900">' + esc(country.ko) + '</div>' +
-          '<button class="btn btn-sm" data-speak="' + esc(country.ko) + '" type="button">🔊 들어보기</button>' +
-        '</div>' +
-        '<div class="muted">' + esc(country.en) + '</div>' +
+      '<div class="modal country-detail" role="dialog" aria-modal="true" aria-labelledby="' + esc(titleId) + '" tabindex="-1">' +
+        '<header class="country-detail-head">' +
+          '<img class="big country-detail-flag" src="' + esc(flagSrc(country.code)) + '" alt="' + esc(country.ko) + ' 국기">' +
+          '<div class="country-detail-heading"><span class="country-detail-eyebrow">나라 공부</span>' +
+            '<h2 class="country-detail-title" id="' + esc(titleId) + '">' + esc(country.ko) + '</h2>' +
+            '<p class="muted">' + esc(country.en) + '</p>' +
+            '<p class="country-detail-region">' + esc(country.continent) + ' · ' + esc(country.region) + '</p></div>' +
+          '<button class="btn btn-listen" data-speak="' + esc(country.ko) + '" type="button" aria-label="' + esc(country.ko) + ' 이름 듣기">🔊 이름 듣기</button>' +
+          '<button class="btn btn-sm btn-ghost country-detail-dismiss" data-close-modal type="button" aria-label="나라 정보 닫기">닫기</button>' +
+        '</header>' +
+        '<div class="country-detail-grid"><div class="country-detail-summary">' +
+        '<section class="country-detail-capital" aria-label="수도">' +
+          '<span class="country-detail-capital-label">🏙️ 수도</span>' +
+          '<strong class="country-detail-capital-name">' + esc(country.capital) + '</strong>' +
+          '<span class="country-detail-capital-en muted">' + esc(country.capitalEn || '') + '</span>' +
+          '<button class="btn btn-listen" data-speak-art="' + esc(country.capital) + '" data-speak-extra="' + esc(country.ko) + '의 수도예요" type="button" aria-label="수도 들어보기">🔊 수도 듣기</button>' +
+        '</section>' +
         '<ul class="info-list">' +
-          '<li><b>수도</b><span>' + esc(country.capital) + ' <span class="muted small">' + esc(country.capitalEn || '') + '</span>' +
-            ' <button class="btn btn-sm btn-ghost" data-speak-art="' + esc(country.capital) + '" data-speak-extra="' + esc(country.ko) + '의 수도예요" type="button" aria-label="수도 들어보기">🔊</button></span></li>' +
           '<li><b>대륙</b><span>' + esc(country.continent) + ' · ' + esc(country.region) + '</span></li>' +
           '<li><b>난이도</b><span>' + esc(FQ.quiz.LEVEL_LABEL[country.level] || '-') + '</span></li>' +
           (rate === null ? '' : '<li><b>내 기록</b><span>' + st.seen + '번 중 ' + st.correct + '번 정답 (' + rate + '%)</span></li>') +
         '</ul>' +
-        '<div class="fact-box">💡 ' + esc(country.fact) + '</div>' +
-        countryArt(country.code) +
+        '<div class="fact-box country-detail-fact">💡 ' + esc(country.fact) + '</div>' +
+        '<div class="country-detail-gallery">' + countryArt(country.code) + '</div>' +
         '<div class="hint-box" style="margin-top:10px">🚩 ' + esc(country.flagHint) + '</div>' +
+        '</div>' +
+        (mapHTML ? '<section class="country-detail-map" aria-label="' + esc(country.ko) + '의 지도">' +
+          '<h3>지도로 살펴보기</h3>' + mapHTML + '</section>' : '') +
+        '</div>' +
         '<button class="btn btn-sm" data-explain type="button" style="margin-top:10px">🔊 설명 듣기</button>' +
         '<div class="small muted" data-audio-status role="status"></div>' +
         '<button class="btn btn-primary btn-big" data-close-modal type="button" style="width:100%;margin-top:14px">닫기</button>' +
       '</div>';
+    modalState = { back: back, opener: opener, bodyOverflow: doc.body.style ? doc.body.style.overflow : '' };
+    if (doc.body.style) doc.body.style.overflow = 'hidden';
     back.addEventListener('click', function (ev) {
-      if (ev.target === back || ev.target.closest('[data-close-modal]')) closeModal();
+      if (generation !== modalGeneration || !modalState || modalState.back !== back) return;
+      if (ev.target === back || ev.target.closest('[data-close-modal]')) { closeModal(); return; }
       var sp = ev.target.closest('[data-speak]');
       var explain = ev.target.closest('[data-explain]');
       var artButton = ev.target.closest('[data-speak-art]');
@@ -163,18 +202,41 @@
           var extra = artButton.getAttribute('data-speak-extra');
           if (extra) lines.push(extra);
         }
-        FQ.audio.say(lines, {}, function () {
-          if (status) status.textContent = '소리를 재생하지 못했어요. 연결과 음량을 확인하고 다시 눌러 주세요.';
-        });
+        var request = ++modalSpeechGeneration;
+        FQ.audio.stopSpeaking();
+        function current() {
+          return generation === modalGeneration && request === modalSpeechGeneration && modalState && modalState.back === back && !doc.hidden;
+        }
+        function play() {
+          if (!current()) return;
+          FQ.audio.say(lines, {}, function () {
+            if (current() && status) status.textContent = '소리를 재생하지 못했어요. 연결과 음량을 확인하고 다시 눌러 주세요.';
+          });
+        }
+        if (FQ.speech && typeof FQ.speech.stopAnd === 'function') FQ.speech.stopAnd(play);
+        else play();
       }
     });
     doc.body.appendChild(back);
-    var btn = back.querySelector('[data-close-modal]');
+    var btn = back.querySelector('.country-detail-dismiss') || back.querySelector('[data-close-modal]');
     if (btn) btn.focus();
   }
 
   doc.addEventListener('keydown', function (ev) {
-    if (ev.key === 'Escape') closeModal();
+    if (!modalState) return;
+    if (ev.key === 'Escape') { if (ev.preventDefault) ev.preventDefault(); closeModal(); return; }
+    if (ev.key !== 'Tab' || !modalState.back.querySelectorAll) return;
+    var back = modalState.back;
+    var focusable = Array.prototype.slice.call(back.querySelectorAll('button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'))
+      .filter(function (element) { return !element.hidden && element.offsetParent !== null; });
+    if (!focusable.length) return;
+    var first = focusable[0], last = focusable[focusable.length - 1];
+    var active = doc.activeElement;
+    var outside = back.contains ? !back.contains(active) : focusable.indexOf(active) === -1;
+    if ((ev.shiftKey && (active === first || outside)) || (!ev.shiftKey && (active === last || outside))) {
+      if (ev.preventDefault) ev.preventDefault();
+      (ev.shiftKey ? last : first).focus();
+    }
   });
 
   FQ.ui = {

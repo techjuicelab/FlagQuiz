@@ -8,6 +8,9 @@ export const SOURCE_VERSION = 'v5.1.2';
 export const SOURCE_URL = 'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/v5.1.2/geojson/ne_50m_admin_0_countries.geojson';
 export const EXPECTED_SHA256 = '3e458fc036ad0a66411f2c1e6cac49c5d7bfb81cb1123bc513b22511a2b7fdeb';
 export const SOURCE_RELATIVE_PATH = 'data/natural-earth/ne_50m_admin_0_countries.geojson';
+export const HIGH_RESOLUTION_URL = 'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/v5.1.2/geojson/ne_10m_admin_0_countries.geojson';
+export const HIGH_RESOLUTION_SHA256 = '239eec57ac17f100a11e2536cffc56752c318b50ae765b0918ff7aab4ce8f255';
+export const HIGH_RESOLUTION_RELATIVE_PATH = 'data/natural-earth/ne_10m_admin_0_countries.geojson';
 const root = fileURLToPath(new URL('../', import.meta.url));
 
 export function verifySource(bytes) {
@@ -19,6 +22,33 @@ export function verifySource(bytes) {
   if (data.type !== 'FeatureCollection' || !Array.isArray(data.features) || data.features.length < 240) {
     throw new Error('지도 원자료는 도형 240개 이상의 FeatureCollection이어야 합니다.');
   }
+  return data;
+}
+
+export function verifyHighResolutionSource(bytes) {
+  const actual = createHash('sha256').update(bytes).digest('hex');
+  if (actual !== HIGH_RESOLUTION_SHA256) throw new Error('10m 지도 원자료 SHA-256 불일치: ' + actual);
+  const data = JSON.parse(bytes.toString('utf8'));
+  if (data.type !== 'FeatureCollection' || !Array.isArray(data.features) || data.features.length !== 258) {
+    throw new Error('10m 지도 원자료는 도형 258개의 FeatureCollection이어야 합니다.');
+  }
+  return data;
+}
+
+export async function fetchHighResolutionSource({ refresh = false } = {}) {
+  const target = path.join(root, HIGH_RESOLUTION_RELATIVE_PATH);
+  if (!refresh) {
+    try { return verifyHighResolutionSource(await fs.readFile(target)); }
+    catch (error) { if (error.code !== 'ENOENT') throw error; }
+  }
+  const response = await fetch(HIGH_RESOLUTION_URL, { signal: AbortSignal.timeout(30000) });
+  if (!response.ok) throw new Error('10m 지도 원자료 다운로드 실패: HTTP ' + response.status);
+  const bytes = Buffer.from(await response.arrayBuffer());
+  const data = verifyHighResolutionSource(bytes);
+  await fs.mkdir(path.dirname(target), { recursive: true });
+  await fs.writeFile(target + '.tmp', bytes);
+  await fs.rename(target + '.tmp', target);
+  console.log('10m 지도 원자료 저장 완료: ' + data.features.length + '개 도형, ' + bytes.length + '바이트');
   return data;
 }
 
@@ -51,7 +81,10 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     console.error('사용법: npm run map:fetch -- [--refresh]');
     process.exitCode = 1;
   } else {
-    try { await fetchSource({ refresh: args.includes('--refresh') }); }
+    try {
+      await fetchSource({ refresh: args.includes('--refresh') });
+      await fetchHighResolutionSource({ refresh: args.includes('--refresh') });
+    }
     catch (error) { console.error(error.message); process.exitCode = 1; }
   }
 }

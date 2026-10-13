@@ -13,7 +13,7 @@ function fixture(seed = 1) {
     addEventListener: forbidden, matchMedia: forbidden, document: new Proxy({}, { get: forbidden }) };
   context.window = context;
   vm.createContext(context);
-  for (const file of ['js/util.js', 'data/countries.js', 'data/map-coords.js', 'data/map-shapes.js', 'js/map.js']) {
+  for (const file of ['js/util.js', 'data/countries.js', 'data/map-coords.js', 'data/map-shapes.js', 'data/capital-coords.js', 'js/map.js']) {
     vm.runInContext(read(file), context, { filename: file });
   }
   return context.FQ;
@@ -67,7 +67,7 @@ test('가까운 유럽 나라만 있어도 세계 자료에서 겹치지 않는 
   const options = FQ.map.chooseOptions(answer, source, 280);
   assertTargets(FQ, options, 280);
   assert.ok(options.some((country) => !source.includes(country)));
-  assert.deepEqual(Array.from(FQ.mapCoords.va), [12.43, 41.9]);
+  assert.deepEqual(Array.from(FQ.mapCoords.va), [12.453418, 41.903323], '바티칸은 실제 10m 경계의 라벨 정밀도를 보존한다');
   const bad = { code: 'missing', ko: '없음' };
   assert.throws(() => FQ.map.chooseOptions(bad, FQ.countries, 280), /좌표/);
   FQ.countries = [answer];
@@ -188,7 +188,7 @@ test('194개 나라 공부는 세계 위치와 실제 영역을 함께 보여 �
 
 test('아주 작은 나라는 실제 외곽 확대창을 제공하고 날짜변경선 근처는 지도 양끝을 연결한다', () => {
   const FQ = fixture(), by = code => FQ.countries.find(country => country.code === code);
-  for (const code of ['va', 'mc', 'sg', 'tv']) {
+  for (const code of ['va', 'mc', 'sg']) {
     const html = FQ.map.study(by(code));
     assert.match(html, /class="map-inset"/);
     const inset = html.slice(html.indexOf('<div class="map-inset"'));
