@@ -161,10 +161,21 @@
       node.textContent = text;
       node.classList.toggle('is-warning', !!warning);
     }
+    function countryColorAttributes(country) {
+      var color = FQ.map && FQ.map.countryColor ? FQ.map.countryColor(country) : '';
+      return /^#[0-9a-f]{6}$/i.test(color) ? ' data-country-color="' + esc(color) +
+        '" style="--chain-country-color:' + esc(color) + '"' : '';
+    }
+    function countrySwatch(country, extraClass) {
+      var attributes = countryColorAttributes(country);
+      return attributes ? '<span class="chain-country-swatch chain-country-color-chip' + (extraClass ? ' ' + extraClass : '') +
+        '"' + attributes + ' aria-hidden="true"></span>' : '';
+    }
     function renderDetails(state) {
       var country = state.countries.filter(function (c) { return c.code === selectedCode; })[0];
       var location = country && FQ.map && FQ.map.describe ? FQ.map.describe(country).coordinates : '';
-      element('chain-detail').innerHTML = country ? '<img class="chain-detail-flag" src="' + esc(ui.flagSrc(country.code)) + '" alt="' + esc(country.ko + ' 국기') + '"><div><h2>' + esc(country.ko) + '</h2><p>' + esc([country.continent, country.region].filter(Boolean).join(' · ')) + '</p><p><span class="muted">수도</span> ' + esc(country.capital || '') + '</p>' + (location ? '<p class="small muted">' + esc(location) + '</p>' : '') + '</div>' : '<p class="muted">나라 이름을 말하면 국기와 나라의 땅이 여기에 쌓여요.</p>';
+      element('chain-detail').innerHTML = country ? '<img class="chain-detail-flag" src="' + esc(ui.flagSrc(country.code)) + '" alt="' + esc(country.ko + ' 국기') + '"><div><h2>' +
+        countrySwatch(country, 'chain-detail-color') + esc(country.ko) + '</h2><p>' + esc([country.continent, country.region].filter(Boolean).join(' · ')) + '</p><p><span class="muted">수도</span> ' + esc(country.capital || '') + '</p>' + (location ? '<p class="small muted">' + esc(location) + '</p>' : '') + '</div>' : '<p class="muted">나라 이름을 말하면 국기와 나라의 땅이 여기에 쌓여요.</p>';
     }
     function render() {
       if (!alive) return;
@@ -178,10 +189,13 @@
       updateVoiceControls();
       element('chain-history-title').textContent = '함께 찾은 나라 · ' + state.total + '개';
       var mapLegend = '<div class="chain-map-heading"><h2>함께 색칠한 지도</h2><p class="chain-map-count">' +
-        state.total + '개 나라의 땅을 채웠어요</p></div><div class="chain-map-legend" aria-label="지도 색깔의 주인">' +
+        state.total + '개 나라의 땅을 채웠어요</p></div>' +
+        '<p class="chain-map-color-note">나라마다 다른 색이에요. 누가 말했는지는 선과 표시 모양으로 알아봐요.</p>' +
+        '<div class="chain-map-legend" aria-label="누가 말했는지 알아보는 선과 표시">' +
         state.players.map(function (name, i) {
           return '<span class="chain-map-legend-item chain-owner-' + i + '"><span class="chain-map-legend-swatch chain-owner-' + i +
-            '" aria-hidden="true"></span><span><b>' + esc(name) + '</b> · ' + state.scores[i] + '개</span></span>';
+            '" aria-hidden="true"><span class="chain-map-legend-symbol"></span></span><span><b>' + esc(name) + '</b> · ' +
+            state.scores[i] + '개<span class="chain-map-legend-pattern">' + (i ? '점선 · 마름모' : '실선 · 동그라미') + '</span></span></span>';
         }).join('') + '</div>';
       element('chain-map').innerHTML = mapLegend + (FQ.map && FQ.map.collection ?
         FQ.map.collection(state.countries, { activeCode: selectedCode, owners: owners }) : '<p class="muted">지도 자료를 준비하고 있어요.</p>');
@@ -189,7 +203,11 @@
       // 지도 안에서만 선택한 나라를 가운데로 보낸다. 글 입력의 초점과 페이지 위치는 유지한다.
       if (marker && typeof marker.offsetLeft === 'number' && scroller.clientWidth) scroller.scrollLeft = Math.max(0, marker.offsetLeft - scroller.clientWidth / 2);
       element('chain-history').innerHTML = state.history.map(function (entry) {
-        return '<li class="chain-history-item"><button type="button" class="chain-country-button chain-owner--' + entry.playerIndex + (entry.code === selectedCode ? ' is-selected' : '') + '" data-chain-country="' + esc(entry.code) + '" aria-label="' + esc(entry.number + '번째, ' + entry.player + ', ' + entry.country.ko + ' 정보 보기') + '"><span class="chain-country-number">' + entry.number + '</span><img src="' + esc(ui.flagSrc(entry.code)) + '" alt="" loading="lazy"><strong>' + esc(entry.country.ko) + '</strong><span>' + esc(entry.player) + '</span></button></li>';
+        return '<li class="chain-history-item"><button type="button" class="chain-country-button chain-owner--' + entry.playerIndex + (entry.code === selectedCode ? ' is-selected' : '') +
+          '" data-chain-country="' + esc(entry.code) + '"' + countryColorAttributes(entry.country) +
+          ' aria-label="' + esc(entry.number + '번째, ' + entry.player + ', ' + entry.country.ko + ' 정보 보기') + '"><span class="chain-country-number">' + entry.number +
+          '</span><img src="' + esc(ui.flagSrc(entry.code)) + '" alt="" loading="lazy">' + countrySwatch(entry.country) +
+          '<strong>' + esc(entry.country.ko) + '</strong><span>' + esc(entry.player) + '</span></button></li>';
       }).join('');
       renderDetails(state);
     }

@@ -17,12 +17,13 @@ function regions(html) {
   });
 }
 
-test('두 사람 모두 194개 나라의 실제 경계·섬·내륙국 구멍 전체를 자기 색으로 칠하고 중립 국경과 44px 보조 단추를 유지한다', () => {
+test('두 사람 모두 194개 나라를 각각 고유색으로 칠하고 소유자·실제 경계·내륙국 구멍과 44px 보조 단추를 유지한다', () => {
   const FQ = fixture(), before = JSON.stringify([FQ.mapCoords, FQ.mapRegions]);
   for (const owner of [0, 1]) {
     const owners = Object.fromEntries(FQ.countries.map(country => [country.code, owner]));
     const html = FQ.map.collection(FQ.countries, { owners, activeCode: 'kr' }), paths = regions(html);
     assert.equal(paths.length, 194); assert.equal(new Set(paths.map(path => path.code)).size, 194);
+    assert.equal(new Set(paths.map(path => path.attrs['data-country-color'])).size, 194, '모든 나라가 다른 색이어야 한다');
     assert.equal((html.match(/class="map-country"/g) || []).length, 194, '누적 전에도 전체 나라 경계가 보인다');
     assert.equal((html.match(/<button[^>]*data-chain-country=/g) || []).length, 194);
     for (const country of FQ.countries) {
@@ -31,6 +32,8 @@ test('두 사람 모두 194개 나라의 실제 경계·섬·내륙국 구멍 �
       assert.equal(path.attrs['fill-rule'], 'evenodd', country.code + ' 내륙국 구멍');
       assert.equal(path.attrs['vector-effect'], 'non-scaling-stroke');
       assert.ok(path.classes.includes('chain-owner-' + owner));
+      assert.ok(Array.from(FQ.map.palette256).includes(path.attrs['data-country-color']));
+      assert.equal(path.attrs.style, '--chain-country-color:' + path.attrs['data-country-color']);
       assert.equal(path.classes.includes('is-active'), country.code === 'kr');
     }
     assert.doesNotMatch(html, /map-capital-marker|answer-btn|is-correct|is-wrong/, '이어 말하기 누적 지도는 수도 퀴즈나 정오답 표시가 아니다');
@@ -58,7 +61,7 @@ test('accepted만 누적하고 중복·미확인·여러 나라 발화와 선택
   assert.equal(game.submit('대한민국').status, 'accepted');
   assert.equal(game.submit('일본').status, 'accepted');
   const before = JSON.stringify(game.snapshot());
-  const colors = html => regions(html).map(path => ({ code: path.code, d: path.attrs.d, owner: path.classes.find(name => /^chain-owner-/.test(name)) })).sort((a, b) => a.code.localeCompare(b.code));
+  const colors = html => regions(html).map(path => ({ code: path.code, d: path.attrs.d, color: path.attrs['data-country-color'], owner: path.classes.find(name => /^chain-owner-/.test(name)) })).sort((a, b) => a.code.localeCompare(b.code));
   const previous = colors(draw('jp'));
   for (const said of ['한국', '달나라', '', '프랑스 또는 미국']) {
     assert.ok(['duplicate', 'unknown', 'ambiguous'].includes(game.submit(said).status), said);

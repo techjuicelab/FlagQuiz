@@ -166,7 +166,7 @@ test('화면은 5개 제한 없이 전체 accepted 나라를 지도·국기 목�
   assert.doesNotMatch(f.node('#main').innerHTML, /정답|문제|data-chain-next|confirm/);
 });
 
-test('실제 지도는 두 사람 색으로 누적하고 나라 영역·보조 단추는 같은 상세를 선택하며 차례와 마이크를 보존한다', () => {
+test('실제 지도는 나라별 색으로 누적하고 나라 영역·보조 단추는 같은 상세를 선택하며 차례와 마이크를 보존한다', () => {
   const f = fixture({ realMap: true }), screen = f.c.FQ.countryChain.start({ players: ['민규', '아빠'], voice: f.voice, speak: false });
   f.type('대한민국'); f.type('일본'); f.type('프랑스');
   const before = JSON.stringify(screen.snapshot()), map = () => f.node('#chain-map').innerHTML;
@@ -189,6 +189,55 @@ test('실제 지도는 두 사람 색으로 누적하고 나라 영역·보조 �
   assert.match(map(), /chain-map-region chain-owner-1" data-chain-country="jp"/);
   f.click({ 'data-chain-country': 'us', class: 'map-country' });
   assert.equal(f.node('#chain-detail').innerHTML, selectedRegionDetail, '아직 말하지 않은 중립 나라는 선택하지 않는다');
+  screen.cleanup();
+});
+
+test('나라별 색은 음성 차례·상세 선택·새 판의 다른 소유자에서도 지도와 목록에 같게 남는다', () => {
+  const f = fixture({ realMap: true }), screen = f.c.FQ.countryChain.start({ players: ['첫째', '둘째'], voice: f.voice, speak: true });
+  function colors(html, wantedClass) {
+    const result = {};
+    for (const tag of html.matchAll(/<(?:path|button)\b[^>]+>/g)) {
+      const attrs = Object.fromEntries(Array.from(tag[0].matchAll(/([\w-]+)="([^"]*)"/g), item => [item[1], item[2]]));
+      if ((attrs.class || '').split(' ').includes(wantedClass)) result[attrs['data-chain-country']] = attrs['data-country-color'];
+    }
+    return result;
+  }
+  function mapColors() { return colors(f.node('#chain-map').innerHTML, 'chain-map-region'); }
+  function historyColors() { return colors(f.node('#chain-history').innerHTML, 'chain-country-button'); }
+  const expected = Object.fromEntries(['kr', 'jp', 'fr'].map(code => [code, f.c.FQ.map.countryColor(code)]));
+  assert.equal(new Set(Object.values(expected)).size, 3, '같은 사람이 말한 두 나라도 서로 다른 색이다');
+  f.click('#chain-mic');
+  for (const [index, [code, text]] of ['kr', 'jp', 'fr'].map(code => [code, f.c.FQ.countries.find(country => country.code === code).ko]).entries()) {
+    const session = f.sessions.at(-1);
+    session.onResult({ text, playerId: index % 2, turnId: index });
+    assert.equal(screen.snapshot().playerIndex, (index + 1) % 2);
+    assert.deepEqual(f.spoken.at(-1).lines, [text]);
+    assert.equal(f.sessions.length, index + 1, '나라를 읽는 동안 다음 마이크를 먼저 열지 않는다');
+    assert.equal(mapColors()[code], expected[code]); assert.equal(historyColors()[code], expected[code]);
+    for (const previous of screen.snapshot().countries) {
+      assert.equal(mapColors()[previous.code], expected[previous.code]);
+      assert.equal(historyColors()[previous.code], expected[previous.code]);
+    }
+    f.spoken.at(-1).opts.onEnd();
+    assert.equal(f.sessions.length, index + 2, '나라 읽기가 끝나면 다음 사람의 기존 듣기 흐름을 잇는다');
+  }
+  const before = JSON.stringify(screen.snapshot()), microphone = f.sessions.length, cancelled = f.cancels;
+  f.click({ 'data-chain-country': 'kr', class: 'chain-map-region chain-owner-0' });
+  assert.deepEqual(mapColors(), expected); assert.deepEqual(historyColors(), expected);
+  assert.ok(f.node('#chain-detail').innerHTML.includes('data-country-color="' + expected.kr + '"'));
+  assert.equal(JSON.stringify(screen.snapshot()), before); assert.equal(f.sessions.length, microphone); assert.equal(f.cancels, cancelled);
+  assert.match(f.node('#chain-map').innerHTML, /나라마다 다른 색이에요/);
+  assert.match(f.node('#chain-map').innerHTML, /실선 · 동그라미/); assert.match(f.node('#chain-map').innerHTML, /점선 · 마름모/);
+  assert.doesNotMatch(f.node('#chain-map').innerHTML, /지도 색깔의 주인|첫째.*파랑|둘째.*주황/);
+  f.click({ 'data-chain-reset': '' });
+  assert.deepEqual(mapColors(), {}); assert.deepEqual(historyColors(), {});
+  f.type('일본'); f.type('대한민국');
+  assert.equal(screen.snapshot().history[0].playerIndex, 0); assert.equal(screen.snapshot().history[1].playerIndex, 1);
+  assert.deepEqual(mapColors(), { jp: expected.jp, kr: expected.kr });
+  assert.deepEqual(historyColors(), { jp: expected.jp, kr: expected.kr });
+  const resetState = JSON.stringify(screen.snapshot()); f.type('한국');
+  assert.equal(JSON.stringify(screen.snapshot()), resetState, '같은 나라의 재입력으로 소유자나 색을 바꾸지 않는다');
+  assert.deepEqual(mapColors(), { jp: expected.jp, kr: expected.kr });
   screen.cleanup();
 });
 

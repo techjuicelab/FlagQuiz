@@ -233,6 +233,35 @@ test('통합: 두 사람 영역 색칠을 누적하며 이름 재생 중 TTS 재
   assert.equal(f.streams[0].track.enabled, false);
 });
 
+test('모의 기기·네트워크 통합: 여섯 음성 결과의 나라별 고유색이 차례와 낭독을 거쳐 누적된다', async t => {
+  const responses = ['대한민국', '일본', '중국', '미국', '브라질', '호주'];
+  const codes = ['kr', 'jp', 'cn', 'us', 'br', 'au'];
+  const f = fixture({ responses, realMap: true }); t.after(() => f.game.cleanup());
+  const accepted = new Map();
+  f.setLoud(0.1); f.click('[data-chain-mic]'); await flush();
+  for (let i = 0; i < responses.length; i++) {
+    f.setLoud(0.1); await f.advance(400); f.setLoud(0); await f.advance(1200);
+    assert.equal(f.requests.length, i + 1);
+    assert.equal(f.requests[i].inputHasVoice, true);
+    assert.equal(f.requests[i].config.headers['X-Player-Id'], String(i % 2));
+    const html = f.node('#chain-map').innerHTML;
+    const paths = [...html.matchAll(/<path class="chain-map-region\b[^>]*>/g)].map(match =>
+      Object.fromEntries([...match[0].matchAll(/([\w-]+)="([^"]*)"/g)].map(a => [a[1], a[2]])));
+    assert.equal(paths.length, i + 1);
+    accepted.set(codes[i], f.window.FQ.map.countryColor(codes[i]));
+    for (const p of paths) {
+      assert.equal(p['data-country-color'], accepted.get(p['data-chain-country']));
+      assert.ok(p.class.includes('chain-owner-' + (codes.indexOf(p['data-chain-country']) % 2)));
+    }
+    assert.equal(new Set(paths.map(p => p['data-country-color'])).size, i + 1);
+    assert.deepEqual(Array.from(f.game.snapshot().scores), [Math.ceil((i + 1) / 2), Math.floor((i + 1) / 2)]);
+    assert.equal(f.streams.length, 1, '두 사람은 이미 허용된 마이크를 이어 쓴다');
+    assert.equal(f.streams[0].track.enabled, false, '낭독은 다음 사람의 입력으로 녹음하지 않는다');
+    f.finishSpeech(); await f.advance(300);
+    assert.equal(f.adapter.isRecording(), true);
+  }
+});
+
 test('통합: 여러 나라가 들린 발화 뒤 같은 마이크를 보관하고 같은 차례의 다음 새 발화만 인정한다', async t => {
   const f = fixture({ responses: ['대한민국 일본', '일본'] }); t.after(() => f.game.cleanup());
   f.setLoud(0.1); f.click('[data-chain-mic]'); await flush();

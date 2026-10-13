@@ -9,27 +9,33 @@
 .chain-map-legend-item { display: inline-flex; align-items: center; gap: 8px; min-width: 0; max-width: 100%; min-height: 32px; color: var(--text-soft); font-size: .875rem; line-height: 1.4; }
 .chain-map-legend-item > span:last-child { min-width: 0; overflow-wrap: anywhere; }
 .chain-map-legend-item b { color: var(--text); font-weight: 650; }
-.chain-map-legend-swatch { flex: 0 0 auto; width: 24px; height: 18px; border: 2px solid var(--chain-owner-0); border-radius: 4px; background: color-mix(in srgb, var(--chain-owner-0) 68%, var(--card)); }
-.chain-map-legend-swatch.chain-owner-1 { border-color: var(--chain-owner-1); border-style: dashed; background: color-mix(in srgb, var(--chain-owner-1) 68%, var(--card)); }
-/* 말한 나라는 섬과 국경 안의 빈 영역까지 실제 윤곽 그대로 누적한다. 두 사람은 색과 선 모양을 함께 구별한다. */
+.chain-map-legend-swatch { display: grid; place-items: center; flex: 0 0 auto; width: 24px; height: 20px; border: 2px solid var(--chain-owner-0); border-radius: 4px; background: var(--card-2); }
+.chain-map-legend-swatch.chain-owner-1 { border-color: var(--chain-owner-1); border-style: dashed; }
+.chain-map-legend-symbol { display: block; width: 7px; height: 7px; border: 1.5px solid var(--chain-owner-0); border-radius: 50%; }
+.chain-owner-1 .chain-map-legend-symbol { border-color: var(--chain-owner-1); border-radius: 1px; transform: rotate(45deg); }
+.chain-map-legend-pattern { display: block; margin-top: 2px; color: var(--text-soft); font-size: .75rem; }
+.chain-map-color-note { margin: 0 0 12px; color: var(--text-soft); font-size: .825rem; line-height: 1.5; }
+.chain-country-color-chip, .chain-country-swatch { display: inline-block; flex: 0 0 auto; width: 16px; height: 16px; border: 1px solid var(--text-soft); border-radius: 4px; background: var(--chain-country-color, var(--card-2)); vertical-align: middle; }
+.chain-detail-color { width: 20px; height: 20px; margin-right: 8px; }
+/* 나라의 고유 면색은 선택과 차례가 바뀌어도 고정한다. 두 사람은 외곽선과 보조 표시 모양으로 구별한다. */
 .chain-map-canvas .map-context-land .map-country { stroke: color-mix(in srgb, var(--map-label) 40%, var(--map-water)); stroke-width: .5px; }
 .chain-map-canvas .chain-map-region {
-  fill: var(--chain-owner-0);
-  fill-opacity: .68;
+  fill: var(--chain-country-color, var(--map-land));
+  fill-opacity: 1;
   stroke: var(--chain-owner-0);
   stroke-width: 1.5px;
   stroke-linejoin: round;
   vector-effect: non-scaling-stroke;
   pointer-events: visiblePainted;
   cursor: pointer;
-  transition: fill-opacity .15s ease, stroke-width .15s ease;
+  transition: stroke-width .15s ease;
 }
-.chain-map-canvas .chain-map-region.chain-owner-1 { fill: var(--chain-owner-1); stroke: var(--chain-owner-1); stroke-dasharray: 6px 3px; }
-.chain-map-canvas .chain-map-region.is-active, .chain-map-canvas .chain-map-region.is-selected, .chain-map-canvas .chain-map-region.is-focused { fill-opacity: .95; stroke-width: 3px; }
+.chain-map-canvas .chain-map-region.chain-owner-1 { stroke: var(--chain-owner-1); stroke-dasharray: 6px 3px; }
+.chain-map-canvas .chain-map-region.is-active, .chain-map-canvas .chain-map-region.is-selected, .chain-map-canvas .chain-map-region.is-focused { stroke-width: 3px; }
 .chain-map-canvas .chain-map-region:focus-visible { fill-opacity: 1; stroke: var(--text); stroke-width: 3px; outline: none; }
 .chain-map-marker { position: absolute; z-index: 2; transform: translate(-50%, -50%); width: 44px; height: 44px; min-height: 44px; border: 0; padding: 0; background: transparent; border-radius: 50%; cursor: pointer; }
-.chain-map-marker > span { display: block; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 7px; height: 7px; border-radius: 50%; background: var(--chain-owner-0); border: 1.5px solid var(--card); box-shadow: 0 0 0 1px var(--chain-owner-0); }
-.chain-map-marker.chain-owner-1 > span { background: var(--chain-owner-1); border-radius: 2px; transform: translate(-50%, -50%) rotate(45deg); box-shadow: 0 0 0 1px var(--chain-owner-1); }
+.chain-map-marker > span { display: block; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 7px; height: 7px; border-radius: 50%; background: var(--chain-country-color, var(--map-land)); border: 1.5px solid var(--chain-owner-0); box-shadow: 0 0 0 1.5px var(--card); }
+.chain-map-marker.chain-owner-1 > span { border-color: var(--chain-owner-1); border-radius: 2px; transform: translate(-50%, -50%) rotate(45deg); }
 .chain-map-marker.is-active { z-index: 3; }
 .chain-map-marker.is-active > span { width: 10px; height: 10px; box-shadow: 0 0 0 3px var(--card), 0 0 0 5px var(--chain-owner-0); }
 .chain-map-marker.chain-owner-1.is-active > span { box-shadow: 0 0 0 3px var(--card), 0 0 0 5px var(--chain-owner-1); }
@@ -322,9 +328,10 @@
 @media (forced-colors: active) {
   .chain-map, .chain-map-canvas, .chain-map-legend { --chain-owner-0: Highlight; --chain-owner-1: CanvasText; }
   .chain-map-canvas .chain-map-region { fill-opacity: 1; forced-color-adjust: none; }
-  .chain-map-legend-swatch { background: Highlight; forced-color-adjust: none; }
-  .chain-map-legend-swatch.chain-owner-1 { background: CanvasText; }
+  .chain-map-legend-swatch { background: Canvas; forced-color-adjust: none; }
+  .chain-map-legend-symbol { forced-color-adjust: none; }
   .chain-map-marker > span { forced-color-adjust: none; }
+  .chain-country-color-chip, .chain-country-swatch { border-color: CanvasText; forced-color-adjust: none; }
   .map-land path, .map-context-land path { fill: GrayText; }
   .map-land .map-region, .map-context-land .map-region, .map-inset .map-region { fill: Highlight; stroke: CanvasText; forced-color-adjust: none; }
   .map-dot { forced-color-adjust: none; background: Highlight; color: HighlightText; }
