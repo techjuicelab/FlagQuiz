@@ -37,7 +37,7 @@ function assertTargets(FQ, options, width) {
   }
 }
 
-test('194개 정답의 실제 핀 네 개가 280·320·768·1024px에서 겹치지 않고 회전 뒤에도 유지된다', () => {
+test('194개 정답의 번호 보조 단추 네 개가 280·320·768·1024px에서 겹치지 않고 회전 뒤에도 유지된다', () => {
   const FQ = fixture(42);
   const before = JSON.stringify(FQ.mapCoords);
   for (const answer of FQ.countries) {
@@ -53,8 +53,7 @@ test('194개 정답의 실제 핀 네 개가 280·320·768·1024px에서 겹치�
           assertTargets(FQ, options, resized);
           assert.equal(FQ.map.fits(options, resized), true);
         }
-        FQ.map.render(options);
-        assert.equal(options.map((country) => country.code).join(','), codes, '렌더링과 크기 검사로 보기가 바뀌지 않는다');
+        assert.equal(options.map((country) => country.code).join(','), codes, '크기 검사로 보기가 바뀌지 않는다');
       }
     }
   }
@@ -75,18 +74,21 @@ test('가까운 유럽 나라만 있어도 세계 자료에서 겹치지 않는 
   assert.throws(() => FQ.map.chooseOptions(answer, [answer, answer, bad], 280), /네 개/);
 });
 
-test('육지와 대륙 안내 위의 번호 버튼은 정답 이름을 노출하지 않고 원자료 좌표를 그대로 렌더링한다', () => {
+test('194개 나라 경계와 보기 네 나라의 전체 영역을 그리며 번호는 정답 이름을 노출하지 않는다', () => {
   const FQ = fixture(8);
   const options = FQ.map.chooseOptions(FQ.countries[0], FQ.countries, 280);
   const html = FQ.map.render(options);
   assert.equal((html.match(/<svg\b/g) || []).length, 1);
-  assert.equal((html.match(/<path\b/g) || []).length, 1);
+  assert.equal((html.match(/<path\b/g) || []).length, 199);
+  assert.equal((html.match(/class="map-country"/g) || []).length, 194);
+  assert.equal((html.match(/class="map-region is-option(?: is-tiny)?"/g) || []).length, 4);
   assert.ok(html.includes('viewBox="0 0 2000 1000"'));
   assert.ok(html.includes('<path d="' + FQ.mapLand.d + '"></path>'));
   const svgEnd = html.indexOf('</svg>');
   assert.ok(html.indexOf('<button') > svgEnd, '핀은 SVG 바깥 HTML 버튼이다');
   assert.equal((html.match(/class="map-pin answer-btn"/g) || []).length, 4);
   for (const [index, country] of options.entries()) {
+    assert.ok(html.includes('data-code="' + country.code + '" d="' + FQ.mapRegions[country.code].d + '" fill-rule="evenodd"'), country.code + ' 실제 국가 영역');
     const [lng, lat] = FQ.mapCoords[country.code];
     const button = html.match(new RegExp('<button[^>]+data-code="' + country.code + '"[^>]*>[\\s\\S]*?</button>'))?.[0];
     assert.ok(button);
@@ -96,7 +98,7 @@ test('육지와 대륙 안내 위의 번호 버튼은 정답 이름을 노출하
     assert.equal(Number(position[1]), (lng + 180) / 360 * 100);
     assert.equal(Number(position[2]), (90 - lat) / 180 * 100);
     assert.ok(button.endsWith('>' + (index + 1) + '</span></button>'));
-    assert.ok(button.includes('class="map-pin-point"'), '실제 위치 점은 번호 말풍선과 분리한다');
+    assert.doesNotMatch(button, /map-pin-point/, '점 표시 대신 국가 영역과 번호를 함께 본다');
   }
   for (const continent of ['아시아', '아프리카', '유럽', '북아메리카', '남아메리카', '오세아니아']) {
     assert.match(html, new RegExp('class="map-continent-label"[^>]*>' + continent + '</span>'));
@@ -106,7 +108,7 @@ test('육지와 대륙 안내 위의 번호 버튼은 정답 이름을 노출하
   assert.throws(() => FQ.map.render([options[0], options[0], options[1], options[2]]), /네 개/);
 });
 
-test('핀은 기본 상태부터 보이며 44px을 유지하고 별도 화면 자원을 남기지 않는다', () => {
+test('국가 영역과 44px 보조 단추는 기본 상태부터 보이고 점과 꼬리를 그리지 않는다', () => {
   const FQ = fixture();
   const options = FQ.map.chooseOptions(FQ.countries[0], [], 280);
   for (let i = 0; i < 10; i++) FQ.map.render(options);
@@ -119,6 +121,10 @@ test('핀은 기본 상태부터 보이며 44px을 유지하고 별도 화면 �
   assert.match(base, /opacity:\s*1/);
   assert.match(base, /transform:\s*translate\(-50%, -50%\)/);
   assert.match(css, /\.map-land path\s*\{[^}]*stroke:\s*none/);
+  assert.match(css, /\.map-land \.map-region\.is-option\s*\{[^}]*pointer-events:\s*visiblePainted/);
+  assert.match(css, /\.map-dot::after, \.map-pin::before, \.map-pin::after\s*\{\s*content:\s*none/);
+  assert.match(css, /\.map-land \.map-region\.is-correct\s*\{[^}]*fill:\s*var\(--success\)/);
+  assert.match(css, /\.map-land \.map-region\.is-wrong\s*\{[^}]*fill:\s*var\(--danger\)/);
   assert.match(css, /aspect-ratio:\s*2\s*\/\s*1/);
   assert.match(css, /padding:\s*22px/);
   assert.doesNotMatch(css, /@keyframes|animation\s*:|opacity:\s*0/);
@@ -155,4 +161,48 @@ test('폰과 태블릿 모두 지형 비율을 보존하고 44px 핀과 읽을 �
   assert.match(css, /\.map-context-canvas--region\s*\{[^}]*aspect-ratio:\s*4\s*\/\s*3/);
   assert.doesNotMatch(css, /@keyframes|animation\s*:|opacity:\s*0/);
   assert.doesNotMatch(css, /orientation:/);
+});
+
+test('194개 나라 공부는 세계 위치와 실제 영역을 함께 보여 주고 주변 지도 안에 주국토 전체를 담는다', () => {
+  const FQ = fixture();
+  for (const country of FQ.countries) {
+    const html = FQ.map.study(country);
+    assert.match(html, /세계에서 어디일까요/);
+    assert.ok(html.includes(country.ko + ' 주변을 크게 보기'));
+    assert.ok(html.includes('d="' + FQ.mapRegions[country.code].d + '"'), country.code + ' 국가 영역');
+    assert.doesNotMatch(html, /answer-btn|<button/, country.code + ' 채점 없는 공부 지도');
+    const views = Array.from(html.matchAll(/class="map-context-land" viewBox="([^"]+)"/g), match => match[1].split(' ').map(Number));
+    assert.deepEqual(views[0], [0, 0, 2000, 1000], country.code + ' 세계 전체');
+    assert.equal(views.length, 2);
+    const [x, y, width, height] = views[1];
+    assert.ok(views[1].every(Number.isFinite) && width > 0 && height > 0);
+    assert.ok(Math.abs(width / height - 4 / 3) < 1e-9, '주변 지도 비율을 보존한다');
+    const bounds = FQ.mapRegions[country.code].focusBounds;
+    assert.ok(bounds[0] >= x && bounds[1] >= y && bounds[2] <= x + width && bounds[3] <= y + height,
+      country.code + ' 주국토와 인접 섬 전체가 주변 지도 안이다');
+    const [lng, lat] = FQ.mapCoords[country.code], px = (lng + 180) / 360 * 2000, py = (90 - lat) / 180 * 1000;
+    assert.ok(px >= x && px <= x + width && py >= y && py <= y + height, country.code + ' 자기 위치가 주변 지도 안이다');
+    assert.match(html, /aria-label="[^".]+(?: 주변 확대 지도|의 세계 위치)\./);
+  }
+});
+
+test('아주 작은 나라는 실제 외곽 확대창을 제공하고 날짜변경선 근처는 지도 양끝을 연결한다', () => {
+  const FQ = fixture(), by = code => FQ.countries.find(country => country.code === code);
+  for (const code of ['va', 'mc', 'sg', 'tv']) {
+    const html = FQ.map.study(by(code));
+    assert.match(html, /class="map-inset"/);
+    const inset = html.slice(html.indexOf('<div class="map-inset"'));
+    assert.ok(inset.includes('d="' + FQ.mapRegions[code].d + '"'), code + ' 가짜 bbox 대신 실제 외곽');
+    const view = inset.match(/class="map-inset-shape" viewBox="([^"]+)"/)[1].split(' ').map(Number);
+    assert.ok(view.every(Number.isFinite) && view[2] > 0 && view[3] > 0);
+  }
+  for (const code of ['nz', 'fj']) {
+    const html = FQ.map.study(by(code));
+    assert.match(html, /<g transform="translate\(2000 0\)">/, code + ' 날짜변경선 너머 영토 연결');
+    assert.ok((html.match(/class="map-viewport-box"/g) || []).length >= 2, '세계지도 양끝에 확대 범위를 나눠 표시한다');
+  }
+  const worldOnly = FQ.map.study(by('kr'), { detail: false });
+  assert.match(worldOnly, /map-learning--world-only/);
+  assert.doesNotMatch(worldOnly, /class="map-region-context"|map-viewport-box/);
+  assert.ok(worldOnly.includes('d="' + FQ.mapRegions.kr.d + '"'));
 });

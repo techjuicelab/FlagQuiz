@@ -18,7 +18,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          [[ "$GITHUB_REF" == refs/heads/main ]] || exit 1
+          # Forgejo 예약 실행은 main, 수동 실행은 refs/heads/main을 전달한다.
+          if [[ "$GITHUB_REF" != refs/heads/main ]]; then
+            [[ "$GITHUB_EVENT_NAME" == schedule && "$GITHUB_REF" == main ]] || exit 1
+          fi
           APP=${GITHUB_REPOSITORY##*/}
           [[ "$APP" == flagquiz ]] || exit 1
           TAG=latest

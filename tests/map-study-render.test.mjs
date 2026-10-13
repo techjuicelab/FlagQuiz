@@ -14,13 +14,13 @@ function fixture() {
 }
 const near = (actual, expected, message) => assert.ok(Math.abs(actual - expected) < 1e-8, message);
 
-test('194개 나라의 공부 지도는 원좌표를 보존하고 세계 위치와 왜곡 없는 주변 확대를 함께 보여 준다', () => {
+test('194개 나라의 공부 지도는 원좌표와 국가 전체 영역을 보존하고 세계 위치와 주변 확대를 함께 보여 준다', () => {
   const FQ = fixture();
   const before = JSON.stringify(FQ.mapCoords);
   for (const country of FQ.countries) {
     const html = FQ.map.study(country);
     const views = [...html.matchAll(/viewBox="([^"]+)"/g)].map(match => match[1].split(' ').map(Number));
-    assert.equal(views.length, 2, country.code);
+    assert.ok(views.length === 2 || views.length === 3, country.code + ' 세계·주변 지도와 선택적 작은 나라 확대창');
     assert.deepEqual(views[0], [0, 0, 2000, 1000]);
     const [vx, vy, vw, vh] = views[1];
     near(vw / vh, 4 / 3, country.code + ' 확대 가로세로 비율');
@@ -29,19 +29,45 @@ test('194개 나라의 공부 지도는 원좌표를 보존하고 세계 위치�
     const x = (lng + 180) / 360 * 2000;
     const y = (90 - lat) / 180 * 1000;
     assert.ok(x >= vx && x <= vx + vw && y >= vy && y <= vy + vh, country.code + ' 확대 화면 안 대표 위치');
+    const bounds=FQ.mapRegions[country.code].focusBounds;
+    assert.ok(bounds[0]>=vx && bounds[2]<=vx+vw && bounds[1]>=vy && bounds[3]<=vy+vh,
+      country.code+' 주국토와 인접 섬의 전체 경계가 확대 화면 안에 들어온다');
+    const regions=[...html.matchAll(/<path class="map-region is-study(?: is-tiny)?" data-code="([a-z]+)" d="([^"]+)" fill-rule="evenodd"/g)];
+    assert.ok(regions.length>=views.length,country.code+' 모든 지도에서 국가 영역을 채운다');
+    for(const [,code,shape]of regions){
+      assert.equal(code,country.code,'강조 영역은 공부 중인 나라에만 속한다');
+      assert.equal(shape,FQ.mapRegions[country.code].d,country.code+' 부속섬과 내륙국 구멍을 포함한 전체 경계');
+    }
     const markers = [...html.matchAll(/class="map-location-marker"[^>]*style="left:([^%]+)%;top:([^%]+)%"/g)];
     assert.equal(markers.length, 2);
     near(Number(markers[0][1]), (lng + 180) / 360 * 100, country.code + ' 세계 경도');
     near(Number(markers[0][2]), (90 - lat) / 180 * 100, country.code + ' 세계 위도');
     near(vx + Number(markers[1][1]) / 100 * vw, x, country.code + ' 확대 경도 역투영');
     near(vy + Number(markers[1][2]) / 100 * vh, y, country.code + ' 확대 위도 역투영');
-    assert.equal((html.match(/preserveAspectRatio="xMidYMid meet"/g) || []).length, 2);
+    assert.equal((html.match(/preserveAspectRatio="xMidYMid meet"/g) || []).length, views.length);
     assert.ok(html.includes(country.ko));
-    assert.match(html, /나라의 대표 위치/);
-    assert.match(html, /국경을 나타내지는 않아요/);
+    assert.ok(html.includes('색칠한 영역이 이 나라예요'),country.code+' 영역 색칠 설명');
+    assert.ok(!html.includes('국경을 나타내지는 않아요'),country.code+' 예전 위치점 전용 설명 제거');
     assert.doesNotMatch(html, /NaN|Infinity|<button|<script/);
   }
   assert.equal(JSON.stringify(FQ.mapCoords), before, '세계 및 확대 렌더링은 데이터에 쓰지 않는다');
+});
+
+test('초소형 나라는 실제 국토 윤곽을 별도 확대창으로 보여 주고 큰 나라는 두 지도를 유지한다', () => {
+  const FQ=fixture();
+  for(const code of ['va','mc','sg']){
+    const country=FQ.countries.find(c=>c.code===code),html=FQ.map.study(country);
+    assert.equal((html.match(/<svg\b/g)||[]).length,3,code+' 작은 나라 확대창');
+    assert.ok(html.includes('class="map-inset"'),code+' 별도 확대창');
+    const svg=html.match(/<svg class="map-inset-shape"[\s\S]*?<\/svg>/)?.[0];
+    assert.ok(svg?.includes('d="'+FQ.mapRegions[code].d+'"'),code+' 점이나 사각형 대체 대신 국가 경계 사용');
+    assert.ok(!svg.includes('map-location-marker'),code+' 영역 윤곽을 점으로 가리지 않는다');
+  }
+  for(const code of ['kr','us','ru']){
+    const html=FQ.map.study(FQ.countries.find(c=>c.code===code));
+    assert.equal((html.match(/<svg\b/g)||[]).length,2,code+' 세계·주변 지도');
+    assert.ok(!html.includes('class="map-inset"'),code+' 충분히 큰 나라');
+  }
 });
 
 test('날짜변경선을 지나는 확대 범위는 반대쪽 육지를 이어 붙이고 세계 지도 양 끝에서 같은 범위를 가리킨다', () => {

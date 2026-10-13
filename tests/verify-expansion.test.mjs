@@ -6,7 +6,7 @@ import path from 'node:path';
 import vm from 'node:vm';
 import { buildLand } from '../scripts/build-map.mjs';
 import { verifyAudioCache, verifyActivateKeepsAudio, verifyMapTolerance,
-  verifyMapGeometry, verifySmallLandPreservation, verifyUiVoicePhrases, verifyMapScriptScope,
+  verifyMapGeometry, verifyMapRegions, verifySmallLandPreservation, verifyUiVoicePhrases, verifyMapScriptScope,
   verifyScriptRegistration, verifyShellFileSources, verifyTestSourceTree } from '../scripts/verify-expansion.mjs';
 
 const sw = fs.readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
@@ -233,8 +233,38 @@ function mapAssets() {
   for (const name of ['map-coords.js', 'map-shapes.js']) {
     vm.runInNewContext(fs.readFileSync(new URL('../data/' + name, import.meta.url), 'utf8'), context);
   }
-  return { land: context.window.FQ.mapLand, coords: context.window.FQ.mapCoords };
+  return { land: context.window.FQ.mapLand, coords: context.window.FQ.mapCoords, regions: context.window.FQ.mapRegions };
 }
+
+test('나라 영역 검사기는 실제 194개국의 자기 영역을 통과시키고 누락·추가 코드를 거부한다', async () => {
+  const { coords, regions } = mapAssets();
+  assert.deepEqual(await problems(verifyMapRegions, regions, coords), []);
+  assert.ok((await problems(verifyMapRegions, null, coords)).some(message => /mapRegions 가 없다/.test(message)));
+  const missing = structuredClone(regions);
+  delete missing.kr;
+  assert.ok((await problems(verifyMapRegions, missing, coords)).some(message => /코드가 다르다/.test(message)));
+  assert.ok((await problems(verifyMapRegions, { ...regions, zz: regions.kr }, coords)).some(message => /코드가 다르다/.test(message)));
+});
+
+test('나라 영역 검사기는 바꿔치기·면적 소실·잘못된 범위·날짜변경선·내륙국 덮기를 거부한다', async () => {
+  const { coords, regions } = mapAssets();
+  const mutants = [
+    ['이웃 나라 도형', copy => { copy.kr.d = regions.jp.d; }, /자기 나라 영역 밖.*kr/],
+    ['면적 없는 링', copy => { copy.kr.d += 'M0 0L1 0L0 0Z'; }, /면적 없는 링.*kr/],
+    ['전체 범위 이탈', copy => { copy.kr.bounds = [0, 0, 1, 1]; }, /전체 bounds 밖.*kr/],
+    ['면적 없는 확대 범위', copy => { copy.kr.focusBounds = [0, 0, 0, 0]; }, /focusBounds가 유효하지 않다.*kr/],
+    ['너무 정밀한 좌표', copy => { copy.kr.d += 'M0.0001 0L1 0L1 1L0.0001 0Z'; }, /정밀도.*kr/],
+    ['날짜변경선 횡단', copy => { copy.ru.d += 'M0 100L2000 100L2000 101L0 101L0 100Z'; }, /날짜변경선 오류.*ru/],
+    ['바티칸 덮기', copy => { copy.it.d += regions.va.d; }, /안쪽 나라의 영역을 덮는다.*it\/va/],
+    ['레소토 덮기', copy => { copy.za.d += regions.ls.d; }, /안쪽 나라의 영역을 덮는다.*za\/ls/]
+  ];
+  for (const [name, mutate, expected] of mutants) {
+    const copy = structuredClone(regions);
+    mutate(copy);
+    const failed = await problems(verifyMapRegions, copy, coords);
+    assert.ok(failed.some(message => expected.test(message)), name + ': ' + failed.join('\n'));
+  }
+});
 
 test('지도 검사기는 실제 최종 도형의 면적·방향·194개 핀을 검사한다', async () => {
   const { land, coords } = mapAssets();

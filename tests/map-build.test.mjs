@@ -3,7 +3,9 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { buildCoordinates, buildLand, assertPinsOnLand, prepareMap } from '../scripts/build-map.mjs';
+import vm from 'node:vm';
+import { buildCoordinates, buildLand, buildRegions, assertPinsOnLand, assertPinsInRegions, prepareMap } from '../scripts/build-map.mjs';
+import { verifyMapRegions } from '../scripts/verify-expansion.mjs';
 
 const box = (west, south, east, north) => [[west, south], [east, south], [east, north], [west, north], [west, south]];
 const polygon = (name, ring, label) => ({
@@ -12,6 +14,13 @@ const polygon = (name, ring, label) => ({
   geometry: { type: 'Polygon', coordinates: [ring] }
 });
 const matched = (feature) => new Map([['zz', feature]]);
+function generatedMap() {
+  const context = { window: {} };
+  for (const file of ['data/countries.js', 'data/map-coords.js', 'data/map-shapes.js']) {
+    vm.runInNewContext(fs.readFileSync(new URL('../' + file, import.meta.url), 'utf8'), context, { filename: file });
+  }
+  return context.window.FQ;
+}
 
 // 생성기에서 반환한 문자열을 독립적으로 읽어 실제 SVG fill 결과를 검증한다.
 function readRings(land) {
@@ -36,6 +45,17 @@ function windingAt(land, [lng, lat]) {
     else if (y1 > py && y2 <= py && cross < 0) winding--;
   }
   return winding;
+}
+
+// SVG evenodd 규칙은 외곽과 구멍의 링 방향에 의존하지 않는다.
+function containsRegion(region, [lng, lat]) {
+  const x = (lng + 180) / 360 * 2000, y = (90 - lat) / 180 * 1000;
+  let inside = false;
+  for (const ring of readRings(region)) for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const a = ring[i], b = ring[j];
+    if ((a[1] > y) !== (b[1] > y) && x < (b[0] - a[0]) * (y - a[1]) / (b[1] - a[1]) + a[0]) inside = !inside;
+  }
+  return inside;
 }
 
 test('LABEL이 나라 bbox 안이어도 실제 육지 밖이면 거부한다', () => {
@@ -98,13 +118,99 @@ test('최종 실루엣 게이트는 바다 핀과 면적 없는 M0 0Z를 거부�
   assert.throws(() => assertPinsOnLand({ zz: [0, 0] }, { viewBox: '0 0 2000 1000', d: 'M0 0Z' }), /실루엣 밖의 지도 핀: zz/);
 });
 
-test('buildLand는 원자료 내부 핀이 단순화 뒤 육지 밖으로 나가면 생성 자체를 거부한다', () => {
+test('바탕 실루엣의 이탈 거부는 유지하고 국가 영역은 좁은 돌출부의 자기 좌표를 정밀화로 보존한다', () => {
   // 0.4도 높이의 좁은 돌출부는 0.5도 단순화에서 사라지지만 나머지 큰 링 면적은 남는다.
   const feature = polygon('돌출부에 핀이 있는 나라', [
     [0, 0], [4, 0], [4, 4], [2.2, 4], [2, 4.4], [1.8, 4], [0, 4], [0, 0]
   ], [2, 4.3]);
   assert.deepEqual(buildCoordinates(matched(feature)), { zz: [2, 4.3] }, '원자료 검증은 정상 통과해야 한다');
   assert.throws(() => buildLand([feature], matched(feature), 0.5), /생성된 실루엣 밖의 지도 핀: zz/);
+  const mapRegions = buildRegions([feature], matched(feature), { zz: [2, 4.3] }, 0.5);
+  assert.equal(containsRegion(mapRegions.zz, [2, 4.3]), true);
+});
+
+test('아주 작은 나라의 실제 외곽과 라벨 없는 부속 섬도 사각형 대체나 생략 없이 남긴다', () => {
+  const triangle = [[12.428, 41.898], [12.439, 41.898], [12.433, 41.906], [12.428, 41.898]];
+  const feature = polygon('작은 삼각형 나라', triangle, [12.433, 41.9]);
+  feature.geometry = { type: 'MultiPolygon', coordinates: [[triangle], [box(12.45, 41.9, 12.452, 41.902)]] };
+  const mapRegions = buildRegions([feature], matched(feature), { zz: [12.433, 41.9] }, 0);
+  const rings = readRings(mapRegions.zz);
+  assert.equal(rings.length, 2, '0.002도 부속 섬도 국가 영역에 보존한다');
+  assert.equal(rings[0].length, 4, '닫힌 삼각형을 bbox 사각형으로 바꾸지 않는다');
+  assert.equal(containsRegion(mapRegions.zz, [12.433, 41.9]), true);
+  assert.equal(containsRegion(mapRegions.zz, [12.451, 41.901]), true);
+  assert.equal(containsRegion(mapRegions.zz, [12.438, 41.905]), false, 'bbox 안이지만 나라 밖인 곳은 채우지 않는다');
+});
+
+test('한 나라 안의 다른 나라는 구멍으로 남겨 둘러싼 나라의 색이 침범하지 않는다', () => {
+  const outer = polygon('둘러싼 나라', box(-5, -5, 5, 5), [3, 3]);
+  outer.geometry.coordinates.push(box(-1, -1, 1, 1));
+  const enclave = polygon('안쪽 나라', box(-1, -1, 1, 1), [0, 0]);
+  const { mapRegions } = buildLand([outer, enclave], new Map([['aa', outer], ['bb', enclave]]), 0);
+  assert.equal(readRings(mapRegions.aa).length, 2);
+  assert.equal(containsRegion(mapRegions.aa, [3, 3]), true);
+  assert.equal(containsRegion(mapRegions.aa, [0, 0]), false);
+  assert.equal(containsRegion(mapRegions.bb, [0, 0]), true);
+  assert.throws(() => assertPinsInRegions({ aa: [0, 0] }, mapRegions), /자기 나라 영역 밖/);
+});
+
+test('군도는 인접한 주요 섬을 focus에 이어 담고 먼 섬과 날짜변경선 반대편은 전체 영역에 남긴다', () => {
+  const feature = polygon('섬나라', box(170, -10, 173, -8), [171, -9]);
+  feature.geometry = { type: 'MultiPolygon', coordinates: [
+    [box(170, -10, 173, -8)], [box(176, -10, 178, -8)],
+    [box(-179, -10, -177, -8)], [box(80, -10, 82, -8)]
+  ] };
+  const { mapRegions } = buildLand([feature], matched(feature), 0);
+  const region = mapRegions.zz;
+  for (const coordinate of [[171, -9], [177, -9], [-178, -9], [81, -9]]) {
+    assert.equal(containsRegion(region, coordinate), true, coordinate.join(','));
+  }
+  assert.equal(readRings(region).length, 4);
+  assert.ok(region.bounds[2] - region.bounds[0] > 1900, '전체 영토는 날짜변경선 양쪽을 포함한다');
+  assert.ok(region.focusBounds[2] - region.focusBounds[0] < 50, '주영역과 인접 섬만 가까이 본다');
+  assert.ok(region.focusBounds[2] > (177 + 180) / 360 * 2000, '두 번째 주요 섬도 포함한다');
+});
+
+test('생성된 194개 나라 영역은 각각 자기 좌표를 포함하고 경계·주영역 범위가 유효하다', () => {
+  const { countries, mapCoords, mapRegions } = generatedMap();
+  assert.equal(Object.keys(mapRegions).length, 194);
+  assert.deepEqual(Object.keys(mapRegions).sort(), Array.from(countries, (country) => country.code).sort());
+  for (const country of countries) {
+    const region = mapRegions[country.code];
+    assert.equal(containsRegion(region, mapCoords[country.code]), true, country.code + ' 자기 좌표');
+    for (const bounds of [region.bounds, region.focusBounds]) {
+      assert.ok(bounds.every(Number.isFinite));
+      assert.ok(bounds[0] >= 0 && bounds[1] >= 0 && bounds[2] <= 2000 && bounds[3] <= 1000);
+      assert.ok(bounds[0] < bounds[2] && bounds[1] < bounds[3], country.code + ' 면적 있는 범위');
+    }
+    const [west, north, east, south] = region.bounds;
+    const focus = region.focusBounds;
+    assert.ok(focus[0] >= west && focus[1] >= north && focus[2] <= east && focus[3] <= south);
+  }
+  assert.equal(containsRegion(mapRegions.za, mapCoords.ls), false, '레소토에 남아공 색을 칠하지 않는다');
+  assert.equal(containsRegion(mapRegions.ls, mapCoords.ls), true);
+});
+
+test('국가 영역 검증기는 다른 나라 도형 대입·내륙국 덮기·범위 오류·날짜변경선 횡단을 거부한다', () => {
+  const { mapCoords, mapRegions } = generatedMap();
+  function failures(regions) {
+    const messages = [];
+    verifyMapRegions({ ok(value, message) { if (!value) messages.push(message); }, note() {} }, regions, mapCoords);
+    return messages.join('\n');
+  }
+  assert.equal(failures(mapRegions), '');
+  const wrongCountry = structuredClone(mapRegions);
+  wrongCountry.kr.d = mapRegions.jp.d;
+  assert.match(failures(wrongCountry), /자기 나라 영역 밖.*kr/);
+  const coveredEnclave = structuredClone(mapRegions);
+  coveredEnclave.it.d += mapRegions.va.d;
+  assert.match(failures(coveredEnclave), /안쪽 나라의 영역을 덮는다: it\/va/);
+  const invalidBounds = structuredClone(mapRegions);
+  invalidBounds.kr.focusBounds = [0, 0, 0, 0];
+  assert.match(failures(invalidBounds), /focusBounds가 유효하지 않다: kr/);
+  const crossedDateline = structuredClone(mapRegions);
+  crossedDateline.ru.d += 'M0 100L2000 100L2000 101L0 101L0 100Z';
+  assert.match(failures(crossedDateline), /날짜변경선 오류: ru/);
 });
 
 test('원자료가 없으면 ENOENT 대신 준비 명령을 알려준다', () => {

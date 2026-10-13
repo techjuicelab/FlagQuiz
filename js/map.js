@@ -1,4 +1,4 @@
-/* 실제 나라 좌표를 그대로 쓰는 지도 보기. 채점과 화면 수명은 app.js가 맡는다. */
+/* 나라의 실제 영역과 좌표를 함께 쓰는 지도 보기. 채점과 화면 수명은 app.js가 맡는다. */
 (function (global) {
   'use strict';
   var FQ = (global.FQ = global.FQ || {});
@@ -92,6 +92,52 @@
   function land() {
     if (!FQ.mapLand || !FQ.mapLand.d) throw new Error('지도 육지 자료가 없습니다.');
     return '<path d="' + esc(FQ.mapLand.d) + '"></path>';
+  }
+
+  function validBounds(bounds) {
+    return Array.isArray(bounds) && bounds.length === 4 && bounds.every(function (value) {
+      return typeof value === 'number' && isFinite(value);
+    }) && bounds[0] < bounds[2] && bounds[1] < bounds[3];
+  }
+
+  function region(country) {
+    var shape = country && FQ.mapRegions && FQ.mapRegions[country.code];
+    return shape && typeof shape.d === 'string' && shape.d && validBounds(shape.bounds) ? shape : null;
+  }
+
+  function focusBounds(country) {
+    var shape = region(country);
+    return shape ? (validBounds(shape.focusBounds) ? shape.focusBounds : shape.bounds) : null;
+  }
+
+  function tiny(country) {
+    var bounds = focusBounds(country);
+    return !!bounds && bounds[2] - bounds[0] < 12 && bounds[3] - bounds[1] < 8;
+  }
+
+  var borderSource = null, borderPaths = '';
+  function countryPaths() {
+    if (!FQ.mapRegions) throw new Error('지도 나라 영역 자료가 없습니다.');
+    if (borderSource !== FQ.mapRegions) {
+      borderSource = FQ.mapRegions;
+      borderPaths = Object.keys(borderSource).sort().map(function (code) {
+        return '<path class="map-country" data-code="' + esc(code) + '" d="' + esc(borderSource[code].d) +
+          '" fill-rule="evenodd" vector-effect="non-scaling-stroke"></path>';
+      }).join('');
+    }
+    return borderPaths;
+  }
+
+  function highlighted(country, mode) {
+    var shape = region(country);
+    if (!shape) throw new Error('이 나라의 지도 영역 자료가 없습니다.');
+    return '<path class="map-region ' + mode + (tiny(country) ? ' is-tiny' : '') +
+      '" data-code="' + esc(country.code) + '" d="' + esc(shape.d) +
+      '" fill-rule="evenodd" vector-effect="non-scaling-stroke"></path>';
+  }
+
+  function countryArt(countries, mode) {
+    return land() + countryPaths() + countries.map(function (country) { return highlighted(country, mode); }).join('');
   }
 
   function percent(x, y) {
@@ -199,7 +245,16 @@
 
   function regionView(country) {
     var p = project(coord(country));
-    // 넓은 나라는 더 넓게 보되 투영 비율은 세계지도와 동일하게 유지한다.
+    var bounds = focusBounds(country);
+    if (bounds) {
+      // 주국토와 인접 섬을 모두 담고 주변 나라도 남긴다. 먼 영토는 위의 세계지도에 함께 색칠한다.
+      var width = Math.max(250, (bounds[2] - bounds[0]) / .72, (bounds[3] - bounds[1]) / .64 * 4 / 3);
+      var height = width * 3 / 4;
+      return { x: (bounds[0] + bounds[2] - width) / 2,
+        y: Math.max(0, Math.min(WORLD_HEIGHT - height, (bounds[1] + bounds[3] - height) / 2)),
+        width: width, height: height };
+    }
+    // 영역 자료가 없는 옛 자료와 섞여도 대표 좌표 중심의 지역 지도는 유지한다.
     var widths = { ru: 1050, ca: 850, us: 850, cn: 750, au: 750, br: 650, id: 650, kz: 650, in: 650 };
     var width = widths[country.code] || 500;
     var height = width * 3 / 4;
@@ -235,20 +290,31 @@
 
   function contextMap(country, view, detailed, viewport) {
     var p = project(coord(country));
-    var art = land();
-    // 육지 원자료를 복사해서 날짜변경선의 반대쪽을 이어 붙인다. 핀의 좌표는 옮기지 않는다.
-    if (view.x < 0) art += '<g transform="translate(-2000 0)">' + land() + '</g>';
-    if (view.x + view.width > WORLD_WIDTH) art += '<g transform="translate(2000 0)">' + land() + '</g>';
+    var art = countryArt([country], 'is-study');
+    // 국경과 강조 영역도 육지와 함께 복사해 날짜변경선 반대쪽 영토를 이어 붙인다.
+    if (view.x < 0) art += '<g transform="translate(-2000 0)">' + countryArt([country], 'is-study') + '</g>';
+    if (view.x + view.width > WORLD_WIDTH) art += '<g transform="translate(2000 0)">' + countryArt([country], 'is-study') + '</g>';
     var point = '<span class="map-location-marker" aria-hidden="true" style="' +
       percent((p.x - view.x) / view.width * 100, (p.y - view.y) / view.height * 100) + '">' +
-      '<span class="map-location-halo"></span><span class="map-location-point"></span>' +
       (detailed ? '<span class="map-location-label-country">' + esc(country.ko) + '</span>' : '') + '</span>';
     return '<div class="map-context-canvas map-context-canvas--' + (detailed ? 'region' : 'world') +
       '" role="img" aria-label="' + esc(country.ko + (detailed ? ' 주변 확대 지도. ' : '의 세계 위치. ') +
-        describe(country).coordinates + '. 점은 나라의 대표 위치입니다.') + '">' +
+        describe(country).coordinates + '. 색칠한 영역이 이 나라입니다.') + '">' +
       '<svg class="map-context-land" viewBox="' + [view.x, view.y, view.width, view.height].join(' ') +
       '" preserveAspectRatio="xMidYMid meet" aria-hidden="true" focusable="false">' + art + equator(view) + '</svg>' +
       (viewport ? viewportBoxes(viewport) : '') + continentLabels(view, country.continent, [country], detailed ? 'region' : 'world') + point + '</div>';
+  }
+
+  /** 세계지도에서 작은 나라는 같은 실제 경계를 별도 확대창에서도 보여 준다. */
+  function inset(country) {
+    if (!tiny(country)) return '';
+    var bounds = focusBounds(country);
+    var width = bounds[2] - bounds[0], height = bounds[3] - bounds[1];
+    var pad = Math.max(width, height) * .3;
+    return '<div class="map-inset" role="img" aria-label="' + esc(country.ko) + '의 작은 영역 확대">' +
+      '<span class="map-inset-label">작은 나라 크게 보기</span>' +
+      '<svg class="map-inset-shape" viewBox="' + [bounds[0] - pad, bounds[1] - pad, width + pad * 2, height + pad * 2].join(' ') +
+        '" preserveAspectRatio="xMidYMid meet" aria-hidden="true" focusable="false">' + countryArt([country], 'is-study') + '</svg></div>';
   }
 
   function study(country, options) {
@@ -258,10 +324,10 @@
     return '<div class="map-learning' + (detailed ? '' : ' map-learning--world-only') + '">' +
       '<section class="map-world-context"><h3>세계에서 어디일까요?</h3>' +
       contextMap(country, worldView(), false, detailed ? view : null) +
-      '<p class="map-context-caption">' + (detailed ? '테두리 안을 확대 지도에서 크게 보아요.' : '점을 따라 나라의 위치를 살펴보아요.') + '</p></section>' +
+      '<p class="map-context-caption">' + (detailed ? '테두리 안을 확대 지도에서 크게 보아요.' : '색칠한 나라의 영역을 살펴보아요.') + '</p></section>' +
       (detailed ? '<section class="map-region-context"><h3>' + esc(country.ko) + ' 주변을 크게 보기</h3>' +
-        contextMap(country, view, true) + '<p class="map-context-caption">지도 위쪽은 북쪽이에요.</p></section>' : '') +
-      '<p class="map-location-note">점은 나라의 대표 위치예요. 나라의 크기나 국경을 나타내지는 않아요.</p></div>';
+        contextMap(country, view, true) + inset(country) + '<p class="map-context-caption">지도 위쪽은 북쪽이에요.</p></section>' : '') +
+      '<p class="map-location-note">색칠한 영역이 이 나라예요. 멀리 떨어진 영토는 세계지도에서 함께 살펴보아요.</p></div>';
   }
 
   function render(options) {
@@ -270,12 +336,12 @@
     }
     return '<div class="map-board"><div class="map-surface">' +
       '<svg class="map-land" viewBox="0 0 2000 1000" preserveAspectRatio="xMidYMid meet" aria-hidden="true" focusable="false">' +
-      land() + equator(worldView()) + '</svg>' + continentLabels(worldView(), null, options, 'quiz') +
+      countryArt(options, 'is-option') + equator(worldView()) + '</svg>' + continentLabels(worldView(), null, options, 'quiz') +
       options.map(function (country, index) {
         var p = coord(country);
         return '<button type="button" class="map-pin answer-btn" data-code="' + esc(country.code) +
           '" aria-label="위치 ' + (index + 1) + '" style="left:' + ((p[0] + 180) / 360 * 100) +
-          '%;top:' + ((90 - p[1]) / 180 * 100) + '%"><span class="map-pin-point" aria-hidden="true"></span><span class="map-dot" aria-hidden="true">' +
+          '%;top:' + ((90 - p[1]) / 180 * 100) + '%"><span class="map-dot" aria-hidden="true">' +
           (index + 1) + '</span></button>';
       }).join('') + '</div></div>';
   }
@@ -300,5 +366,36 @@
       }).join('') + '</div></div>';
   }
 
-  FQ.map = { chooseOptions: chooseOptions, render: render, study: study, collection: collection, describe: describe, fits: fits, MIN_WIDTH: MIN_WIDTH };
+  /** 채점·힌트 상태는 번호 단추와 영역에 함께 적용한다. 화면 수명과 채점은 app.js가 맡는다. */
+  function markAnswer(root, answerCode, selectedCode) {
+    if (!root || !root.querySelectorAll) return;
+    Array.prototype.forEach.call(root.querySelectorAll('.map-region'), function (path) {
+      var code = path.getAttribute('data-code');
+      path.classList.remove('is-focused', 'is-correct', 'is-wrong', 'is-muted', 'is-removed');
+      if (code === answerCode) path.classList.add('is-correct');
+      else if (code === selectedCode) path.classList.add('is-wrong');
+      else path.classList.add('is-muted');
+      path.setAttribute('data-disabled', 'true');
+    });
+  }
+
+  function removeOptions(root, codes) {
+    if (!root || !root.querySelectorAll) return;
+    Array.prototype.forEach.call(root.querySelectorAll('.map-region'), function (path) {
+      var removed = (codes || []).indexOf(path.getAttribute('data-code')) !== -1;
+      path.classList.toggle('is-removed', removed);
+      if (removed) path.setAttribute('data-disabled', 'true');
+      else path.removeAttribute('data-disabled');
+    });
+  }
+
+  function highlight(root, code) {
+    if (!root || !root.querySelectorAll) return;
+    Array.prototype.forEach.call(root.querySelectorAll('.map-region'), function (path) {
+      path.classList.toggle('is-focused', !!code && path.getAttribute('data-code') === code && path.getAttribute('data-disabled') !== 'true');
+    });
+  }
+
+  FQ.map = { chooseOptions: chooseOptions, render: render, study: study, collection: collection, describe: describe, fits: fits, MIN_WIDTH: MIN_WIDTH,
+    markAnswer: markAnswer, removeOptions: removeOptions, highlight: highlight };
 })(window);

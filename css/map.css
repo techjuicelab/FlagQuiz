@@ -43,7 +43,36 @@
 }
 .map-equator { stroke: var(--map-label); stroke-width: 1; stroke-dasharray: 7 9; vector-effect: non-scaling-stroke; opacity: .25; }
 
-/* 좌표점과 번호 풍선을 분리한다. 44px 터치 영역의 중심은 실제 경도·위도 그대로다. */
+/* 나라의 실제 경계를 칠하고 번호는 선택을 돕는 44px 단추로 둔다. */
+.map-land .map-country, .map-context-land .map-country, .map-inset .map-country {
+  fill: var(--map-land);
+  stroke: color-mix(in srgb, var(--map-label) 65%, var(--card));
+  stroke-width: .7px;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+.map-land .map-region, .map-context-land .map-region, .map-inset .map-region {
+  fill: var(--primary);
+  fill-opacity: .45;
+  stroke: var(--primary-dark);
+  stroke-width: 2.2px;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+  transition: fill .2s ease, fill-opacity .2s ease, stroke .2s ease;
+}
+.map-context-land .map-region.is-study, .map-inset .map-region.is-study {
+  fill: var(--accent);
+  fill-opacity: .8;
+  stroke: var(--primary-dark);
+}
+.map-land .map-region.is-correct { fill: var(--success); fill-opacity: .8; stroke: var(--success); }
+.map-land .map-region.is-wrong { fill: var(--danger); fill-opacity: .65; stroke: var(--danger); stroke-dasharray: 5px 3px; }
+.map-land .map-region.is-focused { fill-opacity: .75; stroke-width: 3px; }
+.map-land .map-region.is-option { pointer-events: visiblePainted; cursor: pointer; }
+.map-land .map-region.is-muted { fill-opacity: .16; pointer-events: none; }
+.map-land .map-region.is-removed { opacity: .3; pointer-events: none; }
+.map-land .map-region[data-disabled="true"] { pointer-events: none; }
+
 .map-board .map-pin {
   position: absolute;
   display: flex;
@@ -67,18 +96,17 @@
   z-index: 2;
 }
 .map-board .map-pin:hover:not([disabled]) { transform: translate(-50%, -50%); background: transparent; }
-.map-pin-point { position: absolute; left: 50%; top: 50%; width: 9px; height: 9px; transform: translate(-50%, -50%); border: 2px solid var(--map-halo); border-radius: 50%; background: var(--map-point); box-shadow: 0 0 0 1px var(--map-point); }
 .map-dot {
-  position: absolute; left: 50%; bottom: calc(50% + 7px); transform: translateX(-50%);
+  position: absolute; left: 50%; bottom: calc(50% + 13px); transform: translateX(-50%);
   display: flex; align-items: center; justify-content: center;
   width: 25px; height: 25px; border: 2px solid var(--map-halo); border-radius: 50%;
   background: var(--map-point); color: #fff; font-size: .875rem; line-height: 1; font-weight: 750;
   box-shadow: 0 1px 3px rgb(24 35 52 / 18%); pointer-events: none;
 }
-.map-dot::after { content: ''; position: absolute; top: 100%; left: calc(50% - 1px); width: 2px; height: 5px; background: var(--map-point); }
+.map-dot::after, .map-pin::before, .map-pin::after { content: none; }
 .map-board .map-pin.is-correct, .map-board .map-pin.is-wrong { background: transparent; }
-.map-pin.is-correct { --map-point: #167344; }
-.map-pin.is-wrong { --map-point: #bd3434; }
+.map-pin.is-correct { --map-point: var(--success); }
+.map-pin.is-wrong { --map-point: var(--danger); }
 .map-pin:focus-visible { outline-offset: 1px; z-index: 3; }
 
 /* 질문은 위에 짧게, 지도는 아래 전체 폭으로 놓는다. */
@@ -137,10 +165,24 @@
 .map-context-land path { fill: var(--map-land); stroke: none; }
 .map-viewport-box { position: absolute; z-index: 0; border: 1.5px solid var(--map-point); background: rgb(37 99 235 / 6%); border-radius: 3px; pointer-events: none; }
 .map-location-marker { position: absolute; width: 0; height: 0; z-index: 3; pointer-events: none; }
-.map-location-halo { position: absolute; left: 0; top: 0; width: 24px; height: 24px; transform: translate(-50%, -50%); border: 1px solid var(--map-point); border-radius: 50%; background: rgb(37 99 235 / 12%); }
-.map-location-point { position: absolute; left: 0; top: 0; width: 10px; height: 10px; transform: translate(-50%, -50%); border: 2px solid var(--map-halo); border-radius: 50%; background: var(--map-point); box-shadow: 0 0 0 1px var(--map-point); }
 .map-location-label-country { position: absolute; left: 50%; top: 21px; transform: translateX(-50%); width: max-content; max-width: min(13rem, 62vw); padding: 6px 10px; border: 1px solid var(--map-point); border-radius: 9px; background: var(--card); color: var(--text); font-size: .95rem; font-weight: 700; line-height: 1.35; text-align: center; overflow-wrap: anywhere; }
-.map-location-label-country::before { content: ''; position: absolute; bottom: 100%; left: calc(50% - 1px); width: 2px; height: 12px; background: var(--map-point); }
+.map-location-label-country::before { content: none; }
+.map-inset {
+  display: grid;
+  gap: 8px;
+  width: min(240px, 100%);
+  margin: 14px auto 0;
+  padding: 12px;
+  border: 2px solid var(--accent);
+  border-radius: 12px;
+  background: var(--card);
+  --map-land: color-mix(in srgb, var(--card) 76%, var(--text-soft));
+  --map-label: var(--text-soft);
+}
+.map-inset-label { color: var(--text); font-size: .85rem; font-weight: 750; }
+.map-inset-shape { display: block; width: 100%; height: 120px; overflow: hidden; }
+.map-inset path { fill: var(--map-land); }
+.map-inset .map-region { stroke-width: 2px; }
 .map-location-note { grid-column: 1 / -1; margin: 0; padding: 14px 16px; border-radius: 12px; background: var(--card-2); color: var(--text-soft); font-size: .9rem; line-height: 1.65; }
 .map-location-note strong, .map-location-note b { color: var(--text); font-weight: 650; }
 
@@ -198,12 +240,14 @@
   .chain-map-canvas { --map-water: #151f2d; --map-land: #53657d; --map-label: #d5e0ed; }
   .map-board, .map-context-canvas { --map-water: #151f2d; --map-land: #53657d; --map-label: #d5e0ed; --map-point: #93b7ff; --map-halo: #172234; }
   .map-dot { color: #152137; }
-  .map-pin.is-correct { --map-point: #88dca9; }
-  .map-pin.is-wrong { --map-point: #ffa3a3; }
-  .map-location-halo, .map-viewport-box { background: rgb(147 183 255 / 10%); }
+  .map-viewport-box { background: rgb(147 183 255 / 10%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .map-land .map-region, .map-context-land .map-region, .map-inset .map-region { transition: none; }
 }
 @media (forced-colors: active) {
   .map-land path, .map-context-land path { fill: GrayText; }
-  .map-pin-point, .map-location-point, .map-dot { forced-color-adjust: none; background: Highlight; color: HighlightText; }
+  .map-land .map-region, .map-context-land .map-region, .map-inset .map-region { fill: Highlight; stroke: CanvasText; forced-color-adjust: none; }
+  .map-dot { forced-color-adjust: none; background: Highlight; color: HighlightText; }
   .map-continent-label { color: CanvasText; text-shadow: 0 0 2px Canvas; }
 }

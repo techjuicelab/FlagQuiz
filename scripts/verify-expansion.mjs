@@ -489,6 +489,46 @@ export function verifyMapGeometry(t, land, coords) {
   t.note('최종 도형 면적·방향 및 핀 ' + pins.length + '개의 winding number 검사');
 }
 
+/** 나라별 evenodd fill을 직접 읽어 이웃 나라나 바다가 대신 좌표를 덮는 오류를 잡는다. */
+export function verifyMapRegions(t, regions, coords) {
+  t.ok(regions && typeof regions === 'object', 'FQ.mapRegions 가 없다');
+  if (!regions || typeof regions !== 'object') return;
+  const expected = Object.keys(coords).sort(), actual = Object.keys(regions).sort();
+  t.ok(expected.length === 194, '자기 영역과 대조할 나라 좌표가 194개가 아니다');
+  t.ok(actual.join(',') === expected.join(','), '나라 영역과 좌표의 코드가 다르다');
+  const contains = (region, point) => {
+    const projected = [(point[0] + 180) / 360 * 2000, (90 - point[1]) / 180 * 1000];
+    return parsePathData(region.d).reduce((count, ring) => count + Math.abs(pathWinding(projected, ring)), 0) % 2 !== 0;
+  };
+  for (const code of expected) {
+    const region = regions[code];
+    if (!region) continue;
+    t.ok(typeof region.d === 'string' && region.d.length > 0, '나라 경로가 없다: ' + code);
+    if (typeof region.d !== 'string') continue;
+    const rings = parsePathData(region.d);
+    t.ok(rings.length > 0 && rings.every((ring) => ring.length >= 4 && Math.abs(signedPathArea(ring)) > 1e-9),
+      '나라 영역에 면적 없는 링이 있다: ' + code);
+    t.ok(contains(region, coords[code]), '좌표가 자기 나라 영역 밖에 있다: ' + code);
+    for (const key of ['bounds', 'focusBounds']) {
+      const box = region[key];
+      const valid = Array.isArray(box) && box.length === 4 && box.every(Number.isFinite) &&
+        box[0] >= 0 && box[1] >= 0 && box[2] <= 2000 && box[3] <= 1000 && box[0] < box[2] && box[1] < box[3];
+      t.ok(valid, '나라 ' + key + '가 유효하지 않다: ' + code);
+      if (valid && key === 'bounds') t.ok(rings.every((ring) => ring.every(([x, y]) => x >= box[0] && x <= box[2] && y >= box[1] && y <= box[3])),
+        '나라 경로가 전체 bounds 밖에 있다: ' + code);
+    }
+    t.ok(rings.every((ring) => ring.every(([x, y], index) => {
+      if (x < 0 || y < 0 || x > 2000 || y > 1000 || Number(x.toFixed(3)) !== x || Number(y.toFixed(3)) !== y) return false;
+      return !index || Math.abs(x - ring[index - 1][0]) < 1000;
+    })), '나라 좌표 정밀도·범위 또는 날짜변경선 오류: ' + code);
+  }
+  for (const [outer, enclave] of [['it', 'va'], ['it', 'sm'], ['za', 'ls']]) {
+    if (regions[outer] && coords[enclave]) t.ok(!contains(regions[outer], coords[enclave]),
+      '둘러싼 나라가 안쪽 나라의 영역을 덮는다: ' + outer + '/' + enclave);
+  }
+  t.note('나라 ' + expected.length + '개의 자기 영역·확대 범위·소국 면적·날짜변경선·내륙국 구멍 검사');
+}
+
 /** 국가 코드 목록을 하드코딩해 통과할 수 없도록 가상 국가와 배제 지역을 직접 생성한다. */
 export function verifySmallLandPreservation(t, buildLand) {
   t.ok(typeof buildLand === 'function', 'buildLand를 export하지 않는다');
@@ -1106,11 +1146,11 @@ await check({
 });
 
 await check({
-  id: 'map-shapes-no-borders',
+  id: 'map-shapes-country-regions',
   task: '지도 T3-simplify-silhouette · T4-emit-data',
-  label: '육지 실루엣이 나라별로 쪼개지지 않았는가 (국경선 데이터 금지)',
+  label: '바탕 육지와 194개국의 전체 영역을 함께 보존하는가',
   severity: 'acceptance',
-  why: "나라별 키로 쪼개는 순간 그것이 국경 데이터가 되고, '땅만 그리고 국경선은 그리지 않는다' 방침이 문서만 남고 무너진다."
+  why: '점 대신 나라 전체를 표시하도록 요청되어, 바탕 실루엣과 나라별 실제 영역을 따로 검증한다.'
 }, (t) => {
   const src = readOrSkip(t, 'data/map-shapes.js', '지도 트랙');
   const ctx = { window: {} };
@@ -1119,17 +1159,16 @@ await check({
   t.ok(land && typeof land === 'object', 'FQ.mapLand 가 없다');
   if (!land) return;
   t.ok(Object.keys(land).sort().join(',') === 'd,viewBox',
-    "mapLand 에 나라별 키가 있다 — 그것이 국경 데이터다", Object.keys(land).sort().join(','));
+    'mapLand 바탕 자료의 키가 다르다', Object.keys(land).sort().join(','));
   t.ok(land.viewBox === '0 0 2000 1000', 'viewBox 가 다르다', String(land.viewBox));
   t.ok(typeof land.d === 'string', 'd 가 문자열이 아니다', typeof land.d);
   if (typeof land.d !== 'string') return;
   t.ok(land.d.length < 400000, 'd 가 너무 길다', land.d.length + '자');
   t.ok(land.d.includes('M'), 'd 에 M 명령이 없다');
   const size = fs.statSync(p('data/map-shapes.js')).size;
-  t.ok(size < 250 * 1024, '파일이 250KB 이상이다', size + 'B');
+  t.ok(size < 500000, '파일이 500KB 이상이다', size + 'B');
 
   const body = src.replace(/^\s*\/\*[\s\S]*?\*\//, '');
-  t.ok(!/["']?[a-z]{2}["']?\s*:\s*['"]M/.test(body), '나라 코드 키로 쪼갠 경로가 있다');
   for (const word of ['ADMIN', 'France', 'Russia', 'Taiwan', 'Korea']) {
     t.ok(!body.includes(word), '실루엣 파일에 나라 이름이 들어 있다: ' + word);
   }
@@ -1138,6 +1177,7 @@ await check({
   readOrSkip(t, 'data/map-coords.js', '지도 트랙');
   vm.runInNewContext(read('data/map-coords.js'), ctx, { filename: 'data/map-coords.js' });
   verifyMapGeometry(t, land, ctx.window.FQ.mapCoords || {});
+  verifyMapRegions(t, ctx.window.FQ.mapRegions, ctx.window.FQ.mapCoords || {});
   let outOfRange = 0, notRounded = 0, crossing = 0, tooShort = 0, seams = 0;
   for (const pts of subs) {
     if (pts.length < 4) tooShort++;
@@ -1458,7 +1498,19 @@ await check({
   for (const name of ['Taiwan', 'Palestine', 'Kosovo', 'Western Sahara']) {
     t.ok(excludedNames.has(name), '견해가 갈리는 지역이 배제 목록에 없다: ' + name);
   }
+  const context = { window: {} };
+  vm.runInNewContext(read('data/map-shapes.js'), context, { filename: 'data/map-shapes.js' });
+  const regions = context.window.FQ.mapRegions || {};
+  let sourceRings = 0;
+  for (const [code, feature] of r.matched) {
+    const polygons = feature.geometry.type === 'Polygon' ? [feature.geometry.coordinates] : feature.geometry.coordinates;
+    const count = polygons.reduce((sum, polygon) => sum + polygon.length, 0);
+    sourceRings += count;
+    t.ok(regions[code] && parsePathData(regions[code].d).length === count,
+      '원자료의 부속섬 또는 내륙 구멍이 나라 영역에서 사라졌다: ' + code);
+  }
   t.note('원본 도형 ' + features.length + '개 = 매칭 ' + r.matched.size + ' + 배제 ' + r.excluded.length);
+  t.note('원자료 국가 외곽·내륙 구멍 ' + sourceRings + '개를 생성된 나라 영역과 전수 대조했다');
 });
 
 await check({
@@ -1511,13 +1563,13 @@ await check({
   task: '지도 T3-simplify-silhouette · T4-emit-data',
   label: 'build-map.mjs 의 실루엣 생성 규칙과 라벨 검증',
   severity: 'acceptance',
-  why: '내부 링을 살려두면 레소토·산마리노·바티칸 자리에 흰 구멍이 뚫리고, 작은 나라 링 보존 예외가 없으면 싱가포르·바티칸이 지도에서 사라진다.'
+  why: '바탕 육지는 외곽만 합쳐 구멍을 채우고, 나라별 영역은 내륙의 다른 나라와 부속섬을 보존해야 한다.'
 }, async (t) => {
   const src = readOrSkip(t, 'scripts/build-map.mjs', '지도 T3/T4');
   const headers = Object.fromEntries(['data/map-coords.js', 'data/map-shapes.js']
     .filter(exists).map(file => [file, headerComment(read(file))]));
   verifyMapTolerance(t, src, headers);
-  t.ok(/rings\[0\]|\[0\]/.test(src), '외곽 링만 쓰는 흔적이 없다 — 내부 링을 살리면 흰 구멍이 뚫린다');
+  t.ok(/rings\[0\]|\[0\]/.test(src), '바탕 육지에 외곽 링을 쓰는 흔적이 없다');
   // 도형 분기는 scripts/lib/ 로 빠져 있을 수 있다 — 지도 파이프라인 전체에서 찾는다
   const pipeline = ['scripts/build-map.mjs', 'scripts/lib/simplify.mjs', 'scripts/lib/ne-join.mjs']
     .filter(exists).map(read).join('\n');
@@ -1667,7 +1719,7 @@ await check({
   task: '지도 T8-attribution',
   label: '설정의 앱 정보에 자산 출처와 지도 방침 표시',
   severity: 'acceptance',
-  why: '공통 푸터에서 설정으로 이동해도 flag-icons·Natural Earth·Typecast 출처와 국경선을 그리지 않는다는 방침에 접근할 수 있어야 한다.'
+  why: '설정에서 flag-icons·Natural Earth·Typecast 출처와 나라 영역을 색으로 표시하는 방침에 접근할 수 있어야 한다.'
 }, (t) => {
   const html = read('index.html');
   const app = codeOnly(read('js/app.js'));
@@ -1694,7 +1746,7 @@ await check({
   t.ok(/href="https:\/\/www\.naturalearthdata\.com\/"/.test(line), 'naturalearthdata.com 링크가 없다');
   t.ok(/target="_blank"/.test(line) && /rel="noopener"/.test(line), 'target="_blank" rel="noopener"가 없다');
   t.ok(line.includes('퍼블릭 도메인'), "'퍼블릭 도메인' 문구가 없다");
-  t.ok(line.includes('땅만 그리고 국경선은 그리지 않아요'), '국경선을 그리지 않는다는 지도 방침 문구가 없다');
+  t.ok(line.includes('나라') && line.includes('영역'), '나라 영역 표시 안내가 없다');
   t.ok(/href="https:\/\/github\.com\/lipis\/flag-icons"/.test(f) && f.includes('(MIT)'), 'flag-icons 링크 또는 MIT 출처가 없다');
   t.ok(/href="https:\/\/typecast\.ai"/.test(f) && f.includes('Sua(수아)'), 'Typecast 링크 또는 음성 이름이 없다');
   t.ok(f.includes('TechJuiceLab · OpenAI AI 생성'), '상징물·명소 그림 출처가 없다');
@@ -1728,13 +1780,13 @@ await check({
       }
     }
   }
-  t.ok(md.includes('국경선을 나라를 가르는 선으로 쓰지 않습니다'), '국경선 방침 문장이 없다');
   const lines = md.split('\n');
-  const policy = lines.findIndex((l) => l.includes('국경선을 나라를 가르는 선으로 쓰지 않습니다'));
+  const policy = lines.findIndex((line) => line.includes('Natural Earth') && /나라.*영역/.test(line) && /색칠|색으로/.test(line));
+  t.ok(policy !== -1, '나라 영역 표시 방침 문장이 없다');
   const un = lines.findIndex((l) => l.includes('유엔 회원국 193개국'));
   if (policy !== -1 && un !== -1) {
     const [a, b] = [Math.min(policy, un), Math.max(policy, un)];
-    t.ok(!lines.slice(a, b + 1).some((l) => l.trim() === ''), '국경선 방침 문장이 기존 불릿과 같은 블록 안에 있지 않다');
+    t.ok(!lines.slice(a, b + 1).some((l) => l.trim() === ''), '영역 표시 방침 문장이 기존 불릿과 같은 블록 안에 있지 않다');
   }
   t.ok(md.includes('어른들 사이에서도 답이 갈리는 것은 빼는 편이 낫다'),
     'DISPUTED 검사의 근거 문장이 삭제됐다');
@@ -1882,7 +1934,7 @@ await check({
       if (exists(link)) fs.symlinkSync(p(link), path.join(tmp, link));
     }
     // 그림 검사기는 symlink를 거부하므로 실제 사본으로 검증한다.
-    for (const copy of ['data', 'tests', 'js', 'scripts', 'images', 'index.html', 'sw.js', 'package.json']) {
+    for (const copy of ['data', 'tests', 'js', 'scripts', 'server', 'images', 'index.html', 'sw.js', 'package.json']) {
       if (exists(copy)) fs.cpSync(p(copy), path.join(tmp, copy), { recursive: true });
     }
     // 정상 사본부터 통과해야 이후 실패가 주입한 변이 때문이라고 말할 수 있다.
@@ -1979,8 +2031,8 @@ for (const line of [
   '① 아이패드 비행기 모드: 앱이 뜨고 · 국기가 보이고 · 수아 음원이 재생되는가.',
   '   셸·국기 약 2MB 재다운로드는 정상이고, 음원 114MB 재다운로드는 실패다.',
   '② 내보낸 JSON 을 다른 브라우저에 붙여 실제로 복원되는가 (기계는 샌드박스까지만 본다).',
-  '③ 육지 실루엣 육안 확인: 이탈리아 장화 · 한반도 · 플로리다 반도 · 스칸디나비아 · 일본 열도가',
-  '   알아보이는가 / 나라를 가르는 선이 한 개도 없는가 / 서사하라·팔레스타인·레소토 자리에 흰 구멍이 없는가.',
+  '③ 나라 영역 육안 확인: 한반도 · 이탈리아 장화 · 일본 열도가 알아보이고 선택한 나라 전체가 색칠되는가.',
+  '   작은 나라 확대창의 실제 윤곽이 보이며, 이탈리아·남아공 색칠이 바티칸·산마리노·레소토를 덮지 않는가.',
   '④ 설정의 앱 정보에서 네 출처 줄이 보이고 Natural Earth 링크가 새 탭으로 열리는가.',
   '⑤ 새 버킷의 모든 읽기가 (r.x || 0) 으로 방어됐는가 · export 핸들러가 stats() 를 다시 부르지 않는가.'
 ]) console.log('  ' + line);

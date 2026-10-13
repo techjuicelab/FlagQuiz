@@ -655,17 +655,19 @@
     var size = opts.hidden ? '' : capitalWordSize(country.capital);
     return '<div class="capital-plate' + (place ? ' has-art' : '') + (opts.hidden ? ' is-hidden' : '') + '"' + (opts.id ? ' id="' + opts.id + '"' : '') + '>' +
       (place ? '<figure class="capital-place"><img src="' + esc(place.src) + '" alt="' + esc(place.alt) + '"><figcaption>' + esc(place.alt) + '</figcaption></figure>' : '') +
-      '<div class="capital-plate-text"><span class="capital-tag">🏙️ 수도</span>' +
+      '<div class="capital-plate-text"><span class="capital-tag">🏙️ ' + (opts.confirmation ? '수도 이름' : '수도') + '</span>' +
         '<span class="capital-word' + size + '"' + (opts.id ? ' id="' + opts.id + '-word"' : '') + '>' + (opts.hidden ? '?' : esc(country.capital)) + '</span>' +
       '</div>' +
     '</div>';
   }
 
   /** 명패 아래 한 줄(D29): 국기와 '○○의 수도예요'. 읽어 주는 두 번째 문구와 같은 글이라 소리와 글자가 같은 순서로 놓인다. */
-  function capitalOf(country) {
+  function capitalOf(country, opts) {
+    opts = opts || {};
     return '<div class="capital-of">' +
       '<img class="capital-of-flag" src="' + ui.flagSrc(country.code) + '" alt="' + esc(country.ko) + ' 국기">' +
-      '<span class="capital-of-text"><b>' + esc(country.ko) + '</b>의 수도예요</span>' +
+      '<span class="capital-of-text">' + (opts.confirmation ? '<span class="capital-country-label">나라 이름</span>' : '') +
+        '<b>' + esc(country.ko) + '</b>의 수도예요</span>' +
     '</div>';
   }
 
@@ -1168,7 +1170,7 @@
     } else if (q.mode === 'map') {
       // 시안(PhoneMap): 국기 120×80 과 이름을 한 줄에, 아래에 🔊 전폭. 아이패드 세로에서는 국기·이름·🔊 가 한 줄 카드가 된다(css).
       stage = '<div class="flag-stage map-question">' +
-        '<div class="q-label">이 나라는 어디에 있을까요?</div>' +
+        '<div class="q-label">이 나라의 땅이나 번호를 눌러 보세요</div>' +
         '<div class="map-who">' +
           '<img class="map-question-flag" src="' + ui.flagSrc(q.country.code) + '" alt="' + esc(q.country.ko) + ' 국기">' +
           '<div class="big-name">' + esc(q.country.ko) + '</div>' +
@@ -1272,7 +1274,7 @@
         ui.$('.map-explorer', m).classList.toggle('is-zoomed', expanded);
         zoom.setAttribute('aria-pressed', String(expanded));
         zoom.textContent = expanded ? '세계 전체 보기' : '지도 확대';
-        ui.$('#map-view-help', m).textContent = expanded ? '좌우로 움직여 살펴보세요' : '점이 가리키는 위치를 골라요';
+        ui.$('#map-view-help', m).textContent = expanded ? '좌우로 움직여 살펴보세요' : '나라의 땅이나 번호를 골라요';
         var mapScroll = ui.$('#map-scroll', m);
         mapScroll.scrollLeft = expanded ? (mapScroll.scrollWidth - mapScroll.clientWidth) / 2 : 0;
       });
@@ -1371,7 +1373,7 @@
 
   function answerArea(q) {
     if (q.mode === 'map') return '<div class="map-explorer"><div class="map-view-tools">' +
-      '<span id="map-view-help">점이 가리키는 위치를 골라요</span><button class="btn btn-sm btn-ghost" id="map-zoom" type="button" aria-pressed="false" aria-controls="map-scroll">지도 확대</button></div>' +
+      '<span id="map-view-help">나라의 땅이나 번호를 골라요</span><button class="btn btn-sm btn-ghost" id="map-zoom" type="button" aria-pressed="false" aria-controls="map-scroll">지도 확대</button></div>' +
       '<div class="map-scroll" id="map-scroll" tabindex="0" aria-label="세계 지도. 확대하면 좌우로 움직일 수 있어요">' + FQ.map.render(q.options) + '</div></div>';
     if (q.mode === 'symbol' || q.mode === 'place' || q.mode === 'capital') {
       // 보기는 국기가 주인공이다(시안 IpadPlay·PortraitPlay·PhoneCapital): 2×2 격자, 국기 폭 폰 96px 이상·아이패드 200px 이상, 이름은 국기 아래 작게.
@@ -1426,9 +1428,24 @@
 
   function bindAnswerArea(m, q) {
     ui.on(m, '.answer-btn', 'click', function (e, t) {
-      if (state.answered) return;
+      if (state.answered || t.disabled) return;
       submit({ code: t.getAttribute('data-code') });
     });
+    if (q.mode === 'map') {
+      ui.on(m, '.map-region', 'click', function (e, t) {
+        var code = t.getAttribute('data-code');
+        if (state.answered || t.getAttribute('data-disabled') === 'true' || state.removed.indexOf(code) !== -1) return;
+        submit({ code: code });
+      });
+      ['mouseover', 'focusin'].forEach(function (event) {
+        ui.on(m, '.map-pin', event, function (e, t) {
+          if (!state.answered && !t.disabled) FQ.map.highlight(ui.$('#answer-area'), t.getAttribute('data-code'));
+        });
+      });
+      ['mouseout', 'focusout'].forEach(function (event) {
+        ui.on(m, '.map-pin', event, function () { FQ.map.highlight(ui.$('#answer-area'), null); });
+      });
+    }
 
     var input = ui.$('#answer-input', m);
     if (input) {
@@ -1748,6 +1765,7 @@
         if (btn) { btn.disabled = true; btn.style.opacity = '.3'; }
         state.removed.push(c.code);
       });
+      if (q.mode === 'map') FQ.map.removeOptions(ui.$('#answer-area'), state.removed);
     }
     var hintBtn = ui.$('#hint');
     if (hintBtn) {
@@ -1868,6 +1886,7 @@
       var code = btn.getAttribute('data-code');
       if (code === c.code) btn.classList.add('is-correct');
     });
+    if (q.mode === 'map') FQ.map.markAnswer(ui.$('#answer-area'), c.code, res.picked && res.picked.code);
     var hintBtn = ui.$('#hint');
     if (hintBtn) hintBtn.disabled = true;
     var skipBtn = ui.$('#skip');
@@ -1902,13 +1921,14 @@
     var slots = ui.$('.travel-slots');
     if (slots) slots.innerHTML = travelSlots(chestNow, false);
 
-    // 다시 듣기는 이름과 설명을 읽고, 모든 놀이의 정답 첫 안내는 이름만 짧게 읽는다.
+    // 수도 정답은 나라 이름과 수도 이름을 모두 확인하고, 다른 놀이의 정답 첫 안내는 이름만 짧게 읽는다.
     var isCapitalQ = capitalAxis(q.mode);
+    var confirmCapital = isCapitalQ && !!res.correct;
     var isMapQ = q.mode === 'map';
     var isArtQ = q.mode === 'symbol' || q.mode === 'place';
     var feedbackArtName = isArtQ ? artAlt(c.code, q.mode) : '';
     state.lastSpeech = {
-      lines: isCapitalQ ? [c.capital, c.ko + '의 수도예요'] : isArtQ ? [c.ko, feedbackArtName, c.fact].filter(Boolean) : isMapQ ? [c.ko, c.fact] : [c.ko, c.flagHint],
+      lines: isCapitalQ ? (confirmCapital ? [c.ko, c.capital, c.ko + '의 수도예요'] : [c.capital, c.ko + '의 수도예요']) : isArtQ ? [c.ko, feedbackArtName, c.fact].filter(Boolean) : isMapQ ? [c.ko, c.fact] : [c.ko, c.flagHint],
       opts: { rate: 0.93, pitch: 1.1 }
     };
     var feedbackSpeech = state.lastSpeech;
@@ -1931,8 +1951,8 @@
       return state.feedbackGeneration === generation && state.game === g &&
         g.current() === q && state.answered && !doc.hidden;
     }
-    // 정답은 이름만 짧게, 오답·포기·건너뛰기는 전체 설명을 읽고 모든 놀이에서 자동 진행한다.
-    var quickAnswerSpeech = res.correct ? { lines: [isCapitalQ ? c.capital : c.ko], opts: feedbackSpeech.opts } : feedbackSpeech;
+    // 수도 정답은 두 이름과 관계를 확인하고, 다른 정답은 이름만 짧게 읽은 뒤 자동 진행한다.
+    var quickAnswerSpeech = res.correct && !confirmCapital ? { lines: [c.ko], opts: feedbackSpeech.opts } : feedbackSpeech;
     function scheduleAutoNext(request, delay) {
       if (!feedbackCurrent() || request !== narrationRequest) return;
       if (state.autoNextTimer) global.clearTimeout(state.autoNextTimer);
@@ -1967,7 +1987,7 @@
           if (!feedbackCurrent() || request !== narrationRequest) return;
           audio.stopSpeaking();
           finishNarration(request, false);
-        }, replaying || !res.correct ? AUTO_NEXT_VOICE_WATCHDOG * 3 : AUTO_NEXT_VOICE_WATCHDOG);
+        }, replaying || !res.correct || confirmCapital ? AUTO_NEXT_VOICE_WATCHDOG * 3 : AUTO_NEXT_VOICE_WATCHDOG);
       } else scheduleAutoNext(request, AUTO_NEXT_SILENT);
       FQ.speech.stopAnd(function () {
         if (!feedbackCurrent() || request !== narrationRequest || narrationFinished === request) return;
@@ -2006,15 +2026,19 @@
     // 정답 카드(시안 PhoneAnswer): 정오답이 같은 카드다. 폰에서 국기 전폭, 이름 34px, 노란 상자(그림 이름·상식 / 국기 특징),
     // 🔊 설명 다시 듣기 56px, '다음 나라 →' 64px.
     // 수도 놀이의 정답 카드는 수도가 주인공이다(D29): 수도 명패(가장 큰 글자, 수도 안 명소 그림(D26)이 있으면 함께 — 파리 옆에 에펠탑) 아래에
-    // '[국기] 나라의 수도예요' 한 줄. 읽는 문구 [수도, 나라의 수도예요] 와 같은 순서이고, 나라 이름·국기는 수도를 받치는 자리로 내려간다.
+    // '[국기] 나라의 수도예요' 한 줄. 정답 확인에서는 나라 이름과 수도 이름을 구분하고 두 이름을 모두 읽는다.
     var feedbackArt = isArtQ ? artFor(c.code, q.mode) : null;
     var rememberTitle = isArtQ ? esc(artAlt(c.code, q.mode)) : isMapQ ? '🗺️ ' + esc(c.continent) + ' · ' + esc(c.region) : '';
     var rememberBody = isMapQ || isArtQ ? esc(c.fact) : '🚩 ' + esc(c.flagHint);
+    var replayLabel = confirmCapital ? '🔊 나라와 수도 다시 듣기' : '🔊 설명 다시 듣기';
     var html =
       '<div class="feedback learn discovery-card' + (isCapitalQ ? ' capital-card' : '') + (isMapQ ? ' map-feedback' : '') + '">' +
         '<div class="fb-head"><div class="verdict">' + verdict + '</div>' + extra + '</div>' +
         (isCapitalQ
-          ? capitalPlate(c, capitalPlace(c)) + capitalOf(c)
+          ? (confirmCapital
+              ? '<div class="capital-confirmation" role="group" aria-label="나라 이름 ' + esc(c.ko) + ', 수도 이름 ' + esc(c.capital) + '">' +
+                  capitalPlate(c, capitalPlace(c), { confirmation: true }) + capitalOf(c, { confirmation: true }) + '</div>'
+              : capitalPlate(c, capitalPlace(c)) + capitalOf(c))
           : '<div class="name-row">' +
               '<img class="fb-flag" src="' + ui.flagSrc(c.code) + '" alt="' + esc(c.ko) + ' 국기">' +
               '<div class="kname">' + esc(c.ko) + '</div>' +
@@ -2034,7 +2058,7 @@
             '</div>') +
         (isMapQ ? FQ.map.study(c) : '') +
         (store.settings().speak
-          ? '<button class="btn btn-listen btn-listen-soft" id="replay" type="button">🔊 설명 다시 듣기</button>'
+          ? '<button class="btn btn-listen btn-listen-soft" id="replay" type="button">' + replayLabel + '</button>'
           : '<button class="btn btn-listen btn-listen-soft" id="speak-on" type="button">🔇 읽어주기가 꺼져 있어요 · 켜고 듣기</button>') +
         '<button class="btn btn-primary btn-big btn-go" id="next" type="button">' +
           (g.isLast() ? '오늘 여행 보기 →' : '바로 다음 문제 →') +
@@ -2058,7 +2082,7 @@
     if (replay) {
       replay.addEventListener('click', function () {
         replay.classList.remove('needs-tap');
-        replay.textContent = '🔊 설명 다시 듣기';
+        replay.textContent = replayLabel;
         replayFeedback();
       });
     }
@@ -2067,7 +2091,7 @@
       speakOn.addEventListener('click', function () {
         store.updateSettings({ speak: true });
         audio.setSpeakEnabled(true);
-        speakOn.textContent = '🔊 설명 다시 듣기';
+        speakOn.textContent = replayLabel;
         speakOn.id = 'replay';
         replayFeedback();
       });

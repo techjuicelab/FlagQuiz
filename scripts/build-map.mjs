@@ -8,6 +8,8 @@ import { exteriorRings, largestRing, ringBounds, assertDateline, hasSelfIntersec
 
 // 0.7°의 육안 검사에서 한반도·일본·반도 해안이 거칠어, HANDOFF의 허용 대안 0.5°를 채택.
 export const SIMPLIFY_TOLERANCE_DEG = 0.5;
+// 선택한 나라의 윤곽은 확대해서 배우므로 바탕 실루엣보다 정밀하게 보존한다.
+export const REGION_SIMPLIFY_TOLERANCE_DEG = 0.15;
 const root = fileURLToPath(new URL('../', import.meta.url));
 
 export function signedArea(points) {
@@ -23,6 +25,45 @@ export function signedArea(points) {
 
 const project = ([lng, lat]) => [(lng + 180) / 360 * 2000, (90 - lat) / 180 * 1000];
 const roundPoint = (point) => point.map((value) => Number(value.toFixed(1)));
+const regionPoint = (point) => point.map((value) => Number(value.toFixed(3)));
+const pathFor = (points) => points.map((point, index) => (index ? 'L' : 'M') + point.join(' ')).join('') + 'Z';
+const polygonsFor = (feature) => feature.geometry.type === 'Polygon' ? [feature.geometry.coordinates] : feature.geometry.coordinates;
+const holesFor = (feature) => polygonsFor(feature).flatMap((polygon) => polygon.slice(1));
+
+function pointBounds(points) {
+  return points.reduce((box, [x, y]) => [Math.min(box[0], x), Math.min(box[1], y), Math.max(box[2], x), Math.max(box[3], y)],
+    [Infinity, Infinity, -Infinity, -Infinity]);
+}
+
+function regionContains(d, coordinate) {
+  const rings = d.split('Z').filter(Boolean).map((part) => {
+    const values = (part.match(/-?\d+(?:\.\d+)?/g) || []).map(Number);
+    return Array.from({ length: values.length / 2 }, (_, index) => values.slice(index * 2, index * 2 + 2));
+  });
+  return rings.reduce((count, ring) => count + Number(pointInRing(project(coordinate), ring)), 0) % 2 !== 0;
+}
+
+function focusRings(feature, label, rendered) {
+  const rings = exteriorRings(feature).filter((ring) => rendered.has(ring));
+  const chosen = new Set(rings.filter((ring) => pointInRing(label, ring)));
+  // 본토와 가까운 섬은 함께 보여 주되, 해외영토와 날짜변경선 반대편 때문에 세계 전체로 벌어지지 않는다.
+  // 4° 이내의 링을 이어 일본·인도네시아·뉴질랜드의 주요 군도를 보존한다.
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const ring of rings) {
+      if (chosen.has(ring)) continue;
+      const box = ringBounds(ring);
+      for (const member of chosen) {
+        const nearby = ringBounds(member);
+        const dx = Math.max(0, box[0] - nearby[2], nearby[0] - box[2]);
+        const dy = Math.max(0, box[1] - nearby[3], nearby[1] - box[3]);
+        if (dx <= 4 && dy <= 4) { chosen.add(ring); changed = true; break; }
+      }
+    }
+  }
+  return [...chosen].flatMap((ring) => rendered.get(ring));
+}
 
 function bboxPath([west, south, east, north]) {
   const [left, top] = project([west, north]), [right, bottom] = project([east, south]);
@@ -101,7 +142,8 @@ export function buildLand(features, matched, tolerance = SIMPLIFY_TOLERANCE_DEG,
   const mapLand = { viewBox: '0 0 2000 1000', d: parts.join('') };
   if (Buffer.byteLength(JSON.stringify(mapLand)) >= 250000) throw new Error('지도 실루엣이 250KB를 넘었습니다.');
   assertPinsOnLand(coords, mapLand);
-  return { mapLand, stats: { sourcePoints, outputPoints, outputRings, preservedCountries: matched.size, preservedFeatures: positiveAreaFeatures.size,
+  const mapRegions = buildRegions(features, matched, coords);
+  return { mapLand, mapRegions, stats: { sourcePoints, outputPoints, outputRings, preservedCountries: matched.size, preservedFeatures: positiveAreaFeatures.size,
     bboxFallbacks: [...bboxFallbackFeatures].map((f) => countryByFeature.get(f) || f.properties.ADMIN), refinementPasses, ...topology.stats } };
 }
 
@@ -116,6 +158,48 @@ export function prepareMap({ sourcePath = path.join(root, SOURCE_RELATIVE_PATH) 
   const joined = joinFeatures(source.features, readCountryCodes(root));
   const coords = buildCoordinates(joined.matched);
   return { source, ...joined, coords, ...buildLand(source.features, joined.matched, SIMPLIFY_TOLERANCE_DEG, coords) };
+}
+
+export function buildRegions(features, matched, coords = buildCoordinates(matched), tolerance = REGION_SIMPLIFY_TOLERANCE_DEG) {
+  // 이탈리아의 바티칸·산마리노와 남아공의 레소토를 실제 구멍으로 남긴다.
+  // 구멍도 공유 arc 계산에 참여시켜 둘러싼 나라와 안쪽 나라의 경계를 일치시킨다.
+  const holeFeatures = features.flatMap((feature) => holesFor(feature).map((ring) => ({
+    geometry: { type: 'Polygon', coordinates: [ring] }
+  })));
+  const topology = topologySimplifier([...features, ...holeFeatures], tolerance);
+  const ordered = [...matched].sort(([a], [b]) => a.localeCompare(b));
+  for (let pass = 0; pass <= 64; pass++) {
+    const mapRegions = {}, rendered = new Map(), refine = [];
+    for (const [code, feature] of ordered) {
+      const parts = [];
+      // 작은 부속섬도 생략하지 않는다. 지도 전체와 확대창 모두 같은 실제 영역을 쓴다.
+      for (const [hole, rings] of [[false, exteriorRings(feature)], [true, holesFor(feature)]]) {
+        for (const ring of rings) {
+          assertDateline(ring, feature.properties.ADMIN);
+          let points = topology.simplifyRing(ring).map((point) => regionPoint(project(point)));
+          // 축약하면 사라지는 초소형 영역은 사각형 대체 없이 원본 외곽으로 되돌린다.
+          if (points.length < 4 || Math.abs(signedArea(points)) < 1e-9) points = ring.map((point) => regionPoint(project(point)));
+          if (hasSelfIntersections(points)) { refine.push(ring); continue; }
+          if (Math.abs(signedArea(points)) < 1e-9) throw new Error('나라 영역 면적 0: ' + code);
+          if ((signedArea(points) > 0) === hole) points.reverse();
+          parts.push(pathFor(points));
+          if (!hole) rendered.set(ring, points);
+        }
+      }
+      const exteriorPoints = exteriorRings(feature).flatMap((ring) => rendered.get(ring) || []);
+      const focusPoints = focusRings(feature, coords[code], rendered);
+      mapRegions[code] = { d: parts.join(''), bounds: pointBounds(exteriorPoints),
+        focusBounds: pointBounds(focusPoints.length ? focusPoints : exteriorPoints) };
+      // 합친 육지는 이웃 나라가 좌표 이탈을 숨길 수 있으므로 자기 나라의 evenodd fill도 확인한다.
+      if (!regionContains(mapRegions[code].d, coords[code])) {
+        refine.push(...exteriorRings(feature).filter((ring) => pointInRing(coords[code], ring)));
+      }
+    }
+    if (!refine.length) { assertPinsInRegions(coords, mapRegions); return mapRegions; }
+    if (pass === 64 || !topology.refineRings(refine)) {
+      throw new Error('나라 영역의 자기교차 또는 좌표 이탈을 해소하지 못했습니다.');
+    }
+  }
 }
 
 export const LABEL_OVERRIDES = Object.freeze({
@@ -184,6 +268,16 @@ export function assertPinsOnLand(coords, mapLand) {
   if (bad.length) throw new Error('생성된 실루엣 밖의 지도 핀: ' + bad.join(', '));
 }
 
+export function assertPinsInRegions(coords, regions) {
+  const bad = [];
+  for (const [code, coordinate] of Object.entries(coords)) {
+    const region = regions[code];
+    if (!region || typeof region.d !== 'string') { bad.push(code); continue; }
+    if (!regionContains(region.d, coordinate) || !region.bounds.every(Number.isFinite) || !region.focusBounds.every(Number.isFinite)) bad.push(code);
+  }
+  if (bad.length) throw new Error('자기 나라 영역 밖의 지도 좌표: ' + bad.join(', '));
+}
+
 function generatedHeader() {
   return [
     '// 출처: Natural Earth 50m admin_0_countries (https://www.naturalearthdata.com/)',
@@ -202,8 +296,11 @@ export function emitMap() {
   const coordText = header + '// 값은 [lng, lat]. 특정 화면의 x/y는 저장하지 않는다.\n' +
     '// 렌더링 시 x=(lng+180)/360, y=(90-lat)/180으로 화면 좌표를 구한다.\n' +
     'window.FQ = window.FQ || {};\nwindow.FQ.mapCoords = {\n' + coordBody + '\n};\n';
-  const shapeText = header + 'window.FQ = window.FQ || {};\nwindow.FQ.mapLand = ' + JSON.stringify(result.mapLand) + ';\n';
-  if (Buffer.byteLength(coordText) >= 12000 || Buffer.byteLength(shapeText) >= 250000) throw new Error('지도 생성물이 용량 한도를 넘었습니다.');
+  const shapeText = header + 'window.FQ = window.FQ || {};\nwindow.FQ.mapLand = ' + JSON.stringify(result.mapLand) + ';\n' +
+    '// 나라 영역 단순화 허용 오차: ' + REGION_SIMPLIFY_TOLERANCE_DEG + '°; SVG 소수 셋째 자리; 작은 영역은 원본 외곽 보존.\n' +
+    '// 나라 영역은 evenodd fill을 쓰며, bounds는 전체 영역·focusBounds는 주영역과 인접 섬의 SVG 좌표다.\n' +
+    'window.FQ.mapRegions = ' + JSON.stringify(result.mapRegions) + ';\n';
+  if (Buffer.byteLength(coordText) >= 12000 || Buffer.byteLength(shapeText) >= 500000) throw new Error('지도 생성물이 용량 한도를 넘었습니다.');
   fs.writeFileSync(path.join(root, 'data/map-coords.js'), coordText);
   fs.writeFileSync(path.join(root, 'data/map-shapes.js'), shapeText);
   return { ...result, coords, bytes: { coords: Buffer.byteLength(coordText), shapes: Buffer.byteLength(shapeText) } };

@@ -376,6 +376,7 @@ h3 { font-size: 1.1rem; }
 .capital-of-flag { width: 156px; max-width: 60%; height: auto; aspect-ratio: 4 / 3; object-fit: contain; border: 1px solid var(--line); border-radius: 10px; background: var(--card-2); }
 .capital-of-text { color: var(--text-soft); font-size: 1.2rem; line-height: 1.45; text-align: center; word-break: keep-all; overflow-wrap: anywhere; }
 .capital-of-text b { color: var(--text); font-weight: 650; }
+.capital-country-label { display: block; margin-bottom: 4px; color: var(--text-soft); font-size: .85rem; font-weight: 600; }
 .capital-study-card { display: flex; flex-direction: column; align-items: center; gap: 18px; max-width: 720px; margin: 0 auto; padding: 26px; }
 .capital-study-card .capital-plate { width: 100%; }
 .capital-study-card .capital-of { margin: 0; }
