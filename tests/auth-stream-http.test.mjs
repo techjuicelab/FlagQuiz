@@ -5,18 +5,18 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { createHmac } from 'node:crypto';
-import { once } from 'node:events';
+import { EventEmitter, once } from 'node:events';
 import WebSocket from 'ws';
 import { createAuthServer, readConfig } from '../server/auth-server.mjs';
 
-async function fixture(t, { configured = true } = {}) {
+async function fixture(t, { configured = true, quotaDelayMs = 0 } = {}) {
   const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'flagquiz-stream-auth-'));
   await fs.mkdir(path.join(directory, 'site'));
   let disabled = false;
-  const calls = [], secret = 'fixture-local-signing-secret-'.repeat(3);
+  const calls = [], frames = new EventEmitter(), secret = 'fixture-local-signing-secret-'.repeat(3);
   const realtimeTranscriber = { ready: true, connect(options) {
     const call = { options, frames: [], closed: 0, finalized: 0 }; calls.push(call);
-    return { ready: Promise.resolve(), write(frame) { call.frames.push(frame); return true; },
+    return { ready: Promise.resolve(), write(frame) { call.frames.push(frame); frames.emit('received', call); return true; },
       finalize() { call.finalized++; }, close() { call.closed++; } };
   } };
   const config = readConfig({ AUTH_PROVIDER: 'techjuice-id', PUBLIC_ORIGIN: 'http://127.0.0.1',
@@ -25,6 +25,13 @@ async function fixture(t, { configured = true } = {}) {
     GROQ_API_KEY: 'fixture-groq-never-real', SONIOX_API_KEY: configured ? 'fixture-soniox-never-real' : '' });
   const app = await createAuthServer({ config, realtimeTranscriber,
     techjuiceId: { ready: true, sessionState: async () => ({ gen: 1, disabled }) } });
+  if (quotaDelayMs) {
+    const consume = app.store.consumeSpeechQuota.bind(app.store);
+    app.store.consumeSpeechQuota = async session => {
+      await new Promise(resolve => setTimeout(resolve, quotaDelayMs));
+      return consume(session);
+    };
+  }
   await new Promise(resolve => app.server.listen(0, '127.0.0.1', resolve));
   config.publicOrigin = 'http://127.0.0.1:' + app.server.address().port;
   const session = await app.store.createSession({ sub: '12345678-1234-4123-8123-123456789abc',
@@ -54,16 +61,30 @@ async function fixture(t, { configured = true } = {}) {
     await wait('ready');
     return { socket, messages, wait, mode };
   }
-  return { app, config, calls, request, auth, cookie, session, connect, disable() { disabled = true; } };
+  return { app, config, calls, frames, request, auth, cookie, session, connect, disable() { disabled = true; } };
 }
 const voice = () => { const pcm = Buffer.alloc(3200); for (let i = 0; i < 1600; i++) pcm.writeInt16LE(Math.round(Math.sin(i / 8) * 3000), i * 2); return pcm; };
 const tick = () => new Promise(resolve => setTimeout(resolve, 25));
 async function spoken(f, connection) {
   const previous = f.calls.length;
+  // 인증과 사용량 fsync가 끝난 뒤 실제 첫 PCM 전달까지 기다린다. NAS 부하를 고정 1초 폴링으로 판정하지 않는다.
+  const received = once(f.frames, 'received', { signal: AbortSignal.timeout(10000) });
   connection.socket.send(voice());
-  for (let i = 0; i < 40 && f.calls.length === previous; i++) await tick();
-  assert.equal(f.calls.length, previous + 1); await tick(); return f.calls[previous];
+  const [call] = await received;
+  assert.equal(f.calls.length, previous + 1);
+  assert.equal(call, f.calls[previous]);
+  assert.deepEqual(call.frames[0], voice());
+  return call;
 }
+
+test('사용량 저장이 1초 넘게 걸려도 첫 PCM 전달을 확인한 뒤 스트리밍 결과를 검사한다', async t => {
+  const f = await fixture(t, { quotaDelayMs: 1250 }), connection = await f.connect(), call = await spoken(f, connection);
+  call.options.onTranscript({ text: '프랑스', finalText: '프랑스', hasNonFinal: false, boundary: null, finished: false });
+  const result = await connection.wait('result');
+  assert.equal(result.resolution.code, 'fr');
+  assert.equal(result.quota.dailyUsed, 1);
+  assert.equal(call.closed, 1);
+});
 
 test('인증 세션은 서버 스트리밍 준비 여부만 공개하고 공급자 키를 보내지 않는다', async t => {
   for (const configured of [false, true]) {

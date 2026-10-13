@@ -1,5 +1,5 @@
 국기 퀴즈 확장 검사 — node scripts/verify-expansion.mjs --deep --strict
-저장소: /Users/techjuice/.codex/worktrees/map-capital-release/FlagQuiz   HEAD: 59a9f05
+저장소: /Users/techjuice/.codex/worktrees/map-capital-release/FlagQuiz   HEAD: bfaef8a
 상태는 셋이다 — ✅ 통과 / ❌ 실패 / ⬜ 미구현 (미구현은 실패가 아니다)
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -218,7 +218,7 @@
 ✅ 통과  [test-counts-grew]  지도 T6-tests
    npm test 통과와 검사 건수 증가
    근거: Codex 는 110개 통과(작업 전 87개)를 보고했다. 기존 검사가 한 건도 사라지지 않으면서 늘었는지를 숫자로 확인한다.
-   · node --test → 1105개 통과 (작업 전 기준 87개, Codex 보고 110개)
+   · node --test → 1106개 통과 (작업 전 기준 87개, Codex 보고 110개)
 
 ✅ 통과  [build-output]  지도 T5-register
    npm run build 산출물에 두 파일이 들어가고 원본은 빠지는가
