@@ -75,7 +75,7 @@ function fixture({ chain = false } = {}) {
   if(chain)for(const file of ['js/badges.js','js/screens.js','js/country-chain.js'])vm.runInContext(fs.readFileSync(path.join(root,file),'utf8'),c,{filename:file});
   // 제품 코드에는 테스트 전용 진입점을 추가하지 않고 VM 안에서만 내부 상태를 노출한다.
   const source=fs.readFileSync(path.join(root,'js/app.js'),'utf8').replace('FQ.app = { home:',
-    'FQ.test = {state:state,startListening:startListening,submit:submit,goNext:goNext,toggleMic:toggleMic};\n  FQ.app = { home:');
+    'FQ.test = {state:state,startListening:startListening,submit:submit,goNext:goNext,toggleMic:toggleMic,renderQuiz:renderQuiz};\n  FQ.app = { home:');
   vm.runInContext(source,c,{filename:'js/app.js'});
   // 깜짝 상자 난수는 기본으로 고정한다(굴림 0.99 → 8장째 보장 전에는 안 열림, 종류 보통). 상자를 보려는 검사만 덮어쓴다.
   c.FQ.test.state.rng=()=>0.99;c.FQ.test.state.rngKind=()=>0.5;
@@ -126,6 +126,61 @@ function cloudFixture(f, { streaming = false } = {}) {
 
 let passed=0;
 function test(name,fn){fn();passed++;console.log('✓ '+name);}
+
+test('나라 찾기와 지도 문제에서 끝까지 들은 나라 이름은 정답 자동 안내에서 반복하지 않는다',()=>{
+  for(const mode of ['reverse','map']){
+    const f=fixture(),a=startMode(f,mode,['kr','jp'],{speak:true,sound:false}),country=a.state.game.current().country;
+    const listen=f.node('question-name-listen');listen.setAttribute('data-speak',country.ko);
+    f.clickDelegated('[data-speak]',listen);f.releases.at(-1)();
+    assert.deepEqual(f.spoken,[[country.ko]],mode+' 문제 듣기');
+    f.finishVoice();answerCurrent(f);f.releases.at(-1)();
+    assert.deepEqual(f.spoken,[[country.ko]],mode+' 정답은 이미 들은 이름을 반복하지 않는다');
+    f.advance(899);assert.equal(a.state.game.index,0,mode);
+    f.advance(1);assert.equal(a.state.game.index,1,mode);
+    assert.equal(f.c.FQ.storage.stats().asked,1,mode);
+  }
+});
+
+test('아홉 놀이의 정답 안내가 끝난 뒤 화면을 가렸다 돌아와도 음성을 반복하지 않고 다음 문제로 간다',()=>{
+  for(const mode of ['choice4','reverse','voice','typing','symbol','place','map','capital','capitalVoice']){
+    const f=fixture();f.c.FQ.app.boot();const a=startMode(f,mode,['kr','jp'],{speak:true,sound:false});
+    answerCurrent(f);const oldRelease=f.releases.at(-1);oldRelease();
+    const oldEnd=f.voiceOptions.at(-1).onEnd,oldFail=f.playbackFailures.at(-1);
+    oldEnd();oldEnd();oldFail();f.advance(400);
+    const heard=f.spoken.map(lines=>[...lines]);
+    f.c.document.hidden=true;f.events.visibilitychange[0]();oldRelease();oldEnd();oldFail();f.advance(10000);
+    assert.equal(a.state.game.index,0,mode+' 숨긴 화면에서 문제를 넘기지 않는다');
+    f.c.document.hidden=false;f.events.visibilitychange[0]();oldRelease();oldEnd();oldFail();f.releases.at(-1)();
+    assert.deepEqual(f.spoken,heard,mode+' 완료된 정답 음성을 복귀 때 반복하지 않는다');
+    f.advance(899);assert.equal(a.state.game.index,0,mode);
+    f.advance(1);assert.equal(a.state.game.index,1,mode);
+    assert.equal(f.c.FQ.storage.stats().asked,1,mode);
+  }
+});
+
+test('설명 다시 듣기와 명소 수도 듣기를 중단한 뒤 돌아오면 요청했던 설명을 유지한다',()=>{
+  for(const action of ['replay','capital']){
+    const f=fixture();f.c.FQ.app.boot();const a=startMode(f,'place',['kr','jp'],{speak:true,sound:false}),country=a.state.game.current().country;
+    answerCurrent(f);f.releases.at(-1)();f.finishVoice();f.advance(400);
+    const requested=action==='replay'?Array.from(a.state.lastSpeech.lines):[country.capital,country.ko+'의 수도예요'];
+    if(action==='replay')f.node('#replay').click();
+    else{
+      const button=f.node('place-capital-listen');button.setAttribute('data-speak',country.capital);button.setAttribute('data-speak-extra',country.ko+'의 수도예요');
+      f.clickDelegated('[data-speak]',button);
+    }
+    const staleRelease=f.releases.at(-1);staleRelease();assert.deepEqual(f.spoken.at(-1),requested,action);
+    const staleEnd=f.voiceOptions.at(-1).onEnd,staleFail=f.playbackFailures.at(-1);
+    f.c.document.hidden=true;f.events.visibilitychange[0]();staleEnd();staleFail();f.advance(30000);
+    assert.equal(a.state.game.index,0,action);
+    const heardBeforeResume=f.spoken.length;
+    f.c.document.hidden=false;f.events.visibilitychange[0]();staleRelease();staleEnd();staleFail();
+    assert.equal(f.spoken.length,heardBeforeResume,action+' 과거 요청은 복귀 때 살아나지 않는다');
+    f.releases.at(-1)();assert.equal(f.spoken.length,heardBeforeResume+1,action+' 현재 설명만 한 번 재개한다');
+    assert.deepEqual(f.spoken.at(-1),requested,action+' 복귀 후에도 같은 수동 요청');
+    f.finishVoice();f.advance(900);assert.equal(a.state.game.index,1,action);
+    assert.equal(f.c.FQ.storage.stats().asked,1,action);
+  }
+});
 
 test('동티모르 수도 문제는 딜리를 한 번 안내하고 정답 뒤에는 나라와의 관계만 자동으로 읽는다',()=>{
   const f=fixture(),a=startMode(f,'capital',['tl'],{speak:true,sound:false,dev:{art:false}});
@@ -220,6 +275,65 @@ function wrongCurrent(f){
   else if(q.mode==='typing'){f.node('#answer-input').value=wrong.ko;f.node('#answer-submit').click();}
   else {const choice=f.node('wrong-answer:'+wrong.code);choice.setAttribute('data-code',wrong.code);f.clickDelegated('.answer-btn',choice);}
 }
+
+test('나라 이름 듣기가 실패하거나 중간에 취소되면 정답에서 이름을 생략하지 않는다',()=>{
+  for(const mode of ['reverse','map'])for(const ending of ['failed','interrupted','pending']){
+    const f=fixture(),a=startMode(f,mode,['kr','jp'],{speak:true,sound:false}),country=a.state.game.current().country;
+    const button=f.node('unfinished-question-listen');button.setAttribute('data-speak',country.ko);
+    f.clickDelegated('[data-speak]',button);const oldRelease=f.releases.at(-1);
+    if(ending!=='pending')oldRelease();
+    const oldEnd=f.voiceOptions.at(-1)?.onEnd,oldFail=f.playbackFailures.at(-1);
+    if(ending==='failed'){oldFail();oldEnd();}
+    answerCurrent(f);oldRelease();oldEnd?.();oldFail?.();
+    f.releases.at(-1)();
+    assert.deepEqual(f.spoken,Array.from({length:ending==='pending'?1:2},()=>[country.ko]),mode+' '+ending);
+    f.finishVoice();f.advance(500);oldEnd?.();oldFail?.();f.finishVoice();
+    f.advance(399);assert.equal(a.state.game.index,0,mode+' '+ending);
+    f.advance(1);assert.equal(a.state.game.index,1,mode+' '+ending);
+    assert.equal(f.c.FQ.storage.stats().asked,1,mode+' '+ending);
+  }
+});
+
+test('같은 문제를 keep으로 다시 그려도 완료된 문제 듣기는 유지하고 다음 문제와 새 판에는 넘어가지 않는다',()=>{
+  for(const mode of ['reverse','map']){
+    const f=fixture(),a=startMode(f,mode,['kr','jp'],{speak:true,sound:false}),first=a.state.game.current();
+    const button=f.node('kept-question-listen');button.setAttribute('data-speak',first.country.ko);
+    f.clickDelegated('[data-speak]',button);f.releases.at(-1)();f.finishVoice();
+    a.renderQuiz({timeLeft:0,hint:''});assert.equal(a.state.game.current(),first,mode+' 같은 문제 객체');
+    answerCurrent(f);f.releases.at(-1)();assert.deepEqual(f.spoken,[[first.country.ko]],mode+' keep은 완료 기록 유지');
+    f.advance(900);assert.equal(a.state.game.index,1,mode);
+    const second=a.state.game.current();assert.notEqual(second,first);
+    answerCurrent(f);f.releases.at(-1)();assert.deepEqual(f.spoken,[[first.country.ko],[second.country.ko]],mode+' 다음 문제는 새 이름 안내');
+    f.finishVoice();f.advance(900);assert.match(f.node('main').innerHTML,/result-screen/);
+    startMode(f,mode,[first.country.code],{speak:true,sound:false});
+    answerCurrent(f);f.releases.at(-1)();assert.deepEqual(f.spoken.at(-1),[first.country.ko],mode+' 새 판은 같은 나라라도 새 문제');
+  }
+});
+
+test('오프라인 말하기 대체 문제에서 자동으로 끝까지 들은 나라는 정답 음성에서 반복하지 않는다',()=>{
+  const f=fixture();f.c.navigator.onLine=false;
+  const a=startMode(f,'voice',['kr','jp'],{speak:true,sound:false}),q=a.state.game.current();
+  assert.equal(q.mode,'reverse');assert.equal(q.touchFallback,true);
+  f.releases.at(-1)();assert.deepEqual(f.spoken,[[q.country.ko]]);f.finishVoice();
+  answerCurrent(f);f.releases.at(-1)();assert.deepEqual(f.spoken,[[q.country.ko]]);
+  f.advance(900);assert.equal(a.state.game.index,1);assert.equal(f.c.FQ.storage.stats().asked,1);
+});
+
+test('이름 반복을 생략해도 직접 다시 듣기와 오답 설명은 전체 문구를 보존한다',()=>{
+  for(const mode of ['reverse','map'])for(const correct of [true,false]){
+    const f=fixture(),a=startMode(f,mode,['kr','jp'],{speak:true,sound:false}),country=a.state.game.current().country;
+    const button=f.node('question-before-feedback');button.setAttribute('data-speak',country.ko);
+    f.clickDelegated('[data-speak]',button);f.releases.at(-1)();f.finishVoice();
+    if(correct)answerCurrent(f);else wrongCurrent(f);
+    const full=Array.from(a.state.lastSpeech.lines);
+    assert.deepEqual(full,mode==='map'?[country.ko,country.fact]:[country.ko,country.flagHint]);
+    f.releases.at(-1)();f.finishMusic();
+    assert.deepEqual(f.spoken,correct?[[country.ko]]:[[country.ko],full],mode+' '+correct+' 자동 안내');
+    f.node('#replay').click();f.releases.at(-1)();assert.deepEqual(f.spoken.at(-1),full,mode+' 수동 전체 설명');
+    f.finishVoice();f.advance(900);assert.equal(a.state.game.index,1,mode);
+    assert.equal(f.c.FQ.storage.stats().asked,1,mode);
+  }
+});
 
 test('NAS STT는 녹음·전사를 끝낸 최종 인도네시아를 정답으로 인정한다',()=>{
   const f=fixture(),a=f.startVoice(['id']);

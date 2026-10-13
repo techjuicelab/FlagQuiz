@@ -118,6 +118,7 @@
     hintLevel: 0,      // 수도 놀이 힌트 단계(D24): 1 오답 지우기 + 수도 다시 듣기, 2 나라 이름 듣기
     revealed: false,   // 힌트 2단계로 나라 이름까지 들었다 — 채점은 정답이어도 기록은 '아직'
     removed: [],
+    questionNameHeard: false,
     timerId: null,
     timeLeft: 0,
     listenOn: false,
@@ -1117,6 +1118,10 @@
         t.classList.add('needs-tap');
         t.textContent = '🔊 다시 눌러서 듣기';
       }
+      // 같은 문제의 이름을 끝까지 들은 경우만 정답 자동 안내의 반복을 줄인다.
+      if (!failed && state.game === spokenGame && spokenGame && spokenGame.current() === spokenQuestion &&
+          !state.answered && (spokenQuestion.mode === 'reverse' || spokenQuestion.mode === 'map') &&
+          lines.indexOf(spokenQuestion.country.ko) >= 0) state.questionNameHeard = true;
       if (after) after();
     }
     t.classList.remove('needs-tap');
@@ -1146,6 +1151,7 @@
       state.hintLevel = 0;
       state.revealed = false;
       state.removed = [];
+      state.questionNameHeard = false;
     }
     state.timedOut = false;
     state.timerPaused = false;
@@ -1950,6 +1956,8 @@
     var narrationRequest = 0;
     var voiceWatchdog = null;
     var narrationFinished = -1;
+    var narrationCompleted = false;
+    var pendingNarration = { replaying: false, requestedSpeech: null };
     var correctMusicPlayed = false;
     function clearVoiceWatchdog() {
       if (voiceWatchdog !== null) { global.clearTimeout(voiceWatchdog); voiceWatchdog = null; }
@@ -1967,9 +1975,13 @@
     }
     // 수도 듣기는 문제에서 수도를 이미 들었으므로 정답에서는 관계만 이어 읽는다.
     // 수도 말하기는 정답 발음과 관계를 확인하고, 직접 다시 듣기는 전체 설명을 읽는다.
-    var quickAnswerSpeech = !res.correct ? feedbackSpeech : q.mode === 'capital'
-      ? { lines: [c.ko + '의 수도예요'], opts: feedbackSpeech.opts }
-      : isCapitalQ ? feedbackSpeech : { lines: [c.ko], opts: feedbackSpeech.opts };
+    var quickAnswerSpeech = feedbackSpeech;
+    if (res.correct) {
+      var quickLines = isCapitalQ ? feedbackSpeech.lines : [c.ko];
+      if (q.mode === 'capital') quickLines = [c.ko + '의 수도예요'];
+      if ((q.mode === 'reverse' || q.mode === 'map') && state.questionNameHeard) quickLines = [];
+      quickAnswerSpeech = { lines: quickLines, opts: feedbackSpeech.opts };
+    }
     function scheduleAutoNext(request, delay) {
       if (!feedbackCurrent() || request !== narrationRequest) return;
       if (state.autoNextTimer) global.clearTimeout(state.autoNextTimer);
@@ -1979,9 +1991,10 @@
         goNext();
       }, delay);
     }
-    function finishNarration(request, failed) {
+    function finishNarration(request, failed, completed) {
       if (!feedbackCurrent() || request !== narrationRequest || narrationFinished === request) return;
       narrationFinished = request;
+      narrationCompleted = completed === true;
       clearVoiceWatchdog();
       if (failed && !res.correct) nudgeReplay();
       scheduleAutoNext(request, AUTO_NEXT_AFTER_SPEECH);
@@ -1990,12 +2003,15 @@
       if (!feedbackCurrent() || request !== narrationRequest || narrationFinished === request) return;
       if (!store.settings().speak) return;
       var spoken = requestedSpeech || (replaying ? feedbackSpeech : quickAnswerSpeech);
+      if (!spoken.lines.length) { finishNarration(request, false, true); return; }
       audio.say(spoken.lines, Object.assign({}, spoken.opts, {
-        onEnd: function () { finishNarration(request, false); }
-      }), function () { finishNarration(request, true); });
+        onEnd: function () { finishNarration(request, false, true); }
+      }), function () { finishNarration(request, true, false); });
     }
     function beginFeedback(request, replaying, requestedSpeech) {
       if (!feedbackCurrent() || request !== narrationRequest) return;
+      narrationCompleted = false;
+      pendingNarration = { replaying: replaying, requestedSpeech: requestedSpeech };
       // 마이크 해제·음악·읽기 종료 알림이 빠져도 진행한다. 오답과 다시 듣기는 전체 설명 시간을 준다.
       clearVoiceWatchdog();
       if (store.settings().speak) {
@@ -2003,9 +2019,9 @@
           voiceWatchdog = null;
           if (!feedbackCurrent() || request !== narrationRequest) return;
           audio.stopSpeaking();
-          finishNarration(request, false);
+          finishNarration(request, false, false);
         }, replaying || !res.correct || confirmCapital ? AUTO_NEXT_VOICE_WATCHDOG * 3 : AUTO_NEXT_VOICE_WATCHDOG);
-      } else scheduleAutoNext(request, AUTO_NEXT_SILENT);
+      } else { narrationCompleted = true; scheduleAutoNext(request, AUTO_NEXT_SILENT); }
       FQ.speech.stopAnd(function () {
         if (!feedbackCurrent() || request !== narrationRequest || narrationFinished === request) return;
         if (res.correct || replaying) {
@@ -2027,7 +2043,9 @@
       if (!feedbackCurrent()) return;
       cancelNarration();
       audio.stopSpeaking();
-      beginFeedback(narrationRequest, false);
+      // 끝난 안내는 복귀 때 다시 읽지 않는다. 중단한 수동 설명은 같은 요청으로 재개한다.
+      if (narrationCompleted) scheduleAutoNext(narrationRequest, store.settings().speak ? AUTO_NEXT_AFTER_SPEECH : AUTO_NEXT_SILENT);
+      else beginFeedback(narrationRequest, pendingNarration.replaying, pendingNarration.requestedSpeech);
     };
     state.feedbackSpeak = function (button) {
       if (!feedbackCurrent()) return;
