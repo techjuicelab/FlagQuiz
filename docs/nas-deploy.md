@@ -65,19 +65,19 @@ TJID_APP_SLUG=flagquiz
 TJID_GOOGLE_ENABLED=false
 TRUSTED_PROXY_IPS=172.21.0.1
 SESSION_SECRET=<32바이트 이상의 서버 비밀>
-GROQ_API_KEY=<서버 전용 Groq 키>
+SONIOX_API_KEY=<서버 전용 Soniox 키>
 STATE_DIR=/var/lib/flagquiz
 ```
 
-`op://` 참조를 직접 secret에 넣지 않는다. 1Password 주입으로 참조를 해결한 사본을 저장한다. `PUBLIC_ORIGIN`은 경로 없는 HTTPS origin이다. `SESSION_SECRET` 교체 시 기존 세션이 무효화된다. `AUTH_PROVIDER`는 공통 로그인으로 고정하고 선택값 `TJID_GOOGLE_ENABLED`는 중앙 Google provider를 실제 확인한 뒤에만 `true`로 바꾼다. 기본 로그인은 중앙 계정의 이메일·비밀번호를 사용한다. 개인 Google OAuth 변수는 이 공통 로그인 배포에 전달하지 않는다. Groq 모델은 서버의 `whisper-large-v3-turbo` 고정 설정을 사용한다.
+`op://` 참조를 직접 secret에 넣지 않는다. 1Password 주입으로 참조를 해결한 사본을 저장한다. `PUBLIC_ORIGIN`은 경로 없는 HTTPS origin이다. `SESSION_SECRET` 교체 시 기존 세션이 무효화된다. `AUTH_PROVIDER`는 공통 로그인으로 고정하고 선택값 `TJID_GOOGLE_ENABLED`는 중앙 Google provider를 실제 확인한 뒤에만 `true`로 바꾼다. 기본 로그인은 중앙 계정의 이메일·비밀번호를 사용한다. 개인 Google OAuth 변수는 이 공통 로그인 배포에 전달하지 않는다. 실시간 말하기와 파일 대체 전사는 Soniox `stt-rt-v5`를 사용하며 큰 나라·수도 사전이나 prompt는 전송하지 않는다.
 
 NAS의 기존 `cloudflared`는 host network로 실행 중이다. 2026-10-03 `cf-web`의 격리 컨테이너에 loopback 포트로 접속해 실제 peer `172.21.0.1`을 확인했다. `TRUSTED_PROXY_IPS`는 정확한 IP만 지정하며, 일치하는 peer의 유효한 단일 `CF-Connecting-IP`만 방문자 제한에 사용한다. `X-Forwarded-For`는 신뢰하지 않는다. 직접 LAN 접속으로 헤더를 위조하지 못하도록 published port를 `127.0.0.1`에 한정한다. 네트워크·터널 실행 방식 변경 시 peer를 다시 측정하고 설정도 함께 변경한다.
 
 워크플로는 `umask 077`로 절대 경로의 `deploy/.env`를 만들고 EXIT trap으로 삭제한다. Compose의 `web.environment`가 필요한 값만 읽으며 `HOST`, `PORT`, `STATE_DIR`, `STATIC_ROOT`는 컨테이너 계약으로 고정한다. `config --quiet` 검사 후 `config --format json` 결과를 격리 검사 컨테이너의 stdin으로만 전달한다. 따옴표가 있는 dotenv도 실제 배포와 같은 해석을 적용하며 비밀 값·Compose 오류 원문은 저장하거나 출력하지 않는다. 검사 컨테이너는 네트워크와 운영 볼륨을 사용하지 않는다. 운영 파일 시스템은 읽기 전용이고 쓰기는 데이터 볼륨과 임시 `/tmp`에 한정한다. 음성 녹음 파일은 영속 저장하지 않는다.
 
-GitHub Pages 워크플로는 `main` push 또는 `main`의 수동 실행에서 테스트가 통과하면 NAS 진입 페이지를 배포한다. NAS 로그인 검증의 완료 여부를 자동으로 판정하지 않으므로 운영 연결은 별도로 확인한다. `scripts/build-github-entry.mjs`는 NAS 링크와 이전 PWA 정리용 service worker를 만든다. 기존 `flagquiz-*` 캐시를 삭제하고 해당 Pages scope 안에서 새 worker가 실제 제어하는 열린 창만 새 진입 화면으로 이동한다. 별도 하위 service worker가 제어하는 창은 이동시키지 않는다. 학습 기록을 저장한 localStorage는 변경하지 않는다. 완전히 오프라인인 구버전 설치에는 온라인으로 돌아와 새 worker를 받을 때까지 이 전환을 전달할 수 없다. NAS의 앱·Docker 빌드는 기존 `npm run build`를 유지한다.
+GitHub Pages 게시와 자동 배포는 사용자 요청으로 2026-10-15에 종료했다. 저장소 Pages 설정을 삭제하고 해당 워크플로만 비활성화했으며 이전 주소의 HTTP 404를 확인했다. 다음은 과거 진입 화면의 기록 보존 동작 설명이며 관련 코드와 테스트는 유지한다. NAS 로그인 검증의 완료 여부를 자동으로 판정하지 않으므로 운영 연결은 별도로 확인한다. `scripts/build-github-entry.mjs`는 NAS 링크와 이전 PWA 정리용 service worker를 만든다. 기존 `flagquiz-*` 캐시를 삭제하고 해당 Pages scope 안에서 새 worker가 실제 제어하는 열린 창만 새 진입 화면으로 이동한다. 별도 하위 service worker가 제어하는 창은 이동시키지 않는다. 학습 기록을 저장한 localStorage는 변경하지 않는다. 당시에는 완전히 오프라인인 구버전 설치에 온라인으로 돌아와 새 worker를 받을 때까지 이 전환을 전달할 수 없었다. NAS의 앱·Docker 빌드는 기존 `npm run build`를 유지한다.
 
-Pages 진입 화면은 같은 기기의 `flagquiz.v1` 기록을 주소 fragment로 전달한다. fragment는 HTTP 요청에 포함되지 않으며 로그인 보조 스크립트가 새 origin의 sessionStorage에 보관한 뒤 주소에서 제거한다. 로그인 후 새 주소의 저장소가 비어 있을 때만 자동 복원하며, 기존 기록이 있으면 놀이를 계속하면서 가져올 기록을 선택할 수 있다. 교체 전 기록은 기기에 백업하고 설정에서 파일로 내려받을 수 있다. 기록 파일 가져오기도 설정에서 제공한다. 원본 Pages 기록은 지우지 않으며 유효하지 않거나 512KiB를 초과한 기록은 자동 이동을 멈추고 원문 백업과 수동 이동을 안내한다. 이 기능은 기기 간 또는 계정 간 기록 동기화가 아니다.
+과거 Pages 진입 화면은 같은 기기의 `flagquiz.v1` 기록을 주소 fragment로 전달했다. 게시 종료 후 이 화면은 새로 제공하지 않으며 기기에 남은 원본 기록은 삭제하지 않는다. fragment는 HTTP 요청에 포함되지 않으며 로그인 보조 스크립트가 새 origin의 sessionStorage에 보관한 뒤 주소에서 제거한다. 로그인 후 새 주소의 저장소가 비어 있을 때만 자동 복원하며, 기존 기록이 있으면 놀이를 계속하면서 가져올 기록을 선택할 수 있다. 교체 전 기록은 기기에 백업하고 설정에서 파일로 내려받을 수 있다. 기록 파일 가져오기도 설정에서 제공한다. 원본 Pages 기록은 지우지 않으며 유효하지 않거나 512KiB를 초과한 기록은 자동 이동을 멈추고 원문 백업과 수동 이동을 안내한다. 이 기능은 기기 간 또는 계정 간 기록 동기화가 아니다.
 
 ## 배포와 실패 복귀
 

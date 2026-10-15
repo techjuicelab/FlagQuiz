@@ -3,7 +3,7 @@
 아이와 함께 세계 194개 나라의 **국기·수도·상징물·명소**를 놀이로 익히는 한국어 학습 게임입니다. 만 4~5세가 글자 없이 소리와 그림으로 혼자 놀 수 있게 만들었습니다.
 비공개 버전은 [NAS 주소](https://flagquiz.techjuicelab.space)에서 **나라 이름 번갈아 말하기**, TechJuice ID 로그인과 서버를 통한 음성 인식을 제공합니다. **국기 보고 나라 말하기·국기 보고 수도 말하기·나라 이어 말하기**는 모두 같은 NAS 인증 음성 경로를 사용하며, 지원 기기에서는 Soniox 실시간 인식을 사용합니다. 기존 활성 TechJuice ID 계정에 세계 놀이 권한을 부여했으며 최고 관리자는 `TECHJUICELAB@gmail.com`입니다. 중앙 계정의 아이디 또는 이메일·비밀번호로 로그인하며 Google 로그인은 현재 비활성화되어 있습니다. [말하기 설계](docs/spoken-stt.md), [문장에서 최종 답 찾기](docs/spoken-answer-intent.md), [가족 인증 설계](docs/private-country-chain.md), [서버 실행 안내](server/README.md), [NAS 배포 검증 기록](docs/nas-deploy.md)을 참고하세요.
 
-NAS 버전도 로그인 후 **설정 → 오프라인 저장 → 전체 저장하기**로 그림과 읽어주기 음성까지 준비하면 오프라인에서 이용할 수 있습니다. 최근 추가한 나라 이어 말하기는 글자 입력으로 계속할 수 있습니다. GitHub Pages는 NAS 진입과 이전 기록 이동 화면을 제공합니다.
+NAS 버전도 로그인 후 **설정 → 오프라인 저장 → 전체 저장하기**로 그림과 읽어주기 음성까지 준비하면 오프라인에서 이용할 수 있습니다. 최근 추가한 나라 이어 말하기는 글자 입력으로 계속할 수 있습니다. GitHub Pages 게시와 자동 배포는 2026-10-15에 종료했습니다.
 
 ### 👉 지금 바로 놀기: [FlagQuiz](https://flagquiz.techjuicelab.space)
 
@@ -29,12 +29,12 @@ npm start
 
 포트를 바꾸고 싶다면 `npm start -- 3000`.
 
-개발 미리보기는 localhost에서만 열리고 TechJuice ID 로그인과 Groq STT를 연결하지 않습니다. 나라·수도 말하기와 나라 이어 말하기는 글자 입력으로 검토할 수 있습니다. 실제 음성 인식 검사는 로그인한 비공개 서버에서 진행합니다.
+개발 미리보기는 localhost에서만 열리고 TechJuice ID 로그인과 Soniox STT를 연결하지 않습니다. 나라·수도 말하기와 나라 이어 말하기는 글자 입력으로 검토할 수 있습니다. 실제 음성 인식 검사는 로그인한 비공개 서버에서 진행합니다.
 
 ### 3) 인터넷에 올려서 쓰기
-운영 앱은 [NAS 주소](https://flagquiz.techjuicelab.space)에서 이용합니다. [이전 GitHub Pages 주소](https://techjuicelab.github.io/FlagQuiz/)는 NAS 진입 화면을 제공하며 같은 기기의 기존 기록을 전달합니다.
+운영 앱은 [NAS 주소](https://flagquiz.techjuicelab.space)에서 이용합니다. 이전 GitHub Pages 주소는 2026-10-15에 게시를 철회했습니다. 기기에 저장된 학습 기록과 NAS의 기록 가져오기 기능은 유지합니다.
 
-운영 앱은 Forgejo `techjuice/flagquiz`의 `main`에 올리면 `.forgejo/workflows/deploy.yml`이 검사·이미지 빌드·NAS 배포를 수행합니다. 배포 설정과 실패 복귀 절차는 [NAS 안내](docs/nas-deploy.md)에 있습니다. `.github/workflows/pages.yml`은 별도의 이전 주소 진입 화면을 배포합니다.
+운영 앱은 Forgejo `techjuice/flagquiz`의 `main`에 올리면 `.forgejo/workflows/deploy.yml`이 검사·이미지 빌드·NAS 배포를 수행합니다. 배포 설정과 실패 복귀 절차는 [NAS 안내](docs/nas-deploy.md)에 있습니다. GitHub Pages 배포 워크플로는 비활성화했으며 이전 기록 이동 코드와 검증은 보존합니다.
 
 ### 4) 아이폰·아이패드에 앱처럼 설치하기 (추천)
 운영 NAS 주소로 **사파리**에서 접속한 뒤,

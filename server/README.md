@@ -66,7 +66,7 @@ NAS 커널 `4.4.302+`는 [Node.js 24의 공식 Linux 지원 범위](https://gith
 
 앱·음원·응답의 HTTP 캐시는 `no-store, private`로 유지한다. 로그인한 앱에서는 NAS 전용 설정과 빌드된 공통 워커를 `/sw.js`로 제공해 앱 셸·국기·그림·읽어주기·음악을 Cache Storage에 저장한다. 워커 설치 전에 서버 세션을 확인하며, 오프라인 이용 증명에는 `authenticated`, `offline`, `expiresAt`만 저장한다. 이메일·관리자 역할·CSRF·음성 API 응답은 캐시하지 않는다. `/api/auth/session`의 실제 네트워크 실패에서만 기한 내 오프라인 응답을 제공하며, 서버의 명시적 인증 거절·만료·로그아웃에는 캐시를 폐기한다. 서버 API의 권한 검사는 그대로 적용하며 다른 기기에서 회수한 권한은 다음 온라인 확인 때 반영된다.
 
-로그인 정리 스크립트는 해당 origin의 루트 `/sw.js` 등록과 `flagquiz-` cache만 정리한다. 학습 localStorage는 로그인·로그아웃 시 지우지 않는다. 오프라인 로그아웃은 기기의 앱 접근을 즉시 닫고, 재연결 때 서버 세션 폐기도 마친다. 오프라인 학습 기록은 기존처럼 이 기기의 localStorage에 저장한다. GitHub Pages는 NAS 진입과 이전 브라우저 기록 이동 화면을 제공한다. NAS 안에 기존 기록이 있으면 자동으로 덮어쓰지 않으며 사용자가 가져올 기록을 선택한다. 자세한 이전 경로와 오프라인 구버전의 전환 한계는 [NAS 안내](../docs/nas-deploy.md)에 있다.
+로그인 정리 스크립트는 해당 origin의 루트 `/sw.js` 등록과 `flagquiz-` cache만 정리한다. 학습 localStorage는 로그인·로그아웃 시 지우지 않는다. 오프라인 로그아웃은 기기의 앱 접근을 즉시 닫고, 재연결 때 서버 세션 폐기도 마친다. 오프라인 학습 기록은 기존처럼 이 기기의 localStorage에 저장한다. GitHub Pages 게시와 자동 배포는 2026-10-15에 종료했다. 기기의 학습 기록과 NAS의 기록 가져오기 기능은 유지한다. NAS 안에 기존 기록이 있으면 자동으로 덮어쓰지 않으며 사용자가 가져올 기록을 선택한다. 자세한 이전 경로와 오프라인 구버전의 전환 한계는 [NAS 안내](../docs/nas-deploy.md)에 있다.
 
 홈 화면 설치용 메타데이터는 `GET`·`HEAD`의 정확한 공개 목록으로 제공한다: `/manifest.webmanifest`, `/assets/icon-180.png`, `/assets/icon-192.png`, `/assets/icon-512.png`, `/assets/icon-maskable-512.png`, `/assets/icon.svg`, `/assets/favicon.svg`. Safari의 기본 탐색 경로 `/apple-touch-icon.png`와 `/apple-touch-icon-precomposed.png`도 같은 180px PNG에 고정 매핑한다. 로그인 화면에도 같은 manifest와 180px `apple-touch-icon`, 설치 이름을 선언하므로 로그인 전 설치와 세션 만료 뒤 아이콘 요청이 인증 상태에 의존하지 않는다. 지정 파일만 공개하며 앱 HTML·JS·나라 데이터·음원·계정 및 유료 API에는 기존 인증을 유지한다. 공개 파일도 `no-store`·정확한 MIME·정적 경로 검증을 적용한다.
 
