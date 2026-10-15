@@ -1,7 +1,7 @@
 /* 실시간 음성은 메모리에서만 중계한다. 인증과 사용량 예약은 호출하는 서버가 맡는다. */
 import WebSocket from 'ws';
+import { randomUUID } from 'node:crypto';
 import { SpeechError, MAX_DURATION_MS } from './speech.mjs';
-import { speechVocabulary } from './speech-vocabulary.mjs';
 
 const ENDPOINT = 'wss://stt-rt.soniox.com/transcribe-websocket';
 const MODEL = 'stt-rt-v5';
@@ -66,8 +66,9 @@ export function createRealtimeTranscriber({ apiKey = process.env.SONIOX_API_KEY,
     }
     function opening() {
       if (terminal) return;
+      // 전체 나라·수도 사전은 매 연결마다 텍스트 입력으로 과금되므로 보내지 않는다.
       const config = JSON.stringify({ model: MODEL, audio_format: 'pcm_s16le', sample_rate: 16000, num_channels: 1,
-        language_hints: ['ko'], language_hints_strict: true, context: speechVocabulary(mode),
+        language_hints: ['ko'], language_hints_strict: true, client_reference_id: `flagquiz-rt:${randomUUID()}`,
         enable_endpoint_detection: true, endpoint_latency_adjustment_level: 3,
         endpoint_sensitivity: 0.3, max_endpoint_delay_ms: 500 });
       if (!Number.isFinite(socket.bufferedAmount) || socket.bufferedAmount + Buffer.byteLength(config) > MAX_BUFFERED_BYTES) {

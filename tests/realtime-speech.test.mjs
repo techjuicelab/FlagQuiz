@@ -1,8 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { EventEmitter, once } from 'node:events';
-import { readFileSync } from 'node:fs';
-import vm from 'node:vm';
 import WebSocket, { WebSocketServer } from 'ws';
 import { createRealtimeTranscriber } from '../server/realtime-speech.mjs';
 import { SpeechError } from '../server/speech.mjs';
@@ -34,6 +32,19 @@ function setup(options = {}) {
 const final = text => ({ text, is_final: true });
 const partial = text => ({ text, is_final: false });
 const code = expected => error => error instanceof SpeechError && error.code === expected;
+const referencePattern = /^flagquiz-rt:[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+
+test('전사기 생성과 연결 종료는 유료 소켓을 자동으로 시작하거나 다시 열지 않는다', async () => {
+  const f = setup();
+  await new Promise(setImmediate);
+  assert.equal(f.sockets.length, 0);
+  const c = f.connect(), ws = f.sockets[0]; ws.open(); await c.ready;
+  c.close();
+  ws.emit('error', new Error('late provider error'));
+  await new Promise(setImmediate);
+  assert.equal(f.sockets.length, 1); assert.equal(ws.terminations, 1);
+  assert.equal(f.errors.length, 0);
+});
 
 test('망설임 endpoint 뒤에도 같은 연결로 나라 이름을 계속 받는다', async () => {
   const f = setup(), c = f.connect(), ws = f.sockets[0]; ws.open(); await c.ready;
@@ -55,11 +66,12 @@ test('Soniox 연결은 서버 고정 WSS·Bearer와 한국어 PCM 설정만 사�
     assert.equal(c.write(Buffer.alloc(320)), false);
     ws.open(); await c.ready;
     const config = JSON.parse(ws.sent[0].data);
-    const { context, ...audioConfig } = config;
+    const { client_reference_id, ...audioConfig } = config;
     assert.deepEqual(audioConfig, { model: 'stt-rt-v5', audio_format: 'pcm_s16le', sample_rate: 16000, num_channels: 1,
       language_hints: ['ko'], language_hints_strict: true, enable_endpoint_detection: true,
       endpoint_latency_adjustment_level: 3, endpoint_sensitivity: 0.3, max_endpoint_delay_ms: 500 });
-    assert.ok(Array.isArray(context?.terms));
+    assert.match(client_reference_id, referencePattern);
+    assert.equal(Object.hasOwn(config, 'context'), false);
     assert.equal(ws.sent[0].config.binary, false);
     assert.doesNotMatch(ws.sent[0].data, /provider-key|client-key|client-model/);
     const audio = Buffer.from([1, 0, 2, 0]); assert.equal(c.write(audio), true);
@@ -69,33 +81,30 @@ test('Soniox 연결은 서버 고정 WSS·Bearer와 한국어 PCM 설정만 사�
   }
 });
 
-test('나라·수도 전체 한국어 사전은 현재 정답이나 클라이언트 어휘와 무관하다', async () => {
-  const source = vm.createContext({ window: { FQ: {} } });
-  vm.runInContext(readFileSync(new URL('../data/countries.js', import.meta.url), 'utf8'), source);
-  const countries = source.window.FQ.countries;
+test('모든 모드에서 유료 문맥 사전을 보내지 않고 개인정보 없는 고유 reference를 만든다', async () => {
+  const references = new Set();
   for (const mode of ['voice', 'capitalVoice', 'country-chain']) {
     const f = setup(), c = f.connect({ mode }), ws = f.sockets[0];
     ws.open(); await c.ready;
     const config = JSON.parse(ws.sent[0].data);
-    assert.ok(config.context?.general?.some(entry => entry.key === 'language' && entry.value === 'Korean'));
-    assert.ok(Array.isArray(config.context.terms));
-    for (const country of countries) assert.ok(config.context.terms.includes(mode === 'capitalVoice' ? country.capital : country.ko));
-    assert.equal(config.context.terms.length, new Set(config.context.terms).size);
-    assert.ok(config.context.terms.every(term => typeof term === 'string' && /[가-힣]/.test(term)));
-    assert.ok(JSON.stringify(config.context).length < 10000);
-    if (mode !== 'capitalVoice') assert.ok(config.context.terms.includes('적도기니'));
-    else {
-      assert.ok(config.context.terms.includes('시우다드데라파스'));
-      assert.ok(!config.context.terms.includes('말라보'), '새 수도 사전에 옛 수도를 정답 후보로 남기지 않는다');
-    }
+    assert.equal(Object.hasOwn(config, 'context'), false);
+    assert.match(config.client_reference_id, referencePattern);
+    references.add(config.client_reference_id);
     c.close();
     const changed = f.connect({ mode, answer: '클라이언트전용답', choices: ['현재정답보기'],
-      context: { terms: ['외부힌트'], general: [{ key: 'topic', value: '현재정답' }] }, language_hints: ['en'] });
+      context: { terms: ['외부힌트'], general: [{ key: 'topic', value: '현재정답' }] }, language_hints: ['en'],
+      client_reference_id: 'private-user-id' });
     const other = f.sockets[1]; other.open(); await changed.ready;
-    assert.equal(other.sent[0].data, ws.sent[0].data);
-    assert.doesNotMatch(other.sent[0].data, /클라이언트전용답|현재정답보기|외부힌트|현재정답/);
+    const next = JSON.parse(other.sent[0].data);
+    assert.equal(Object.hasOwn(next, 'context'), false);
+    assert.match(next.client_reference_id, referencePattern);
+    references.add(next.client_reference_id);
+    const withoutReference = ({ client_reference_id, ...fields }) => fields;
+    assert.deepEqual(withoutReference(next), withoutReference(config));
+    assert.doesNotMatch(other.sent[0].data, /클라이언트전용답|현재정답보기|외부힌트|현재정답|private-user-id/);
     changed.close();
   }
+  assert.equal(references.size, 6);
 });
 
 test('ready는 open뿐 아니라 고정 설정 전송 완료를 기다린다', async () => {
@@ -285,7 +294,10 @@ test('실제 ws 전송은 Bearer·고정 config·PCM·finalize와 부분 대체�
         return;
       }
       const message = JSON.parse(data.toString());
-      if (!configured) { assert.equal(message.model, 'stt-rt-v5'); configured = true; return; }
+      if (!configured) {
+        assert.equal(message.model, 'stt-rt-v5'); assert.equal(Object.hasOwn(message, 'context'), false);
+        assert.match(message.client_reference_id, referencePattern); configured = true; return;
+      }
       assert.deepEqual(message, { type: 'finalize' }); receivedFinalize = true;
       peer.send(JSON.stringify({ tokens: [final('민국'), final('<fin>')] }));
     });
