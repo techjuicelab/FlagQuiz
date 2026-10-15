@@ -52,7 +52,7 @@ export function createRealtimeTranscriber({ apiKey = process.env.SONIOX_API_KEY,
     function disconnected() { fail(failed()); }
     function transportError() { fail(failed()); }
 
-    function send(value, binary) {
+    function send(value, binary, onSent) {
       if (terminal || socket?.readyState !== 1) return false;
       const size = Buffer.isBuffer(value) ? value.length : Buffer.byteLength(value);
       if (!Number.isFinite(socket.bufferedAmount) || socket.bufferedAmount + size > MAX_BUFFERED_BYTES) {
@@ -60,7 +60,17 @@ export function createRealtimeTranscriber({ apiKey = process.env.SONIOX_API_KEY,
         return false;
       }
       try {
-        socket.send(value, { binary }, error => { if (error) fail(failed()); });
+        let completed = false;
+        socket.send(value, { binary }, error => {
+          if (completed || terminal) return;
+          completed = true;
+          if (error) {
+            const safeError = failed(); fail(safeError);
+            try { onSent?.(safeError); } catch { /* 소비자 callback 오류도 원문을 전달하지 않는다. */ }
+            return;
+          }
+          try { onSent?.(); } catch { fail(failed()); }
+        });
         return !terminal;
       } catch { fail(failed()); return false; }
     }
@@ -120,13 +130,13 @@ export function createRealtimeTranscriber({ apiKey = process.env.SONIOX_API_KEY,
 
     const connection = {
       ready: connectionReady,
-      write(audio) {
+      write(audio, onSent) {
         if (terminal || !opened || finalizing) return false;
         if (!Buffer.isBuffer(audio) || !audio.length || audio.length % 2) { fail(invalidAudio()); return false; }
         if (pcmBytes + audio.length > MAX_PCM_BYTES) {
           fail(new SpeechError(413, 'audio_too_long', '답은 12초 안에 짧게 말해 주세요.')); return false;
         }
-        if (!send(Buffer.from(audio), true)) return false;
+        if (!send(Buffer.from(audio), true, onSent)) return false;
         pcmBytes += audio.length; return true;
       },
       finalize() {

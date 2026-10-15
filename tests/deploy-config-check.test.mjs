@@ -17,7 +17,7 @@ const environment = overrides => ({
   AUTH_PROVIDER: 'techjuice-id', PUBLIC_ORIGIN: 'https://flagquiz.test',
   TJID_SUPABASE_URL: 'https://identity.test', TJID_SUPABASE_ANON_KEY: 'sb_publishable_fixture',
   TJID_APP_SLUG: 'flagquiz', TJID_GOOGLE_ENABLED: 'false', TRUSTED_PROXY_IPS: '172.19.0.3',
-  SESSION_SECRET: secret, GROQ_API_KEY: 'fixture_groq_$dollar#hash',
+  SESSION_SECRET: secret, SONIOX_API_KEY: 'fixture_soniox_$dollar#hash',
   HOST: '0.0.0.0', PORT: '8090', STATE_DIR: '/var/lib/flagquiz', STATIC_ROOT: '/app/_site',
   ...overrides
 });
@@ -40,9 +40,9 @@ function rejected(value) {
 
 test('Compose web 환경만 검사하고 다른 서비스와 부모 환경 값을 인증 설정에 쓰지 않는다', () => {
   const value = document();
-  value.services.backup = { environment: { SESSION_SECRET: 'not-valid', GROQ_API_KEY: '' } };
+  value.services.backup = { environment: { SESSION_SECRET: 'not-valid', SONIOX_API_KEY: '' } };
   assert.deepEqual(checkPrivateComposeConfig(value), { ok: true });
-  for (const name of ['PUBLIC_ORIGIN', 'TJID_SUPABASE_URL', 'TJID_SUPABASE_ANON_KEY', 'SESSION_SECRET', 'STATE_DIR', 'GROQ_API_KEY']) {
+  for (const name of ['PUBLIC_ORIGIN', 'TJID_SUPABASE_URL', 'TJID_SUPABASE_ANON_KEY', 'SESSION_SECRET', 'STATE_DIR', 'SONIOX_API_KEY']) {
     rejected(document({ [name]: '' }));
   }
 });
@@ -62,12 +62,12 @@ test('실제 readConfig와 같은 URL·인증·경로·포트·프록시 규칙�
     { STATE_DIR: 'relative' }, { STATE_DIR: '/app/_site/private' }, { PORT: '70000' },
     { TRUSTED_PROXY_IPS: '172.19.0.0/16' }, { TJID_SUPABASE_URL: 'https://identity.test/path' },
     { TJID_SUPABASE_ANON_KEY: 'sb_secret_forbidden' }, { TJID_APP_SLUG: 'FlagQuiz' },
-    { GROQ_API_KEY: 'op://fixture/secret/key' }, { SONIOX_API_KEY: 'op://fixture/secret/key' }, { SESSION_SECRET: '"op://fixture/secret/session"' }
+    { SONIOX_API_KEY: 'op://fixture/secret/key' }, { SESSION_SECRET: '"op://fixture/secret/session"' }
   ]) rejected(document(overrides));
 });
 
 test('Compose 출력의 $$를 한 번 복원하고 실제 비밀의 바이트 길이를 검사한다', () => {
-  assert.deepEqual(checkPrivateComposeConfig(document({ SESSION_SECRET: '$'.repeat(32), GROQ_API_KEY: 'fixture$$groq' })), { ok: true });
+  assert.deepEqual(checkPrivateComposeConfig(document({ SESSION_SECRET: '$'.repeat(32), SONIOX_API_KEY: 'fixture$$soniox' })), { ok: true });
   rejected(document({ SESSION_SECRET: '$'.repeat(16) }));
   const noncanonical = document();
   noncanonical.services.web.environment.SESSION_SECRET = secret;
@@ -97,7 +97,7 @@ test('CLI는 성공·실패 한 줄만 출력하고 값·예외·argv를 출력�
   assert.equal(good.status, 0); assert.equal(good.stdout, '운영 설정 검사 통과\n'); assert.equal(good.stderr, '');
   for (const result of [
     cli(JSON.stringify(document({ PUBLIC_ORIGIN: secret }))),
-    cli(JSON.stringify(document({ GROQ_API_KEY: 'op://fixture/secret/key' }))),
+    cli(JSON.stringify(document({ SONIOX_API_KEY: 'op://fixture/secret/key' }))),
     cli('{"private":"' + secret + '"'),
     cli(JSON.stringify(document()).padEnd(MAX_CONFIG_BYTES + 1, ' ')),
     cli(JSON.stringify(document()), [secret])
@@ -126,7 +126,7 @@ test('표준 quoted dotenv는 Compose 해석 후 그대로 사전 검사를 통�
   assert.equal(result.status, 0, 'fixture Compose JSON 생성이 성공해야 한다');
   const canonical = JSON.parse(result.stdout);
   assert.equal(canonical.services.web.environment.SESSION_SECRET, secret.replaceAll('$', () => '$$'));
-  assert.equal(canonical.services.web.environment.GROQ_API_KEY, values.GROQ_API_KEY.replaceAll('$', () => '$$'));
+  assert.equal(canonical.services.web.environment.SONIOX_API_KEY, values.SONIOX_API_KEY.replaceAll('$', () => '$$'));
   assert.equal(canonical.services.web.environment.PUBLIC_ORIGIN, values.PUBLIC_ORIGIN);
   const checked = cli(result.stdout);
   assert.equal(checked.status, 0); assert.equal(checked.stdout, '운영 설정 검사 통과\n'); assert.equal(checked.stderr, '');
@@ -148,7 +148,7 @@ if (args[0]==='compose' && args.includes('config')) {
   if (args.includes('--quiet') && s.quietFails) error();
   if (args.includes('--format')) {
     const canonical = ${JSON.stringify(document())};
-    if (s.configFails) canonical.services.web.environment.GROQ_API_KEY='';
+    if (s.configFails) canonical.services.web.environment.SONIOX_API_KEY='';
     console.log(JSON.stringify(canonical));
     if (s.producerFails) error();
   }

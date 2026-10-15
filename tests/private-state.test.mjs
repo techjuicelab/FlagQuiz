@@ -29,7 +29,7 @@ test('fixture 검증은 별도 복원·쓰기·실제 프로세스 재시작을 
   assert.equal(result.ok, true); assert.ok(Object.values(result.checks).every(value => value === true));
   assert.deepEqual(await fs.readdir(f.temporaryRoot), []);
   const cli = new URL('../scripts/verify-private-state.mjs', import.meta.url);
-  const response = await run(process.execPath, [cli.pathname], { env: { GROQ_API_KEY: 'secret-must-not-print', SESSION_SECRET: 'other-secret-must-not-print' } });
+  const response = await run(process.execPath, [cli.pathname], { env: { SONIOX_API_KEY: 'secret-must-not-print', SESSION_SECRET: 'other-secret-must-not-print' } });
   assert.equal(JSON.parse(response.stdout).checks.processRestart, true);
   assert.doesNotMatch(response.stdout + response.stderr, /secret-must-not-print|@|source-admin|child-sub/);
 });

@@ -22,7 +22,7 @@ export function checkPrivateComposeConfig(document) {
       env[name] = value.replaceAll('$$', '$');
     }
     const config = readConfig(env);
-    if (!config.ready || !config.groqApiKey) throw new Error();
+    if (!config.ready || !config.sonioxApiKey) throw new Error();
     return { ok: true };
   } catch { throw new PrivateConfigCheckError(); }
 }

@@ -1,7 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { PassThrough } from 'node:stream';
-import { createTranscriber, readSpeechInput, validateSpeechInput, SpeechError, MAX_AUDIO_BYTES, MAX_PROMPT_BYTES } from '../server/speech.mjs';
+import { EventEmitter } from 'node:events';
+import { createRealtimeTranscriber } from '../server/realtime-speech.mjs';
+import { createTranscriber, readSpeechInput, validateSpeechInput, SpeechError, MAX_AUDIO_BYTES } from '../server/speech.mjs';
 
 function wav(durationMs = 1000, sample = 512) {
   const samples = Math.round(durationMs * 16);
@@ -98,138 +100,193 @@ test('업로드 취소와 시간 제한은 대기 중인 메모리 버퍼를 폐
   assert.equal(slow.listenerCount('data'), 0);
 });
 
-test('Groq 요청은 서버 고정 모델·한국어·짧은 맞춤법 안내를 쓰고 WAV를 한 번만 전송한다', async () => {
-  const calls = [];
-  const transcribe = createTranscriber({ apiKey: 'test-secret', model: 'client-selected-model', countryNames: ['x'.repeat(5000)], fetchImpl: async (url, options) => {
-    calls.push({ url, options }); return { ok: true, json: async () => ({ text: '  대한민국  ', extra: 'private' }) };
-  } });
-  assert.equal(transcribe.ready, true);
-  assert.equal(transcribe.model, 'whisper-large-v3-turbo');
-  assert.deepEqual(await transcribe(input()), { text: '대한민국' });
-  assert.equal(calls.length, 1);
-  const { url, options } = calls[0];
-  assert.equal(url, 'https://api.groq.com/openai/v1/audio/transcriptions');
-  assert.equal(options.headers.Authorization, 'Bearer test-secret');
-  assert.equal(options.body.get('model'), 'whisper-large-v3-turbo');
-  assert.equal(options.body.get('language'), 'ko');
-  assert.equal(options.body.get('response_format'), 'json');
-  const prompt = options.body.get('prompt');
-  assert.match(prompt, /한국어 나라 이름/);
-  assert.doesNotMatch(prompt, /대한민국|미국|영국|중국|일본|짐바브웨|x{10}/);
-  assert.ok(Buffer.byteLength(prompt, 'utf8') <= MAX_PROMPT_BYTES);
-  assert.equal(MAX_PROMPT_BYTES, 160);
-  assert.ok(MAX_PROMPT_BYTES < 224);
-  const file = options.body.get('file');
-  assert.equal(file.type, 'audio/wav');
-  assert.equal(file.name, 'speech.wav');
-  assert.deepEqual(Buffer.from(await file.arrayBuffer()), input().audio);
+function provider(options = {}) {
+  const sockets = [], delays = [];
+  const final = text => ({ text, is_final: true });
+  class Socket extends EventEmitter {
+    constructor(url, config) {
+      super(); this.url = url; this.config = config; this.readyState = 0; this.bufferedAmount = 0;
+      this.sent = []; this.pending = []; this.terminations = 0; sockets.push(this);
+      if (options.constructorError) throw new Error('test-secret raw constructor detail');
+      if (!options.stalled) queueMicrotask(() => { this.readyState = 1; this.emit('open'); });
+    }
+    send(data, config, callback) {
+      this.sent.push({ data, config });
+      if (config.binary && options.sendThrow) throw new Error('test-secret raw send detail');
+      if (config.binary && options.deferSend) { this.pending.push(callback); return; }
+      callback(config.binary && options.sendError ? new Error('test-secret raw send detail') : null);
+      if (!config.binary && JSON.parse(data).type === 'finalize' && !options.noFinal) {
+        if (options.onFinalize) options.onFinalize(this);
+        else this.receive({ tokens: [final(options.text || '  대한민국  '), final('<fin>')] });
+      }
+      if (config.binary) options.onFrame?.(this);
+    }
+    receive(result) { this.emit('message', Buffer.from(JSON.stringify(result)), false); }
+    terminate() { this.terminations++; this.readyState = 3; this.emit('close'); }
+  }
+  const realtime = createRealtimeTranscriber({ apiKey: 'test-secret', WebSocketImpl: Socket, timeoutMs: 1000 });
+  const transcribe = createTranscriber({ apiKey: 'test-secret', realtimeTranscriber: realtime, timeoutMs: 1000,
+    delayImpl: async (ms, signal) => { delays.push(ms); assert.equal(signal.aborted, false); await options.delay?.(ms, signal); },
+    ...options.transcriber });
+  return { sockets, delays, realtime, transcribe, Socket };
+}
+const final = text => ({ text, is_final: true });
+const referencePattern = /^flagquiz-rt:[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+const tick = () => new Promise(setImmediate);
+
+test('파일 대체 경로도 Soniox RT만 사용하고 WAV 헤더 없이 PCM을 한 연결로 보낸다', async () => {
+  const f = provider();
+  assert.equal(f.transcribe.ready, true); assert.equal(f.transcribe.model, 'stt-rt-v5');
+  assert.deepEqual(await f.transcribe(input()), { text: '대한민국' });
+  assert.equal(f.sockets.length, 1);
+  const ws = f.sockets[0], config = JSON.parse(ws.sent[0].data);
+  assert.equal(ws.url, 'wss://stt-rt.soniox.com/transcribe-websocket');
+  assert.equal(ws.config.headers.Authorization, 'Bearer test-secret');
+  assert.equal(config.model, 'stt-rt-v5'); assert.deepEqual(config.language_hints, ['ko']);
+  assert.equal(config.language_hints_strict, true); assert.match(config.client_reference_id, referencePattern);
+  assert.equal(Object.hasOwn(config, 'context'), false); assert.equal(Object.hasOwn(config, 'prompt'), false);
+  const frames = ws.sent.filter(row => row.config.binary);
+  assert.equal(frames.length, 10); assert.ok(frames.every(row => row.data.length <= 3200));
+  assert.deepEqual(Buffer.concat(frames.map(row => row.data)), input().audio.subarray(44));
+  assert.deepEqual(f.delays, Array(10).fill(100));
+  assert.deepEqual(JSON.parse(ws.sent.at(-1).data), { type: 'finalize' });
+  assert.equal(ws.terminations, 1);
 });
 
-test('나라와 수도는 서버 고정 문맥만 다르고 정답·동적 후보·클라이언트 prompt는 외부로 보내지 않는다', async () => {
-  const calls = [];
-  const transcribe = createTranscriber({ apiKey: 'test-secret', fetchImpl: async (url, options) => {
-    calls.push(options.body); return { ok: true, json: async () => ({ text: '파리' }) };
-  } });
+test('나라·수도·이어 말하기는 큰 사전·정답·동적 후보를 보내지 않고 매번 고유 reference를 쓴다', async () => {
+  const f = provider(), references = new Set();
   for (const mode of ['voice', 'capitalVoice', 'country-chain']) {
-    await transcribe({ ...input(), mode, answer: '파리', country: '프랑스', prompt: '파리', candidates: ['파리'] });
+    await f.transcribe({ ...input(100), mode, answer: '파리', country: '프랑스', prompt: '파리',
+      candidates: ['파리'], context: { terms: ['프랑스'] }, model: 'client-model', client_reference_id: 'private-child' });
+    const ws = f.sockets.at(-1), config = JSON.parse(ws.sent[0].data);
+    assert.match(config.client_reference_id, referencePattern); references.add(config.client_reference_id);
+    assert.equal(Object.hasOwn(config, 'context'), false); assert.equal(Object.hasOwn(config, 'prompt'), false);
+    assert.doesNotMatch(ws.sent[0].data, /파리|프랑스|client-model|private-child/);
   }
-  assert.equal(calls[0].get('prompt'), calls[2].get('prompt'));
-  assert.match(calls[0].get('prompt'), /나라 이름/); assert.match(calls[1].get('prompt'), /수도 이름/);
-  for (const body of calls) {
-    assert.doesNotMatch(body.get('prompt'), /파리|프랑스/);
-    assert.ok(Buffer.byteLength(body.get('prompt'), 'utf8') <= MAX_PROMPT_BYTES);
-    assert.equal(body.get('language'), 'ko'); assert.equal(body.get('model'), 'whisper-large-v3-turbo');
-  }
-  await assert.rejects(transcribe({ ...input(), mode: 'other' }), code('invalid_mode'));
-  assert.equal(calls.length, 3);
+  assert.equal(references.size, 3);
+  await assert.rejects(f.transcribe({ ...input(), mode: 'other' }), code('invalid_mode'));
+  assert.equal(f.sockets.length, 3);
 });
 
-test('기본 키는 GROQ_API_KEY만 사용하고 다른 공급자의 키로 대체하지 않는다', async () => {
-  const previousGroq = process.env.GROQ_API_KEY;
-  const previousOpenAI = process.env.OPENAI_API_KEY;
-  let calls = 0;
-  const fetchImpl = async (url, options) => {
-    calls++;
-    assert.equal(url, 'https://api.groq.com/openai/v1/audio/transcriptions');
-    assert.equal(options.headers.Authorization, 'Bearer test-groq-secret');
-    return { ok: true, json: async () => ({ text: '일본' }) };
-  };
+test('기본 키는 SONIOX_API_KEY만 쓰고 Groq나 다른 공급자의 키로 대체하지 않는다', async () => {
+  const previous = Object.fromEntries(['SONIOX_API_KEY', 'GROQ_API_KEY', 'OPENAI_API_KEY'].map(key => [key, process.env[key]]));
+  const f = provider();
   try {
-    process.env.OPENAI_API_KEY = 'test-other-provider-secret';
-    delete process.env.GROQ_API_KEY;
-    const missing = createTranscriber({ fetchImpl });
-    assert.equal(missing.ready, false);
-    await assert.rejects(missing(input()), code('speech_unavailable'));
-    assert.equal(calls, 0);
-    process.env.GROQ_API_KEY = 'test-groq-secret';
-    const configured = createTranscriber({ fetchImpl });
-    assert.equal(configured.ready, true);
-    assert.deepEqual(await configured(input()), { text: '일본' });
-    assert.equal(calls, 1);
+    process.env.GROQ_API_KEY = 'test-other-provider-secret'; process.env.OPENAI_API_KEY = 'test-other-provider-secret';
+    delete process.env.SONIOX_API_KEY;
+    const missing = createTranscriber({ WebSocketImpl: f.Socket });
+    assert.equal(missing.ready, false); await assert.rejects(missing(input()), code('speech_unavailable'));
+    assert.equal(f.sockets.length, 0);
+    process.env.SONIOX_API_KEY = '  test-soniox-secret  ';
+    const configured = createTranscriber({ WebSocketImpl: f.Socket, delayImpl: async () => {} });
+    assert.equal(configured.ready, true); assert.deepEqual(await configured(input(100)), { text: '대한민국' });
+    assert.equal(f.sockets.length, 1);
+    assert.equal(f.sockets[0].config.headers.Authorization, 'Bearer test-soniox-secret');
   } finally {
-    if (previousGroq === undefined) delete process.env.GROQ_API_KEY; else process.env.GROQ_API_KEY = previousGroq;
-    if (previousOpenAI === undefined) delete process.env.OPENAI_API_KEY; else process.env.OPENAI_API_KEY = previousOpenAI;
+    for (const [key, value] of Object.entries(previous)) {
+      if (value === undefined) delete process.env[key]; else process.env[key] = value;
+    }
   }
 });
 
-test('키 없음·무효 음성·미리 취소한 요청은 유료 호출을 만들지 않는다', async () => {
-  let calls = 0;
-  const fetchImpl = async () => { calls++; return { ok: true, json: async () => ({ text: '일본' }) }; };
-  const missing = createTranscriber({ apiKey: '', fetchImpl });
-  assert.equal(missing.ready, false);
-  await assert.rejects(missing(input()), code('speech_unavailable'));
-  const ready = createTranscriber({ apiKey: 'test-secret', fetchImpl });
-  await assert.rejects(ready(input(12001)), code('audio_too_long'));
+test('키 없음·무효 음성·미리 취소한 요청은 유료 연결을 만들지 않는다', async () => {
+  const f = provider();
+  const missing = createTranscriber({ apiKey: '', realtimeTranscriber: f.realtime });
+  assert.equal(missing.ready, false); await assert.rejects(missing(input()), code('speech_unavailable'));
+  await assert.rejects(f.transcribe(input(12001)), code('audio_too_long'));
   const controller = new AbortController(); controller.abort();
-  await assert.rejects(ready(input(), { signal: controller.signal }), code('cancelled'));
-  assert.equal(calls, 0);
+  await assert.rejects(f.transcribe(input(), { signal: controller.signal }), code('cancelled'));
+  assert.equal(f.sockets.length, 0);
 });
 
-test('미해결 1Password 참조는 공백 유무와 관계없이 준비되지 않은 키로 처리하고 외부 호출하지 않는다', async () => {
-  let calls = 0;
-  for (const apiKey of ['op://Private/Groq/api-key', '  op://Private/Groq/api-key  ', '"op://Private/Groq/api-key"', "'op://Private/Groq/api-key'", '  ']) {
-    const transcribe = createTranscriber({ apiKey, fetchImpl: async () => { calls++; return { ok: true, json: async () => ({ text: '일본' }) }; } });
-    assert.equal(transcribe.ready, false);
-    await assert.rejects(transcribe(input()), code('speech_unavailable'));
+test('미해결 참조·줄바꿈 키·준비되지 않은 공급자는 외부 연결 전에 거절한다', async () => {
+  const f = provider();
+  for (const apiKey of ['op://Private/Soniox/api-key', '  op://Private/Soniox/api-key  ', '"op://Private/Soniox/api-key"',
+    "'op://Private/Soniox/api-key'", 'OP://Private/Soniox/api-key', '  ', 'test\nsecret']) {
+    const transcribe = createTranscriber({ apiKey, realtimeTranscriber: f.realtime });
+    assert.equal(transcribe.ready, false); await assert.rejects(transcribe(input()), code('speech_unavailable'));
   }
-  assert.equal(calls, 0);
+  const unavailable = createTranscriber({ apiKey: 'test-secret', realtimeTranscriber: { ready: false } });
+  assert.equal(unavailable.ready, false); await assert.rejects(unavailable(input()), code('speech_unavailable'));
+  assert.equal(f.sockets.length, 0);
 });
 
-test('상위 서비스 오류·깨진 응답·네트워크 오류는 비밀이나 원문을 노출하지 않고 자동 재시도하지 않는다', async () => {
-  for (const response of [
-    async () => ({ ok: false, status: 401, json: async () => ({ error: 'test-secret provider detail' }) }),
-    async () => { throw new Error('test-secret raw upstream request'); },
-    async () => ({ ok: true, json: async () => { throw new Error('test-secret malformed json'); } }),
-    async () => ({ ok: true, json: async () => ({ text: 'x'.repeat(501) }) })
+test('큰 WAV도 100ms PCM씩 송신 완료를 기다려 버퍼 상한 안에서 한 번만 전송한다', async () => {
+  const f = provider({ deferSend: true });
+  const pending = f.transcribe(input(12000));
+  await tick(); const ws = f.sockets[0];
+  for (let i = 0; i < 120; i++) {
+    assert.equal(ws.sent.filter(row => row.config.binary).length, i + 1);
+    assert.equal(ws.pending.length, 1); const callback = ws.pending.shift(); callback(); callback();
+    await tick();
+  }
+  assert.deepEqual(await pending, { text: '대한민국' });
+  assert.equal(f.sockets.length, 1); assert.equal(f.delays.reduce((sum, value) => sum + value, 0), 12000);
+  assert.deepEqual(Buffer.concat(ws.sent.filter(row => row.config.binary).map(row => row.data)), input(12000).audio.subarray(44));
+});
+
+test('부분 전사를 반복해서 덧붙이지 않고 여러 endpoint의 확정 발화를 최종 결과에 보존한다', async () => {
+  let frames = 0;
+  const f = provider({ onFrame(ws) {
+    frames++;
+    if (frames === 1) {
+      ws.receive({ tokens: [{ text: '대한', is_final: false }] });
+      ws.receive({ tokens: [final('대한민국'), final('<end>')] });
+    }
+    if (frames === 2) ws.receive({ tokens: [{ text: '아니', is_final: false }] });
+  }, onFinalize(ws) { ws.receive({ tokens: [final('아니면 일본'), final('<fin>')] }); } });
+  assert.deepEqual(await f.transcribe(input()), { text: '대한민국 아니면 일본' });
+});
+
+test('여러 확정 구간 사이의 공백을 포함한 전체 전사는 500자까지만 반환한다', async () => {
+  for (const tail of [249, 250]) {
+    let frames = 0;
+    const f = provider({ onFrame(ws) {
+      if (++frames === 1) ws.receive({ tokens: [final('가'.repeat(250)), final('<end>')] });
+    }, onFinalize(ws) { ws.receive({ tokens: [final('나'.repeat(tail)), final('<fin>')] }); } });
+    if (tail === 249) assert.equal((await f.transcribe(input())).text.length, 500);
+    else await assert.rejects(f.transcribe(input()), code('speech_failed'));
+    assert.equal(f.sockets.length, 1); assert.equal(f.sockets[0].terminations, 1);
+  }
+});
+
+test('조기 finished·누적 500자 초과·상위 오류는 안전한 실패이고 자동 재연결하지 않는다', async () => {
+  for (const options of [
+    { constructorError: true }, { sendError: true }, { sendThrow: true },
+    { onFrame: ws => ws.receive({ tokens: [final('대한민국')], finished: true }) },
+    { onFrame: ws => ws.receive({ tokens: [final('x'.repeat(251)), final('<end>')] }) },
+    { onFinalize: ws => ws.receive({ error_code: 500, error_message: 'test-secret raw provider detail' }) }
   ]) {
-    let calls = 0;
-    const transcribe = createTranscriber({ apiKey: 'test-secret', fetchImpl: (...args) => { calls++; return response(...args); } });
-    await assert.rejects(transcribe(input()), error => {
-      assert.ok(error instanceof SpeechError);
-      assert.equal(error.code, 'speech_failed');
-      assert.doesNotMatch(error.message, /test-secret|raw upstream|provider|malformed/);
-      return true;
+    const f = provider(options);
+    await assert.rejects(f.transcribe(input()), error => {
+      assert.ok(error instanceof SpeechError); assert.equal(error.code, 'speech_failed');
+      assert.doesNotMatch(error.message, /test-secret|raw|provider/); return true;
     });
-    assert.equal(calls, 1);
+    await tick(); assert.equal(f.sockets.length, 1);
   }
 });
 
-test('유료 요청 시간 제한과 클라이언트 취소가 상위 fetch를 abort한다', async () => {
-  function stalled() {
-    let calls = 0, aborted = false;
-    return { get calls() { return calls; }, get aborted() { return aborted; }, fetchImpl: async (url, options) => {
-      calls++;
-      return new Promise((resolve, reject) => options.signal.addEventListener('abort', () => {
-        aborted = true; reject(new Error('test-secret abort detail'));
-      }, { once: true }));
-    } };
+test('연결·송신 callback·최종 응답 대기는 전체 시간 제한과 취소 시 즉시 닫힌다', async () => {
+  for (const options of [{ stalled: true }, { deferSend: true }, { noFinal: true }]) {
+    const timed = provider({ ...options, transcriber: { timeoutMs: 10 } });
+    await assert.rejects(timed.transcribe(input(100)), code('speech_timeout'));
+    assert.equal(timed.sockets.length, 1); assert.equal(timed.sockets[0].terminations, 1);
+    const f = provider(options), controller = new AbortController();
+    const pending = f.transcribe(input(100), { signal: controller.signal }); await tick();
+    controller.abort(); await assert.rejects(pending, code('cancelled'));
+    const ws = f.sockets[0], before = ws.sent.length;
+    ws.pending.shift()?.(); ws.receive({ tokens: [final('late answer'), final('<fin>')] });
+    await tick(); assert.equal(ws.terminations, 1); assert.equal(ws.sent.length, before); assert.equal(f.sockets.length, 1);
   }
-  const timeout = stalled();
-  await assert.rejects(createTranscriber({ apiKey: 'test-secret', timeoutMs: 5, fetchImpl: timeout.fetchImpl })(input()), code('speech_timeout'));
-  assert.equal(timeout.calls, 1); assert.equal(timeout.aborted, true);
-  const cancelled = stalled(), controller = new AbortController();
-  const pending = createTranscriber({ apiKey: 'test-secret', fetchImpl: cancelled.fetchImpl })(input(), { signal: controller.signal });
-  controller.abort();
-  await assert.rejects(pending, code('cancelled'));
-  assert.equal(cancelled.calls, 1); assert.equal(cancelled.aborted, true);
+});
+
+test('실제 pacing 대기 중 취소는 다음 PCM과 finalize를 보내지 않는다', async () => {
+  const f = provider(), controller = new AbortController();
+  const transcribe = createTranscriber({ apiKey: 'test-secret', realtimeTranscriber: f.realtime });
+  const pending = transcribe(input(), { signal: controller.signal });
+  await tick(); assert.equal(f.sockets[0].sent.filter(row => row.config.binary).length, 1);
+  controller.abort(); await assert.rejects(pending, code('cancelled'));
+  await new Promise(resolve => setTimeout(resolve, 120));
+  assert.equal(f.sockets[0].sent.filter(row => row.config.binary).length, 1);
+  assert.equal(f.sockets[0].sent.filter(row => !row.config.binary).length, 1);
 });

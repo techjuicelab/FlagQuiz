@@ -57,7 +57,7 @@ async function fixture(t, kind = 'techjuice-id', { linkedRoot = false } = {}) {
     GOOGLE_CLIENT_ID: 'fixture.apps.googleusercontent.com', GOOGLE_CLIENT_SECRET: 'fixture-google-secret',
     TJID_SUPABASE_URL: 'https://fixture.supabase.co', TJID_SUPABASE_ANON_KEY: kind === 'unconfigured' ? '' : 'fixture-public-anon',
     SESSION_SECRET: 'fixture-signing-key-never-real-'.repeat(3), STATE_DIR: stateDirectory, STATIC_ROOT: configuredStaticRoot,
-    GROQ_API_KEY: 'fixture-groq-key-never-real'
+    SONIOX_API_KEY: 'fixture-soniox-key-never-real'
   });
   app = await createAuthServer({ config, techjuiceId, oidc,
     fetchImpl: forbidden('fetch'), clock: () => Date.UTC(2026, 9, 4, 12),

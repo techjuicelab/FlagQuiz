@@ -22,7 +22,7 @@ async function fixture(t, { configured = true, quotaDelayMs = 0 } = {}) {
   const config = readConfig({ AUTH_PROVIDER: 'techjuice-id', PUBLIC_ORIGIN: 'http://127.0.0.1',
     TJID_SUPABASE_URL: 'https://fixture.supabase.co', TJID_SUPABASE_ANON_KEY: 'fixture-public-anon-key',
     SESSION_SECRET: secret, STATE_DIR: path.join(directory, 'state'), STATIC_ROOT: path.join(directory, 'site'),
-    GROQ_API_KEY: 'fixture-groq-never-real', SONIOX_API_KEY: configured ? 'fixture-soniox-never-real' : '' });
+    SONIOX_API_KEY: configured ? 'fixture-soniox-never-real' : '' });
   const app = await createAuthServer({ config, realtimeTranscriber,
     techjuiceId: { ready: true, sessionState: async () => ({ gen: 1, disabled }) } });
   if (quotaDelayMs) {

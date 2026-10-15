@@ -4,9 +4,11 @@ Node.js 24 이상으로 `_site`를 로그인 뒤에서 제공한다. NAS 구성�
 
 2026-10-03 기준 중앙 `flagquiz` 앱을 ‘세계 놀이’로 등록하고 기존 활성 계정 17개 모두에 앱 권한을 부여했다(`user` 16개, 기존 TECH 관리자 1개). 비활성·익명 계정은 제외했고 다른 앱 설정은 변경하지 않았다. [NAS 최초 성공 운영 기록](../docs/nas-deploy.md#최초-성공-운영-기록)에 실제 배포, DNS·Cloudflare·외부 HTTPS, 중앙 관리자·일반 계정 로그인, 운영 Groq 전사, 백업·별도 복원 및 재시작 후 상태 유지 검증이 있다. 외부 주소는 `https://flagquiz.techjuicelab.space`, NAS loopback 포트는 `31015`다. `/health`의 `configured:true`는 설정 검사를 뜻하며 실제 로그인이나 전사 성공을 보장하지 않는다.
 
-국기 보고 나라 말하기(`voice`)·국기 보고 수도 말하기(`capitalVoice`)·나라 이어 말하기(`country-chain`)는 NAS가 허용하고 기기가 지원하면 Soniox 스트리밍으로 연결해 확정 이름을 즉시 채점한다. 키 미설정·기기 미지원이면 기존 Groq 파일 전사를 선택한다. 실제 iPhone/iPad 어린이 발화 정확도·지연은 별도 검증 대상이다. [말하기 설계와 검증 범위](../docs/spoken-stt.md), [스트리밍 계약](../docs/streaming-speech-design.md)을 참고한다.
+국기 보고 나라 말하기(`voice`)·국기 보고 수도 말하기(`capitalVoice`)·나라 이어 말하기(`country-chain`)는 NAS가 허용하고 기기가 지원하면 Soniox 스트리밍으로 연결해 확정 이름을 즉시 채점한다. 스트리밍을 지원하지 않는 기기는 WAV 녹음 뒤 같은 Soniox 실시간 모델로 전사하며, Soniox 키가 없으면 글자로 답한다. 실제 iPhone/iPad 어린이 발화 정확도·지연은 별도 검증 대상이다. [말하기 설계와 검증 범위](../docs/spoken-stt.md), [스트리밍 계약](../docs/streaming-speech-design.md)을 참고한다.
 
-Soniox에는 한국어 제한만 제공하며, 매 연결마다 텍스트 입력 비용이 발생하는 나라·수도 문맥 사전은 보내지 않는다. 사용량 로그에는 개인정보 없는 `flagquiz-rt:<UUID>`를 붙인다. 현재 문제의 정답이나 보기로 전사를 유도하지 않는다. `voice`·`capitalVoice`의 발화 종료 시점에서 이름으로 해석하지 못한 짧은 한국어 답도 브라우저로 전달해 소리 자모의 실제 편집거리 유사도 30%부터 관대하게 채점한다. 명확한 다른 이름, 질문·부정·포기·모호한 후보와 망설임만 있는 말은 기존 해석을 유지한다. 글자 입력과 `country-chain`에는 이 추가 채점 기준을 적용하지 않는다.
+Soniox에는 한국어 제한만 제공하며, 스트리밍·녹음 후 전사 모두 나라·수도 문맥 사전과 고정 프롬프트를 보내지 않는다. 두 경로의 사용량 로그에는 개인정보 없는 `flagquiz-rt:<UUID>`를 붙인다. 현재 문제의 정답이나 보기로 전사를 유도하지 않는다. `voice`·`capitalVoice`의 발화 종료 시점에서 이름으로 해석하지 못한 짧은 한국어 답도 브라우저로 전달해 소리 자모의 실제 편집거리 유사도 30%부터 관대하게 채점한다. 명확한 다른 이름, 질문·부정·포기·모호한 후보와 망설임만 있는 말은 기존 해석을 유지한다. 글자 입력과 `country-chain`에는 이 추가 채점 기준을 적용하지 않는다.
+
+나라·수도·힌트 읽어주기는 미리 생성한 Typecast Sua MP3 1,319개를 재사용하며, 이용 중 Soniox로 음원을 생성하지 않는다. 로그인한 기기의 **설정 → 오프라인 저장 → 전체 저장하기**에서 이 음원도 저장한다. 음성 인식용 문맥 사전은 STT에 보내는 텍스트이고, 아이에게 들려주는 MP3와 별개다. 기기 내 음성 인식 모델은 추가하지 않는다.
 
 ## 시작 설정
 
@@ -20,11 +22,10 @@ NAS용 [Compose](../deploy/compose.prod.yml)는 `AUTH_PROVIDER=techjuice-id`, `T
 | `TJID_APP_SLUG` | 중앙 앱 권한 이름, `flagquiz` |
 | `SESSION_SECRET` | 최소 32바이트의 서버 세션 서명 키 |
 | `STATE_DIR` | 정적 폴더 밖의 절대 경로. NAS에서는 `/var/lib/flagquiz` |
-| `GROQ_API_KEY` | 서버 전용 전사 키. 없으면 수동 입력으로 놀이 가능 |
-| `SONIOX_API_KEY` | 선택 설정, 서버 전용 실시간 인식 키. 설정되고 AudioWorklet을 지원하면 녹음 중 이름 확정 |
+| `SONIOX_API_KEY` | 서버 전용 인식 키. AudioWorklet 지원 시 녹음 중 이름 확정, 미지원 시 녹음 뒤 동일 실시간 모델로 전사. 없으면 수동 입력으로 놀이 가능 |
 | `TYPESAFE_API_KEY` | 선택 설정, 기본값은 비어 있음. 서버 전용 Jev 최종 선택 보조 키 |
 
-비밀은 1Password에서 실행 시 주입한다. `env/private.op.env`에서 중앙 연결·세션·Groq 값은 기존 참조를 사용하고, 비밀이 아닌 `PUBLIC_ORIGIN=https://flagquiz.techjuicelab.space`와 `STATE_DIR=/var/lib/flagquiz`는 명시한다. `FlagQuiz Private`의 빈 운영 주소·저장 경로 필드를 채울 필요는 없다. `npm run start:private`가 `op run`으로 참조를 해결한다. NAS에서는 1Password에서 해결한 배포용 사본을 Forgejo의 `APP_ENV_FILE` secret으로 전달한 운영 기록이 있다. 중앙 인증에는 service-role key나 앱 전용 Google client secret을 전달하지 않는다. 환경 변수에 `op://`가 문자 그대로 남으면 시작을 거절하고 오류에 참조나 비밀 값을 출력하지 않는다.
+비밀은 1Password에서 실행 시 주입한다. `env/private.op.env`에서 중앙 연결·세션·Soniox 값은 기존 참조를 사용하고, 비밀이 아닌 `PUBLIC_ORIGIN=https://flagquiz.techjuicelab.space`와 `STATE_DIR=/var/lib/flagquiz`는 명시한다. `FlagQuiz Private`의 빈 운영 주소·저장 경로 필드를 채울 필요는 없다. `npm run start:private`가 `op run`으로 참조를 해결한다. NAS에서는 1Password에서 해결한 배포용 사본을 Forgejo의 `APP_ENV_FILE` secret으로 전달한 운영 기록이 있다. 중앙 인증에는 service-role key나 앱 전용 Google client secret을 전달하지 않는다. 환경 변수에 `op://`가 문자 그대로 남으면 시작을 거절하고 오류에 참조나 비밀 값을 출력하지 않는다.
 
 ```sh
 npm ci --ignore-scripts
@@ -71,13 +72,17 @@ NAS 커널 `4.4.302+`는 [Node.js 24의 공식 Linux 지원 범위](https://gith
 
 ## 유료 말하기와 영속 저장
 
-전사는 Groq `whisper-large-v3-turbo`를 고정 사용한다. 한국어 `ko`·JSON 응답과 160 UTF-8 바이트 이하의 짧은 나라 또는 수도 말하기 힌트를 보낸다. 힌트에는 현재 문제의 나라·수도 정답을 넣지 않는다. STT는 최종 문자를 반환하고, 공유 `js/spoken-answer.js`가 실제 이름·별칭과 정정 표현으로 최종 선택을 찾은 뒤 브라우저의 기존 채점 엔진에 정식 이름 하나를 전달한다. 현재 문제 정답을 기준으로 전사에서 원하는 이름을 골라 넣지 않는다. 시간당 $0.04, 요청당 최소 10초 과금이며 월 3,000회 × 최대 12초는 약 $0.40의 전사 비용에 해당한다(무료 크레딧·세금 제외, 2026-10-03 기준의 계산이며 이번 변경에서 요금은 재검증하지 않았다). 실제 어린이 발화 정확도는 별도 검증이 필요하다. [공식 규격·요금](https://console.groq.com/docs/speech-to-text).
+2026-10-15 변경부터 실시간 스트리밍과 기기 미지원용 녹음 후 전사 모두 Soniox `stt-rt-v5` WebSocket을 사용한다. 두 경로 모두 한국어 인식을 지정하고 `context`·`prompt`를 전송하지 않는다. STT는 최종 문자를 반환하고, 공유 `js/spoken-answer.js`가 실제 이름·별칭과 정정 표현으로 최종 선택을 찾은 뒤 브라우저의 기존 채점 엔진에 정식 이름 하나를 전달한다. 이 로컬 이름 목록은 전사 결과의 해석에 사용하며 Soniox에 보내지 않는다. 현재 문제 정답을 기준으로 전사에서 원하는 이름을 골라 넣지 않는다. 유료 연결이 실패해도 자동 재시도하거나 다른 전사 경로로 다시 보내지 않는다. 실제 어린이 발화 정확도와 변경 후 청구액은 별도 검증이 필요하다. [Soniox 공식 요금](https://soniox.com/pricing).
+
+`/api/speech`의 WAV 대체 경로는 녹음을 서버 메모리에서 PCM으로 읽어 100ms 단위로 보낸다. 각 송신 완료를 확인하고 실제 오디오 속도를 지키므로 녹음 종료 뒤 녹음 길이만큼의 전송 대기가 추가된다. 녹음은 최대 12초이며 전사 시작부터 결과까지의 전체 제한은 20초다. 이 추가 대기는 대체 경로에만 적용한다. Soniox 파일 업로드·비동기 전사 리소스는 생성하지 않으며, 취소·실패·완료 시 실시간 연결을 정리한다.
+
+과거 2026-10-03 파일 경로는 Groq `whisper-large-v3-turbo`와 160 UTF-8 바이트 이하의 짧은 모드 힌트를 사용했다. 당시 시간당 $0.04·요청당 최소 10초로 계산한 월 3,000회 × 최대 12초의 약 $0.40은 과거 Groq 기준이며 현재 Soniox 비용 예측에 적용하지 않는다(무료 크레딧·세금 제외, 당시 요금 기록). [당시 공급자 규격](https://console.groq.com/docs/speech-to-text).
 
 브라우저는 `getUserMedia`·`MediaRecorder`로 받은 짧은 녹음을 메모리에서 WAV로 변환하고 같은 origin의 `/api/speech`에 보낸다. `Content-Type: audio/wav`, 실제 길이에 맞춘 `X-Audio-Duration-Ms`, `X-Speech-Mode`(`voice`·`capitalVoice`·`country-chain`), `X-Player-Id`, `X-Turn-Id`, `X-CSRF-Token`과 세션 쿠키를 사용한다. 요청의 이름이나 차례를 인증 증거로 쓰지 않으며 서버가 세션·Origin·CSRF·최신 중앙 상태를 검사한다. 성공 응답은 STT 원문 `text`, `mode`, 대응 `playerId`·`turnId`, 사용량과 `resolution`을 반환한다. `resolution`의 필드는 `status`(`answer`·`retry`·`giveup`), `code` 또는 `null`, 선택한 정식 이름 `text`, `reason`, `source`(`rules`·`jev`)다. 원문은 유지하며 별도 선택 결과에 현재 정답을 섞지 않는다. 브라우저는 자체 규칙과 실제 후보를 다시 검사하고 이미 취소하거나 떠난 문제의 늦은 응답을 버린다.
 
 `server/answer-resolution.mjs`는 서버에서 같은 순수 규칙을 먼저 실행한다. 선택 설정 `TYPESAFE_API_KEY`가 있으면 명확한 답과 최종 선택이 있는 복잡한 문장 모두 실제 후보 안에서 Jev `Choice`로 확인한다. `jev-1.13.0`을 고정하며 최대 3초·전사당 최대 한 번이고 자동 재시도하지 않는다. 부정·인용·선택 미정·질문·지시 조작·단순 나열은 모델 선택으로 덮지 않는다. 키 미설정, 장애, 시간 초과, 형식·확률 검증 실패와 후보 밖 응답은 기존 규칙 결과를 유지하며 명시적으로 확정한 답도 다른 앞선 후보로 바꾸지 않는다. 유료 선택 직전 fresh 권한 확인은 실제 모델 호출에만 수행하고 권한 오류는 fallback으로 삼키지 않는다. 출제 정답·보기·이미지·아이 이름·계정은 Jev에 전달하지 않는다. 인증된 응답의 `Server-Timing`에는 authorization·speech·selection-auth·selection의 숫자만 기록하며 selection은 selection-auth를 포함하므로 단순 합산하지 않는다. [최종 답 설계와 공식 TypeSafe 근거](../docs/spoken-answer-intent.md)에 모델 고정·보수적 기준·한계를 정리했다.
 
-`TYPESAFE_API_KEY`는 기본값이 비어 있고 Compose도 미설정 상태를 허용한다. 서버 실행 시 1Password에서 주입하며 브라우저·빌드·로그·학습 기록에 저장하지 않는다. [합성 비교](../docs/spoken-answer-intent.md#확인-범위)와 별도로 NAS run `585`의 SHA `57810302aa60beb912500fe822e144f921676f9f`에서 세 말하기 모드의 합성 음원 3개가 실제 Groq → Jev 경로로 올바른 이름과 `source:jev`를 반환했다. 이는 운영 키 연결과 서버 경로 검증이며 실제 어린이 발화 정확도를 뜻하지 않는다. 말끝 이후 전체 지연은 추정 1.18–1.48초로 목표 미달이며 [측정 구간과 스트리밍 후속 설계](../docs/streaming-speech-design.md)에 한계를 기록했다. 키가 없어도 Groq STT와 순수 최종 답 규칙은 동작한다.
+`TYPESAFE_API_KEY`는 기본값이 비어 있고 Compose도 미설정 상태를 허용한다. 서버 실행 시 1Password에서 주입하며 브라우저·빌드·로그·학습 기록에 저장하지 않는다. 과거 [합성 비교](../docs/spoken-answer-intent.md#확인-범위)와 별도로 NAS run `585`의 SHA `57810302aa60beb912500fe822e144f921676f9f`에서 세 말하기 모드의 합성 음원 3개가 실제 Groq → Jev 경로로 올바른 이름과 `source:jev`를 반환했다. 이는 당시 운영 키 연결과 서버 경로 검증이며 현재 Soniox 녹음 후 경로나 실제 어린이 발화 정확도를 증명하지 않는다. 당시 말끝 이후 전체 지연은 추정 1.18–1.48초로 목표 미달이며 [측정 구간과 스트리밍 후속 설계](../docs/streaming-speech-design.md)에 한계를 기록했다. 현재도 Jev 키가 없어도 Soniox STT와 순수 최종 답 규칙은 동작한다.
 
 권한·연결·사용량 오류에는 현재 문제·차례를 유지하고 글자 입력과 수동 마이크 재시도를 제공한다. 실패한 유료 요청은 자동 재시도하지 않는다. 말하기 시도의 제한시간은 실제 녹음 중에 측정하고 권한·녹음 정리·전사 대기 중에는 멈춘다. 수동 입력이나 재시도로 돌아오면 기존 남은 시간을 이어 쓴다. 연결이 완전히 끊기면 기존 동일 문제 선택형 전환을 사용한다. localhost 정적 `?preview=1`에는 인증된 STT를 연결하지 않는다.
 
@@ -85,7 +90,7 @@ NAS 커널 `4.4.302+`는 [Node.js 24의 공식 Linux 지원 범위](https://gith
 
 `STATE_DIR/access.json`에는 허용 목록·중앙 `sub` 연결·차단 기록·세션 generation·사용량을 저장한다. 임시 파일 `fsync` → 원자적 rename → 디렉터리 `fsync` 후 성공을 반환하며 파일은 0600, 상태 디렉터리는 0700으로 준비한다. 손상·쓰기 실패 시 접근을 닫고 빈 파일로 덮어쓰지 않는다. Node 내장 SQLite의 배타적 OS guard와 프로세스 내부 소유 목록으로 같은 상태 디렉터리의 두 서버 실행을 막는다. SIGKILL/재부팅 뒤 OS guard가 해제되면 오래된 PID 파일을 정리해 재시작할 수 있다. SQLite 파일은 잠금용이며 원본 데이터는 `access.json`이다. 네트워크 파일시스템 대신 NAS의 로컬 Docker volume을 사용한다.
 
-백업 작업만 `flagquiz-data`를 읽기 전용으로, `flagquiz-backups`를 `/var/backups/flagquiz`에 쓰기 가능하게 마운트한다. 운영 web에는 백업 volume을 붙이지 않으며 백업 컨테이너에 로그인·Groq 키를 전달하지 않는다. 원자적 JSON snapshot을 매번 별도 임시 디렉터리에 복원하여 재시작·쓰기·단일 프로세스 guard를 검사한 뒤 보관한다. 일간 14개·일요일 주간 8개·매월 1일 월간 12개를 유지하고 파일 0600·디렉터리 0700, 공개 배포 SHA 등 metadata만 출력한다.
+백업 작업만 `flagquiz-data`를 읽기 전용으로, `flagquiz-backups`를 `/var/backups/flagquiz`에 쓰기 가능하게 마운트한다. 운영 web에는 백업 volume을 붙이지 않으며 백업 컨테이너에 로그인·음성 공급자 키를 전달하지 않는다. 원자적 JSON snapshot을 매번 별도 임시 디렉터리에 복원하여 재시작·쓰기·단일 프로세스 guard를 검사한 뒤 보관한다. 일간 14개·일요일 주간 8개·매월 1일 월간 12개를 유지하고 파일 0600·디렉터리 0700, 공개 배포 SHA 등 metadata만 출력한다.
 
 ```sh
 node scripts/verify-private-state.mjs --source /var/lib/flagquiz/access.json
@@ -102,6 +107,6 @@ Snapshot을 그대로 연결하면 그 이후 로그아웃·로컬 차단·사�
 node --test tests/auth-backend.test.mjs tests/auth-tjid-http.test.mjs tests/techjuice-id.test.mjs tests/auth-store.test.mjs tests/private-state.test.mjs tests/speech-api.test.mjs tests/cloud-speech.test.mjs tests/auth-ui.test.mjs
 ```
 
-검사는 실제 HTTP·JWT 서명·중앙 권한과 상태 장애·Origin/CSRF·세션 해제·로컬 차단·원자적 사용량·강제 종료 복구·별도 대상 백업 복원을 다루며 중앙 인증/Groq 응답은 격리한다. 기존 Groq 키로 대한민국 음원을 전사한 사전 검사와, 최초 운영 서버에서 합성 대한민국 WAV를 실제 Groq에 전송한 1회 검사는 별도의 기록이다. 실제 어린이 목소리의 기기 검사를 뜻하지 않는다.
+검사는 실제 HTTP·JWT 서명·중앙 권한과 상태 장애·Origin/CSRF·세션 해제·로컬 차단·원자적 사용량·강제 종료 복구·별도 대상 백업 복원을 다루며 중앙 인증과 음성 공급자 응답은 격리한다. 기존 Groq 키로 대한민국 음원을 전사한 사전 검사와, 최초 운영 서버에서 합성 대한민국 WAV를 실제 Groq에 전송한 1회 검사는 과거 경로의 별도 기록이다. 실제 어린이 목소리의 기기 검사를 뜻하지 않는다.
 
 최초 운영 서버의 로그인·외부 HTTPS·인증되지 않은 앱/API 접근 차단·로그아웃 쿠키 폐기, 실제 Groq 전사, 운영 백업·별도 복원, 서버 재시작 후 상태와 사용량 보존은 [배포 증거](../docs/nas-deploy.md#최초-성공-운영-기록)에 있다. 후속 run `585`에서는 실제 세 모드 합성 음원·Jev 선택·기존 인증 세션 유지·운영 JS 일치를 별도로 확인했다. iPhone/iPad의 실제 어린이 발화, 인식 지연, 마이크 권한 거부와 재시도, 지연 응답·화면 이동 취소, 예약 백업·외부 암호화 사본은 기존 검사와 구분해 확인한다. 자동 검사만으로 운영 배포나 실제 기기 정확도를 완료로 표시하지 않는다.

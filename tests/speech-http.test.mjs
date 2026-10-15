@@ -4,7 +4,10 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
+import { EventEmitter } from 'node:events';
 import { createAuthServer, readConfig } from '../server/auth-server.mjs';
+import * as speech from '../server/speech.mjs';
+import { createRealtimeTranscriber } from '../server/realtime-speech.mjs';
 
 const NOW = Date.UTC(2026, 9, 3, 12);
 function wav(durationMs = 1000) {
@@ -19,9 +22,44 @@ async function fixture(t, options = {}) {
   const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'flagquiz-speech-http-'));
   const stateDirectory = path.join(directory, 'state'); let calls = 0, jevCalls = 0, centralCalls = 0, paused = false;
   let centralState = { gen: 1, disabled: false };
+  class ProviderSocket extends EventEmitter {
+    constructor(url, config) {
+      super(); this.readyState = 0; this.bufferedAmount = 0; this.frames = [];
+      assert.equal(url, 'wss://stt-rt.soniox.com/transcribe-websocket');
+      assert.equal(config.headers.Authorization, 'Bearer fixture-soniox-not-real');
+      calls++;
+      queueMicrotask(() => { this.readyState = 1; this.emit('open'); });
+    }
+    send(data, config, callback) {
+      if (config.binary) { this.frames.push(Buffer.from(data)); callback(); return; }
+      const body = JSON.parse(data);
+      if (body.type !== 'finalize') {
+        assert.equal(body.model, 'stt-rt-v5'); assert.deepEqual(body.language_hints, ['ko']);
+        assert.equal(Object.hasOwn(body, 'context'), false); assert.equal(Object.hasOwn(body, 'prompt'), false);
+        callback(); return;
+      }
+      callback();
+      (async () => {
+        assert.deepEqual(Buffer.concat(this.frames), wav().subarray(44));
+        const saved = JSON.parse(await fs.readFile(path.join(stateDirectory, 'access.json'), 'utf8'));
+        assert.equal(saved.quota.monthly['2026-10'], 1);
+        if (options.providerFailure) {
+          this.emit('message', Buffer.from(JSON.stringify({ error_code: 500,
+            error_message: 'fixture-provider-secret-must-not-leak' })), false); return;
+        }
+        if (options.revokeAfterSpeech) centralState = { gen: 2, disabled: false };
+        this.emit('message', Buffer.from(JSON.stringify({ tokens: [
+          { text: options.text || '대한민국', is_final: true }, { text: '<fin>', is_final: true }
+        ] })), false);
+      })().catch(error => this.emit('error', error));
+    }
+    terminate() { this.readyState = 3; this.emit('close'); }
+  }
+  const realtimeTranscriber = createRealtimeTranscriber({ apiKey: 'fixture-soniox-not-real', WebSocketImpl: ProviderSocket });
   const app = await createAuthServer({ config: readConfig({ AUTH_PROVIDER: 'techjuice-id', PUBLIC_ORIGIN: 'http://127.0.0.1',
     TJID_SUPABASE_URL: 'https://fixture.supabase.co', TJID_SUPABASE_ANON_KEY: 'fixture-public', SESSION_SECRET: 's'.repeat(64),
-    GROQ_API_KEY: 'fixture-not-real', TYPESAFE_API_KEY: options.typesafeApiKey || '', STATE_DIR: stateDirectory, STATIC_ROOT: path.join(directory, 'site') }), clock: () => NOW, timingClock: options.timingClock,
+    SONIOX_API_KEY: 'fixture-soniox-not-real', TYPESAFE_API_KEY: options.typesafeApiKey || '', STATE_DIR: stateDirectory, STATIC_ROOT: path.join(directory, 'site') }), clock: () => NOW, timingClock: options.timingClock,
+    realtimeTranscriber, speechModule: { ...speech, createTranscriber: config => speech.createTranscriber({ ...config, delayImpl: async () => {} }) },
     techjuiceId: { ready: true, sessionState: async () => { centralCalls++; return centralState; },
       passwordGrant: async (identifier, password) => identifier === 'fixture-child' && password === 'fixture-password' ? {
         sub: '22222222-2222-4222-8222-222222222222', email: 'fixture-child@example.invalid', techjuiceRole: 'user',
@@ -42,15 +80,7 @@ async function fixture(t, options = {}) {
           type: 'choice', choice: code, confidence: 1, probabilities
         } } }), { headers: { 'Content-Type': 'application/json' } });
       }
-      calls++;
-      assert.equal(url, 'https://api.groq.com/openai/v1/audio/transcriptions'); assert.equal(config.method, 'POST');
-      assert.equal(config.body.get('model'), 'whisper-large-v3-turbo'); assert.equal(config.body.get('language'), 'ko');
-      assert.deepEqual(Buffer.from(await config.body.get('file').arrayBuffer()), wav());
-      const saved = JSON.parse(await fs.readFile(path.join(stateDirectory, 'access.json'), 'utf8'));
-      assert.equal(saved.quota.monthly['2026-10'], 1);
-      if (options.providerFailure) return new Response('fixture-provider-secret-must-not-leak', { status: 500 });
-      if (options.revokeAfterSpeech) centralState = { gen: 2, disabled: false };
-      return new Response(JSON.stringify({ text: options.text || '대한민국' }), { headers: { 'Content-Type': 'application/json' } });
+      throw new Error('파일 업로드나 다른 음성 공급자의 유료 REST 호출은 허용하지 않는다.');
     } });
   app.server.prependListener('request', req => {
     if (req.url === '/api/speech') req.once('pause', () => { paused = true; });

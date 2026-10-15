@@ -45,12 +45,12 @@ async function fixture(t, options = {}) {
   const env = { AUTH_PROVIDER: 'techjuice-id', PUBLIC_ORIGIN: options.secure ? 'https://quiz.test' : 'http://127.0.0.1',
     TJID_SUPABASE_URL: 'https://fixture.supabase.co', TJID_SUPABASE_ANON_KEY: 'fixture-public-anon-key', TJID_APP_SLUG: 'flagquiz',
     TJID_GOOGLE_ENABLED: options.google ? 'true' : 'false', SESSION_SECRET: 'a'.repeat(64),
-    STATE_DIR: path.join(directory, 'state'), STATIC_ROOT: staticRoot, GROQ_API_KEY: 'fixture-groq-key-never-real',
+    STATE_DIR: path.join(directory, 'state'), STATIC_ROOT: staticRoot, SONIOX_API_KEY: 'fixture-soniox-key-never-real',
     TYPESAFE_API_KEY: options.typesafeApiKey || '' };
   let app;
   const speechModule = { readSpeechInput: async () => { events.push('input'); await options.onRead?.(); return { playerId: '0', turnId: '1', mode: 'voice' }; },
     createTranscriber: ({ apiKey }) => {
-      assert.equal(apiKey, env.GROQ_API_KEY);
+      assert.equal(apiKey, env.SONIOX_API_KEY);
       return async () => {
         const saved = JSON.parse(await fs.readFile(path.join(env.STATE_DIR, 'access.json'), 'utf8'));
         assert.equal(saved.quota.monthly['2026-10'], 1);
@@ -109,7 +109,7 @@ test('중앙 이메일·비밀번호 폼 로그인은 앱 권한을 가진 계�
   assert.match(login.started.html, /기존 TechJuice ID/);
   assert.match(login.started.html, /action="\/api\/auth\/password"/);
   assert.match(login.started.html, /<script src="\/login-legacy\.js" defer><\/script>/);
-  assert.doesNotMatch(login.started.html, /Google 계정으로 로그인|fixture-public-anon-key|fixture-groq-key/);
+  assert.doesNotMatch(login.started.html, /Google 계정으로 로그인|fixture-public-anon-key|fixture-soniox-key/);
   assert.match(login.sessionHeader, /HttpOnly/); assert.match(login.sessionHeader, /SameSite=Lax/); assert.match(login.sessionHeader, /Secure/);
   assert.match(login.sessionHeader, /Max-Age=2592000(?:;|$)/);
   assert.deepEqual(f.passwordCalls, [{ identifier: 'child@example.invalid', password: PASSWORD }]);
@@ -120,7 +120,7 @@ test('중앙 이메일·비밀번호 폼 로그인은 앱 권한을 가진 계�
   assert.equal((await f.request('/app.js')).status, 401);
   const state = JSON.parse(await fs.readFile(path.join(f.env.STATE_DIR, 'access.json'), 'utf8'));
   assert.equal(state.sessions[0].generation, 1);
-  assert.doesNotMatch(JSON.stringify(state), /fixture-password|fixture-groq-key|fixture-public-anon-key/);
+  assert.doesNotMatch(JSON.stringify(state), /fixture-password|fixture-soniox-key|fixture-public-anon-key/);
 });
 
 test('기기 로그인은 중앙 JWT 만료 후 새 요청과 같은 상태 디렉터리의 서버 재시작에서도 30일 동안 유지된다', async t => {

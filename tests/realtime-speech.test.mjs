@@ -46,6 +46,32 @@ test('전사기 생성과 연결 종료는 유료 소켓을 자동으로 시작�
   assert.equal(f.errors.length, 0);
 });
 
+test('PCM 송신 callback은 전송 완료에 한 번만 호출하고 close 후 늦은 완료는 무시한다', async () => {
+  const f = setup({ deferSend: true }), c = f.connect(), ws = f.sockets[0];
+  ws.open(); ws.flush(); await c.ready;
+  const sent = [];
+  assert.equal(c.write(Buffer.from([1, 0]), error => sent.push(error || 'sent')), true);
+  assert.equal(sent.length, 0);
+  const complete = ws.pendingSends.shift(); complete(); complete();
+  assert.deepEqual(sent, ['sent']);
+  assert.equal(c.write(Buffer.from([2, 0]), error => sent.push(error || 'late')), true);
+  c.close(); ws.flush();
+  assert.deepEqual(sent, ['sent']); assert.equal(f.errors.length, 0); assert.equal(ws.terminations, 1);
+});
+
+test('PCM 송신 callback 오류는 안전한 오류를 한 번 전달하고 연결을 다시 만들지 않는다', async () => {
+  const f = setup({ deferSend: true }), c = f.connect(), ws = f.sockets[0];
+  ws.open(); ws.flush(); await c.ready;
+  const sent = [];
+  assert.equal(c.write(Buffer.from([1, 0]), error => sent.push(error)), true);
+  const complete = ws.pendingSends.shift();
+  complete(new Error('provider-key private send detail')); complete();
+  assert.equal(sent.length, 1); assert.equal(sent[0].code, 'speech_failed');
+  assert.doesNotMatch(sent[0].message, /provider-key|private/);
+  assert.equal(f.errors.length, 1); assert.equal(ws.terminations, 1); assert.equal(f.sockets.length, 1);
+  assert.equal(c.write(Buffer.from([2, 0])), false);
+});
+
 test('망설임 endpoint 뒤에도 같은 연결로 나라 이름을 계속 받는다', async () => {
   const f = setup(), c = f.connect(), ws = f.sockets[0]; ws.open(); await c.ready;
   ws.receive({ tokens: [final('음.'), final('<end>')] });

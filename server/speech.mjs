@@ -1,16 +1,9 @@
 /* 음성은 메모리에서만 처리한다. 인증과 사용량 예약은 호출하는 서버가 먼저 맡는다. */
 export const MAX_AUDIO_BYTES = 2 * 1024 * 1024;
 export const MAX_DURATION_MS = 12000;
-export const MAX_PROMPT_BYTES = 160;
 const SAMPLE_RATE = 16000;
-const ENDPOINT = 'https://api.groq.com/openai/v1/audio/transcriptions';
-const MODEL = 'whisper-large-v3-turbo';
-// Whisper의 byte-level BPE는 UTF-8 바이트를 합친다. 내용은 최대 160토큰으로, 224토큰 한도에 여유를 둔다.
-const COUNTRY_PROMPT = '한국어 나라 이름 놀이의 짧은 답변과 요청. 힌트, 몰라요, 다시.';
-const CAPITAL_PROMPT = '한국어 수도 이름 놀이의 짧은 답변과 요청. 힌트, 몰라요, 다시.';
-for (const prompt of [COUNTRY_PROMPT, CAPITAL_PROMPT]) {
-  if (Buffer.byteLength(prompt, 'utf8') > MAX_PROMPT_BYTES) throw new Error('말하기 안내가 너무 길어요.');
-}
+const MODEL = 'stt-rt-v5';
+const PCM_FRAME_BYTES = SAMPLE_RATE * 2 / 10;
 
 export class SpeechError extends Error {
   constructor(status, code, message) { super(message); this.name = 'SpeechError'; this.status = status; this.code = code; }
@@ -18,6 +11,16 @@ export class SpeechError extends Error {
 
 function invalid() { return new SpeechError(400, 'invalid_audio', '녹음 형식을 확인할 수 없어요. 다시 말하거나 글자로 답해 주세요.'); }
 function cancelled() { return new SpeechError(499, 'cancelled', '말하기 요청을 취소했어요.'); }
+function failed() { return new SpeechError(502, 'speech_failed', '목소리를 알아듣지 못했어요. 다시 말하거나 글자로 답해 주세요.'); }
+
+function pause(ms, signal) {
+  return new Promise((resolve, reject) => {
+    if (signal.aborted) { reject(cancelled()); return; }
+    const timer = setTimeout(() => { signal.removeEventListener('abort', abort); resolve(); }, ms);
+    function abort() { clearTimeout(timer); signal.removeEventListener('abort', abort); reject(cancelled()); }
+    signal.addEventListener('abort', abort, { once: true });
+  });
+}
 
 function speechMode(value) {
   const mode = value === undefined ? 'country-chain' : value;
@@ -102,8 +105,11 @@ export async function readSpeechInput(req, { signal, timeoutMs = 10000 } = {}) {
   return input;
 }
 
-export function createTranscriber({ apiKey = process.env.GROQ_API_KEY, fetchImpl = globalThis.fetch, timeoutMs = 20000 } = {}) {
-  const ready = typeof apiKey === 'string' && apiKey.trim().length > 0 && !/^['"]?op:\/\//.test(apiKey.trim());
+export function createTranscriber({ apiKey = process.env.SONIOX_API_KEY, realtimeTranscriber,
+  WebSocketImpl, timeoutMs = 20000, delayImpl = pause } = {}) {
+  const key = typeof apiKey === 'string' ? apiKey.trim() : '';
+  const ready = Boolean(key && !/^["']?op:\/\//i.test(key) && !/[\r\n]/.test(key) && realtimeTranscriber?.ready !== false);
+  const duration = Number.isFinite(timeoutMs) && timeoutMs > 0 ? timeoutMs : 20000;
   async function transcribe(rawInput, { signal } = {}) {
     if (!ready) throw new SpeechError(503, 'speech_unavailable', '클라우드 말하기가 아직 준비되지 않았어요. 글자로 답해 주세요.');
     const input = validateSpeechInput(rawInput);
@@ -111,25 +117,80 @@ export function createTranscriber({ apiKey = process.env.GROQ_API_KEY, fetchImpl
     const controller = new AbortController();
     const abort = () => controller.abort();
     signal?.addEventListener('abort', abort, { once: true });
-    let timedOut = false;
-    const timer = setTimeout(() => { timedOut = true; controller.abort(); }, timeoutMs);
+    let timedOut = false, connection;
+    function close() { try { connection?.close(); } catch { /* 종료 오류도 공급자 원문으로 노출하지 않는다. */ } }
+    const timer = setTimeout(() => { timedOut = true; controller.abort(); }, duration);
     try {
-      const body = new FormData();
-      body.set('file', new Blob([input.audio], { type: 'audio/wav' }), 'speech.wav');
-      body.set('model', MODEL); body.set('language', 'ko'); body.set('response_format', 'json');
-      body.set('prompt', input.mode === 'capitalVoice' ? CAPITAL_PROMPT : COUNTRY_PROMPT);
-      const response = await fetchImpl(ENDPOINT, { method: 'POST', headers: { Authorization: 'Bearer ' + apiKey }, body, signal: controller.signal });
-      if (!response.ok) throw new SpeechError(502, 'speech_failed', '목소리를 알아듣지 못했어요. 다시 말하거나 글자로 답해 주세요.');
-      const result = await response.json();
+      // 순환 import를 피하고 HTTP 파일 경로도 같은 Soniox RT 어댑터만 사용한다.
+      const realtime = realtimeTranscriber || (await import('./realtime-speech.mjs')).createRealtimeTranscriber({
+        apiKey: key, WebSocketImpl, timeoutMs: duration
+      });
       if (controller.signal.aborted) throw cancelled();
-      if (!result || typeof result.text !== 'string' || result.text.length > 500) throw new SpeechError(502, 'speech_failed', '목소리를 알아듣지 못했어요. 글자로 답해 주세요.');
-      return { text: result.text.trim() };
+      return await new Promise((resolve, reject) => {
+        let settled = false, audioSent = false, finalizing = false;
+        const segments = [];
+        function finish(error, text) {
+          if (settled) return;
+          settled = true;
+          controller.signal.removeEventListener('abort', aborted);
+          close();
+          controller.abort();
+          if (error) reject(error); else resolve({ text });
+        }
+        function aborted() { finish(cancelled()); }
+        controller.signal.addEventListener('abort', aborted, { once: true });
+        function transcript(result) {
+          if (settled) return;
+          if (!result || typeof result.finalText !== 'string') { finish(failed()); return; }
+          const text = [...segments, result.finalText].join(' ').trim();
+          if (text.length > 500) { finish(failed()); return; }
+          if (result.boundary === 'fin' || result.finished === true) {
+            // 공급자가 오디오 끝보다 먼저 종료하면 잘린 답을 채점하지 않는다.
+            if (!audioSent || !finalizing || result.hasNonFinal) { finish(failed()); return; }
+            finish(null, text);
+          } else if (result.boundary === 'end') {
+            if (result.finalText.trim()) segments.push(result.finalText.trim());
+          }
+        }
+        try {
+          connection = realtime.connect({ mode: input.mode, signal: controller.signal,
+            onTranscript: transcript, onError: error => finish(error instanceof SpeechError ? error : failed()) });
+          if (settled) { close(); return; }
+          async function stream() {
+            await connection.ready;
+            const pcm = input.audio.subarray(44);
+            for (let offset = 0; offset < pcm.length; offset += PCM_FRAME_BYTES) {
+              if (controller.signal.aborted || settled) return;
+              const frame = pcm.subarray(offset, offset + PCM_FRAME_BYTES);
+              await new Promise((sent, rejectSent) => {
+                let completed = false;
+                function done(error) {
+                  if (completed) return;
+                  completed = true;
+                  controller.signal.removeEventListener('abort', cancelSend);
+                  if (error) rejectSent(failed()); else sent();
+                }
+                function cancelSend() { done(cancelled()); }
+                controller.signal.addEventListener('abort', cancelSend, { once: true });
+                try { if (!connection.write(frame, done)) done(failed()); }
+                catch { done(failed()); }
+              });
+              // 미리 녹음한 PCM도 공급자의 실시간 속도 규칙과 버퍼 상한을 지킨다.
+              await delayImpl(frame.length / (SAMPLE_RATE * 2) * 1000, controller.signal);
+            }
+            if (controller.signal.aborted || settled) return;
+            audioSent = true; finalizing = true;
+            if (!connection.finalize()) finish(failed());
+          }
+          stream().catch(error => finish(error instanceof SpeechError ? error : failed()));
+        } catch { finish(failed()); }
+      });
     } catch (error) {
       if (timedOut) throw new SpeechError(504, 'speech_timeout', '목소리를 확인하는 데 시간이 오래 걸려요. 글자로 답해 주세요.');
       if (signal?.aborted) throw cancelled();
       if (error instanceof SpeechError) throw error;
-      throw new SpeechError(502, 'speech_failed', '목소리를 알아듣지 못했어요. 다시 말하거나 글자로 답해 주세요.');
-    } finally { clearTimeout(timer); signal?.removeEventListener('abort', abort); }
+      throw failed();
+    } finally { clearTimeout(timer); signal?.removeEventListener('abort', abort); close(); }
   }
   transcribe.ready = ready;
   transcribe.model = MODEL;

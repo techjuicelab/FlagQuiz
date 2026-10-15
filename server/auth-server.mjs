@@ -35,14 +35,14 @@ const INSTALL_METADATA = '<meta name="theme-color" content="#F5F6F8">' +
   '<meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default">';
 
 export function readConfig(env = process.env) {
-  for (const name of ['PUBLIC_ORIGIN', 'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'SESSION_SECRET', 'STATE_DIR', 'STATIC_ROOT', 'GROQ_API_KEY', 'SONIOX_API_KEY', 'TYPESAFE_API_KEY', 'HOST', 'PORT', 'TJID_SUPABASE_URL', 'TJID_SUPABASE_ANON_KEY', 'TRUSTED_PROXY_IPS']) {
+  for (const name of ['PUBLIC_ORIGIN', 'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'SESSION_SECRET', 'STATE_DIR', 'STATIC_ROOT', 'SONIOX_API_KEY', 'TYPESAFE_API_KEY', 'HOST', 'PORT', 'TJID_SUPABASE_URL', 'TJID_SUPABASE_ANON_KEY', 'TRUSTED_PROXY_IPS']) {
     if (typeof env[name] === 'string' && /^["']?\s*op:\/\//i.test(env[name].trim())) {
       throw new Error('Unresolved 1Password reference in ' + name + '; start with op run');
     }
   }
   const config = { publicOrigin: env.PUBLIC_ORIGIN || '', clientId: env.GOOGLE_CLIENT_ID || '', clientSecret: env.GOOGLE_CLIENT_SECRET || '',
     sessionSecret: env.SESSION_SECRET || '', stateDirectory: env.STATE_DIR || '', staticRoot: path.resolve(env.STATIC_ROOT || path.join(repository, '_site')),
-    groqApiKey: env.GROQ_API_KEY || '', sonioxApiKey: env.SONIOX_API_KEY || '', typesafeApiKey: env.TYPESAFE_API_KEY || '', port: Number(env.PORT || 8080), host: env.HOST || '127.0.0.1',
+    sonioxApiKey: env.SONIOX_API_KEY || '', typesafeApiKey: env.TYPESAFE_API_KEY || '', port: Number(env.PORT || 8080), host: env.HOST || '127.0.0.1',
     authProvider: env.AUTH_PROVIDER || (env.TJID_SUPABASE_URL ? 'techjuice-id' : 'google'),
     supabaseUrl: env.TJID_SUPABASE_URL || '', anonKey: env.TJID_SUPABASE_ANON_KEY || '', appSlug: env.TJID_APP_SLUG || 'flagquiz',
     googleEnabled: env.TJID_GOOGLE_ENABLED === 'true', trustedProxyIPs: parseTrustedProxyIPs(env.TRUSTED_PROXY_IPS) };
@@ -229,7 +229,7 @@ export async function createAuthServer({ config = readConfig(), fetchImpl = fetc
   }
   async function speechRequest(req, res, session) {
     sameOrigin(req, session);
-    if (!config.groqApiKey) throw new AccessError(503, 'speech-not-configured');
+    if (!config.sonioxApiKey) throw new AccessError(503, 'speech-not-configured');
     const release = claimSpeech(session);
     const abort = new AbortController();
     function disconnected() { if (!res.writableEnded) abort.abort(); }
@@ -249,7 +249,7 @@ export async function createAuthServer({ config = readConfig(), fetchImpl = fetc
     }
     try {
       speech ||= await import('./speech.mjs');
-      transcribe ||= speech.createTranscriber({ apiKey: config.groqApiKey, fetchImpl });
+      transcribe ||= speech.createTranscriber({ apiKey: config.sonioxApiKey, realtimeTranscriber: realtime });
       const input = await speech.readSpeechInput(req, { signal: abort.signal });
       const current = await measure('authorization', async () => {
         const checked = tjid ? await authorized(req, true) : session;
